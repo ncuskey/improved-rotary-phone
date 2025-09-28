@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Improved Rotary Phone (ISBN Lot Optimizer)
 
 Improved Rotary Phone is a desktop and CLI toolkit for cataloguing second-hand
@@ -60,3 +61,7 @@ python -m isbn_lot_optimizer --no-gui --refresh-metadata --limit 100
 ## Licensing
 This repository currently ships without an explicit licence. Add one before
 publishing binaries or distributing widely.
+=======
+# improved-rotary-phone
+LotHelper
+>>>>>>> 659cfea46e2523246e71b66e56a4f568641ab4cb

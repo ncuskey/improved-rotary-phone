@@ -1,10 +1,10 @@
-<<<<<<< HEAD
 # Improved Rotary Phone (ISBN Lot Optimizer)
 
-Improved Rotary Phone is a desktop and CLI toolkit for cataloguing second-hand
-books, estimating resale value, and assembling profitable eBay lots. The GUI is
-built with Tkinter and drives a background service that persists scans,
-retrieves market intelligence, and updates lot recommendations in real time.
+Improved Rotary Phone—formerly LotHelper—is a desktop and CLI toolkit for
+cataloguing second-hand books, estimating resale value, and assembling
+profitable eBay lots. The GUI is built with Tkinter and drives a background
+service that persists scans, retrieves market intelligence, and updates lot
+recommendations in real time.
 
 ## Highlights
 - Barcode-friendly GUI for scanning ISBNs with condition and edition tracking.
@@ -61,7 +61,3 @@ python -m isbn_lot_optimizer --no-gui --refresh-metadata --limit 100
 ## Licensing
 This repository currently ships without an explicit licence. Add one before
 publishing binaries or distributing widely.
-=======
-# improved-rotary-phone
-LotHelper
->>>>>>> 659cfea46e2523246e71b66e56a4f568641ab4cb

@@ -11,6 +11,7 @@ recommendations in real time.
 - Background refresh jobs with unified progress feedback for cover prefetching
   and metadata/market updates.
 - eBay Finding API integration for sell-through and pricing statistics.
+- Interactive Author Cleanup reviewer with per-cluster approvals and book thumbnails (Pillow/requests-backed).
 - Monte Carlo based lot optimiser that favours cohesive sets and recency.
 - Persistent SQLite catalogue stored in `~/.isbn_lot_optimizer/` with optional
   CSV import/export workflows.
@@ -47,6 +48,21 @@ python -m isbn_lot_optimizer --no-gui --scan 9780316769488 --condition "Very Goo
 # Refresh metadata for the latest titles
 python -m isbn_lot_optimizer --no-gui --refresh-metadata --limit 100
 ```
+
+## Author Cleanup (Case-by-case with thumbnails)
+
+Use the GUI to normalize inconsistent author names with visual context:
+
+- Menu: Tools → Author Cleanup…
+- The reviewer opens one cluster at a time (e.g., ["Rowling, J. K.", "J K Rowling", "Joanne K Rowling"]).
+- Pick a representative form (default favors multi-token names).
+- Check the variants you want to merge into the representative.
+- Review sample book thumbnails to confirm authorship; click “Apply This Cluster” to rename across the catalog.
+- Use Next/Previous/Skip to move between clusters.
+
+Thumbnails
+- Thumbnails are loaded from metadata sources (Google Books/Open Library) and cached under `~/.isbn_lot_optimizer/covers/`.
+- Image support uses Pillow and requests, which are included in requirements. If they’re missing, the GUI falls back gracefully without images.
 
 ## Development Notes
 - Source lives in `isbn_lot_optimizer/`; see `CODEMAP.md` for an overview.

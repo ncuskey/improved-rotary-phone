@@ -33,6 +33,8 @@ from .clipboard_import import ImportOptions, parse_prices_from_clipboard_text
 from .models import BookEvaluation, LotSuggestion
 from .service import BookService, COVER_CHOICES
 from .utils import normalise_isbn, isbn10_to_isbn13, compute_isbn10_check_digit
+from .author_match import cluster_authors
+from .db import list_distinct_author_names
 
 # Optional cover image support is imported lazily in _load_cover_image to avoid a hard dependency
 # on PIL/requests at import time and to prevent static analysis errors when they aren't installed.
@@ -187,8 +189,17 @@ class BookEvaluatorGUI:
         refresh_button = ttk.Button(input_frame, text="Refresh Selected", command=self.refresh_selected)
         refresh_button.grid(row=0, column=8, padx=5)
 
+        modify_button = ttk.Button(input_frame, text="Modify Books", command=self._on_modify_books)
+        modify_button.grid(row=0, column=9, padx=5)
+
         clear_db_button = ttk.Button(input_frame, text="Clear Database", command=self._on_clear_database)
-        clear_db_button.grid(row=0, column=9, padx=5)
+        clear_db_button.grid(row=0, column=10, padx=5)
+
+        # Refresh all BooksRun offers (bulk)
+        refresh_booksrun_all_button = ttk.Button(
+            input_frame, text="Refresh BooksRun (All)", command=self.refresh_booksrun_all
+        )
+        refresh_booksrun_all_button.grid(row=0, column=11, padx=5)
 
         # Search row
         ttk.Label(input_frame, text="Search:").grid(row=1, column=0, sticky="w", pady=(8, 0))
@@ -239,6 +250,9 @@ class BookEvaluatorGUI:
             "quantity",
             "condition",
             "sell_through",
+            "booksrun_cash",
+            "booksrun_credit",
+            "booksrun_value",
             "scanned",
         )
         self.books_tree = ttk.Treeview(
@@ -248,9 +262,14 @@ class BookEvaluatorGUI:
             height=12,
             selectmode="extended",
         )
+        heading_overrides = {
+            "booksrun_cash": "BooksRun Cash",
+            "booksrun_credit": "BooksRun Credit",
+            "booksrun_value": "BooksRun Value",
+        }
         for col in book_columns:
-            heading = col.replace("_", " ").title()
-            cast = _as_float if col in {"price"} else (_as_int if col in {"quantity"} else None)
+            heading = heading_overrides.get(col, col.replace("_", " ").title())
+            cast = _as_float if col in {"price", "booksrun_cash", "booksrun_credit"} else (_as_int if col in {"quantity"} else None)
             self.books_tree.heading(col, text=heading, command=lambda c=col, func=cast: _tree_sortby(self.books_tree, c, cast=func))
         self.books_tree.column("isbn", width=130, anchor="w")
         self.books_tree.column("title", width=260, anchor="w")
@@ -263,6 +282,9 @@ class BookEvaluatorGUI:
         self.books_tree.column("quantity", width=70, anchor="center")
         self.books_tree.column("condition", width=100, anchor="w")
         self.books_tree.column("sell_through", width=110, anchor="w")
+        self.books_tree.column("booksrun_cash", width=110, anchor="e")
+        self.books_tree.column("booksrun_credit", width=110, anchor="e")
+        self.books_tree.column("booksrun_value", width=120, anchor="w")
         self.books_tree.column("scanned", width=150, anchor="w")
         self.books_tree.bind("<<TreeviewSelect>>", self._on_book_select)
         self.books_tree.bind("<Double-1>", self._on_books_double_click)
@@ -274,6 +296,7 @@ class BookEvaluatorGUI:
 
         self.books_menu = tk.Menu(self.root, tearoff=0)
         self.books_menu.add_command(label="Edit…", command=lambda: self._menu_edit_book())
+        self.books_menu.add_command(label="Modify…", command=self._on_modify_books)
         self.books_menu.add_separator()
         self.books_menu.add_command(label="Delete", command=lambda: self._menu_delete_books())
         self.books_tree.bind("<Button-3>", self._popup_books_menu)
@@ -335,6 +358,8 @@ class BookEvaluatorGUI:
 
         tools = tk.Menu(menubar, tearoff=0)
         tools.add_command(label="Refresh Selected Book(s)", command=self.refresh_selected)
+        tools.add_command(label="Refresh BooksRun (All)", command=self.refresh_booksrun_all)
+        tools.add_command(label="Author Cleanup…", command=self._open_author_cleanup)
         tools.add_command(label="Refresh Series Catalog", command=self._refresh_series_catalog)
         tools.add_separator()
         tools.add_command(label="Show Cover Cache Info", command=self._show_cover_cache_info)
@@ -474,6 +499,99 @@ class BookEvaluatorGUI:
 
     def _on_refresh_selected(self) -> None:
         self.refresh_selected()
+
+    def refresh_booksrun_all(self, *_args) -> None:
+        """
+        Refresh BooksRun offers for all stored books with polite rate limiting.
+        Uses the service.refresh_booksrun_all method and shows a determinate progress bar.
+        """
+        if self._refresh_thread and self._refresh_thread.is_alive():
+            messagebox.showinfo("BooksRun Refresh", "A refresh is already in progress. Please wait for it to finish.")
+            return
+
+        confirm = messagebox.askyesno(
+            "Refresh BooksRun (All)",
+            "This will query BooksRun for all books in your catalog.\n\nProceed?",
+        )
+        if not confirm:
+            self._set_status("BooksRun refresh cancelled.")
+            return
+
+        # Start progress; total will be updated by progress callback
+        self._set_status("Refreshing BooksRun offers for all books…")
+        self._start_progress("booksrun", "BooksRun", 1)
+
+        def progress(done: int, total_count: int) -> None:
+            # Update progress from worker thread safely
+            self.root.after(0, self._update_progress, "booksrun", done, total_count)
+
+        def handle_error(exc: Exception) -> None:
+            self._refresh_thread = None
+            self._reset_progress("booksrun")
+            messagebox.showerror("BooksRun Refresh", f"Refresh failed:\n{exc}")
+            self._set_status("BooksRun refresh failed.")
+
+        def handle_success(count: int) -> None:
+            self._refresh_thread = None
+            self.reload_tables()
+            self._finish_progress("booksrun", label="BooksRun", delay_ms=1200)
+            self._set_status(f"Refreshed BooksRun offers for {count} book(s).")
+
+        def worker() -> None:
+            try:
+                # Delay between calls defaults from env BOOKSRUN_DELAY or 0.2s inside service
+                count = self.service.refresh_booksrun_all(progress_cb=progress)
+            except Exception as exc:  # pragma: no cover - UI path
+                self.root.after(0, lambda: handle_error(exc))
+                return
+            self.root.after(0, lambda: handle_success(count))
+
+        self._refresh_thread = threading.Thread(target=worker, daemon=True)
+        self._refresh_thread.start()
+
+    def _open_author_cleanup(self) -> None:
+        """
+        Find probable author name variants and offer to normalize them.
+        Strategy:
+          - Pull distinct author names from the DB.
+          - Cluster with author_match.cluster_authors.
+          - For each cluster, choose a representative display form (prefer multi-token names).
+          - Build a mapping old_name -> representative for all members where it differs.
+          - Show a summary and prompt to apply.
+        """
+        if self._refresh_thread and self._refresh_thread.is_alive():
+            messagebox.showinfo("Author Cleanup", "An operation is already in progress. Please wait for it to finish.")
+            return
+
+        # Gather names
+        try:
+            # list_distinct_author_names expects a sqlite3 connection
+            conn = self.service.db._get_connection()  # type: ignore[attr-defined]
+            names = list_distinct_author_names(conn)
+        except Exception:
+            # Fall back to scanning in-memory books
+            try:
+                names = sorted({
+                    (b.metadata.authors[0].strip() if b.metadata.authors else "")
+                    for b in self.service.list_books()
+                    if b and getattr(b, "metadata", None) and b.metadata.authors
+                })
+            except Exception:
+                names = []
+
+        names = [n for n in names if n]
+        if not names:
+            messagebox.showinfo("Author Cleanup", "No author names found to analyze.")
+            return
+
+        clusters = cluster_authors(names)
+        # Open interactive review UI for case-by-case approval with thumbnails
+        review_clusters = {k: v for k, v in clusters.items() if isinstance(v, (list, tuple)) and len(v) >= 2}
+        if not review_clusters:
+            messagebox.showinfo("Author Cleanup", "No normalization suggestions were generated.")
+            return
+        self._open_author_cleanup_reviewer(review_clusters)
+        return
 
     def _on_clear_database(self) -> None:
         confirm = messagebox.askyesno(
@@ -638,6 +756,151 @@ class BookEvaluatorGUI:
         entry_title.focus_set()
         dialog.wait_window()
 
+    def _on_modify_books(self) -> None:
+        selected = self.books_tree.selection()
+        if not selected:
+            messagebox.showinfo("Modify Books", "Select one or more books to modify.")
+            return
+        isbns: list[str] = []
+        for iid in selected:
+            values = self.books_tree.item(iid).get("values", [])
+            if not values:
+                continue
+            isbn = values[0]
+            if isbn:
+                isbns.append(str(isbn))
+        if not isbns:
+            messagebox.showinfo("Modify Books", "No valid ISBNs found in the selection.")
+            return
+        self.open_batch_modify_dialog(isbns)
+
+    def open_batch_modify_dialog(self, isbns: list[str]) -> None:
+        if not isbns:
+            return
+
+        dialog = Toplevel(self.root)
+        dialog.title(f"Modify {len(isbns)} Book(s)")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        dialog.columnconfigure(1, weight=1)
+
+        ttk.Label(
+            dialog,
+            text=f"Apply updates to {len(isbns)} selected book(s).",
+        ).grid(row=0, column=0, columnspan=2, sticky="w", padx=8, pady=(10, 6))
+
+        apply_vars: dict[str, tk.BooleanVar] = {}
+        value_vars: dict[str, tk.Variable] = {}
+
+        def add_field(row_idx: int, field_key: str, label_text: str, widget: Any, *, enabled_state: str) -> None:
+            var = tk.BooleanVar(value=False)
+            apply_vars[field_key] = var
+            ttk.Checkbutton(dialog, text=label_text, variable=var).grid(
+                row=row_idx, column=0, sticky="w", padx=8, pady=4
+            )
+            widget.grid(row=row_idx, column=1, sticky="ew", padx=8, pady=4)
+
+            def toggle() -> None:
+                state = enabled_state if var.get() else "disabled"
+                try:
+                    widget.configure(state=state)
+                except Exception:
+                    pass
+
+            var.trace_add("write", lambda *_: toggle())
+            toggle()
+
+        row = 1
+
+        value_vars["title"] = tk.StringVar()
+        title_entry = ttk.Entry(dialog, textvariable=value_vars["title"], width=50)
+        add_field(row, "title", "Title", title_entry, enabled_state="normal")
+        row += 1
+
+        value_vars["authors"] = tk.StringVar()
+        authors_entry = ttk.Entry(dialog, textvariable=value_vars["authors"], width=50)
+        add_field(row, "authors", "Author(s)", authors_entry, enabled_state="normal")
+        row += 1
+
+        value_vars["cover_type"] = tk.StringVar(value="Unknown")
+        cover_combo = ttk.Combobox(
+            dialog,
+            textvariable=value_vars["cover_type"],
+            values=COVER_CHOICES,
+            state="disabled",
+            width=28,
+        )
+        add_field(row, "cover_type", "Cover type", cover_combo, enabled_state="readonly")
+        row += 1
+
+        value_vars["edition"] = tk.StringVar()
+        edition_entry = ttk.Entry(dialog, textvariable=value_vars["edition"], width=28)
+        add_field(row, "edition", "Edition", edition_entry, enabled_state="normal")
+        row += 1
+
+        value_vars["printing"] = tk.StringVar()
+        printing_entry = ttk.Entry(dialog, textvariable=value_vars["printing"], width=28)
+        add_field(row, "printing", "Printing", printing_entry, enabled_state="normal")
+        row += 1
+
+        value_vars["condition"] = tk.StringVar(value="Good")
+        condition_combo = ttk.Combobox(
+            dialog,
+            textvariable=value_vars["condition"],
+            values=["New", "Like New", "Very Good", "Good", "Acceptable", "Poor"],
+            state="disabled",
+            width=28,
+        )
+        add_field(row, "condition", "Condition", condition_combo, enabled_state="readonly")
+        row += 1
+
+        button_frame = ttk.Frame(dialog)
+        button_frame.grid(row=row, column=0, columnspan=2, sticky="e", padx=8, pady=(6, 12))
+
+        def do_apply() -> None:
+            payload: Dict[str, Any] = {}
+            if apply_vars.get("title") and apply_vars["title"].get():
+                payload["title"] = value_vars["title"].get().strip()
+            if apply_vars.get("authors") and apply_vars["authors"].get():
+                payload["authors"] = value_vars["authors"].get().strip()
+            if apply_vars.get("cover_type") and apply_vars["cover_type"].get():
+                payload["cover_type"] = value_vars["cover_type"].get().strip() or "Unknown"
+            if apply_vars.get("edition") and apply_vars["edition"].get():
+                payload["edition"] = value_vars["edition"].get().strip()
+            if apply_vars.get("printing") and apply_vars["printing"].get():
+                payload["printing"] = value_vars["printing"].get().strip()
+            if apply_vars.get("condition") and apply_vars["condition"].get():
+                payload["condition"] = value_vars["condition"].get().strip()
+
+            if not payload:
+                messagebox.showinfo("Modify Books", "Select at least one field to update.")
+                return
+
+            try:
+                updated_count = self.service.update_books_fields(isbns, payload)
+            except Exception as exc:
+                messagebox.showerror("Modify Books", f"Could not apply changes:\n{exc}")
+                return
+
+            if updated_count == 0:
+                messagebox.showinfo("Modify Books", "No changes were applied.")
+                return
+
+            self.reload_tables()
+            try:
+                self.books_tree.selection_set(isbns)
+                if isbns:
+                    self.books_tree.focus(isbns[0])
+            except Exception:
+                pass
+            self._set_status(f"Updated {updated_count} book(s).")
+            dialog.destroy()
+
+        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side="right", padx=6)
+        ttk.Button(button_frame, text="Apply", command=do_apply).pack(side="right")
+
+        dialog.wait_window()
+
     def _popup_books_menu(self, event) -> None:
         iid = self.books_tree.identify_row(event.y)
         if iid:
@@ -657,7 +920,7 @@ class BookEvaluatorGUI:
         selection = self.books_tree.selection()
         if not selection:
             return
-        isbns = [self.books_tree.item(i, "values")[0] for i in selection if self.books_tree.item(i, "values")] 
+        isbns = [self.books_tree.item(i, "values")[0] for i in selection if self.books_tree.item(i, "values")]
         if not isbns:
             return
         if not messagebox.askyesno("Delete Books", f"Delete {len(isbns)} selected book(s)? This cannot be undone."):
@@ -1234,6 +1497,231 @@ class BookEvaluatorGUI:
         self._lot_by_iid[target_iid] = lot
 
     # ------------------------------------------------------------------
+    # Author cleanup reviewer (interactive)
+    def _collect_books_for_author_names(self, names: Iterable[str], limit: int = 12) -> list[BookEvaluation]:
+        books: list[BookEvaluation] = []
+        seen: set[str] = set()
+        names_set = {str(n).strip() for n in names if n and str(n).strip()}
+        try:
+            candidates = self.service.list_books()
+        except Exception:
+            candidates = []
+        for b in candidates:
+            if len(books) >= limit:
+                break
+            try:
+                credited = list(getattr(b.metadata, "credited_authors", ())) or [
+                    a.strip() for a in getattr(b.metadata, "authors", ()) if a and str(a).strip()
+                ]
+            except Exception:
+                credited = []
+            if any(a in names_set for a in credited):
+                if b.isbn not in seen:
+                    books.append(b)
+                    seen.add(b.isbn)
+        return books
+
+    def _open_author_cleanup_reviewer(self, clusters: Dict[str, list[str]]) -> None:
+        # Prepare an ordered list of clusters for review
+        order: list[tuple[str, list[str]]] = []
+        for key, members in clusters.items():
+            mems = [str(m).strip() for m in members if str(m).strip()]
+            if not mems:
+                continue
+            # Prefer multi-token then shorter string then lexicographic
+            mems_sorted = sorted(
+                mems,
+                key=lambda s: (-len([p for p in s.split() if p]), len(s), s.lower())
+            )
+            order.append((key, mems_sorted))
+        if not order:
+            messagebox.showinfo("Author Cleanup", "No normalization suggestions were generated.")
+            return
+        # Sort clusters by size desc to prioritize impactful ones
+        order.sort(key=lambda item: len(item[1]), reverse=True)
+
+        win = Toplevel(self.root)
+        win.title("Author Cleanup — Review")
+        win.transient(self.root)
+        win.grab_set()
+        win.geometry("820x640")
+
+        state = {
+            "index": 0,
+            "order": order,
+            "images": [],  # keep references to PhotoImage to avoid GC
+            "member_vars": {},  # name -> BooleanVar
+            "rep_var": tk.StringVar(),
+        }
+
+        header = ttk.Frame(win)
+        header.pack(fill="x", padx=10, pady=(10, 6))
+
+        lbl_pos = ttk.Label(header, text="")
+        lbl_pos.pack(side="left")
+
+        lbl_cluster = ttk.Label(header, text="", font=("TkDefaultFont", 10, "bold"))
+        lbl_cluster.pack(side="right")
+
+        body = ttk.Frame(win)
+        body.pack(fill="both", expand=True, padx=10, pady=6)
+
+        # Representative selector
+        rep_frame = ttk.LabelFrame(body, text="Proposed Representative")
+        rep_frame.pack(fill="x", padx=4, pady=6)
+        rep_combo = ttk.Combobox(rep_frame, textvariable=state["rep_var"], state="readonly", width=50)
+        rep_combo.pack(side="left", padx=8, pady=6)
+
+        # Members checklist
+        members_frame = ttk.LabelFrame(body, text="Members to Rename → Representative")
+        members_frame.pack(fill="both", expand=False, padx=4, pady=6)
+        members_inner = ttk.Frame(members_frame)
+        members_inner.pack(fill="x", padx=8, pady=6)
+
+        # Thumbnails area (scrollable)
+        thumbs_frame = ttk.LabelFrame(body, text="Sample Book Thumbnails")
+        thumbs_frame.pack(fill="both", expand=True, padx=4, pady=6)
+
+        canvas = tk.Canvas(thumbs_frame, height=260)
+        sbar = ttk.Scrollbar(thumbs_frame, orient="vertical", command=canvas.yview)
+        inner = ttk.Frame(canvas)
+        inner.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.create_window((0, 0), window=inner, anchor="nw")
+        canvas.configure(yscrollcommand=sbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        sbar.pack(side="right", fill="y")
+
+        # Footer buttons
+        footer = ttk.Frame(win)
+        footer.pack(fill="x", padx=10, pady=(6, 10))
+        btn_prev = ttk.Button(footer, text="Previous", command=lambda: move(-1))
+        btn_next = ttk.Button(footer, text="Next", command=lambda: move(1))
+        btn_skip = ttk.Button(footer, text="Skip", command=lambda: apply_cluster(apply_changes=False))
+        btn_apply = ttk.Button(footer, text="Apply This Cluster", command=lambda: apply_cluster(apply_changes=True))
+        btn_close = ttk.Button(footer, text="Close", command=win.destroy)
+        btn_prev.pack(side="left")
+        btn_next.pack(side="left", padx=(6, 0))
+        btn_close.pack(side="right")
+        btn_apply.pack(side="right", padx=(0, 6))
+        btn_skip.pack(side="right", padx=(0, 6))
+
+        def load_cluster(idx: int) -> None:
+            # Reset image refs and members UI
+            state["images"].clear()
+            for child in members_inner.winfo_children():
+                child.destroy()
+            for child in inner.winfo_children():
+                child.destroy()
+            state["member_vars"].clear()
+
+            total = len(state["order"])
+            lbl_pos.config(text=f"Cluster {idx + 1} of {total}")
+
+            key, members = state["order"][idx]
+            lbl_cluster.config(text=f"Key: {key}")
+
+            # Populate representative choices
+            rep_combo.configure(values=members)
+            rep_default = members[0]
+            state["rep_var"].set(rep_default)
+
+            # Member checkboxes (default include all except representative)
+            for name in members:
+                var = tk.BooleanVar(value=(name != rep_default))
+                state["member_vars"][name] = var
+                cb = ttk.Checkbutton(members_inner, text=name, variable=var)
+                cb.pack(anchor="w", pady=2)
+
+            # Load thumbnails for books matching any member names
+            books = self._collect_books_for_author_names(members, limit=20)
+            if not books:
+                ttk.Label(inner, text="No thumbnails available for this cluster").pack(anchor="w", padx=8, pady=6)
+            else:
+                # Render in a grid
+                col = 0
+                row = 0
+                for b in books:
+                    url, img = self._best_cover_entry(b)
+                    if img:
+                        lbl = ttk.Label(inner, image=img)
+                        lbl.grid(row=row, column=col, padx=4, pady=4, sticky="w")
+                        state["images"].append(img)
+                    else:
+                        lbl = ttk.Label(inner, text=b.metadata.title or b.isbn)
+                        lbl.grid(row=row, column=col, padx=4, pady=4, sticky="w")
+                    col += 1
+                    if col >= 6:
+                        col = 0
+                        row += 1
+
+        def move(delta: int) -> None:
+            new_idx = state["index"] + delta
+            total = len(state["order"])
+            if new_idx < 0 or new_idx >= total:
+                return
+            state["index"] = new_idx
+            load_cluster(state["index"])
+
+        def apply_cluster(apply_changes: bool) -> None:
+            idx = state["index"]
+            _key, members = state["order"][idx]
+            representative = state["rep_var"].get().strip()
+            if not representative:
+                messagebox.showwarning("Author Cleanup", "Select a representative name first.")
+                return
+            if not apply_changes:
+                # Move to next without applying
+                move(1)
+                return
+            mapping: Dict[str, str] = {}
+            for name in members:
+                if name == representative:
+                    continue
+                var = state["member_vars"].get(name)
+                if var and var.get():
+                    mapping[name] = representative
+            if not mapping:
+                move(1)
+                return
+
+            # Run rename in background with progress
+            self._set_status("Applying author cleanup…")
+            self._start_progress("author_cleanup", "Authors", len(members))
+
+            def progress(done: int, total_count: int) -> None:
+                try:
+                    self.root.after(0, self._update_progress, "author_cleanup", done, total_count or len(members))
+                except Exception:
+                    pass
+
+            def handle_error(exc: Exception) -> None:
+                self._reset_progress("author_cleanup")
+                messagebox.showerror("Author Cleanup", f"Rename failed:\n{exc}")
+                self._set_status("Author cleanup failed.")
+
+            def handle_success(count: int) -> None:
+                self.reload_tables()
+                self._finish_progress("author_cleanup", label="Authors", delay_ms=800)
+                self._set_status(f"Renamed authors in {count} row(s).")
+                move(1)
+
+            def worker() -> None:
+                try:
+                    updated = self.service.rename_authors(mapping, progress_cb=progress)
+                except Exception as exc:
+                    self.root.after(0, lambda: handle_error(exc))
+                    return
+                self.root.after(0, lambda: handle_success(updated))
+
+            threading.Thread(target=worker, daemon=True).start()
+
+        # Initialize first cluster
+        load_cluster(state["index"])
+
+    # ------------------------------------------------------------------
     # Data refresh
 
     def _populate_tables(self, *, select_isbn: Optional[str] = None) -> None:
@@ -1257,6 +1745,20 @@ class BookEvaluatorGUI:
             probability = f"{book.probability_label} ({book.probability_score:.0f})"
             scanned = self._format_timestamp(getattr(book, "created_at", None))
             quantity = str(getattr(book, "quantity", 1))
+            booksrun_cash = ""
+            booksrun_credit = ""
+            booksrun_value = book.booksrun_value_label or ""
+            offer = getattr(book, "booksrun", None)
+            if offer is not None:
+                if offer.cash_price is not None:
+                    booksrun_cash = f"${offer.cash_price:.2f}"
+                if offer.store_credit is not None:
+                    booksrun_credit = f"${offer.store_credit:.2f}"
+            if booksrun_value and book.booksrun_value_ratio is not None:
+                try:
+                    booksrun_value = f"{booksrun_value} ({book.booksrun_value_ratio:.0%})"
+                except Exception:
+                    booksrun_value = booksrun_value
             self.books_tree.insert(
                 "",
                 "end",
@@ -1273,6 +1775,9 @@ class BookEvaluatorGUI:
                     quantity,
                     book.condition,
                     sell_through,
+                    booksrun_cash,
+                    booksrun_credit,
+                    booksrun_value,
                     scanned,
                 ),
             )
@@ -1306,6 +1811,20 @@ class BookEvaluatorGUI:
             probability = f"{book.probability_label} ({book.probability_score:.0f})"
             scanned = self._format_timestamp(getattr(book, "created_at", None))
             quantity = str(getattr(book, "quantity", 1))
+            booksrun_cash = ""
+            booksrun_credit = ""
+            booksrun_value = book.booksrun_value_label or ""
+            offer = getattr(book, "booksrun", None)
+            if offer is not None:
+                if offer.cash_price is not None:
+                    booksrun_cash = f"${offer.cash_price:.2f}"
+                if offer.store_credit is not None:
+                    booksrun_credit = f"${offer.store_credit:.2f}"
+            if booksrun_value and book.booksrun_value_ratio is not None:
+                try:
+                    booksrun_value = f"{booksrun_value} ({book.booksrun_value_ratio:.0%})"
+                except Exception:
+                    booksrun_value = booksrun_value
             self.books_tree.insert(
                 "",
                 "end",
@@ -1322,6 +1841,9 @@ class BookEvaluatorGUI:
                     quantity,
                     book.condition,
                     sell_through,
+                    booksrun_cash,
+                    booksrun_credit,
+                    booksrun_value,
                     scanned,
                 ),
             )
@@ -2255,6 +2777,21 @@ class BookEvaluatorGUI:
             lines.append(f"Rarity score: {book.rarity:.2f}")
         if book.edition:
             lines.append(f"Edition notes: {book.edition}")
+        offer = getattr(book, "booksrun", None)
+        if offer is not None:
+            if offer.cash_price is not None:
+                lines.append(f"BooksRun cash offer: ${offer.cash_price:.2f}")
+            if offer.store_credit is not None:
+                lines.append(f"BooksRun credit offer: ${offer.store_credit:.2f}")
+            if book.booksrun_value_label:
+                if book.booksrun_value_ratio is not None:
+                    lines.append(
+                        f"BooksRun value: {book.booksrun_value_label} ({book.booksrun_value_ratio:.0%} of estimate)"
+                    )
+                else:
+                    lines.append(f"BooksRun value: {book.booksrun_value_label}")
+            if getattr(offer, "url", None):
+                lines.append(f"BooksRun link: {offer.url}")
         created_at = getattr(book, "created_at", None)
         if created_at:
             lines.append(f"Scanned: {self._format_timestamp(created_at)}")

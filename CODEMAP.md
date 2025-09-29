@@ -10,8 +10,9 @@
 ## Package Layout (`isbn_lot_optimizer/`)
 - `__main__.py` – Module entrypoint so `python -m isbn_lot_optimizer` launches the app.
 - `app.py` – CLI argument parsing, environment bootstrapping, and service orchestration.
-- `gui.py` – Tkinter application that manages scanning, lot display, status bar progress,
-  and integration with the `BookService`.
+- `gui.py` – Tkinter application that manages scanning, lot display, status bar progress, integration with the `BookService`, and an interactive Author Cleanup reviewer:
+  - Per-cluster, case-by-case approvals
+  - Sample book thumbnails (Pillow/requests-backed), cached under `~/.isbn_lot_optimizer/covers/`
 - `service.py` – Domain logic for book storage, metadata/market refresh, and lot
   recomputation. Exposes hooks used by both GUI and CLI flows.
 - `database.py` – SQLite access layer covering schema creation and query helpers.

@@ -1,30 +1,65 @@
-
 # Configuration
 
-The app uses a local SQLite database and optional API credentials.
+The app uses a local SQLite database with a few on-disk caches. A `.env` file in the repo root is auto-loaded on startup (python-dotenv), and shell exports also work.
 
-## Database
-- Path: `~/.isbn_lot_optimizer/catalog.db`
-- Tables: `books`, `lots`
+## Database and Caches
+- Catalog DB: `~/.isbn_lot_optimizer/catalog.db` (created on demand)
+- Cover cache: `~/.isbn_lot_optimizer/covers/`
+- eBay Browse OAuth token cache: `~/.isbn_lot_optimizer/ebay_bearer.json`
+- Lot market snapshot cache: `~/.isbn_lot_optimizer/lot_cache.json`
+
+Tables (created as needed): `books`, `lots`
 
 ## Environment Variables
-- `EBAY_APP_ID` (optional): eBay Finding API App ID to enable sell-through and price comps.
-- `HTTP_PROXY` / `HTTPS_PROXY` (optional): if you need to route requests through a proxy.
+- EBAY_APP_ID (optional): eBay Finding API App ID for sold/unsold history and pricing statistics.
+- EBAY_CLIENT_ID / EBAY_CLIENT_SECRET (optional): eBay Browse API client credentials to enable active comps and median pricing.
+- EBAY_MARKETPLACE (optional): eBay marketplace ID for Browse API requests. Default: `EBAY_US` (aka `EBAY-US` in Finding).
+- BOOKSRUN_KEY (optional): BooksRun API key for SELL quote fetching (GUI refresh and `lothelper` CLI).
+- HTTP_PROXY / HTTPS_PROXY (optional): Route HTTP(S) requests through a proxy when needed.
 
 Create a local `.env` (or export in your shell) to set variables, e.g.:
-
 ```bash
-export EBAY_APP_ID=your-app-id
+# Finding API (sold/unsold)
+export EBAY_APP_ID=your-finding-app-id
+
+# Browse API (active comps)
+export EBAY_CLIENT_ID=your-browse-client-id
+export EBAY_CLIENT_SECRET=your-browse-client-secret
+export EBAY_MARKETPLACE=EBAY_US
+
+# BooksRun (bulk SELL quotes / GUI BooksRun refresh)
+export BOOKSRUN_KEY=your-booksrun-api-key
+
+# Optional proxy
+export HTTP_PROXY=http://proxy:8080
+export HTTPS_PROXY=http://proxy:8080
 ```
 
+Notes:
+- If `EBAY_CLIENT_ID/EBAY_CLIENT_SECRET` are missing, Browse features are disabled; a warning is printed on startup.
+- If `EBAY_APP_ID` is not set, sold/unsold statistics via Finding API are skipped; Browse may still provide active comps.
+- Dotenv loading does not override already-exported shell variables by default.
+
 ## Tunables (edit in-code)
-- Minimum single-listing price: `$10` (see `probability.py` → `score_probability` under "Single-item resale under $10").
+- Single-item minimum price signal: see `probability.py` → `score_probability` (adds a strong negative and sets `suppress_single` when baseline price < $10; suggests bundling).
 - Condition weights: `CONDITION_WEIGHTS` in `probability.py`.
-- Edition bonus: `EDITION_KEYWORDS` in `probability.py`.
 - Demand keywords: `HIGH_DEMAND_KEYWORDS` in `probability.py`.
+- Edition boosts: handled in `probability.py` for edition strings containing “first/1st”, “signed”, or “limited”.
 
 ## Author Cleanup & Thumbnails
-- The GUI includes an interactive Author Cleanup reviewer (Tools → Author Cleanup…) that lets you normalize author names cluster-by-cluster with visual context.
-- Sample book thumbnails are displayed to help verify the correct author form.
-- Thumbnails are fetched from metadata sources (Google Books/Open Library) and cached under `~/.isbn_lot_optimizer/covers/` with SHA-256 filenames.
-- Image support uses `Pillow` and `requests` (both listed in `requirements.txt`). If these libraries are not available, the reviewer still works but will omit thumbnails.
+- The GUI includes an interactive Author Cleanup reviewer (Tools → Author Cleanup…) for normalizing author names cluster-by-cluster with optional visual context.
+- Thumbnails are fetched from metadata sources (Google Books / Open Library) and cached under `~/.isbn_lot_optimizer/covers/` using SHA-256 filenames.
+- Image support uses `Pillow` and `requests` (both listed in `requirements.txt`). If these libraries are unavailable, the reviewer still works but omits thumbnails.
+
+## eBay Integration Details
+- Finding API is used for sold/unsold counts and average/median sold prices when `EBAY_APP_ID` is configured.
+- Browse API is used for active comps and medians when `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` are configured; bearer tokens are cached in `~/.isbn_lot_optimizer/ebay_bearer.json`.
+- Lot market snapshots (`lot_market.py`) combine Browse active medians and (optionally) Finding sold medians for author/series/theme queries, with results cached in `~/.isbn_lot_optimizer/lot_cache.json`.
+
+## BooksRun Integration
+- The GUI can refresh BooksRun offers for all stored books.
+- A separate headless CLI exists under the `lothelper` package:
+  ```bash
+  python -m lothelper booksrun-sell --in isbns.csv --out booksrun_sell_quotes.csv
+  ```
+- Requires `BOOKSRUN_KEY` in the environment or `.env`.

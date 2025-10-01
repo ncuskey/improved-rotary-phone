@@ -15,6 +15,8 @@ Tables (created as needed): `books`, `lots`
 - EBAY_CLIENT_ID / EBAY_CLIENT_SECRET (optional): eBay Browse API client credentials to enable active comps and median pricing.
 - EBAY_MARKETPLACE (optional): eBay marketplace ID for Browse API requests. Default: `EBAY_US` (aka `EBAY-US` in Finding).
 - BOOKSRUN_KEY (optional): BooksRun API key for SELL quote fetching (GUI refresh and `lothelper` CLI).
+- HARDCOVER_API_TOKEN (optional but recommended): Hardcover API token used for series detection. Include the "Bearer " prefix, e.g. `Bearer eyJ...`.
+- HARDCOVER_GRAPHQL_ENDPOINT (optional): Override the Hardcover API endpoint. Default: `https://api.hardcover.app/graphql`.
 - HTTP_PROXY / HTTPS_PROXY (optional): Route HTTP(S) requests through a proxy when needed.
 
 Create a local `.env` (or export in your shell) to set variables, e.g.:
@@ -34,6 +36,26 @@ export BOOKSRUN_KEY=your-booksrun-api-key
 export HTTP_PROXY=http://proxy:8080
 export HTTPS_PROXY=http://proxy:8080
 ```
+
+## Hardcover Series Integration
+
+- Purpose: Detect and persist series metadata using Hardcover’s GraphQL search.
+- Env:
+  - `HARDCOVER_API_TOKEN` must be set; include the "Bearer " prefix.
+  - `.env` in the repo root is auto-loaded; shell exports also work.
+- Persistence (created on demand):
+  - books: `series_name`, `series_slug`, `series_id_hardcover`, `series_position` (REAL), `series_confidence` (REAL), `series_last_checked` (TIMESTAMP)
+  - `series_peers` table: stores peer titles for a series (ordered by position when available; title otherwise)
+  - `hc_cache` table: caches API payloads with 7 day TTL to reduce repeated calls
+- Rate limiting and retries:
+  - 1 request/second with burst of 5; automatic backoff/retry on HTTP 429
+- CLI usage:
+  - One-shot refresh via main app:  
+    `python -m isbn_lot_optimizer --refresh-series --limit 500`
+  - Standalone backfill:  
+    `python -m isbn_lot_optimizer.scripts.backfill_series --db ~/.isbn_lot_optimizer/catalog.db --limit 500 --only-missing --stale-days 30`
+- GUI:
+  - After a successful scan or import, background enrichment updates the DB. Rows with no series are marked checked to avoid reprocessing immediately.
 
 Notes:
 - If `EBAY_CLIENT_ID/EBAY_CLIENT_SECRET` are missing, Browse features are disabled; a warning is printed on startup.

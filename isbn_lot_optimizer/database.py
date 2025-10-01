@@ -2,9 +2,43 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import os
+import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+
+# ------------------------------------------------------------------------------
+# Lightweight module-level logger for DB activity
+# Writes to ~/.isbn_lot_optimizer/activity.log by default
+LOG_DIR = Path.home() / ".isbn_lot_optimizer"
+try:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
+LOG_PATH = Path(os.getenv("APP_LOG_PATH", str(LOG_DIR / "activity.log")))
+_logger = logging.getLogger("isbn_lot_optimizer.db")
+if not _logger.handlers:
+    _logger.setLevel(logging.INFO)
+    try:
+        _handler = RotatingFileHandler(LOG_PATH, maxBytes=512 * 1024, backupCount=3)
+    except Exception:
+        _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    _logger.addHandler(_handler)
+    _logger.propagate = False
+
+
+def _log(action: str, **fields: Any) -> None:
+    try:
+        _logger.info("%s %s", action, json.dumps(fields, ensure_ascii=False, sort_keys=True))
+    except Exception:
+        try:
+            _logger.info("%s %s", action, str(fields))
+        except Exception:
+            pass
+# ------------------------------------------------------------------------------
 
 class DatabaseManager:
     """Lightweight SQLite wrapper for storing scanned books and lot suggestions."""
@@ -39,6 +73,7 @@ class DatabaseManager:
                     ebay_currency TEXT,
                     metadata_json TEXT,
                     market_json TEXT,
+                    booksrun_json TEXT,
                     source_json TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -60,6 +95,7 @@ class DatabaseManager:
                 """
             )
             self._ensure_lot_justification(conn)
+            self._ensure_booksrun_column(conn)
 
     def _get_connection(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path)
@@ -72,6 +108,12 @@ class DatabaseManager:
         if "justification" not in existing_columns:
             conn.execute("ALTER TABLE lots ADD COLUMN justification TEXT")
 
+    def _ensure_booksrun_column(self, conn: sqlite3.Connection) -> None:
+        cursor = conn.execute("PRAGMA table_info(books)")
+        columns = {row[1] for row in cursor.fetchall()}
+        if "booksrun_json" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN booksrun_json TEXT")
+
     # ------------------------------------------------------------------
     # Book persistence helpers
 
@@ -79,6 +121,7 @@ class DatabaseManager:
         data = payload.copy()
         data["metadata_json"] = json.dumps(data.get("metadata_json", {}))
         data["market_json"] = json.dumps(data.get("market_json", {}))
+        data["booksrun_json"] = json.dumps(data.get("booksrun_json", {}))
         data["source_json"] = json.dumps(data.get("source_json", {}))
         data.setdefault("probability_reasons", "")
         data.setdefault("condition", "Good")
@@ -86,6 +129,8 @@ class DatabaseManager:
         data.setdefault("probability_score", 0.0)
         data.setdefault("estimated_price", 0.0)
         data.setdefault("price_reference", 0.0)
+
+        _log("upsert_book", isbn=data.get("isbn"), title=data.get("title"))
 
         with self._get_connection() as conn:
             conn.execute(
@@ -95,14 +140,14 @@ class DatabaseManager:
                     estimated_price, price_reference, rarity,
                     probability_label, probability_score, probability_reasons,
                     sell_through, ebay_active_count, ebay_sold_count, ebay_currency,
-                    metadata_json, market_json, source_json,
+                    metadata_json, market_json, booksrun_json, source_json,
                     created_at, updated_at
                 ) VALUES (
                     :isbn, :title, :authors, :publication_year, :edition, :condition,
                     :estimated_price, :price_reference, :rarity,
                     :probability_label, :probability_score, :probability_reasons,
                     :sell_through, :ebay_active_count, :ebay_sold_count, :ebay_currency,
-                    :metadata_json, :market_json, :source_json,
+                    :metadata_json, :market_json, :booksrun_json, :source_json,
                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
                 ON CONFLICT(isbn) DO UPDATE SET
@@ -123,6 +168,7 @@ class DatabaseManager:
                     ebay_currency=excluded.ebay_currency,
                     metadata_json=excluded.metadata_json,
                     market_json=excluded.market_json,
+                    booksrun_json=excluded.booksrun_json,
                     source_json=excluded.source_json,
                     updated_at=CURRENT_TIMESTAMP;
                 """,
@@ -131,6 +177,7 @@ class DatabaseManager:
 
     def update_book_market_json(self, isbn: str, market_blob: Dict[str, Any]) -> None:
         payload = json.dumps(market_blob or {}, ensure_ascii=False)
+        _log("update_market", isbn=isbn, bytes=len(payload))
         with self._get_connection() as conn:
             conn.execute(
                 "UPDATE books SET market_json = ?, updated_at = CURRENT_TIMESTAMP WHERE isbn = ?",
@@ -139,6 +186,7 @@ class DatabaseManager:
 
     def update_book_source_json(self, isbn: str, source_blob: Dict[str, Any]) -> None:
         payload = json.dumps(source_blob or {}, ensure_ascii=False)
+        _log("update_source", isbn=isbn, bytes=len(payload))
         with self._get_connection() as conn:
             conn.execute(
                 "UPDATE books SET source_json = ?, updated_at = CURRENT_TIMESTAMP WHERE isbn = ?",
@@ -198,10 +246,12 @@ class DatabaseManager:
             assignments.append("updated_at = CURRENT_TIMESTAMP")
             sql = f"UPDATE books SET {', '.join(assignments)} WHERE isbn = ?"
             values.append(isbn)
+            _log("update_record", isbn=isbn, columns=list(columns.keys()), metadata_changed=metadata_dict is not None)
             conn.execute(sql, values)
 
     def delete_book(self, isbn: str) -> None:
         with self._get_connection() as conn:
+            _log("delete_book", isbn=isbn)
             conn.execute("DELETE FROM books WHERE isbn = ?", (isbn,))
 
     def delete_books(self, isbns: Iterable[str]) -> int:
@@ -211,7 +261,9 @@ class DatabaseManager:
                 before = conn.total_changes
                 conn.execute("DELETE FROM books WHERE isbn = ?", (isbn,))
                 after = conn.total_changes
-                deleted += max(0, after - before)
+                delta = max(0, after - before)
+                deleted += delta
+                _log("delete_book", isbn=isbn, deleted=delta)
         return deleted
 
     def fetch_book(self, isbn: str) -> Optional[sqlite3.Row]:
@@ -255,6 +307,7 @@ class DatabaseManager:
             payload["book_isbns"] = json.dumps(payload.get("book_isbns", []))
             payload.setdefault("justification", "")
 
+        _log("replace_lots", count=len(lot_payloads))
         with self._get_connection() as conn:
             conn.execute("DELETE FROM lots")
             conn.executemany(
@@ -282,6 +335,7 @@ class DatabaseManager:
 
     def clear(self) -> None:
         with self._get_connection() as conn:
+            _log("clear_all")
             conn.execute("DELETE FROM books")
             conn.execute("DELETE FROM lots")
 

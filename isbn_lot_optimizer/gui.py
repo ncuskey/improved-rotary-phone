@@ -29,7 +29,7 @@ try:  # pragma: no cover - chime optional dependency
 except Exception:
     chime = None  # type: ignore
 
-from .clipboard_import import ImportOptions, parse_prices_from_clipboard_text
+from .clipboard_import import ImportOptions, parse_prices_from_clipboard_text, parse_isbns_from_text
 from .models import BookEvaluation, LotSuggestion
 from .service import BookService, COVER_CHOICES
 from .utils import normalise_isbn, isbn10_to_isbn13, compute_isbn10_check_digit
@@ -155,7 +155,14 @@ class BookEvaluatorGUI:
     # UI construction
 
     def _build_layout(self) -> None:
-        input_frame = ttk.Frame(self.root, padding=10)
+        # Use grid on the root so the status bar stays visible at the bottom
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
+        # Central body container takes the expandable grid cell
+        self.body = ttk.Frame(self.root)
+        self.body.grid(row=0, column=0, sticky="nsew")
+
+        input_frame = ttk.Frame(self.body, padding=10)
         input_frame.pack(fill="x")
 
         ttk.Label(input_frame, text="ISBN:").grid(row=0, column=0, sticky="w")
@@ -217,7 +224,7 @@ class BookEvaluatorGUI:
         input_frame.columnconfigure(5, weight=1)
 
         # --- Lot type toggle bar ---
-        lotbar = ttk.Frame(self.root)
+        lotbar = ttk.Frame(self.body)
         lotbar.pack(side="top", fill="x", padx=8, pady=(8, 0))
 
         ttk.Label(lotbar, text="Form lots by:").pack(side="left", padx=(0, 6))
@@ -235,7 +242,7 @@ class BookEvaluatorGUI:
 
 
         # Books table
-        books_frame = ttk.LabelFrame(self.root, text="Evaluated Books", padding=10)
+        books_frame = ttk.LabelFrame(self.body, text="Evaluated Books", padding=10)
         books_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         book_columns = (
@@ -288,11 +295,17 @@ class BookEvaluatorGUI:
         self.books_tree.column("scanned", width=150, anchor="w")
         self.books_tree.bind("<<TreeviewSelect>>", self._on_book_select)
         self.books_tree.bind("<Double-1>", self._on_books_double_click)
-        self.books_tree.pack(side="left", fill="both", expand=True)
 
+        # Use grid geometry inside books_frame to support both scrollbars
+        self.books_tree.grid(row=0, column=0, sticky="nsew")
         sb_books = ttk.Scrollbar(books_frame, orient="vertical", command=self.books_tree.yview)
-        sb_books.pack(side="right", fill="y")
-        self.books_tree.configure(yscrollcommand=sb_books.set)
+        sb_books.grid(row=0, column=1, sticky="ns")
+        sb_books_x = ttk.Scrollbar(books_frame, orient="horizontal", command=self.books_tree.xview)
+        sb_books_x.grid(row=1, column=0, sticky="ew")
+        self.books_tree.configure(yscrollcommand=sb_books.set, xscrollcommand=sb_books_x.set)
+        # Make the tree expand to fill the frame
+        books_frame.rowconfigure(0, weight=1)
+        books_frame.columnconfigure(0, weight=1)
 
         self.books_menu = tk.Menu(self.root, tearoff=0)
         self.books_menu.add_command(label="Edit…", command=lambda: self._menu_edit_book())
@@ -304,7 +317,7 @@ class BookEvaluatorGUI:
             self.books_tree.bind("<Control-Button-1>", self._popup_books_menu)
 
         # Lots table
-        lots_frame = ttk.LabelFrame(self.root, text="Lot Recommendations", padding=10)
+        lots_frame = ttk.LabelFrame(self.body, text="Lot Recommendations", padding=10)
         lots_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         lot_columns = ("title", "author", "value", "probability", "justification")
@@ -326,22 +339,38 @@ class BookEvaluatorGUI:
         self.lots_tree.column("justification", width=380)
         self.lots_tree.bind("<<TreeviewSelect>>", self._on_lot_select)
         self.lots_tree.bind("<Double-1>", self._on_lot_double_click)
-        self.lots_tree.pack(side="left", fill="both", expand=True)
 
+        # Use grid geometry inside lots_frame to support both scrollbars
+        self.lots_tree.grid(row=0, column=0, sticky="nsew")
         sb_lots = ttk.Scrollbar(lots_frame, orient="vertical", command=self.lots_tree.yview)
-        sb_lots.pack(side="right", fill="y")
-        self.lots_tree.configure(yscrollcommand=sb_lots.set)
+        sb_lots.grid(row=0, column=1, sticky="ns")
+        sb_lots_x = ttk.Scrollbar(lots_frame, orient="horizontal", command=self.lots_tree.xview)
+        sb_lots_x.grid(row=1, column=0, sticky="ew")
+        self.lots_tree.configure(yscrollcommand=sb_lots.set, xscrollcommand=sb_lots_x.set)
+        # Make the tree expand to fill the frame
+        lots_frame.rowconfigure(0, weight=1)
+        lots_frame.columnconfigure(0, weight=1)
 
         # initialize service strategies from defaults now that tables exist
         self._on_lot_option_change()
 
         # Detail panel
-        detail_frame = ttk.LabelFrame(self.root, text="Details", padding=10)
+        detail_frame = ttk.LabelFrame(self.body, text="Details", padding=10)
         detail_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        # cover thumbnails container
-        self.cover_frame = ttk.Frame(detail_frame)
-        self.cover_frame.pack(anchor="w", pady=(0, 6), fill="x")
+        # cover thumbnails container with horizontal scrolling
+        self.cover_wrap = ttk.Frame(detail_frame)
+        self.cover_wrap.pack(fill="x", pady=(0, 6))
+        self.cover_canvas = tk.Canvas(self.cover_wrap, height=200, highlightthickness=0)
+        self.cover_canvas.grid(row=0, column=0, sticky="ew")
+        self.cover_hbar = ttk.Scrollbar(self.cover_wrap, orient="horizontal", command=self.cover_canvas.xview)
+        self.cover_hbar.grid(row=1, column=0, sticky="ew")
+        self.cover_canvas.configure(xscrollcommand=self.cover_hbar.set)
+        self.cover_inner = ttk.Frame(self.cover_canvas)
+        self.cover_canvas.create_window((0, 0), window=self.cover_inner, anchor="nw")
+        self.cover_wrap.columnconfigure(0, weight=1)
+        # Update scrollregion when thumbnails change
+        self.cover_inner.bind("<Configure>", lambda e: self.cover_canvas.configure(scrollregion=self.cover_canvas.bbox("all")))
 
         self.detail_text = tk.Text(detail_frame, height=8, wrap="word")
         self.detail_text.pack(fill="both", expand=True)
@@ -361,6 +390,7 @@ class BookEvaluatorGUI:
         tools.add_command(label="Refresh BooksRun (All)", command=self.refresh_booksrun_all)
         tools.add_command(label="Author Cleanup…", command=self._open_author_cleanup)
         tools.add_command(label="Refresh Series Catalog", command=self._refresh_series_catalog)
+        tools.add_command(label="Bulk Remove Sold (Paste…)", command=self._open_bulk_remove_paste)
         tools.add_separator()
         tools.add_command(label="Show Cover Cache Info", command=self._show_cover_cache_info)
         tools.add_command(label="Show Cover Sources", command=self._show_cover_sources)
@@ -377,7 +407,7 @@ class BookEvaluatorGUI:
         self.root.config(menu=menubar)
 
         status_frame = ttk.Frame(self.root)
-        status_frame.pack(fill="x", padx=10, pady=(0, 5))
+        status_frame.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 5))
 
         status_bar = ttk.Label(status_frame, textvariable=self.status_var, anchor="w")
         status_bar.pack(side="left", fill="x", expand=True)
@@ -466,6 +496,10 @@ class BookEvaluatorGUI:
         self._play_scan_complete()
         self._set_status(f"Recorded {evaluation.metadata.title or evaluation.isbn}")
         self._populate_tables(select_isbn=evaluation.isbn)
+        try:
+            self._enqueue_series_enrichment(evaluation.isbn)
+        except Exception:
+            pass
         if self._isbn_in_any_lot(evaluation.isbn):
             self._play_lot_match()
             self._focus_lot_for_isbn(evaluation.isbn)
@@ -496,6 +530,10 @@ class BookEvaluatorGUI:
     def _handle_import_result(self, count: int, path: Path) -> None:
         self._set_status(f"Imported {count} ISBNs from {path.name}")
         self.reload_tables()
+        try:
+            self._enqueue_series_backfill(limit=count or 200)
+        except Exception:
+            pass
 
     def _on_refresh_selected(self) -> None:
         self.refresh_selected()
@@ -592,6 +630,103 @@ class BookEvaluatorGUI:
             return
         self._open_author_cleanup_reviewer(review_clusters)
         return
+
+    def _open_bulk_remove_paste(self) -> None:
+        """
+        Paste text from World of Books / BooksRun confirmation pages, parse ISBNs, and bulk remove.
+        """
+        if self._refresh_thread and self._refresh_thread.is_alive():
+            messagebox.showinfo("Bulk Remove", "An operation is already in progress. Please wait for it to finish.")
+            return
+
+        dialog = Toplevel(self.root)
+        dialog.title("Bulk Remove Sold — Paste Confirmation Page")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        dialog.geometry("720x520")
+
+        ttk.Label(
+            dialog,
+            text="Paste the confirmation page text below (World of Books or BooksRun). ISBNs will be detected."
+        ).pack(anchor="w", padx=10, pady=(10, 6))
+
+        txt_input = tk.Text(dialog, height=12, wrap="word")
+        txt_input.pack(fill="both", expand=False, padx=10, pady=(0, 6))
+        try:
+            # Pre-fill from clipboard if available
+            clip = self.root.clipboard_get()
+            if clip and isinstance(clip, str):
+                txt_input.insert("1.0", clip)
+        except Exception:
+            pass
+
+        status_var = tk.StringVar(value="Found 0 ISBN(s)")
+        ttk.Label(dialog, textvariable=status_var).pack(anchor="w", padx=10, pady=(4, 0))
+
+        preview = tk.Text(dialog, height=10, wrap="word", state="disabled")
+        preview.pack(fill="both", expand=True, padx=10, pady=(4, 8))
+
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        parsed_isbns: list[str] = []
+
+        def show_preview(items: list[str]) -> None:
+            preview.configure(state="normal")
+            preview.delete("1.0", "end")
+            if items:
+                sample = items[:200]
+                preview.insert("1.0", "\n".join(sample))
+                if len(items) > len(sample):
+                    preview.insert("end", f"\n… and {len(items) - len(sample)} more")
+            else:
+                preview.insert("1.0", "No ISBNs detected yet.")
+            preview.configure(state="disabled")
+
+        def do_parse() -> None:
+            nonlocal parsed_isbns
+            text = txt_input.get("1.0", "end")
+            try:
+                items = parse_isbns_from_text(text)
+            except Exception as exc:
+                messagebox.showerror("Bulk Remove", f"Parse failed:\n{exc}")
+                return
+            parsed_isbns = items or []
+            status_var.set(f"Found {len(parsed_isbns)} ISBN(s)")
+            show_preview(parsed_isbns)
+            try:
+                btn_remove.configure(state=("normal" if parsed_isbns else "disabled"))
+            except Exception:
+                pass
+
+        def do_remove() -> None:
+            if not parsed_isbns:
+                messagebox.showinfo("Bulk Remove", "No ISBNs to remove.")
+                return
+            if not messagebox.askyesno("Confirm Remove", f"Delete {len(parsed_isbns)} book(s)? This cannot be undone."):
+                return
+            try:
+                deleted = self.service.delete_books(parsed_isbns)
+            except Exception as exc:
+                messagebox.showerror("Bulk Remove", f"Delete failed:\n{exc}")
+                return
+            self.reload_tables()
+            self._set_status(f"Deleted {deleted} book(s).")
+            dialog.destroy()
+
+        btn_parse = ttk.Button(btn_frame, text="Parse", command=do_parse)
+        btn_parse.pack(side="left")
+
+        btn_remove = ttk.Button(btn_frame, text="Remove", command=do_remove, state="disabled")
+        btn_remove.pack(side="right")
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side="right", padx=(0, 6))
+
+        # Initial parse if content was pre-filled
+        try:
+            if txt_input.get("1.0", "end").strip():
+                do_parse()
+        except Exception:
+            pass
 
     def _on_clear_database(self) -> None:
         confirm = messagebox.askyesno(
@@ -2416,11 +2551,15 @@ class BookEvaluatorGUI:
             pass
 
     def _display_cover_images(self, entries: list[tuple[Optional[str], Optional[Any]]]) -> None:
-        for child in self.cover_frame.winfo_children():
+        # Clear existing thumbnails
+        container = getattr(self, "cover_inner", None) or getattr(self, "cover_frame", None)
+        if container is None:
+            return
+        for child in container.winfo_children():
             child.destroy()
         self._cover_images.clear()
         if not entries:
-            ttk.Label(self.cover_frame, text="No thumbnail available").pack(side="left", padx=4)
+            ttk.Label(container, text="No thumbnail available").pack(side="left", padx=4)
             return
 
         sorted_entries: list[tuple[Optional[str], Optional[Any], Optional[str]]] = []
@@ -2437,12 +2576,12 @@ class BookEvaluatorGUI:
 
         for url, img, _isbn in sorted_entries:
             if img:
-                label = ttk.Label(self.cover_frame, image=img)
+                label = ttk.Label(container, image=img)
                 label.pack(side="left", padx=4)
                 label.bind("<Button-1>", lambda e, img_url=url: self._focus_book_for_cover(img_url))
                 self._cover_images.append(img)
             else:
-                ttk.Label(self.cover_frame, text="No thumbnail available").pack(side="left", padx=4)
+                ttk.Label(container, text="No thumbnail available").pack(side="left", padx=4)
 
     def _focus_book_for_cover(self, cover_url: Optional[str]) -> None:
         if not cover_url:
@@ -2844,6 +2983,119 @@ class BookEvaluatorGUI:
 
     def _set_status(self, message: str) -> None:
         self.status_var.set(message)
+
+    def _enqueue_series_enrichment(self, isbn: str) -> None:
+        """
+        Background-enrich a single ISBN with series data from Hardcover.
+        Uses a fresh sqlite3 connection to avoid cross-thread issues.
+        """
+        def worker() -> None:
+            conn = None
+            try:
+                from .services.hardcover import HardcoverClient
+                from .services.series_resolver import (
+                    ensure_series_schema,
+                    get_series_for_isbn,
+                    update_book_row_with_series,
+                )
+                # Separate connection for thread-safety
+                conn = self.service.db._get_connection()  # type: ignore[attr-defined]
+                ensure_series_schema(conn)
+                hc = HardcoverClient()
+                series = get_series_for_isbn(conn, isbn, hc)
+                if series.get("confidence", 0) >= 0.6 and series.get("series_name"):
+                    update_book_row_with_series(conn, isbn, series)
+                else:
+                    try:
+                        conn.execute("UPDATE books SET series_last_checked = CURRENT_TIMESTAMP WHERE isbn = ?", (isbn,))
+                        conn.commit()
+                    except Exception:
+                        pass
+                try:
+                    self.root.after(0, lambda: self._set_status(f"Series resolved for {isbn}"))
+                except Exception:
+                    pass
+            except Exception:
+                # Soft-fail; do not surface token or stack traces in GUI
+                pass
+            finally:
+                try:
+                    if conn:
+                        conn.close()
+                except Exception:
+                    pass
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _enqueue_series_backfill(self, limit: int = 200) -> None:
+        """
+        Background backfill of missing series rows after bulk import.
+        """
+        if not isinstance(limit, int) or limit <= 0:
+            limit = 200
+
+        def worker() -> None:
+            conn = None
+            try:
+                from .services.hardcover import HardcoverClient
+                from .services.series_resolver import (
+                    ensure_series_schema,
+                    get_series_for_isbn,
+                    update_book_row_with_series,
+                )
+                conn = self.service.db._get_connection()  # type: ignore[attr-defined]
+                ensure_series_schema(conn)
+                hc = HardcoverClient()
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    SELECT isbn FROM books
+                    WHERE (series_name IS NULL OR series_name = '')
+                      AND isbn IS NOT NULL AND length(isbn)=13
+                    ORDER BY updated_at DESC
+                    LIMIT ?
+                    """,
+                    (int(limit),),
+                )
+                rows = [r[0] for r in cur.fetchall()]
+                total = len(rows)
+                if total:
+                    try:
+                        self.root.after(0, lambda: self._start_progress("series", "Series", total))
+                    except Exception:
+                        pass
+                done = 0
+                for code in rows:
+                    try:
+                        series = get_series_for_isbn(conn, code, hc)
+                        if series.get("confidence", 0) >= 0.6 and series.get("series_name"):
+                            update_book_row_with_series(conn, code, series)
+                        else:
+                            cur.execute("UPDATE books SET series_last_checked = CURRENT_TIMESTAMP WHERE isbn = ?", (code,))
+                            conn.commit()
+                    except Exception:
+                        try:
+                            cur.execute("UPDATE books SET series_last_checked = CURRENT_TIMESTAMP WHERE isbn = ?", (code,))
+                            conn.commit()
+                        except Exception:
+                            pass
+                    done += 1
+                    try:
+                        self.root.after(0, self._update_progress, "series", done, total)
+                    except Exception:
+                        pass
+                try:
+                    self.root.after(0, lambda: self._finish_progress("series", label="Series", delay_ms=1000))
+                except Exception:
+                    pass
+            finally:
+                try:
+                    if conn:
+                        conn.close()
+                except Exception:
+                    pass
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def run(self) -> None:
         try:

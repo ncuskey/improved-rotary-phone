@@ -86,6 +86,30 @@ Available flags (selection):
 - Lots: `--refresh-lot-signals`, `--limit`
 - Author tools: `--author-search`, `--author-threshold`, `--author-limit`, `--list-author-clusters`
 
+## Series Enrichment (Hardcover)
+
+The app integrates Hardcover’s GraphQL search to detect and persist series information.
+
+- Environment:
+  - Set HARDCOVER_API_TOKEN to your Hardcover API token (include the "Bearer " prefix).
+    - Example in .env:
+      HARDCOVER_API_TOKEN=Bearer YOUR_TOKEN
+- Persistence:
+  - books table gains: series_name, series_slug, series_id_hardcover, series_position (REAL, preserves decimals like 0.5), series_confidence, series_last_checked.
+  - series_peers table stores peer titles for a detected series (ordered by position when available, else title).
+  - hc_cache caches API payloads (7 day TTL) to reduce repeat calls.
+- Rate limiting and retries:
+  - 1 request/second with burst of 5. Automatic backoff/retry on HTTP 429.
+- GUI:
+  - After a successful scan/import, a background thread enriches series for the new records and updates the DB; the detail pane can show a chip like “Series · #position” when available.
+- CLI:
+  - Inline refresh from the main entrypoint:
+    python -m isbn_lot_optimizer --refresh-series --limit 500
+  - Standalone backfill script:
+    python -m isbn_lot_optimizer.scripts.backfill_series --db ~/.isbn_lot_optimizer/catalog.db --limit 500 --only-missing --stale-days 30
+
+Tip: If a book has no series in Hardcover, series_confidence remains 0 and series_last_checked is set so it won’t be reprocessed immediately.
+
 ## BooksRun Bulk Quotes (lothelper)
 Fetch SELL quotes from BooksRun in bulk (requires `BOOKSRUN_KEY`):
 

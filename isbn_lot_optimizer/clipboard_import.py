@@ -323,3 +323,47 @@ def parse_prices_from_clipboard_text(text: str, opt: Optional[ImportOptions] = N
         }
     )
     return result
+
+
+def parse_isbns_from_text(text: str) -> list[str]:
+    """
+    Extract ISBN-10/13 codes from arbitrary pasted text.
+
+    - Handles patterns like 'Barcode\\n978...' (World of Books example) as well as inline tokens
+    - Accepts digits, 'X' (for ISBN-10), and hyphens; then normalizes via normalise_isbn
+    - Returns unique, normalized ISBN-13 strings preserving input order
+    """
+    if not text:
+        return []
+
+    # Find tokens that look like ISBN fragments (10 or 13 digits/X, possibly with hyphens)
+    # This is generous and we validate/normalize afterward.
+    candidates = re.findall(r"[0-9Xx\\-]{9,17}", text)
+
+    # Also catch plain 13-digit runs across the text.
+    candidates += re.findall(r"\\b(97[89][0-9]{10})\\b", text)
+
+    results: list[str] = []
+    seen: set[str] = set()
+
+    for token in candidates:
+        cleaned = "".join(ch.upper() if ch.upper() == "X" else ch for ch in str(token) if ch.isdigit() or ch.upper() == "X")
+        if len(cleaned) not in (10, 13):
+            continue
+        try:
+            # Import here to avoid any import cycles at module import time
+            from .utils import normalise_isbn  # type: ignore
+        except Exception:
+            continue
+        try:
+            normalized = normalise_isbn(cleaned)
+        except Exception:
+            normalized = None
+        if not normalized:
+            continue
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        results.append(normalized)
+
+    return results

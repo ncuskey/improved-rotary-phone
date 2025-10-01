@@ -20,6 +20,8 @@ from typing import Optional, Sequence
 from .models import BookEvaluation
 from .service import BookService
 from .utils import normalise_isbn
+from .author_match import probable_author_matches, cluster_authors
+from . import db
 
 DEFAULT_DB_PATH = Path.home() / ".isbn_lot_optimizer" / "catalog.db"
 
@@ -50,8 +52,34 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="Refresh metadata only for rows missing title/authors/publication_year/metadata_json")
     parser.add_argument("--refresh-lot-signals", action="store_true",
         help="Fetch eBay actives+sold comps for candidate lots, score them, persist to market_json")
+    parser.add_argument("--refresh-series", action="store_true",
+        help="Refresh series metadata from Hardcover for rows missing series and exit")
     parser.add_argument("--limit", type=int, default=None,
         help="Optional limit for number of rows to process during refresh")
+
+    # Author match utilities
+    parser.add_argument(
+        "--author-search",
+        metavar="QUERY",
+        help="Search probable matches for an author name from the local catalog and exit.",
+    )
+    parser.add_argument(
+        "--author-threshold",
+        type=float,
+        default=0.85,
+        help="Similarity threshold in [0,1] for author search (default: 0.85).",
+    )
+    parser.add_argument(
+        "--author-limit",
+        type=int,
+        default=10,
+        help="Maximum number of matches to show (default: 10).",
+    )
+    parser.add_argument(
+        "--list-author-clusters",
+        action="store_true",
+        help="List clusters of similar author names in the catalog and exit.",
+    )
 
     args = parser.parse_args(argv)
 
@@ -61,6 +89,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         parser.error("--ebay-delay must be non-negative")
     if args.metadata_delay < 0:
         parser.error("--metadata-delay must be non-negative")
+    if args.author_threshold < 0 or args.author_threshold > 1:
+        parser.error("--author-threshold must be between 0 and 1")
+    if args.author_limit is not None and args.author_limit < 0:
+        parser.error("--author-limit must be non-negative")
 
     return args
 
@@ -77,6 +109,17 @@ def summarise_book(evaluation: BookEvaluation) -> str:
         parts.append(f"Sell-through: {evaluation.market.sell_through_rate:.0%}")
     if evaluation.market and evaluation.market.sold_avg_price:
         parts.append(f"Avg sold price: ${evaluation.market.sold_avg_price:.2f}")
+    if evaluation.booksrun:
+        offer = evaluation.booksrun
+        price_bits = []
+        if offer.cash_price is not None:
+            price_bits.append(f"cash ${offer.cash_price:.2f}")
+        if offer.store_credit is not None:
+            price_bits.append(f"credit ${offer.store_credit:.2f}")
+        if price_bits:
+            parts.append("BooksRun: " + ", ".join(price_bits))
+        if evaluation.booksrun_value_label:
+            parts.append(f"BooksRun value: {evaluation.booksrun_value_label}")
     if evaluation.justification:
         parts.append("Reasons:")
         parts.extend(f" - {reason}" for reason in evaluation.justification)
@@ -96,8 +139,45 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     args = parse_args(argv)
     database_path = ensure_database_path(args.database)
 
+    # Fast path: author matching utilities
+    if args.author_search or args.list_author_clusters:
+        conn = db.connect(args.database)
+        try:
+            names = db.list_distinct_author_names(conn)
+        finally:
+            pass  # keep connection open for now; lightweight operation
+
+        if args.list_author_clusters:
+            groups = cluster_authors(names)
+            print(f"Author clusters: {len(groups)} groups")
+            for key in sorted(groups.keys()):
+                members = sorted(groups[key], key=lambda x: x.lower())
+                if not members:
+                    continue
+                # Show canonical representative and variants
+                head = members[0]
+                tail = [m for m in members[1:]]
+                variants = (", ".join(tail)) if tail else ""
+                if variants:
+                    print(f"- {head}: {variants}")
+                else:
+                    print(f"- {head}")
+            raise SystemExit(0)
+
+        if args.author_search:
+            matches = probable_author_matches(
+                args.author_search, names, threshold=args.author_threshold, limit=args.author_limit
+            )
+            if not matches:
+                print("No probable matches found.")
+            else:
+                print(f"Probable matches for '{args.author_search}' (threshold {args.author_threshold}):")
+                for cand, score in matches:
+                    print(f"- {cand}  ({score:.2f})")
+            raise SystemExit(0)
+
     if args.refresh_metadata or args.refresh_metadata_missing:
-        from . import db, metadata
+        from . import metadata
         import sqlite3
         import requests
 
@@ -147,6 +227,51 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
         conn.commit()
         print(f"✅ Metadata refresh complete  | GB:{c_gb}  OL:{c_ol}  Hint:{c_hint}  Cache:{c_cache}  NotFound:{c_nf}  Errors:{c_err}")
+        raise SystemExit(0)
+
+    # Optional one-shot: refresh series from Hardcover then exit
+    if args.refresh_series:
+        # Use the current database path
+        import sqlite3
+        from .services.hardcover import HardcoverClient
+        from .services.series_resolver import ensure_series_schema, get_series_for_isbn, update_book_row_with_series
+
+        db_path_series = ensure_database_path(args.database)
+        conn_series = sqlite3.connect(db_path_series)
+        try:
+            ensure_series_schema(conn_series)
+            hc = HardcoverClient()
+            cur = conn_series.cursor()
+            # Select candidates (only-missing by default). Respect --limit or use 500 default.
+            limit = args.limit if args.limit is not None else 500
+            cur.execute(
+                """
+                SELECT isbn FROM books
+                WHERE (series_name IS NULL OR series_name = '')
+                  AND isbn IS NOT NULL
+                  AND length(isbn)=13
+                ORDER BY updated_at DESC
+                LIMIT ?
+                """,
+                (int(limit),),
+            )
+            rows = [r[0] for r in cur.fetchall()]
+            for code in rows:
+                try:
+                    series = get_series_for_isbn(conn_series, code, hc)
+                    if series.get("confidence", 0) >= 0.6 and series.get("series_name"):
+                        update_book_row_with_series(conn_series, code, series)
+                    else:
+                        cur.execute("UPDATE books SET series_last_checked = CURRENT_TIMESTAMP WHERE isbn = ?", (code,))
+                        conn_series.commit()
+                except Exception:
+                    cur.execute("UPDATE books SET series_last_checked = CURRENT_TIMESTAMP WHERE isbn = ?", (code,))
+                    conn_series.commit()
+        finally:
+            try:
+                conn_series.close()
+            except Exception:
+                pass
         raise SystemExit(0)
 
     service = BookService(

@@ -6,7 +6,7 @@ import re
 import time
 from typing import Any, Dict, Iterable, Optional, overload
 
-import requests
+import requests  # type: ignore[reportMissingImports]
 
 from .author_aliases import canonical_author as _alias_canonical_author
 from .series_finder import attach_series

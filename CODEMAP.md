@@ -36,6 +36,8 @@
 - `utils.py` – ISBN normalisation and helper routines shared across modules.
 - `author_aliases.py`, `probability.py` – Supporting data and probability scoring logic (condition weights, demand keywords, single-item <$10 bundling rule).
 - `booksrun.py` – Internal BooksRun integration helpers (simple SELL endpoint support).
+- `services/hardcover.py` – Hardcover GraphQL client with conservative rate limiting, retries, and parsing helpers.
+- `services/series_resolver.py` – Series schema ensure, caching (7d TTL), Hardcover lookups, peers upsert, and book row updates.
 
 ## Auxiliary CLI Package (`lothelper/`)
 - `__main__.py` – Entrypoint `python -m lothelper …` with subcommands.
@@ -48,6 +50,9 @@
 
 ## Data & Persistence
 - Default SQLite catalogue path: `~/.isbn_lot_optimizer/catalog.db` (created on demand).
+- Series metadata columns on `books`: `series_name`, `series_slug`, `series_id_hardcover`, `series_position`, `series_confidence`, `series_last_checked`
+- `series_peers` table persists peer titles for a series (ordered by position when available; title otherwise)
+- `hc_cache` table caches Hardcover payloads (7d TTL) to reduce repeated calls
 - Cover thumbnails cached under `~/.isbn_lot_optimizer/covers/` with SHA-256 filenames.
 - eBay Browse OAuth token cache: `~/.isbn_lot_optimizer/ebay_bearer.json`
 - Lot market snapshot cache: `~/.isbn_lot_optimizer/lot_cache.json`
@@ -58,6 +63,8 @@
 
 ## CLI Entrypoints
 - App (GUI/CLI): `python -m isbn_lot_optimizer`
+  - Series refresh one-shot: `python -m isbn_lot_optimizer --refresh-series --limit 500`
+- Backfill series script: `python -m isbn_lot_optimizer.scripts.backfill_series --db ~/.isbn_lot_optimizer/catalog.db --limit 500 --only-missing --stale-days 30`
 - BooksRun bulk quotes: `python -m lothelper booksrun-sell --in isbns.csv --out quotes.csv [--format parquet] [--sleep 0.1]`
 
 ## Testing & Tooling

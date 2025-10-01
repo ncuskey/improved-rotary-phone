@@ -1,15 +1,23 @@
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter, defaultdict
 import re
+import time
 from dataclasses import asdict, fields
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, cast
 
 import requests
 
 from .author_aliases import canonical_author as alias_canonical_author, display_label as alias_display_label
+from .booksrun import (
+    BooksRunAPIError,
+    DEFAULT_BASE_URL as BOOKSRUN_DEFAULT_BASE_URL,
+    fetch_offer as fetch_booksrun_offer,
+    normalise_condition as normalize_booksrun_condition,
+)
 from .database import DatabaseManager
 from .metadata import create_http_session, enrich_authorship, fetch_metadata
 from .series_index import (
@@ -19,7 +27,7 @@ from .series_index import (
     now_ts,
     parse_series_volume_hint,
 )
-from .models import BookEvaluation, BookMetadata, EbayMarketStats, LotCandidate, LotSuggestion
+from .models import BookEvaluation, BookMetadata, BooksRunOffer, EbayMarketStats, LotCandidate, LotSuggestion
 from .probability import build_book_evaluation
 from .lots import build_lots_with_strategies, generate_lot_suggestions
 from .series_catalog import get_or_fetch_series_for_authors
@@ -28,6 +36,9 @@ from .market import fetch_single_market_stat, fetch_market_stats_v2
 from .lot_market import market_snapshot_for_lot
 from .lot_scoring import score_lot
 from .utils import normalise_isbn, read_isbn_csv
+
+BOOKSRUN_FALLBACK_KEY = "a08gyu3z4mmoro511yu0"
+BOOKSRUN_FALLBACK_AFFILIATE = "18807"
 
 
 _TITLE_NORMALIZER = re.compile(r"[^a-z0-9]+")
@@ -59,6 +70,10 @@ class BookService:
         ebay_delay: float = 1.0,
         ebay_entries: int = 20,
         metadata_delay: float = 0.0,
+        booksrun_api_key: Optional[str] = None,
+        booksrun_affiliate_id: Optional[str] = None,
+        booksrun_base_url: Optional[str] = None,
+        booksrun_timeout: Optional[float] = None,
     ) -> None:
         self.db = DatabaseManager(database_path)
         self.metadata_session = create_http_session()
@@ -72,6 +87,33 @@ class BookService:
         self._series_index_bootstrapped: set[str] = set(self.series_index.canonical_authors())
         self._lot_manual_cache: dict[str, str] = {}
         self._series_catalog_fetched: set[str] = set()
+        self.booksrun_api_key = (
+            booksrun_api_key
+            if booksrun_api_key is not None
+            else (
+                os.getenv("BOOKSRUN_API_KEY")
+                or os.getenv("BOOKSRUN_KEY")
+                or BOOKSRUN_FALLBACK_KEY
+            )
+        )
+        self.booksrun_affiliate_id = (
+            booksrun_affiliate_id
+            if booksrun_affiliate_id is not None
+            else (
+                os.getenv("BOOKSRUN_AFFILIATE_ID")
+                or os.getenv("BOOKSRUN_AFK")
+                or BOOKSRUN_FALLBACK_AFFILIATE
+            )
+        )
+        base_url_env = os.getenv("BOOKSRUN_BASE_URL")
+        self.booksrun_base_url = booksrun_base_url or base_url_env or BOOKSRUN_DEFAULT_BASE_URL
+        timeout_env = os.getenv("BOOKSRUN_TIMEOUT")
+        self.booksrun_timeout = (
+            float(booksrun_timeout)
+            if booksrun_timeout is not None
+            else float(timeout_env) if timeout_env else 15.0
+        )
+        self._booksrun_session: Optional[requests.Session] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -79,6 +121,11 @@ class BookService:
     def close(self) -> None:
         self.metadata_session.close()
         self.series_index.save_if_dirty()
+        if self._booksrun_session:
+            try:
+                self._booksrun_session.close()
+            except Exception:
+                pass
 
     def scan_isbn(
         self,
@@ -137,6 +184,9 @@ class BookService:
 
         self._register_book_in_series_index(evaluation)
         # Try Browse API median as a better price anchor; keep $10 minimum rule
+        booksrun_offer: Optional[BooksRunOffer] = None
+        if include_market:
+            booksrun_offer = self._fetch_booksrun_offer(normalized, condition=condition)
         try:
             v2_stats = fetch_market_stats_v2(normalized)
             median_price = v2_stats.get("median_price")
@@ -145,6 +195,7 @@ class BookService:
         except Exception:
             pass
 
+        self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
         self._persist_book(evaluation)
         if recalc_lots:
             self.recalculate_lots()
@@ -218,6 +269,8 @@ class BookService:
         except Exception:
             pass
 
+        booksrun_offer = self._fetch_booksrun_offer(isbn, condition=existing.condition)
+        self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
         self._persist_book(evaluation)
         if recalc_lots:
             self.recalculate_lots()
@@ -273,13 +326,24 @@ class BookService:
         new_quantity = max(1, current.quantity + delta_int)
         return self.set_book_quantity(current.isbn, new_quantity)
 
-    def update_book_fields(self, isbn: str, fields: Dict[str, Any]) -> None:
+    def _update_book_fields_single(
+        self,
+        isbn: str,
+        fields: Dict[str, Any],
+        *,
+        raise_if_missing: bool = True,
+    ) -> bool:
         normalized = normalise_isbn(isbn)
         if not normalized:
-            raise ValueError("Invalid ISBN")
+            if raise_if_missing:
+                raise ValueError("Invalid ISBN")
+            return False
+
         row = self.db.fetch_book(normalized)
         if not row:
-            raise ValueError(f"Book {isbn} not found")
+            if raise_if_missing:
+                raise ValueError(f"Book {isbn} not found")
+            return False
 
         try:
             meta = json.loads(row["metadata_json"] or "{}")
@@ -342,13 +406,36 @@ class BookService:
 
         meta["raw"] = raw_meta
         metadata_payload = meta if metadata_changed else None
+        # Skip database writes if nothing changed
+        if not column_updates and metadata_payload is None:
+            return False
+
         self.db.update_book_record(normalized, columns=column_updates, metadata=metadata_payload)
 
         updated = self.get_book(normalized)
         if updated:
             self._register_book_in_series_index(updated)
-        self.series_index.save_if_dirty()
-        self.recalculate_lots()
+        return True
+
+    def update_book_fields(self, isbn: str, fields: Dict[str, Any]) -> None:
+        changed = self._update_book_fields_single(isbn, fields, raise_if_missing=True)
+        if changed:
+            self.series_index.save_if_dirty()
+            self.recalculate_lots()
+
+    def update_books_fields(self, isbns: Iterable[str], fields: Dict[str, Any]) -> int:
+        updated_count = 0
+        for isbn in isbns:
+            try:
+                changed = self._update_book_fields_single(isbn, fields, raise_if_missing=False)
+            except Exception:
+                continue
+            if changed:
+                updated_count += 1
+        if updated_count:
+            self.series_index.save_if_dirty()
+            self.recalculate_lots()
+        return updated_count
 
     def delete_books(self, isbns: Iterable[str]) -> int:
         normalized_isbns: List[str] = []
@@ -399,6 +486,183 @@ class BookService:
         if refreshed:
             self.recalculate_lots()
         return refreshed
+
+    def refresh_booksrun_all(
+        self,
+        *,
+        delay: Optional[float] = None,
+        progress_cb: Optional[Callable[[int, int], None]] = None,
+    ) -> int:
+        """
+        Refresh BooksRun offers for all books without touching eBay stats/metadata.
+        Polite rate limiting via 'delay' seconds between calls (default from BOOKSRUN_DELAY or 0.2).
+        """
+        try:
+            rows = self.db.fetch_all_books()
+        except Exception:
+            rows = []
+        isbns: list[str] = []
+        for row in rows:
+            try:
+                code = row["isbn"]
+            except Exception:
+                code = None
+            if code:
+                isbns.append(str(code))
+        total = len(isbns)
+        if total == 0:
+            if progress_cb:
+                try:
+                    progress_cb(0, 0)
+                except Exception:
+                    pass
+            return 0
+
+        # Determine delay
+        if delay is None:
+            try:
+                delay = float(os.getenv("BOOKSRUN_DELAY", "0.2"))
+            except Exception:
+                delay = 0.2
+
+        # Ensure a session for connection reuse
+        if self._booksrun_session is None:
+            try:
+                self._booksrun_session = requests.Session()
+            except Exception:
+                self._booksrun_session = None
+
+        count = 0
+        for idx, isbn in enumerate(isbns, start=1):
+            try:
+                evaluation = self._refresh_single_book(
+                    isbn,
+                    requery_market=False,
+                    requery_metadata=False,
+                    requery_booksrun=True,
+                )
+                if evaluation:
+                    count += 1
+            except Exception:
+                # Continue on errors
+                pass
+            if progress_cb:
+                try:
+                    progress_cb(idx, total)
+                except Exception:
+                    pass
+            if idx < total and delay and delay > 0:
+                try:
+                    time.sleep(delay)
+                except Exception:
+                    pass
+
+        if count:
+            self.recalculate_lots()
+        return count
+
+    def rename_authors(
+        self,
+        mapping: Dict[str, str],
+        progress_cb: Optional[Callable[[int, int], None]] = None,
+    ) -> int:
+        """
+        Rename author display names across the catalog.
+
+        mapping: dict of raw_name -> canonical_name to apply. Matches are exact string matches
+        on the delimited 'authors' column and in metadata_json authors lists.
+
+        Returns the number of rows updated.
+        """
+        if not mapping:
+            return 0
+        try:
+            rows = self.db.fetch_all_books()
+        except Exception:
+            rows = []
+        total = len(rows)
+        updated = 0
+        for idx, row in enumerate(rows, start=1):
+            try:
+                raw_authors = row["authors"] or ""
+            except Exception:
+                raw_authors = ""
+            # Split authors by ';' or ',' preserving order
+            parts_raw: list[str] = []
+            for token in re.split(r";|,", str(raw_authors)):
+                t = token.strip()
+                if t:
+                    parts_raw.append(t)
+            if not parts_raw:
+                if progress_cb:
+                    try:
+                        progress_cb(idx, total)
+                    except Exception:
+                        pass
+                continue
+
+            # Apply mapping
+            new_parts: list[str] = []
+            seen_local: set[str] = set()
+            changed = False
+            for name in parts_raw:
+                renamed = mapping.get(name, name)
+                if renamed != name:
+                    changed = True
+                if renamed not in seen_local:
+                    new_parts.append(renamed)
+                    seen_local.add(renamed)
+
+            if not changed:
+                if progress_cb:
+                    try:
+                        progress_cb(idx, total)
+                    except Exception:
+                        pass
+                continue
+
+            # Prepare updated metadata
+            try:
+                meta = json.loads(row["metadata_json"]) if row["metadata_json"] else {}
+            except Exception:
+                meta = {}
+            if not isinstance(meta, dict):
+                meta = {}
+            meta["authors"] = list(new_parts)
+            meta["credited_authors"] = list(new_parts)
+            meta["authors_str"] = ", ".join(new_parts)
+            # Recompute canonical fields using existing pipeline
+            try:
+                meta = enrich_authorship(meta)
+            except Exception:
+                pass
+
+            # Persist updated authors column and metadata
+            try:
+                isbn_code = str(row["isbn"])
+            except Exception:
+                isbn_code = None
+            if isbn_code:
+                try:
+                    self.db.update_book_record(
+                        isbn_code,
+                        columns={"authors": "; ".join(new_parts)},
+                        metadata=meta,
+                    )
+                    updated += 1
+                except Exception:
+                    pass
+
+            if progress_cb:
+                try:
+                    progress_cb(idx, total)
+                except Exception:
+                    pass
+
+        if updated:
+            # Refresh lots after cleanup
+            self.recalculate_lots()
+        return updated
 
     def search_books(self, query: str) -> List[BookEvaluation]:
         """
@@ -510,15 +774,16 @@ class BookService:
                 if match and (not canonical_author_value or match.canonical_author == canonical_author_value):
                     key = (match.canonical_author, match.canonical_series)
                     hits[key] += 1
-                    if match.volume:
-                        volumes[key].add(int(match.volume))
+                    vol_val = getattr(match, "volume", None)
+                    if isinstance(vol_val, (int, str)) and str(vol_val).isdigit():
+                        volumes[key].add(int(vol_val))
                     if match.display_series:
                         display_map.setdefault(key, match.display_series)
-                    if not match.volume:
+                    if not getattr(match, "volume", None):
                         volume_hint = getattr(book.metadata, "series_index", None) or parse_series_volume_hint(
                             getattr(book.metadata, "title", None)
                         ) or parse_series_volume_hint(getattr(book.metadata, "subtitle", None))
-                        if volume_hint:
+                        if isinstance(volume_hint, (int, str)) and str(volume_hint).isdigit():
                             self.series_index.add_mapping(
                                 book.isbn,
                                 match.display_author or author_display or (book.metadata.authors[0] if book.metadata.authors else ""),
@@ -558,19 +823,20 @@ class BookService:
                 volume_hint = getattr(book.metadata, "series_index", None) or parse_series_volume_hint(
                     getattr(book.metadata, "title", None)
                 ) or parse_series_volume_hint(getattr(book.metadata, "subtitle", None))
-                if volume_hint:
+                if isinstance(volume_hint, (int, str)) and str(volume_hint).isdigit():
                     volumes[key].add(int(volume_hint))
 
             if not hits:
                 return None, None, None, None, False
 
             (best_author, best_series), _ = hits.most_common(1)[0]
-            entry = self.series_index.get_entry(best_author, best_series)
+            entry_obj = self.series_index.get_entry(best_author, best_series)
             series_display = display_map.get((best_author, best_series))
-            if entry:
-                series_display = entry.get("display_series") or series_display
-                expected_map = entry.get("expected_vols", {})
-            else:
+            entry_dict: Dict[str, Any] = cast(Dict[str, Any], entry_obj) if isinstance(entry_obj, dict) else {}
+            if entry_dict:
+                series_display = entry_dict.get("display_series") or series_display
+            expected_map = entry_dict.get("expected_vols", {})
+            if not isinstance(expected_map, dict):
                 expected_map = {}
 
             series_have = len(volumes.get((best_author, best_series), set()))
@@ -765,18 +1031,22 @@ class BookService:
             if canonical:
                 self._series_index_bootstrapped.add(canonical)
 
-            entries = self.series_index.series_entries_for_author(author)
+            entries_obj = self.series_index.series_entries_for_author(author)
+            entries: Dict[str, Any] = entries_obj if isinstance(entries_obj, dict) else {}
             for canonical_series_value, entry in entries.items():
-                series_display = entry.get("display_series") or canonical_series_value
-                expected_map = entry.get("expected_vols", {}) or {}
+                entry_dict: Dict[str, Any] = cast(Dict[str, Any], entry) if isinstance(entry, dict) else {}
+                series_display = entry_dict.get("display_series") or canonical_series_value
+                expected_map = entry_dict.get("expected_vols", {}) or {}
+                if not isinstance(expected_map, dict):
+                    expected_map = {}
                 expected_norm: Dict[str, Optional[int]] = {}
                 for vol_key, title in expected_map.items():
                     norm = _normalise_title(title)
                     if not norm:
                         continue
-                    try:
+                    if isinstance(vol_key, (int, str)) and str(vol_key).isdigit():
                         expected_norm[norm] = int(vol_key)
-                    except Exception:
+                    else:
                         expected_norm[norm] = None
 
                 in_series: List[BookEvaluation] = []
@@ -789,8 +1059,9 @@ class BookService:
                     if match and match.canonical_series == canonical_series_value:
                         in_series.append(book)
                         seen_isbns.add(book.isbn)
-                        if match.volume:
-                            have_numbers.add(int(match.volume))
+                        vol = getattr(match, "volume", None)
+                        if isinstance(vol, (int, str)) and str(vol).isdigit():
+                            have_numbers.add(int(vol))
                         continue
                     meta_series = getattr(book.metadata, "series_name", None) or getattr(book.metadata, "series", None)
                     if meta_series and canonical_series(meta_series) == canonical_series_value:
@@ -799,7 +1070,7 @@ class BookService:
                         vol_hint = getattr(book.metadata, "series_index", None) or parse_series_volume_hint(
                             getattr(book.metadata, "title", None)
                         ) or parse_series_volume_hint(getattr(book.metadata, "subtitle", None))
-                        if vol_hint:
+                        if isinstance(vol_hint, (int, str)) and str(vol_hint).isdigit():
                             have_numbers.add(int(vol_hint))
                         continue
                     title_norm = _normalise_title(getattr(book.metadata, "title", None))
@@ -828,17 +1099,23 @@ class BookService:
                 owned = len(in_series)
                 missing = []
                 if expected_map:
-                    known_vols = {
-                        str(meta.get("volume"))
-                        for meta in entry.get("known_isbns", {}).values()
-                        if meta.get("volume")
-                    }
+                    # Safely gather known volumes from entry.known_isbns
+                    known_isbns_raw = entry_dict.get("known_isbns")
+                    known_isbns = known_isbns_raw if isinstance(known_isbns_raw, dict) else {}
+                    known_vols: set[str] = set()
+                    if isinstance(known_isbns, dict):
+                        for meta in known_isbns.values():
+                            if isinstance(meta, dict):
+                                vol_val = meta.get("volume")
+                                if vol_val is not None:
+                                    known_vols.add(str(vol_val))
                     owned = len(known_vols) or owned
-                    missing = [
-                        (int(vol), title)
-                        for vol, title in expected_map.items()
-                        if vol not in known_vols
-                    ]
+                    # Build missing list without unsafe int() casts on unknown keys
+                    missing = []
+                    for vol_key, title in expected_map.items():
+                        vol_key_str = str(vol_key)
+                        if vol_key_str not in known_vols:
+                            missing.append((vol_key_str, title))
                     total_expected = len(expected_map)
 
                 est_total = sum(float(getattr(b, "estimated_price", 0.0) or 0.0) for b in in_series)
@@ -1113,12 +1390,17 @@ class BookService:
             coverage_entries = []
 
         for entry in coverage_entries:
-            coverage = entry.get("coverage") or {}
-            series_display = coverage.get("series") or entry.get("label") or "Series"
+            entry_dict: Dict[str, Any] = entry if isinstance(entry, dict) else {}
+            coverage = entry_dict.get("coverage") or {}
+            if not isinstance(coverage, dict):
+                coverage = {}
+            series_display = (coverage.get("series") or entry_dict.get("label") or "Series")
             author = coverage.get("author")
             total_expected = coverage.get("total") or 0
             owned = coverage.get("owned") or 0
             missing = coverage.get("missing") or []
+            if not isinstance(missing, list):
+                missing = []
             if owned <= 0:
                 continue
             if total_expected and owned >= total_expected:
@@ -1130,7 +1412,7 @@ class BookService:
             if canonical_series_value and canonical_series_value in existing_series:
                 continue
 
-            books = [b for b in entry.get("books") or [] if isinstance(b, BookEvaluation)]
+            books = [b for b in (entry_dict.get("books") or []) if isinstance(b, BookEvaluation)]
             if not books:
                 continue
 
@@ -1153,11 +1435,20 @@ class BookService:
             canonical_from_books, display_author_label, _credited = self._author_labels_for_books(books)
             canonical_author_value = canonical_from_books or (canonical_author(author) if author else None)
 
-            sell_through_values = [
-                float(b.market.sell_through_rate)
-                for b in books
-                if getattr(b, "market", None) and getattr(b.market, "sell_through_rate", None) is not None
-            ]
+            # Safely compute sell-through values with explicit None/type checks to satisfy static typing
+            sell_through_values: list[float] = []
+            for b in books:
+                mkt = getattr(b, "market", None)
+                if not mkt:
+                    continue
+                rate = getattr(mkt, "sell_through_rate", None)
+                if rate is None:
+                    continue
+                try:
+                    sell_through_values.append(float(rate))
+                except Exception:
+                    # Skip values that cannot be coerced to float
+                    continue
             sell_through = (
                 sum(sell_through_values) / len(sell_through_values)
                 if sell_through_values
@@ -1228,6 +1519,7 @@ class BookService:
         *,
         requery_market: bool,
         requery_metadata: bool,
+        requery_booksrun: bool = False,
     ) -> Optional[BookEvaluation]:
         normalized = normalise_isbn(isbn)
         if not normalized:
@@ -1268,6 +1560,10 @@ class BookService:
 
         self._register_book_in_series_index(evaluation)
 
+        if requery_booksrun or requery_market or not getattr(existing, "booksrun", None):
+            booksrun_offer = self._fetch_booksrun_offer(normalized, condition=existing.condition)
+        else:
+            booksrun_offer = getattr(existing, "booksrun", None)
         if requery_market:
             try:
                 v2_stats = fetch_market_stats_v2(normalized)
@@ -1277,6 +1573,7 @@ class BookService:
             except Exception:
                 pass
 
+        self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
         self._persist_book(evaluation)
         return evaluation
 
@@ -1293,16 +1590,21 @@ class BookService:
                 meta = attach_series(meta, normalized, session=self.metadata_session)
             except Exception:
                 pass
-            series_info = meta.get("series") if isinstance(meta.get("series"), dict) else {}
+            series_info_obj = meta.get("series")
+            series_info: Dict[str, Any] = series_info_obj if isinstance(series_info_obj, dict) else {}
             series_name = meta.get("series_name") or series_info.get("name")
             series_index = meta.get("series_index")
-            if series_index is None and isinstance(series_info, dict):
-                try:
-                    series_index = int(series_info.get("index")) if series_info.get("index") is not None else None
-                except Exception:
+            if series_index is None and series_info:
+                idx_val = series_info.get("index")
+                if isinstance(idx_val, (int, str)) and str(idx_val).isdigit():
+                    try:
+                        series_index = int(idx_val)
+                    except Exception:
+                        series_index = None
+                else:
                     series_index = None
             series_id = meta.get("series_id")
-            if not series_id and isinstance(series_info, dict):
+            if not series_id:
                 ids = series_info.get("id") or {}
                 if isinstance(ids, dict):
                     series_id = (
@@ -1311,8 +1613,10 @@ class BookService:
                         or ids.get("work_qid")
                         or ids.get("id")
                     )
-                if not series_id and series_info.get("name"):
-                    series_id = series_info.get("name")
+                if not series_id:
+                    name_val = series_info.get("name")
+                    if isinstance(name_val, str):
+                        series_id = name_val
             try:
                 metadata = BookMetadata(
                     isbn=normalized,
@@ -1373,8 +1677,9 @@ class BookService:
                 pass
             self._series_index_bootstrapped.add(canonical_author_value)
 
-        entry = self.series_index.get_entry(canonical_author_value, canonical_series_value)
-        expected_map = entry.get("expected_vols", {}) if entry else {}
+        entry_obj = self.series_index.get_entry(canonical_author_value, canonical_series_value)
+        entry_dict: Dict[str, Any] = entry_obj if isinstance(entry_obj, dict) else {}
+        expected_map = entry_dict.get("expected_vols", {}) if entry_dict else {}
 
         volume = getattr(metadata, "series_index", None)
         if volume is None:
@@ -1385,9 +1690,9 @@ class BookService:
             title_norm = _normalise_title(getattr(metadata, "title", None))
             for vol_key, title in expected_map.items():
                 if _normalise_title(title) == title_norm:
-                    try:
+                    if isinstance(vol_key, (int, str)) and str(vol_key).isdigit():
                         volume = int(vol_key)
-                    except Exception:
+                    else:
                         volume = None
                     break
 
@@ -1518,6 +1823,125 @@ class BookService:
             ledger[lot_key] = entry
             self.db.update_book_market_json(book.isbn, market_blob)
 
+    def _fetch_booksrun_offer(self, isbn: str, *, condition: Optional[str]) -> Optional[BooksRunOffer]:
+        if not self.booksrun_api_key:
+            return None
+        cond = normalize_booksrun_condition(condition or "good")
+        try:
+            offer = fetch_booksrun_offer(
+                isbn,
+                api_key=self.booksrun_api_key,
+                affiliate_id=self.booksrun_affiliate_id,
+                condition=cond,
+                base_url=self.booksrun_base_url,
+                timeout=int(self.booksrun_timeout),
+                session=self._booksrun_session,
+            )
+        except BooksRunAPIError:
+            return None
+        except Exception:
+            return None
+        if offer and not offer.url:
+            offer.url = self._booksrun_fallback_url(isbn)
+        return offer
+
+    def _booksrun_fallback_url(self, isbn: str) -> str:
+        root = (self.booksrun_base_url or BOOKSRUN_DEFAULT_BASE_URL).rstrip("/")
+        return f"{root}/sell-textbooks/{isbn}"
+
+    @staticmethod
+    def _booksrun_best_price(offer: BooksRunOffer) -> Optional[float]:
+        prices: List[float] = []
+        for value in (offer.cash_price, offer.store_credit):
+            if isinstance(value, (int, float)):
+                prices.append(float(value))
+        if not prices:
+            return None
+        return max(prices)
+
+    @staticmethod
+    def _safe_float(value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            text = value.strip().replace("$", "")
+            try:
+                return float(text)
+            except Exception:
+                return None
+        return None
+
+    @staticmethod
+    def _classify_booksrun_ratio(ratio: float) -> str:
+        if ratio >= 0.8:
+            return "High"
+        if ratio >= 0.5:
+            return "Medium"
+        return "Low"
+
+    def _apply_booksrun_to_evaluation(
+        self,
+        evaluation: BookEvaluation,
+        offer: Optional[BooksRunOffer],
+    ) -> None:
+        evaluation.booksrun = offer
+        evaluation.booksrun_value_label = None
+        evaluation.booksrun_value_ratio = None
+        if not offer:
+            return
+        best_price = self._booksrun_best_price(offer)
+        if best_price is None:
+            evaluation.booksrun_value_label = "No Offer"
+            return
+        try:
+            est_price = float(evaluation.estimated_price)
+        except Exception:
+            est_price = 0.0
+        if est_price <= 0:
+            return
+        ratio = best_price / max(est_price, 1e-6)
+        evaluation.booksrun_value_ratio = round(ratio, 3)
+        evaluation.booksrun_value_label = self._classify_booksrun_ratio(ratio)
+
+    def _booksrun_from_blob(self, isbn: str, blob: Any) -> Optional[BooksRunOffer]:
+        if not isinstance(blob, dict) or not blob:
+            return None
+        cash_price = self._safe_float(blob.get("cash_price") or blob.get("cash"))
+        credit_price = self._safe_float(blob.get("store_credit") or blob.get("credit"))
+        currency = blob.get("currency")
+        condition = blob.get("condition") or "good"
+        url = blob.get("url")
+        updated = blob.get("updated_at") or blob.get("updated") or blob.get("timestamp")
+        raw_payload: Dict[str, Any] = {}
+        raw_val = blob.get("raw") if isinstance(blob, dict) else None
+        if isinstance(raw_val, dict):
+            try:
+                for k, v in raw_val.items():
+                    key_str = k.decode() if isinstance(k, (bytes, bytearray)) else str(k)
+                    raw_payload[key_str] = v
+            except Exception:
+                raw_payload = {}
+        elif isinstance(blob, dict):
+            try:
+                for k, v in blob.items():
+                    key_str = k.decode() if isinstance(k, (bytes, bytearray)) else str(k)
+                    raw_payload[key_str] = v
+            except Exception:
+                raw_payload = {}
+        offer = BooksRunOffer(
+            isbn=str(blob.get("isbn") or isbn),
+            condition=str(condition),
+            cash_price=cash_price,
+            store_credit=credit_price,
+            currency=str(currency) if isinstance(currency, str) else None,
+            url=str(url) if isinstance(url, str) else self._booksrun_fallback_url(isbn),
+            updated_at=str(updated) if updated is not None else None,
+            raw=raw_payload,
+        )
+        return offer
+
     def _persist_book(self, evaluation: BookEvaluation) -> None:
         metadata_dict = asdict(evaluation.metadata)
         metadata_dict["authors"] = list(metadata_dict.get("authors") or [])
@@ -1526,6 +1950,11 @@ class BookService:
             metadata_dict["categories"] = list(metadata_dict.get("categories") or [])
         metadata_dict = enrich_authorship(metadata_dict)
         market_dict = asdict(evaluation.market) if evaluation.market else {}
+        booksrun_dict = asdict(evaluation.booksrun) if evaluation.booksrun else {}
+        if evaluation.booksrun_value_label:
+            booksrun_dict["value_label"] = evaluation.booksrun_value_label
+        if evaluation.booksrun_value_ratio is not None:
+            booksrun_dict["value_ratio"] = evaluation.booksrun_value_ratio
         payload = {
             "isbn": evaluation.isbn,
             "title": evaluation.metadata.title,
@@ -1545,6 +1974,7 @@ class BookService:
             "ebay_currency": evaluation.market.currency if evaluation.market else None,
             "metadata_json": metadata_dict,
             "market_json": market_dict,
+            "booksrun_json": booksrun_dict,
             "source_json": {
                 "condition": evaluation.condition,
                 "edition": evaluation.edition,
@@ -1559,6 +1989,16 @@ class BookService:
         metadata_payload = json.loads(metadata_json) if metadata_json else {"isbn": row["isbn"]}
         metadata_dict = dict(metadata_payload)
         market_dict = json.loads(market_json) if market_json else None
+        booksrun_blob_raw = None
+        try:
+            if "booksrun_json" in row.keys():
+                booksrun_blob_raw = row["booksrun_json"]
+        except Exception:
+            booksrun_blob_raw = None
+        try:
+            booksrun_blob = json.loads(booksrun_blob_raw) if booksrun_blob_raw else {}
+        except Exception:
+            booksrun_blob = {}
         source_raw = None
         try:
             if "source_json" in row.keys():
@@ -1666,6 +2106,8 @@ class BookService:
             suppress_single=(row["estimated_price"] or 0.0) < 10,
             quantity=quantity,
         )
+        booksrun_offer = self._booksrun_from_blob(row["isbn"], booksrun_blob)
+        self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
         try:
             if "created_at" in row.keys():
                 setattr(evaluation, "created_at", row["created_at"])

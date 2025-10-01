@@ -1,4 +1,4 @@
-import json, sqlite3
+import json, sqlite3, re
 from pathlib import Path
 
 
@@ -43,3 +43,25 @@ def update_book_metadata(conn: sqlite3.Connection, isbn: str, meta: dict | None)
         "publication_year": publication_year,
         "metadata_json": metadata_json,
     })
+
+def list_distinct_author_names(conn: sqlite3.Connection) -> list[str]:
+    """
+    Return a de-duplicated list of author names found in the books table.
+
+    The 'authors' column is stored as a delimited string; this function splits on
+    semicolons and commas, trims whitespace, and returns unique names sorted
+    case-insensitively for stable display.
+    """
+    rows = conn.execute(
+        "SELECT authors FROM books WHERE authors IS NOT NULL AND authors <> ''"
+    ).fetchall()
+
+    names_set: set[str] = set()
+    for (authors_str,) in rows:
+        s = str(authors_str or "")
+        parts = [p.strip() for p in re.split(r";|,", s) if p and p.strip()]
+        for p in parts:
+            if p:
+                names_set.add(p)
+
+    return sorted(names_set, key=lambda x: x.lower())

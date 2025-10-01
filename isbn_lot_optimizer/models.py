@@ -52,6 +52,18 @@ class EbayMarketStats:
 
 
 @dataclass
+class BooksRunOffer:
+    isbn: str
+    condition: str
+    cash_price: Optional[float] = None
+    store_credit: Optional[float] = None
+    currency: Optional[str] = None
+    url: Optional[str] = None
+    updated_at: Optional[str] = None
+    raw: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class BookEvaluation:
     isbn: str
     original_isbn: str
@@ -66,6 +78,9 @@ class BookEvaluation:
     justification: Sequence[str] = field(default_factory=list)
     suppress_single: bool = False
     quantity: int = 1
+    booksrun: Optional[BooksRunOffer] = None
+    booksrun_value_label: Optional[str] = None
+    booksrun_value_ratio: Optional[float] = None
 
 
 @dataclass

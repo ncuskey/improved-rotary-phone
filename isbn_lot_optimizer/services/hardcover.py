@@ -3,7 +3,7 @@ import time
 import json
 import threading
 from typing import Any, Dict, Optional, List
-import requests
+from urllib import request as urlrequest, error as urlerror
 
 
 HARDCOVER_GRAPHQL_ENDPOINT = "https://api.hardcover.app/graphql"
@@ -68,14 +68,28 @@ class HardcoverClient:
             "user-agent": self.user_agent,
         }
         payload = {"query": query, "variables": variables or {}}
+        body = json.dumps(payload).encode("utf-8")
         for attempt in range(3):
-            resp = requests.post(self.endpoint, headers=headers, data=json.dumps(payload), timeout=30)
-            if resp.status_code == 429:
-                time.sleep(2 + attempt)  # backoff on throttle
-                continue
-            if not resp.ok:
-                raise RuntimeError(f"Hardcover HTTP {resp.status_code}: {resp.text[:200]}")
-            data = resp.json()
+            req = urlrequest.Request(self.endpoint, data=body, headers=headers, method="POST")
+            try:
+                with urlrequest.urlopen(req, timeout=30) as resp:
+                    resp_text = resp.read().decode("utf-8")
+            except urlerror.HTTPError as e:
+                if getattr(e, "code", None) == 429:
+                    time.sleep(2 + attempt)  # backoff on throttle
+                    continue
+                err_text = ""
+                try:
+                    err_text = e.read().decode("utf-8", errors="ignore")  # type: ignore[attr-defined]
+                except Exception:
+                    pass
+                raise RuntimeError(f"Hardcover HTTP {getattr(e, 'code', 'error')}: {err_text[:200]}")
+            except urlerror.URLError as e:
+                raise RuntimeError(f"Hardcover network error: {e}")
+            try:
+                data = json.loads(resp_text)
+            except Exception:
+                raise RuntimeError(f"Hardcover invalid JSON response: {resp_text[:200]}")
             if "errors" in data and data["errors"]:
                 # Surface first error
                 raise RuntimeError(f"Hardcover GraphQL error: {data['errors']}")

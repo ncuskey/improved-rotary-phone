@@ -2,9 +2,14 @@ from __future__ import annotations
 
 # Load .env from project root so env vars are available everywhere
 try:
-    from dotenv import load_dotenv
-    load_dotenv()
+    import importlib
+
+    _dotenv = importlib.import_module("dotenv")  # type: ignore
+    _load = getattr(_dotenv, "load_dotenv", None)
+    if callable(_load):
+        _load()
 except Exception:
+    # Ignore if python-dotenv is not installed or any error occurs
     pass
 
 import os
@@ -179,7 +184,7 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
     if args.refresh_metadata or args.refresh_metadata_missing:
         from . import metadata
         import sqlite3
-        import requests
+        import requests  # type: ignore[reportMissingImports,reportMissingModuleSource]
 
         conn = db.connect(args.database)
         if args.refresh_metadata_missing:

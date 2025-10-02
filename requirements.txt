@@ -4,3 +4,8 @@ pyarrow
 python-dotenv
 requests
 pytest
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+sse-starlette

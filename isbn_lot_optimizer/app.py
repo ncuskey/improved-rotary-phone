@@ -26,7 +26,7 @@ from .models import BookEvaluation
 from .service import BookService
 from .utils import normalise_isbn
 from .author_match import probable_author_matches, cluster_authors
-from . import db
+from .database import DatabaseManager
 
 DEFAULT_DB_PATH = Path.home() / ".isbn_lot_optimizer" / "catalog.db"
 
@@ -146,11 +146,11 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
     # Fast path: author matching utilities
     if args.author_search or args.list_author_clusters:
-        conn = db.connect(args.database)
+        db_mgr = DatabaseManager(database_path)
         try:
-            names = db.list_distinct_author_names(conn)
+            names = db_mgr.list_distinct_author_names()
         finally:
-            pass  # keep connection open for now; lightweight operation
+            db_mgr.close()
 
         if args.list_author_clusters:
             groups = cluster_authors(names)
@@ -183,55 +183,59 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
     if args.refresh_metadata or args.refresh_metadata_missing:
         from . import metadata
-        import sqlite3
         import requests  # type: ignore[reportMissingImports,reportMissingModuleSource]
 
-        conn = db.connect(args.database)
-        if args.refresh_metadata_missing:
-            rows = conn.execute("""
-                SELECT isbn FROM books
-                WHERE (metadata_json IS NULL OR metadata_json = '')
-                   OR title IS NULL OR title = ''
-                   OR authors IS NULL OR authors = ''
-                   OR publication_year IS NULL
-            """).fetchall()
-        else:
-            rows = conn.execute("SELECT isbn FROM books ORDER BY updated_at DESC").fetchall()
-
-        if args.limit is not None:
-            rows = rows[:args.limit]
-
-        c_gb, c_ol, c_cache, c_hint, c_err, c_nf = 0, 0, 0, 0, 0, 0
-
-        sess = requests.Session()
+        db_mgr = DatabaseManager(database_path)
         try:
-            for (isbn,) in rows:
-                print(f"Metadata: {isbn} …", end=" ")
-                try:
-                    meta = metadata.fetch_metadata(isbn, session=sess)
-                    if not meta:
-                        c_nf += 1
-                        print("not found")
-                        continue
-                    source = meta.get("source") or "unknown"
-                    if source == "google_books":
-                        c_gb += 1
-                    elif source in ("open_library", "open_library_deep"):
-                        c_ol += 1
-                    elif source == "isbn_hint":
-                        c_hint += 1
-                    elif source == "cache":
-                        c_cache += 1
-                    db.update_book_metadata(conn, isbn, meta)
-                    print(f"ok ({source})")
-                except Exception as exc:
-                    c_err += 1
-                    print(f"error: {exc}")
-        finally:
-            sess.close()
+            conn = db_mgr._get_connection()
+            if args.refresh_metadata_missing:
+                rows = conn.execute("""
+                    SELECT isbn FROM books
+                    WHERE (metadata_json IS NULL OR metadata_json = '')
+                       OR title IS NULL OR title = ''
+                       OR authors IS NULL OR authors = ''
+                       OR publication_year IS NULL
+                """).fetchall()
+            else:
+                rows = conn.execute("SELECT isbn FROM books ORDER BY updated_at DESC").fetchall()
 
-        conn.commit()
-        print(f"✅ Metadata refresh complete  | GB:{c_gb}  OL:{c_ol}  Hint:{c_hint}  Cache:{c_cache}  NotFound:{c_nf}  Errors:{c_err}")
+            if args.limit is not None:
+                rows = rows[:args.limit]
+
+            c_gb, c_ol, c_cache, c_hint, c_err, c_nf = 0, 0, 0, 0, 0, 0
+
+            sess = requests.Session()
+            try:
+                for row in rows:
+                    isbn = row[0] if isinstance(row, tuple) else row["isbn"]
+                    print(f"Metadata: {isbn} …", end=" ")
+                    try:
+                        meta = metadata.fetch_metadata(isbn, session=sess)
+                        if not meta:
+                            c_nf += 1
+                            print("not found")
+                            continue
+                        source = meta.get("source") or "unknown"
+                        if source == "google_books":
+                            c_gb += 1
+                        elif source in ("open_library", "open_library_deep"):
+                            c_ol += 1
+                        elif source == "isbn_hint":
+                            c_hint += 1
+                        elif source == "cache":
+                            c_cache += 1
+                        db_mgr.update_book_metadata_fields(isbn, meta)
+                        print(f"ok ({source})")
+                    except Exception as exc:
+                        c_err += 1
+                        print(f"error: {exc}")
+            finally:
+                sess.close()
+
+            conn.commit()
+            print(f"✅ Metadata refresh complete  | GB:{c_gb}  OL:{c_ol}  Hint:{c_hint}  Cache:{c_cache}  NotFound:{c_nf}  Errors:{c_err}")
+        finally:
+            db_mgr.close()
         raise SystemExit(0)
 
     # Optional one-shot: refresh series from Hardcover then exit

@@ -11,13 +11,20 @@ The app uses a local SQLite database with a few on-disk caches. A `.env` file in
 Tables (created as needed): `books`, `lots`
 
 ## Environment Variables
-- EBAY_APP_ID (optional): eBay Finding API App ID for sold/unsold history and pricing statistics.
-- EBAY_CLIENT_ID / EBAY_CLIENT_SECRET (optional): eBay Browse API client credentials to enable active comps and median pricing.
-- EBAY_MARKETPLACE (optional): eBay marketplace ID for Browse API requests. Default: `EBAY_US` (aka `EBAY-US` in Finding).
-- BOOKSRUN_KEY (optional): BooksRun API key for SELL quote fetching (GUI refresh and `lothelper` CLI).
-- HARDCOVER_API_TOKEN (optional but recommended): Hardcover API token used for series detection. Include the "Bearer " prefix, e.g. `Bearer eyJ...`.
-- HARDCOVER_GRAPHQL_ENDPOINT (optional): Override the Hardcover API endpoint. Default: `https://api.hardcover.app/graphql`.
-- HTTP_PROXY / HTTPS_PROXY (optional): Route HTTP(S) requests through a proxy when needed.
+
+### Primary Variables
+- **EBAY_APP_ID** (optional): eBay Finding API App ID for sold/unsold history and pricing statistics.
+- **EBAY_CLIENT_ID** / **EBAY_CLIENT_SECRET** (optional): eBay Browse API client credentials to enable active comps and median pricing.
+- **EBAY_MARKETPLACE** (optional): eBay marketplace ID for Browse API requests. Default: `EBAY_US` (aka `EBAY-US` in Finding).
+- **BOOKSRUN_KEY** (optional): BooksRun API key for SELL quote fetching (GUI refresh and `lothelper` CLI).
+- **BOOKSRUN_AFFILIATE_ID** (optional): BooksRun affiliate ID for tracking.
+- **HARDCOVER_API_TOKEN** (optional but recommended): Hardcover API token used for series detection. Include the "Bearer " prefix, e.g. `Bearer eyJ...`.
+- **HARDCOVER_GRAPHQL_ENDPOINT** (optional): Override the Hardcover API endpoint. Default: `https://api.hardcover.app/graphql`.
+- **HTTP_PROXY** / **HTTPS_PROXY** (optional): Route HTTP(S) requests through a proxy when needed.
+
+### Deprecated Variables (for backward compatibility)
+- ~~BOOKSRUN_API_KEY~~ - Use **BOOKSRUN_KEY** instead
+- ~~BOOKSRUN_AFK~~ - Use **BOOKSRUN_AFFILIATE_ID** instead
 
 Create a local `.env` (or export in your shell) to set variables, e.g.:
 ```bash

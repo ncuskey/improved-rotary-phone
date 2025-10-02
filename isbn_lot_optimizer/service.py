@@ -11,18 +11,18 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 import requests
 
-from .author_aliases import canonical_author as alias_canonical_author, display_label as alias_display_label
+from .author_aliases import canonical_author, display_label as alias_display_label
 from .booksrun import (
     BooksRunAPIError,
     DEFAULT_BASE_URL as BOOKSRUN_DEFAULT_BASE_URL,
     fetch_offer as fetch_booksrun_offer,
     normalise_condition as normalize_booksrun_condition,
 )
+from .constants import BOOKSRUN_FALLBACK_KEY, BOOKSRUN_FALLBACK_AFFILIATE, COVER_CHOICES, TITLE_NORMALIZER
 from .database import DatabaseManager
 from .metadata import create_http_session, enrich_authorship, fetch_metadata
 from .series_index import (
     SeriesIndex,
-    canonical_author,
     canonical_series,
     now_ts,
     parse_series_volume_hint,
@@ -37,26 +37,16 @@ from .lot_market import market_snapshot_for_lot
 from .lot_scoring import score_lot
 from .utils import normalise_isbn, read_isbn_csv
 
-BOOKSRUN_FALLBACK_KEY = "a08gyu3z4mmoro511yu0"
-BOOKSRUN_FALLBACK_AFFILIATE = "18807"
-
-
-_TITLE_NORMALIZER = re.compile(r"[^a-z0-9]+")
-
-COVER_CHOICES = [
-    "Hardcover",
-    "Trade Paperback",
-    "Mass Market Paperback",
-    "Library Binding",
-    "Unknown",
-]
+# Re-export for backward compatibility (gui.py imports this)
+# New code should import from constants.py directly
+__all__ = ["BookService", "COVER_CHOICES"]
 
 
 def _normalise_title(text: Optional[str]) -> str:
     if not text:
         return ""
     value = str(text).lower()
-    return _TITLE_NORMALIZER.sub(" ", value).strip()
+    return TITLE_NORMALIZER.sub(" ", value).strip()
 
 
 class BookService:
@@ -87,23 +77,34 @@ class BookService:
         self._series_index_bootstrapped: set[str] = set(self.series_index.canonical_authors())
         self._lot_manual_cache: dict[str, str] = {}
         self._series_catalog_fetched: set[str] = set()
+        # Standardize on BOOKSRUN_KEY (deprecated: BOOKSRUN_API_KEY)
+        key_from_env = os.getenv("BOOKSRUN_KEY") or os.getenv("BOOKSRUN_API_KEY")
+        if os.getenv("BOOKSRUN_API_KEY") and not os.getenv("BOOKSRUN_KEY"):
+            import warnings
+            warnings.warn(
+                "BOOKSRUN_API_KEY is deprecated. Please use BOOKSRUN_KEY instead.",
+                DeprecationWarning,
+                stacklevel=2
+            )
         self.booksrun_api_key = (
             booksrun_api_key
             if booksrun_api_key is not None
-            else (
-                os.getenv("BOOKSRUN_API_KEY")
-                or os.getenv("BOOKSRUN_KEY")
-                or BOOKSRUN_FALLBACK_KEY
-            )
+            else (key_from_env or BOOKSRUN_FALLBACK_KEY)
         )
+
+        # Standardize on BOOKSRUN_AFFILIATE_ID (deprecated: BOOKSRUN_AFK)
+        affiliate_from_env = os.getenv("BOOKSRUN_AFFILIATE_ID") or os.getenv("BOOKSRUN_AFK")
+        if os.getenv("BOOKSRUN_AFK") and not os.getenv("BOOKSRUN_AFFILIATE_ID"):
+            import warnings
+            warnings.warn(
+                "BOOKSRUN_AFK is deprecated. Please use BOOKSRUN_AFFILIATE_ID instead.",
+                DeprecationWarning,
+                stacklevel=2
+            )
         self.booksrun_affiliate_id = (
             booksrun_affiliate_id
             if booksrun_affiliate_id is not None
-            else (
-                os.getenv("BOOKSRUN_AFFILIATE_ID")
-                or os.getenv("BOOKSRUN_AFK")
-                or BOOKSRUN_FALLBACK_AFFILIATE
-            )
+            else (affiliate_from_env or BOOKSRUN_FALLBACK_AFFILIATE)
         )
         base_url_env = os.getenv("BOOKSRUN_BASE_URL")
         self.booksrun_base_url = booksrun_base_url or base_url_env or BOOKSRUN_DEFAULT_BASE_URL
@@ -119,6 +120,14 @@ class BookService:
     # Public API
 
     def close(self) -> None:
+        """
+        Clean up all resources: HTTP sessions and database connections.
+
+        Note: In the future, we could further centralize HTTP session management
+        by passing self.metadata_session to market.py, lot_market.py, and other
+        modules that currently create their own requests.Session() instances.
+        This would reduce overhead and improve connection reuse.
+        """
         self.metadata_session.close()
         self.series_index.save_if_dirty()
         if self._booksrun_session:
@@ -126,6 +135,11 @@ class BookService:
                 self._booksrun_session.close()
             except Exception:
                 pass
+        # Close database connection
+        try:
+            self.db.close()
+        except Exception:
+            pass
 
     def scan_isbn(
         self,

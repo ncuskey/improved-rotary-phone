@@ -1,10 +1,24 @@
 """Series detection helpers.
 
-This module resolves series metadata for ISBNs using Open Library and Wikidata,
+DEPRECATED: This module resolves series metadata for ISBNs using Open Library and Wikidata,
 falling back to lightweight heuristics when network data is unavailable.
+
+This module is being phased out in favor of the Hardcover GraphQL API integration
+(services/hardcover.py and services/series_resolver.py).
+
+For new code, prefer using the Hardcover-based series detection system.
+This module is retained for backward compatibility only.
 """
 
 from __future__ import annotations
+
+import warnings
+
+warnings.warn(
+    "series_finder module is deprecated. Use services.series_resolver (Hardcover integration) instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 import re
 from typing import Dict, Optional, Tuple

@@ -1,12 +1,33 @@
+"""
+DEPRECATED: Local series index system.
+
+This module provides local JSON-backed series tracking and is being phased out
+in favor of the Hardcover GraphQL API integration (services/hardcover.py and
+services/series_resolver.py).
+
+For new code, prefer using the Hardcover-based series detection system which
+provides more accurate and up-to-date series information.
+
+This module is retained for backward compatibility and migration support only.
+"""
 from __future__ import annotations
 
 import json
 import re
 import threading
 import time
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Tuple
+
+from .author_aliases import canonical_author
+
+warnings.warn(
+    "series_index module is deprecated. Use services.series_resolver (Hardcover integration) instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 try:  # Avoid import errors if series_catalog has side effects
     from .series_catalog import CATALOG_PATH as SERIES_CATALOG_PATH
@@ -14,7 +35,6 @@ except Exception:  # pragma: no cover - fallback when module import fails
     SERIES_CATALOG_PATH = Path.home() / ".isbn_lot_optimizer" / "series_catalog.json"
 
 DEFAULT_INDEX_PATH = Path.home() / ".isbn_lot_optimizer" / "series_index.json"
-_AUTHOR_SPLIT_RE = re.compile(r"\s*(?:&| and | with |,|;|\+| featuring | feat\.? )\s*", re.IGNORECASE)
 _SERIES_SUFFIX_RE = re.compile(r"\b(series|novels|books|collection|box set|set|saga)\b", re.IGNORECASE)
 _VOLUME_PATTERNS = [
     re.compile(r"#\s*(\d{1,3})"),
@@ -334,19 +354,7 @@ class SeriesIndex:
 
 # --------------------------------------------------------------
 # Canonicalisation and parsing helpers
-
-
-def canonical_author(name: Optional[str]) -> Optional[str]:
-    if not name:
-        return None
-    lowered = name.strip().lower()
-    if not lowered:
-        return None
-    parts = _AUTHOR_SPLIT_RE.split(lowered)
-    primary = parts[0] if parts else lowered
-    primary = re.sub(r"[^a-z0-9\s]", " ", primary)
-    primary = re.sub(r"\s+", " ", primary).strip()
-    return primary or None
+# Note: canonical_author is now imported from author_aliases module
 
 
 def canonical_series(name: Optional[str]) -> Optional[str]:

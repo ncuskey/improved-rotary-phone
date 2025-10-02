@@ -31,10 +31,10 @@ except Exception:
 
 from .clipboard_import import ImportOptions, parse_prices_from_clipboard_text, parse_isbns_from_text
 from .models import BookEvaluation, LotSuggestion
-from .service import BookService, COVER_CHOICES
+from .service import BookService
+from .constants import COVER_CHOICES
 from .utils import normalise_isbn, isbn10_to_isbn13, compute_isbn10_check_digit
 from .author_match import cluster_authors
-from .db import list_distinct_author_names
 
 # Optional cover image support is imported lazily in _load_cover_image to avoid a hard dependency
 # on PIL/requests at import time and to prevent static analysis errors when they aren't installed.
@@ -603,9 +603,8 @@ class BookEvaluatorGUI:
 
         # Gather names
         try:
-            # list_distinct_author_names expects a sqlite3 connection
-            conn = self.service.db._get_connection()  # type: ignore[attr-defined]
-            names = list_distinct_author_names(conn)
+            # Use DatabaseManager method directly
+            names = self.service.db.list_distinct_author_names()
         except Exception:
             # Fall back to scanning in-memory books
             try:

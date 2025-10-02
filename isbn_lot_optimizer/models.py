@@ -12,7 +12,6 @@ class BookMetadata:
     authors: Tuple[str, ...] = tuple()
     credited_authors: Tuple[str, ...] = tuple()
     canonical_author: Optional[str] = None
-    series: Optional[str] = None
     published_year: Optional[int] = None
     published_raw: Optional[str] = None
     page_count: Optional[int] = None
@@ -33,6 +32,16 @@ class BookMetadata:
     series_id: Optional[str] = None
     source: str = "unknown"
     raw: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def series(self) -> Optional[str]:
+        """Backward compatibility alias for series_name."""
+        return self.series_name
+
+    @series.setter
+    def series(self, value: Optional[str]) -> None:
+        """Backward compatibility setter for series_name."""
+        self.series_name = value
 
 
 @dataclass

@@ -1,18 +1,34 @@
+"""
+DEPRECATED: OpenLibrary-based series catalog.
+
+This module provides series detection via OpenLibrary API and is being phased out
+in favor of the Hardcover GraphQL API integration (services/hardcover.py and
+services/series_resolver.py).
+
+For new code, prefer using the Hardcover-based series detection system.
+This module is retained for backward compatibility only.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
 import json
-import re
+import warnings
 from typing import Dict, List, Tuple
 
 import requests
 
+from .constants import TITLE_NORMALIZER
+
+warnings.warn(
+    "series_catalog module is deprecated. Use services.series_resolver (Hardcover integration) instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 CATALOG_DIR = Path.home() / ".isbn_lot_optimizer"
 CATALOG_DIR.mkdir(parents=True, exist_ok=True)
 CATALOG_PATH = CATALOG_DIR / "series_catalog.json"
-
-TITLE_NORMALIZER = re.compile(r"[^a-z0-9]+")
 
 
 @dataclass

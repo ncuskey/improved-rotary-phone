@@ -22,19 +22,20 @@
   - Per-cluster, case-by-case approvals in Author Cleanup
   - Optional sample book thumbnails (Pillow/requests-backed), cached under `~/.isbn_lot_optimizer/covers/`
   - Background task progress via `_start_progress`, `_update_progress`, `_finish_progress`
-- `service.py` – Domain logic for book storage, metadata/market refresh, series indexing, BooksRun refresh, and lot recomputation. Used by both GUI and CLI flows.
-- `database.py` – SQLite access layer covering schema creation and query helpers (adds `booksrun_json`, lot justification, etc).
-- `db.py` – Lightweight connection utilities used by maintenance scripts or simple access.
+- `service.py` – Domain logic for book storage, metadata/market refresh, series indexing, BooksRun refresh, and lot recomputation. Used by both GUI and CLI flows. Manages HTTP session reuse and database connection lifecycle.
+- `database.py` – SQLite access layer with connection pooling. DatabaseManager class provides schema creation, query helpers, and persistent connection reuse for improved performance.
 - `models.py` – Data classes representing books, lots, market stats, and metadata payloads.
 - `metadata.py` – Google Books/Open Library lookups plus enrichment helpers.
 - `market.py` – eBay Finding API integration (sold/unsold and pricing) with Browse API fallback for active comps; market snapshot builders.
 - `lot_market.py` – Lot-level market snapshots combining eBay Browse (active medians) and Finding (sold medians) for author/series/theme queries with on-disk caching.
 - `ebay_auth.py` – Client credentials OAuth for eBay Browse API with on-disk bearer token caching.
 - `lots.py` & `lot_scoring.py` – Lot generation strategies and scoring heuristics.
-- `series_index.py`, `series_catalog.py`, `series_finder.py` – Series detection and caching.
+- `series_index.py`, `series_catalog.py`, `series_finder.py` – **DEPRECATED**: Legacy local series detection (JSON-backed). Replaced by Hardcover integration in `services/`. Retained for backward compatibility only.
 - `clipboard_import.py` – Clipboard parsing utilities for quick ISBN entry.
 - `utils.py` – ISBN normalisation and helper routines shared across modules.
-- `author_aliases.py`, `probability.py` – Supporting data and probability scoring logic (condition weights, demand keywords, single-item <$10 bundling rule).
+- `constants.py` – Shared constants and regex patterns (title normalization, author splitting, cover types, BooksRun fallbacks).
+- `author_aliases.py` – Unified author canonicalization with manual alias mapping and regex normalization. Consolidated from multiple implementations.
+- `probability.py` – Probability scoring logic (condition weights, demand keywords, single-item <$10 bundling rule).
 - `booksrun.py` – Internal BooksRun integration helpers (simple SELL endpoint support).
 - `services/hardcover.py` – Hardcover GraphQL client with conservative rate limiting, retries, and parsing helpers.
 - `services/series_resolver.py` – Series schema ensure, caching (7d TTL), Hardcover lookups, peers upsert, and book row updates.

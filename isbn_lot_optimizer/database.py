@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import os
 import logging
@@ -47,6 +48,7 @@ class DatabaseManager:
         self.db_path = Path(db_path)
         if not self.db_path.parent.exists():
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._conn: Optional[sqlite3.Connection] = None
         self._initialise()
 
     def _initialise(self) -> None:
@@ -98,9 +100,26 @@ class DatabaseManager:
             self._ensure_booksrun_column(conn)
 
     def _get_connection(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+        """
+        Get or create a persistent database connection.
+
+        Previously created a new connection each time (inefficient).
+        Now maintains a single connection throughout the manager's lifetime.
+        """
+        if self._conn is None:
+            self._conn = sqlite3.connect(self.db_path)
+            self._conn.row_factory = sqlite3.Row
+        return self._conn
+
+    def close(self) -> None:
+        """Close the database connection if open."""
+        if self._conn is not None:
+            try:
+                self._conn.close()
+            except Exception:
+                pass
+            finally:
+                self._conn = None
 
     def _ensure_lot_justification(self, conn: sqlite3.Connection) -> None:
         cursor = conn.execute("PRAGMA table_info(lots)")
@@ -338,6 +357,62 @@ class DatabaseManager:
             _log("clear_all")
             conn.execute("DELETE FROM books")
             conn.execute("DELETE FROM lots")
+
+    def list_distinct_author_names(self) -> List[str]:
+        """
+        Return a de-duplicated list of author names found in the books table.
+
+        The 'authors' column is stored as a delimited string; this function splits on
+        semicolons and commas, trims whitespace, and returns unique names sorted
+        case-insensitively for stable display.
+        """
+        with self._get_connection() as conn:
+            rows = conn.execute(
+                "SELECT authors FROM books WHERE authors IS NOT NULL AND authors <> ''"
+            ).fetchall()
+
+        names_set: set[str] = set()
+        for row in rows:
+            authors_str = row[0] if isinstance(row, tuple) else row["authors"]
+            s = str(authors_str or "")
+            parts = [p.strip() for p in re.split(r";|,", s) if p and p.strip()]
+            for p in parts:
+                if p:
+                    names_set.add(p)
+
+        return sorted(names_set, key=lambda x: x.lower())
+
+    def update_book_metadata_fields(self, isbn: str, meta: Optional[Dict[str, Any]]) -> None:
+        """
+        Write normalized fields into scalar columns (title/authors/publication_year)
+        and store the full dict in metadata_json. Keep existing values if new ones are None.
+
+        This is the method used by CLI metadata refresh operations.
+        """
+        if not meta:
+            return
+
+        title = meta.get("title")
+        authors = meta.get("authors_str") or (", ".join(meta.get("authors") or []) or None)
+        publication_year = meta.get("publication_year")
+        metadata_json = json.dumps(meta, ensure_ascii=False)
+
+        with self._get_connection() as conn:
+            conn.execute("""
+                UPDATE books SET
+                  title = COALESCE(:title, title),
+                  authors = COALESCE(:authors, authors),
+                  publication_year = COALESCE(:publication_year, publication_year),
+                  metadata_json = :metadata_json,
+                  updated_at = CURRENT_TIMESTAMP
+                WHERE isbn = :isbn
+            """, {
+                "isbn": isbn,
+                "title": title,
+                "authors": authors,
+                "publication_year": publication_year,
+                "metadata_json": metadata_json,
+            })
 
 
 def ensure_metadata_columns(conn: sqlite3.Connection) -> None:

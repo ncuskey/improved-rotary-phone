@@ -1,0 +1,136 @@
+{% if lot %}
+<div class="space-y-4">
+    <!-- Lot Header -->
+    <div class="border-b border-gray-200 pb-4">
+        <h4 class="text-xl font-bold text-gray-900 mb-2">{{ lot.name }}</h4>
+        <div class="flex items-center gap-2">
+            <span class="badge badge-info">{{ lot.strategy }}</span>
+            {% if lot.probability_label %}
+                {% if lot.probability_label == 'Excellent' %}
+                    <span class="badge badge-success">{{ lot.probability_label }}</span>
+                {% elif lot.probability_label == 'Good' %}
+                    <span class="badge badge-info">{{ lot.probability_label }}</span>
+                {% elif lot.probability_label == 'Fair' %}
+                    <span class="badge badge-warning">{{ lot.probability_label }}</span>
+                {% else %}
+                    <span class="badge badge-danger">{{ lot.probability_label }}</span>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Lot Metrics -->
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-gray-50 rounded-lg p-3">
+            <div class="text-sm text-gray-500">Total Books</div>
+            <div class="text-2xl font-bold text-gray-900">
+                {% if lot.book_isbns %}
+                    {{ lot.book_isbns.split(',')|length }}
+                {% else %}
+                    0
+                {% endif %}
+            </div>
+        </div>
+
+        {% if lot.estimated_value %}
+        <div class="bg-green-50 rounded-lg p-3">
+            <div class="text-sm text-gray-500">Estimated Value</div>
+            <div class="text-2xl font-bold text-green-600">
+                ${{ "%.2f"|format(lot.estimated_value) }}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if lot.sell_through is not none %}
+        <div class="bg-blue-50 rounded-lg p-3">
+            <div class="text-sm text-gray-500">Sell-Through Rate</div>
+            <div class="text-2xl font-bold text-blue-600">
+                {{ "%.0f"|format(lot.sell_through * 100) }}%
+            </div>
+        </div>
+        {% endif %}
+
+        {% if lot.probability_score is not none %}
+        <div class="bg-purple-50 rounded-lg p-3">
+            <div class="text-sm text-gray-500">Probability Score</div>
+            <div class="text-2xl font-bold text-purple-600">
+                {{ "%.0f"|format(lot.probability_score * 100) }}%
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Justification -->
+    {% if lot.justification %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm text-yellow-700">{{ lot.justification }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Books in Lot -->
+    <div class="border-t border-gray-200 pt-4">
+        <h5 class="font-semibold text-gray-900 mb-3">Books in this Lot</h5>
+
+        {% if books %}
+        <div class="space-y-2 max-h-96 overflow-y-auto">
+            {% for book in books %}
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                <div class="flex-1 min-w-0">
+                    <div class="font-medium text-gray-900 truncate">
+                        {{ book.metadata.title if book.metadata else 'Unknown Title' }}
+                    </div>
+                    <div class="text-sm text-gray-500 truncate">
+                        {{ book.metadata.authors|join(', ') if book.metadata and book.metadata.authors else 'Unknown Author' }}
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        ISBN: {{ book.isbn }}
+                    </div>
+                </div>
+                <div class="ml-4 text-right flex-shrink-0">
+                    {% if book.estimated_price %}
+                    <div class="text-sm font-medium text-green-600">
+                        ${{ "%.2f"|format(book.estimated_price) }}
+                    </div>
+                    {% endif %}
+                    <div class="text-xs text-gray-500">
+                        {{ book.condition or 'N/A' }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-500">No books in this lot</p>
+        {% endif %}
+    </div>
+
+    <!-- Actions -->
+    <div class="border-t border-gray-200 pt-4 flex gap-2">
+        <button class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            Create eBay Listing
+        </button>
+        <button class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
+            Export Details
+        </button>
+    </div>
+</div>
+
+{% elif error %}
+<div class="p-4 text-center">
+    <p class="text-sm text-red-600">{{ error }}</p>
+</div>
+
+{% else %}
+<div class="p-4 text-center">
+    <p class="text-sm text-gray-500">Loading lot details...</p>
+</div>
+{% endif %}

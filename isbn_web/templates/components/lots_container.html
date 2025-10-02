@@ -1,0 +1,129 @@
+<div id="lots-container" class="p-6">
+    {% if lots %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {% for lot in lots %}
+        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow cursor-pointer"
+             hx-get="/api/lots/{{ lot.id }}"
+             hx-target="#lot-modal-content"
+             hx-swap="innerHTML"
+             onclick="document.getElementById('lot-modal').classList.remove('hidden')">
+
+            <!-- Lot Name -->
+            <h3 class="font-semibold text-gray-900 mb-2 truncate" title="{{ lot.name }}">
+                {{ lot.name }}
+            </h3>
+
+            <!-- Strategy Badge -->
+            <div class="mb-3">
+                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                    {{ lot.strategy }}
+                </span>
+            </div>
+
+            <!-- Metrics -->
+            <div class="space-y-2 text-sm">
+                <!-- Books Count -->
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Books:</span>
+                    <span class="font-medium text-gray-900">
+                        {% if lot.book_isbns %}
+                            {% if lot.book_isbns is string %}
+                                {{ lot.book_isbns.split(',')|length }}
+                            {% else %}
+                                {{ lot.book_isbns|length }}
+                            {% endif %}
+                        {% else %}
+                            0
+                        {% endif %}
+                    </span>
+                </div>
+
+                <!-- Estimated Value -->
+                {% if lot.estimated_value %}
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Value:</span>
+                    <span class="font-semibold text-green-600">
+                        ${{ "%.2f"|format(lot.estimated_value) }}
+                    </span>
+                </div>
+                {% endif %}
+
+                <!-- Probability -->
+                {% if lot.probability_label %}
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Probability:</span>
+                    <div>
+                        {% if lot.probability_label == 'Excellent' %}
+                            <span class="badge badge-success">{{ lot.probability_label }}</span>
+                        {% elif lot.probability_label == 'Good' %}
+                            <span class="badge badge-info">{{ lot.probability_label }}</span>
+                        {% elif lot.probability_label == 'Fair' %}
+                            <span class="badge badge-warning">{{ lot.probability_label }}</span>
+                        {% else %}
+                            <span class="badge badge-danger">{{ lot.probability_label }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Sell Through -->
+                {% if lot.sell_through is not none %}
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Sell-Through:</span>
+                    <span class="font-medium text-gray-900">{{ "%.0f"|format(lot.sell_through * 100) }}%</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- View Details Button -->
+            <div class="mt-4 pt-3 border-t border-gray-200">
+                <button class="w-full text-center text-sm text-blue-600 hover:text-blue-800 font-medium">
+                    View Details →
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination/Summary -->
+    <div class="mt-6 text-center text-sm text-gray-600">
+        Showing {{ lots|length }} lot{% if lots|length != 1 %}s{% endif %}
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No lots generated yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Scan some books to generate lot recommendations</p>
+        <div class="mt-6">
+            <button hx-post="/api/lots/regenerate"
+                    hx-target="#lots-container"
+                    hx-swap="outerHTML"
+                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Generate Lots
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Lot Detail Modal -->
+<div id="lot-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Lot Details</h3>
+            <button onclick="document.getElementById('lot-modal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div id="lot-modal-content">
+            <!-- Content loaded via HTMX -->
+        </div>
+    </div>
+</div>

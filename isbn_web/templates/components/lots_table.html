@@ -1,0 +1,96 @@
+<!-- Lots table component - must be wrapped in flex-1 overflow-auto container -->
+<div id="lots-table">
+    {% if lots %}
+    <table class="w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50 sticky top-0 z-10">
+            <tr>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Strategy</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Books</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Est. Value</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Probability</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Sell-Through</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for lot in lots %}
+            <tr class="table-row hover:bg-gray-50 {% if selected_lot_id and lot.id == selected_lot_id %}table-row-selected{% endif %}"
+                hx-get="/api/lots/{{ lot.id }}"
+                hx-target="#lot-detail"
+                hx-swap="innerHTML">
+                <td class="px-4 py-3 text-sm text-gray-900">
+                    <div class="font-medium truncate max-w-xs" title="{{ lot.name }}">{{ lot.name }}</div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                        {{ lot.strategy }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                    {% if lot.book_isbns %}
+                        {% if lot.book_isbns is string %}
+                            {{ lot.book_isbns.split(',')|length }}
+                        {% else %}
+                            {{ lot.book_isbns|length }}
+                        {% endif %}
+                    {% else %}
+                        0
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {% if lot.estimated_value %}
+                        <span class="font-semibold text-green-600">${{ "%.2f"|format(lot.estimated_value) }}</span>
+                    {% else %}
+                        <span class="text-gray-400">—</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                    {% if lot.probability_label %}
+                        {% if lot.probability_label == 'Excellent' %}
+                            <span class="badge badge-success">{{ lot.probability_label }}</span>
+                        {% elif lot.probability_label == 'Good' %}
+                            <span class="badge badge-info">{{ lot.probability_label }}</span>
+                        {% elif lot.probability_label == 'Fair' %}
+                            <span class="badge badge-warning">{{ lot.probability_label }}</span>
+                        {% else %}
+                            <span class="badge badge-danger">{{ lot.probability_label }}</span>
+                        {% endif %}
+                        {% if lot.probability_score %}
+                            <span class="text-xs text-gray-500 ml-1">{{ "%.0f"|format(lot.probability_score * 100) }}%</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-gray-400">—</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    {% if lot.sell_through is not none %}
+                        {{ "%.0f"|format(lot.sell_through * 100) }}%
+                    {% else %}
+                        <span class="text-gray-400">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% else %}
+    <div class="flex items-center justify-center p-8">
+        <div class="text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No lots found</h3>
+            <p class="mt-1 text-sm text-gray-500">Scan some books to generate lot recommendations.</p>
+            <div class="mt-4">
+                <button hx-post="/api/lots/regenerate"
+                        hx-target="#lots-table"
+                        hx-swap="outerHTML"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Generate Lots
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>

@@ -1,0 +1,394 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Scanner Input Section -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6" x-data="{ condition: 'Good', edition: '' }">
+    <form hx-post="/api/books/scan"
+          hx-target="#book-table"
+          hx-swap="outerHTML"
+          hx-on::after-request="$el.reset(); $refs.isbnInput.focus()"
+          class="flex flex-wrap items-end gap-4">
+
+        <!-- ISBN Input -->
+        <div class="flex-1 min-w-[200px]">
+            <label for="isbn" class="block text-sm font-medium text-gray-700 mb-1">ISBN</label>
+            <input type="text"
+                   name="isbn"
+                   id="isbn"
+                   x-ref="isbnInput"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="Scan or enter ISBN"
+                   required
+                   autofocus>
+        </div>
+
+        <!-- Condition Select -->
+        <div class="w-40">
+            <label for="condition" class="block text-sm font-medium text-gray-700 mb-1">Condition</label>
+            <select name="condition"
+                    id="condition"
+                    x-model="condition"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <option>New</option>
+                <option>Like New</option>
+                <option>Very Good</option>
+                <option selected>Good</option>
+                <option>Acceptable</option>
+                <option>Poor</option>
+            </select>
+        </div>
+
+        <!-- Edition Input -->
+        <div class="flex-1 min-w-[200px]">
+            <label for="edition" class="block text-sm font-medium text-gray-700 mb-1">Edition Notes</label>
+            <input type="text"
+                   name="edition"
+                   id="edition"
+                   x-model="edition"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                   placeholder="Optional">
+        </div>
+
+        <!-- Scan Button -->
+        <div>
+            <button type="submit"
+                    class="px-6 py-2 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <span class="htmx-indicator">
+                    <svg class="inline w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </span>
+                Scan ISBN
+            </button>
+        </div>
+
+        <!-- Additional Actions -->
+        <div class="flex gap-2">
+            <button type="button"
+                    onclick="document.getElementById('import-modal').classList.remove('hidden')"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                Import CSV
+            </button>
+            <button type="button"
+                    hx-post="/api/actions/refresh-metadata"
+                    hx-vals='{"limit": 100}'
+                    hx-swap="none"
+                    class="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                Refresh Metadata
+            </button>
+        </div>
+    </form>
+
+    <!-- Search Bar -->
+    <div class="mt-4 pt-4 border-t border-gray-200">
+        <form hx-get="/api/books"
+              hx-target="#book-table"
+              hx-swap="outerHTML"
+              hx-trigger="submit, keyup[target.value.length > 2] delay:500ms from:#search"
+              class="flex gap-4">
+            <div class="flex-1">
+                <input type="text"
+                       name="search"
+                       id="search"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="Search by ISBN, title, or author...">
+            </div>
+            <button type="submit"
+                    class="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-md shadow-sm hover:bg-gray-200">
+                Search
+            </button>
+            <button type="button"
+                    hx-get="/api/books"
+                    hx-target="#book-table"
+                    hx-swap="outerHTML"
+                    onclick="document.getElementById('search').value=''"
+                    class="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-md shadow-sm hover:bg-gray-200">
+                Clear
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Tabbed Interface -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6" x-data="{ activeTab: 'books' }">
+    <!-- Tab Headers -->
+    <div class="border-b border-gray-200">
+        <nav class="flex -mb-px" aria-label="Tabs">
+            <button @click="activeTab = 'books'"
+                    :class="activeTab === 'books' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors">
+                <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Books
+            </button>
+            <button @click="activeTab = 'lots'"
+                    :class="activeTab === 'lots' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                    class="w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm transition-colors">
+                <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                Lots
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div style="height: calc(100vh - 420px); min-height: 500px;">
+        <!-- Books Tab -->
+        <div x-show="activeTab === 'books'" class="h-full">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 h-full">
+                <!-- Books Table (2/3 width) -->
+                <div class="lg:col-span-2 flex flex-col">
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full">
+                        <div class="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+                            <h3 class="text-sm font-semibold text-gray-900">Scanned Books</h3>
+                        </div>
+                        <!-- Scrollable table container -->
+                        <div class="flex-1 overflow-auto" id="book-table-container"
+                             hx-get="/api/books"
+                             hx-trigger="load"
+                             hx-target="#book-table"
+                             hx-swap="outerHTML">
+                            <div id="book-table">
+                                <!-- Book table will be loaded here -->
+                                <div class="p-8 text-center text-gray-500">
+                                    <svg class="inline w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <p class="mt-2">Loading books...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Book count footer - outside scrollable area -->
+                        <div class="px-4 py-2 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+                            <div class="text-xs text-gray-600">
+                                <span id="book-count">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Book Details Panel (1/3 width) -->
+                <div class="lg:col-span-1 flex flex-col">
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full">
+                        <div class="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+                            <h3 class="text-sm font-semibold text-gray-900">Book Details</h3>
+                        </div>
+                        <div id="book-detail" class="p-4 overflow-auto flex-1">
+                            <p class="text-sm text-gray-500 text-center">Select a book to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lots Tab -->
+        <div x-show="activeTab === 'lots'" class="h-full" x-cloak>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 h-full">
+                <!-- Lots Table (2/3 width) -->
+                <div class="lg:col-span-2 flex flex-col">
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full">
+                        <div class="px-4 py-3 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
+                            <h3 class="text-sm font-semibold text-gray-900">Suggested Lots</h3>
+                            <div class="flex items-center gap-3">
+                                <label class="flex items-center text-xs">
+                                    <input type="checkbox" checked class="mr-1 rounded">
+                                    <span>Author</span>
+                                </label>
+                                <label class="flex items-center text-xs">
+                                    <input type="checkbox" checked class="mr-1 rounded">
+                                    <span>Series</span>
+                                </label>
+                                <label class="flex items-center text-xs">
+                                    <input type="checkbox" class="mr-1 rounded">
+                                    <span>Genre</span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Scrollable lots container -->
+                        <div class="flex-1 overflow-auto" id="lots-table-container"
+                             hx-get="/api/lots"
+                             hx-trigger="load"
+                             hx-target="#lots-table"
+                             hx-swap="outerHTML">
+                            <div id="lots-table">
+                                <!-- Lots table will be loaded here -->
+                                <div class="p-8 text-center text-gray-500">
+                                    <svg class="inline w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <p class="mt-2">Loading lots...</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Lot count footer -->
+                        <div class="px-4 py-2 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+                            <div class="text-xs text-gray-600">
+                                <span id="lot-count">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lot Details Panel (1/3 width) -->
+                <div class="lg:col-span-1 flex flex-col">
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full">
+                        <div class="px-4 py-3 border-b border-gray-200 flex-shrink-0">
+                            <h3 class="text-sm font-semibold text-gray-900">Lot Details</h3>
+                        </div>
+                        <div id="lot-detail" class="p-4 overflow-auto flex-1">
+                            <p class="text-sm text-gray-500 text-center">Select a lot to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSV Import Modal -->
+<div id="import-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Import Books from CSV</h3>
+            <button onclick="document.getElementById('import-modal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <form id="import-form" enctype="multipart/form-data" x-data="{ uploading: false }">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    CSV File
+                </label>
+                <input type="file"
+                       name="file"
+                       accept=".csv"
+                       required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                <p class="mt-1 text-xs text-gray-500">CSV should have an 'isbn' column</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Default Condition
+                </label>
+                <select name="condition"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    <option>New</option>
+                    <option>Like New</option>
+                    <option>Very Good</option>
+                    <option selected>Good</option>
+                    <option>Acceptable</option>
+                    <option>Poor</option>
+                </select>
+            </div>
+
+            <div id="import-progress" class="hidden mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span id="import-status">Importing...</span>
+                    <span id="import-percent">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="import-progress-bar" class="bg-blue-600 h-2 rounded-full transition-all" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button type="button"
+                        @click="uploadCSV"
+                        :disabled="uploading"
+                        class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
+                    <span x-show="!uploading">Import</span>
+                    <span x-show="uploading">Importing...</span>
+                </button>
+                <button type="button"
+                        onclick="document.getElementById('import-modal').classList.add('hidden')"
+                        class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Update lot count when lots are loaded
+document.body.addEventListener('updateLotCount', function(evt) {
+    const lotCountElement = document.getElementById('lot-count');
+    if (lotCountElement) {
+        const count = evt.detail.count;
+        lotCountElement.textContent = `${count} lot${count !== 1 ? 's' : ''}`;
+    }
+});
+
+// CSV Import with Progress Tracking
+async function uploadCSV() {
+    const form = document.getElementById('import-form');
+    const formData = new FormData(form);
+    const progressDiv = document.getElementById('import-progress');
+    const progressBar = document.getElementById('import-progress-bar');
+    const statusText = document.getElementById('import-status');
+    const percentText = document.getElementById('import-percent');
+
+    try {
+        // Show progress UI
+        progressDiv.classList.remove('hidden');
+
+        // Start import
+        const response = await fetch('/api/actions/import-csv', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+        const taskId = data.task_id;
+
+        // Subscribe to SSE progress updates
+        const eventSource = new EventSource(`/api/events/${taskId}`);
+
+        eventSource.addEventListener('progress', (e) => {
+            const progress = JSON.parse(e.data);
+
+            progressBar.style.width = `${progress.percent}%`;
+            percentText.textContent = `${progress.percent}%`;
+            statusText.textContent = progress.label || 'Importing...';
+
+            if (progress.status === 'complete') {
+                eventSource.close();
+                setTimeout(() => {
+                    document.getElementById('import-modal').classList.add('hidden');
+                    progressDiv.classList.add('hidden');
+                    form.reset();
+                    // Refresh book table
+                    htmx.ajax('GET', '/api/books', {target: '#book-table', swap: 'outerHTML'});
+                    showToast('Import complete!', 'success');
+                }, 1000);
+            }
+        });
+
+        eventSource.addEventListener('ping', (e) => {
+            // Keep connection alive
+        });
+
+        eventSource.onerror = () => {
+            eventSource.close();
+            showToast('Import failed or timed out', 'error');
+        };
+
+    } catch (error) {
+        showToast('Failed to start import: ' + error.message, 'error');
+        progressDiv.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}

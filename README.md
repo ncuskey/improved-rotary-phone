@@ -99,6 +99,26 @@ The web interface features a stunning 3D interactive carousel for viewing lot de
 - **Tailwind CSS**: Modern, utility-first styling
 - **CSS 3D Transforms**: Smooth 3D animations and perspective
 
+### Troubleshooting
+
+#### "Lot not found" Error
+If you see "Lot not found" when clicking on lots:
+- Ensure the lots table template uses `{{ lot.id }}` instead of `{{ loop.index0 }}`
+- Check that the route `/api/lots/{lot_id}` is working correctly
+
+#### Carousel Not Loading
+If the 3D carousel doesn't appear:
+- Verify Alpine.js is loaded: Check browser console for `window.Alpine`
+- Ensure the `carouselData()` function exists in `base.html`
+- Check that `window.lotBooksData` is populated in the page source
+- Restart the server to pick up template changes
+
+#### Deployment Synchronization
+The `isbn-web` shortcut uses a separate directory (`/Users/nickcuskey/ISBN`):
+- Copy updated files manually from development to deployment directory
+- Key files to sync: `base.html`, `lot_details.html`, `lots_table.html`, `lots.py`, `service.py`
+- Restart the server after synchronization
+
 ## Command Line Usage (isbn_lot_optimizer)
 The toolkit also supports headless workflows. Representative examples:
 

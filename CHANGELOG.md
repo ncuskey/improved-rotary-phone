@@ -38,8 +38,16 @@ All notable changes to this project will be documented in this file.
 - Resolved Alpine.js syntax errors caused by large inline JSON objects
 - Fixed template data type issues with lot justification and book ISBNs
 - Corrected server-side JSON serialization for complex dataclass objects
+- **Fixed "Lot not found" error**: Corrected lots table template to use actual lot IDs instead of array indices
+- Fixed 3D carousel navigation links in lots table
 
 ### Changed
 - Updated README.md to document web interface and 3D carousel features
 - Enhanced lot detail templates with improved styling and functionality
 - Refactored Alpine.js component structure for better maintainability
+
+### Deployment Notes
+- **isbn-web Shortcut**: The `isbn-web` command uses a separate directory (`/Users/nickcuskey/ISBN`) 
+  - Changes must be synchronized manually between development and deployment directories
+  - Updated files: `base.html`, `lot_details.html`, `lot_detail.html`, `lots.py`, `service.py`, `lots_table.html`
+  - Added new components: `carousel.html`, `lot_edit_form.html`

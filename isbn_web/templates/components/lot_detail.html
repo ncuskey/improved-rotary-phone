@@ -25,7 +25,7 @@
             <div class="text-sm text-gray-500">Total Books</div>
             <div class="text-2xl font-bold text-gray-900">
                 {% if lot.book_isbns %}
-                    {{ lot.book_isbns.split(',')|length }}
+                    {{ lot.book_isbns|length }}
                 {% else %}
                     0
                 {% endif %}
@@ -70,7 +70,11 @@
                 </svg>
             </div>
             <div class="ml-3">
-                <p class="text-sm text-yellow-700">{{ lot.justification }}</p>
+                <div class="text-sm text-yellow-700">
+                    {% for line in lot.justification %}
+                        <p>{{ line }}</p>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
@@ -115,7 +119,11 @@
 
     <!-- Actions -->
     <div class="border-t border-gray-200 pt-4 flex gap-2">
-        <button class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <a href="/api/lots/{{ lot.id }}/details" 
+           class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center transition-colors">
+            View Full Details
+        </a>
+        <button class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
             Create eBay Listing
         </button>
         <button class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">

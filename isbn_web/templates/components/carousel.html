@@ -1,0 +1,125 @@
+<!-- Carousel partial for HTMX updates -->
+<div id="carousel-container" 
+     x-data="{
+       currentIndex: 0,
+       isHovering: false,
+       books: {{ books | tojson }},
+       navigate(index) { this.currentIndex = index; },
+       nextBook() { if (this.currentIndex < this.books.length - 1) this.currentIndex++; },
+       prevBook() { if (this.currentIndex > 0) this.currentIndex--; },
+       getBookStyle(index) {
+         const diff = index - this.currentIndex;
+         const absDiff = Math.abs(diff);
+         
+         // Calculate transforms
+         const angle = diff * 15;           // degrees rotation
+         const distance = absDiff * 120;    // horizontal spacing
+         const depth = absDiff * 100;       // z-axis depth
+         const verticalOffset = absDiff * 20; // upward arc
+         
+         const scale = Math.max(0.4, 1 - absDiff * 0.2);
+         const opacity = Math.max(0.2, 1 - absDiff * 0.3);
+         const blur = absDiff > 0 ? absDiff * 2 : 0;
+         
+         return {
+           transform: `translateX(${diff * distance}px) translateZ(${-depth}px) translateY(${verticalOffset}px) rotateY(${-angle}deg) scale(${scale})`,
+           opacity: opacity,
+           filter: `blur(${blur}px)`,
+           zIndex: 100 - absDiff
+         };
+       },
+       get currentBook() { return this.books[this.currentIndex]; }
+     }"
+     @mouseenter="isHovering = true"
+     @mouseleave="isHovering = false"
+     @wheel.prevent="
+       if (isHovering) {
+         const delta = $event.deltaY;
+         if (delta > 10) nextBook();
+         else if (delta < -10) prevBook();
+       }
+     ">
+  
+  <!-- Hover indicator -->
+  <div x-show="isHovering && books.length > 1" 
+       x-transition
+       class="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
+    Scroll to browse books
+  </div>
+  
+  <!-- 3D perspective container -->
+  <div class="relative h-full" style="perspective: 1000px;">
+    <div class="absolute inset-0 flex items-center justify-center">
+      
+      <!-- Books carousel -->
+      <template x-for="(book, index) in books" :key="book.isbn">
+        <div 
+          @click="navigate(index)"
+          :style="getBookStyle(index)"
+          class="absolute cursor-pointer transition-all duration-500 ease-in-out">
+          
+          <!-- Book card -->
+          <div class="bg-white rounded-lg shadow-2xl p-6 w-64 h-80 border-2 border-gray-200 hover:border-blue-400 flex flex-col">
+            
+            <!-- Book cover -->
+            <div class="bg-gradient-to-br from-blue-500 to-purple-600 h-40 rounded-md mb-4 flex items-center justify-center text-white font-bold text-center p-4 relative overflow-hidden">
+              <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-700/20"></div>
+              <div class="relative z-10">
+                <div class="text-lg font-bold leading-tight" x-text="book.metadata?.title || 'Unknown Title'"></div>
+                <div class="text-sm mt-2 opacity-90" x-text="book.metadata?.authors?.[0] || 'Unknown Author'"></div>
+              </div>
+            </div>
+            
+            <!-- Book details -->
+            <div class="flex-1 flex flex-col">
+              <h3 class="font-bold text-lg mb-1 truncate" x-text="book.metadata?.title || 'Unknown Title'"></h3>
+              <p class="text-sm text-gray-600 mb-2 truncate" x-text="book.metadata?.authors?.[0] || 'Unknown Author'"></p>
+              <p class="text-xs text-gray-500 mb-3 font-mono" x-text="book.isbn"></p>
+              
+              <div class="mt-auto">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-600">Condition:</span>
+                  <span class="font-semibold" x-text="book.condition || 'N/A'"></span>
+                </div>
+                <div class="flex items-center justify-between mt-2">
+                  <span class="text-gray-600">Price:</span>
+                  <span class="font-bold text-green-600 text-lg" x-text="'$' + (book.estimated_price?.toFixed(2) || '0.00')"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      
+      <!-- Navigation arrows -->
+      <button @click="prevBook()" 
+              :disabled="currentIndex === 0"
+              :class="currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-70 hover:opacity-100'"
+              class="absolute left-4 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900 p-3 rounded-full shadow-lg transition-all duration-200">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      
+      <button @click="nextBook()" 
+              :disabled="currentIndex === books.length - 1"
+              :class="currentIndex === books.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-70 hover:opacity-100'"
+              class="absolute right-4 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900 p-3 rounded-full shadow-lg transition-all duration-200">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+      
+    </div>
+    
+    <!-- Progress dots -->
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex space-x-2" x-show="books.length > 1">
+      <template x-for="(book, index) in books" :key="'dot-' + index">
+        <button @click="navigate(index)"
+                :class="index === currentIndex ? 'bg-blue-600' : 'bg-white/60 hover:bg-white/80'"
+                class="w-3 h-3 rounded-full transition-all duration-200 shadow-lg"></button>
+      </template>
+    </div>
+  </div>
+</div>
+

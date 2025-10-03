@@ -701,6 +701,8 @@ class BookService:
                 sell_through=row["sell_through"],
                 justification=justification_lines,
             )
+            # Add the database ID to the lot object
+            lot.id = row["id"]
             try:
                 books_for_lot = self.get_books_for_lot(lot)
             except Exception:

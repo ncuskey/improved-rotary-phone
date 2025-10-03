@@ -101,3 +101,200 @@ async def get_lot_detail(
         "components/lot_detail.html",
         {"request": request, "lot": lot, "books": books},
     )
+
+
+@router.get("/{lot_id}/details", response_class=HTMLResponse)
+async def get_lot_details_page(
+    request: Request,
+    lot_id: int,
+    service: BookService = Depends(get_book_service),
+):
+    """
+    Get the full lot details page with 3D carousel.
+
+    Returns the complete lot details page.
+    """
+    lots = service.list_lots()
+
+    # Find the lot by ID
+    lot = None
+    for l in lots:
+        if l.id == lot_id:
+            lot = l
+            break
+
+    if not lot:
+        return templates.TemplateResponse(
+            "lot_details.html",
+            {"request": request, "lot": None, "books": [], "error": "Lot not found"},
+        )
+
+    # Get books in this lot
+    books = service.get_books_for_lot(lot)
+
+    # Convert books to serializable format for Alpine.js
+    books_data = []
+    for book in books:
+        book_data = {
+            "isbn": book.isbn,
+            "condition": book.condition,
+            "estimated_price": book.estimated_price,
+            "metadata": {
+                "title": book.metadata.title,
+                "authors": list(book.metadata.authors) if book.metadata.authors else [],
+                "published_year": book.metadata.published_year,
+                "series_name": book.metadata.series_name,
+            }
+        }
+        books_data.append(book_data)
+
+    # Calculate lot statistics
+    total_books = len(books)
+    total_value = sum(b.estimated_price or 0 for b in books)
+    average_price = total_value / total_books if total_books > 0 else 0
+    estimated_profit = total_value * 0.8  # Assume 20% fees
+    profit_margin = (estimated_profit / total_value * 100) if total_value > 0 else 0
+
+    lot_stats = {
+        "total_books": total_books,
+        "total_value": total_value,
+        "average_price": average_price,
+        "estimated_profit": estimated_profit,
+        "profit_margin": profit_margin,
+    }
+
+    return templates.TemplateResponse(
+        "lot_details.html",
+        {"request": request, "lot": lot, "books": books, "books_data": books_data, "stats": lot_stats},
+    )
+
+
+@router.get("/{lot_id}/edit", response_class=HTMLResponse)
+async def get_lot_edit_form(
+    request: Request,
+    lot_id: int,
+    service: BookService = Depends(get_book_service),
+):
+    """
+    Get the lot edit form.
+
+    Returns the edit form HTML partial.
+    """
+    lots = service.list_lots()
+    lot = None
+    for l in lots:
+        if l.id == lot_id:
+            lot = l
+            break
+
+    if not lot:
+        return templates.TemplateResponse(
+            "components/lot_edit_form.html",
+            {"request": request, "lot": None, "error": "Lot not found"},
+        )
+
+    return templates.TemplateResponse(
+        "components/lot_edit_form.html",
+        {"request": request, "lot": lot},
+    )
+
+
+@router.put("/{lot_id}", response_class=HTMLResponse)
+async def update_lot(
+    request: Request,
+    lot_id: int,
+    service: BookService = Depends(get_book_service),
+):
+    """
+    Update a lot's details.
+
+    Returns the updated lot details page.
+    """
+    # Get form data from request
+    form_data = await request.form()
+    
+    lots = service.list_lots()
+    lot = None
+    for l in lots:
+        if l.id == lot_id:
+            lot = l
+            break
+
+    if not lot:
+        return templates.TemplateResponse(
+            "lot_details.html",
+            {"request": request, "lot": None, "books": [], "error": "Lot not found"},
+        )
+
+    # Update lot properties (in a real implementation, you'd update the database)
+    lot.name = form_data.get("name", lot.name)
+    lot.strategy = form_data.get("strategy", lot.strategy)
+    lot.estimated_value = float(form_data.get("estimated_value", lot.estimated_value or 0))
+    lot.probability_score = float(form_data.get("probability_score", lot.probability_score or 0))
+    lot.probability_label = form_data.get("probability_label", lot.probability_label)
+    lot.sell_through = float(form_data.get("sell_through", lot.sell_through or 0)) if form_data.get("sell_through") else lot.sell_through
+    
+    justification_text = form_data.get("justification", "")
+    if justification_text:
+        lot.justification = [line.strip() for line in justification_text.split('\n') if line.strip()]
+
+    # Get books in this lot
+    books = service.get_books_for_lot(lot)
+
+    # Calculate lot statistics
+    total_books = len(books)
+    total_value = sum(b.estimated_price or 0 for b in books)
+    average_price = total_value / total_books if total_books > 0 else 0
+    estimated_profit = total_value * 0.8  # Assume 20% fees
+    profit_margin = (estimated_profit / total_value * 100) if total_value > 0 else 0
+
+    lot_stats = {
+        "total_books": total_books,
+        "total_value": total_value,
+        "average_price": average_price,
+        "estimated_profit": estimated_profit,
+        "profit_margin": profit_margin,
+    }
+
+    return templates.TemplateResponse(
+        "lot_details.html",
+        {"request": request, "lot": lot, "books": books, "stats": lot_stats},
+    )
+
+
+@router.delete("/{lot_id}/book/{book_id}", response_class=HTMLResponse)
+async def remove_book_from_lot(
+    request: Request,
+    lot_id: int,
+    book_id: str,
+    service: BookService = Depends(get_book_service),
+):
+    """
+    Remove a book from a lot.
+
+    Returns the updated carousel HTML partial.
+    """
+    # This would need to be implemented in the service
+    # For now, return a placeholder response
+    lots = service.list_lots()
+    lot = None
+    for l in lots:
+        if l.id == lot_id:
+            lot = l
+            break
+
+    if not lot:
+        return templates.TemplateResponse(
+            "components/carousel.html",
+            {"request": request, "books": [], "error": "Lot not found"},
+        )
+
+    # Get updated books list (in a real implementation, you'd remove the book)
+    books = service.get_books_for_lot(lot)
+    # Filter out the removed book
+    books = [b for b in books if b.isbn != book_id]
+
+    return templates.TemplateResponse(
+        "components/carousel.html",
+        {"request": request, "books": books},
+    )

@@ -1,11 +1,14 @@
 # Improved Rotary Phone (ISBN Lot Optimizer)
 
-Improved Rotary Phone—formerly LotHelper—is a desktop and CLI toolkit for
+Improved Rotary Phone—formerly LotHelper—is a desktop, CLI, and web toolkit for
 cataloguing second-hand books, estimating resale value, and assembling
-profitable eBay lots. The Tkinter GUI drives a background service that persists
-scans, retrieves market intelligence, and updates lot recommendations in real time.
+profitable eBay lots. The application includes a Tkinter GUI, FastAPI web interface,
+and background service that persists scans, retrieves market intelligence, and updates
+lot recommendations in real time.
 
 ## Highlights
+- **Multi-Interface Support**: Tkinter desktop GUI, FastAPI web interface, and CLI tools
+- **3D Interactive Carousel**: Beautiful lot details page with 3D book carousel featuring real book covers
 - Barcode-friendly GUI for scanning ISBNs with condition and edition tracking.
 - Background refresh jobs with unified progress feedback for cover prefetching,
   metadata/market updates, and BooksRun offer refresh.
@@ -43,7 +46,9 @@ scans, retrieves market intelligence, and updates lot recommendations in real ti
    export HTTPS_PROXY=http://proxy:8080
    ```
 
-3. Launch the GUI:
+3. Launch the application:
+   
+   **Desktop GUI:**
    ```bash
    python -m isbn_lot_optimizer
    ```
@@ -52,6 +57,47 @@ scans, retrieves market intelligence, and updates lot recommendations in real ti
      and updates the status bar as background jobs complete.
    - If `EBAY_CLIENT_ID/EBAY_CLIENT_SECRET` are missing, Browse API features are disabled (a warning is printed).
    - Finding API sold/unsold stats are used when `EBAY_APP_ID` is present.
+   
+   **Web Interface:**
+   ```bash
+   uvicorn isbn_web.main:app --reload
+   ```
+   - Navigate to `http://localhost:8000` for the web dashboard
+   - Features a modern, responsive interface with:
+     - Book scanning and catalog management
+     - Interactive lot generation and optimization
+     - **3D Book Carousel**: Beautiful lot details page with real book covers
+     - HTMX-powered dynamic updates without page refreshes
+     - Alpine.js for interactive components
+
+## 3D Book Carousel
+
+The web interface features a stunning 3D interactive carousel for viewing lot details:
+
+### Features
+- **Real Book Covers**: Displays actual book cover thumbnails from Open Library
+- **3D Perspective**: Books arranged in a 3D arc with perspective transforms
+- **Interactive Navigation**: 
+  - Mouse wheel scrolling when hovering
+  - Click on any book to navigate
+  - Arrow buttons and progress dots
+  - Smooth transitions and animations
+- **Smart Fallbacks**: Graceful degradation to gradient covers if thumbnails fail to load
+- **Color-coded Conditions**: Visual condition badges with appropriate colors
+- **Responsive Design**: Works on desktop and mobile devices
+
+### Usage
+1. Start the web server: `uvicorn isbn_web.main:app --reload`
+2. Navigate to the lots page and click on any lot
+3. Click "View Full Details" to see the 3D carousel
+4. Use mouse wheel, click navigation, or arrow buttons to browse books
+
+### Technical Stack
+- **FastAPI**: Backend API with Jinja2 templates
+- **Alpine.js**: Reactive UI components and state management
+- **HTMX**: Dynamic updates without page refreshes
+- **Tailwind CSS**: Modern, utility-first styling
+- **CSS 3D Transforms**: Smooth 3D animations and perspective
 
 ## Command Line Usage (isbn_lot_optimizer)
 The toolkit also supports headless workflows. Representative examples:
@@ -133,10 +179,12 @@ The command reads an input CSV with an `isbn` column and writes either CSV or Pa
 - Lot market snapshot cache: `~/.isbn_lot_optimizer/lot_cache.json`
 
 ## Development Notes
-- Source lives in `isbn_lot_optimizer/` and `lothelper/`; see `CODEMAP.md` for an overview.
+- Source lives in `isbn_lot_optimizer/`, `lothelper/`, and `isbn_web/`; see `CODEMAP.md` for an overview.
+- **Web Interface**: FastAPI application in `isbn_web/` with modern frontend stack
 - Quick syntax check:
   ```bash
   python -m py_compile isbn_lot_optimizer/*.py
+  python -m py_compile isbn_web/*.py
   ```
 - Tests (pytest):
   ```bash
@@ -145,6 +193,7 @@ The command reads an input CSV with an `isbn` column and writes either CSV or Pa
 - The GUI uses background threads for long-running operations. Any new service
   hooks should report progress through `_start_progress`, `_update_progress`,
   and `_finish_progress` to keep the status bar accurate.
+- **Web Development**: The web interface uses HTMX for dynamic updates and Alpine.js for reactive components.
 
 ## Licensing
 This repository currently ships without an explicit licence. Add one before

@@ -1,0 +1,34 @@
+# Netlify Configuration for ISBN Lot Optimizer
+#
+# ⚠️ IMPORTANT: This FastAPI Python app CANNOT be deployed to Netlify
+#
+# Netlify is designed for:
+# - Static websites (HTML/CSS/JS)
+# - Serverless functions
+#
+# This app requires:
+# - A continuously running Python FastAPI server
+# - Server-side rendering with Jinja2 templates
+# - WebSocket support for real-time features
+#
+# RECOMMENDED PLATFORMS:
+# - Railway: https://railway.app (easiest)
+# - Render: https://render.com
+# - Fly.io: https://fly.io
+#
+# See QUICK_DEPLOY.md for deployment instructions
+
+# This tells Netlify to ignore this repository
+[build]
+  # Skip build
+  ignore = "git diff --quiet HEAD^ HEAD"
+  
+  # If Netlify tries to build anyway, this will fail fast
+  command = "echo 'This is a FastAPI Python app and cannot be deployed to Netlify. Please use Railway, Render, or Fly.io instead. See DEPLOYMENT.md for instructions.' && exit 1"
+
+# Prevent any deployment
+[[redirects]]
+  from = "/*"
+  to = "https://github.com/ncuskey/improved-rotary-phone/blob/main/DEPLOYMENT.md"
+  status = 302
+  force = true

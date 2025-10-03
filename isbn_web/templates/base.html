@@ -33,37 +33,43 @@
 <body class="bg-gray-50 min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-screen-2xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+        <div class="max-w-screen-2xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <h1 class="text-2xl font-bold text-gray-900">📚 ISBN Lot Optimizer</h1>
+                    <h1 class="text-lg font-bold text-gray-900">📚 ISBN Lot Optimizer</h1>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="/api/docs" target="_blank" class="text-sm text-gray-600 hover:text-gray-900">API Docs</a>
-                    <button class="text-sm text-gray-600 hover:text-gray-900">Settings</button>
+                <div class="flex items-center space-x-3">
+                    <a href="/api/docs" target="_blank" class="text-xs text-gray-600 hover:text-gray-900">API Docs</a>
+                    <button class="text-xs text-gray-600 hover:text-gray-900">Settings</button>
                 </div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-screen-2xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+    <main class="max-w-screen-2xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Status Bar -->
     <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-        <div class="max-w-screen-2xl mx-auto px-4 py-2 sm:px-6 lg:px-8">
+        <div class="max-w-screen-2xl mx-auto px-4 py-1.5 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between">
-                <div id="status-message" class="text-sm text-gray-600">
+                <div id="status-message" class="text-xs text-gray-600">
                     Ready
                 </div>
-                <div id="progress-bar" class="hidden">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-64 bg-gray-200 rounded-full h-2">
-                            <div id="progress-bar-fill" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                <div class="flex items-center gap-6">
+                    <div id="progress-bar" class="hidden">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-48 bg-gray-200 rounded-full h-1.5">
+                                <div id="progress-bar-fill" class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <span id="progress-text" class="text-xs text-gray-600">0%</span>
                         </div>
-                        <span id="progress-text" class="text-sm text-gray-600">0%</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span id="book-count" class="text-xs text-gray-600">Loading...</span>
+                        <span id="lot-count" class="text-xs text-gray-600 hidden">Loading...</span>
                     </div>
                 </div>
             </div>

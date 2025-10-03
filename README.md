@@ -9,6 +9,7 @@ lot recommendations in real time.
 ## Highlights
 - **Multi-Interface Support**: Tkinter desktop GUI, FastAPI web interface, and CLI tools
 - **3D Interactive Carousel**: Beautiful lot details page with 3D book carousel featuring real book covers
+- **Mobile Camera Scanner**: Smartphone camera integration for ISBN scanning (OCR working, barcode scanning in progress)
 - Barcode-friendly GUI for scanning ISBNs with condition and edition tracking.
 - Background refresh jobs with unified progress feedback for cover prefetching,
   metadata/market updates, and BooksRun offer refresh.
@@ -20,6 +21,17 @@ lot recommendations in real time.
 - Persistent SQLite catalogue stored under `~/.isbn_lot_optimizer/` with optional
   CSV import/export workflows.
 - Headless utilities, including a bulk BooksRun SELL quote fetcher.
+
+## Mobile Camera Scanner
+
+The web interface includes a mobile-optimized camera scanner for ISBN detection:
+
+- **✅ OCR Text Recognition**: Successfully extracts ISBNs from book cover text
+- **❌ Barcode Scanning**: Currently not working (see `CAMERA_SCANNER_TODO.md`)
+- **📱 Mobile-First Design**: Optimized for smartphone use
+- **🔄 Fallback Options**: Manual input when camera fails
+
+**Status**: OCR functionality is working well, but barcode scanning needs fixes. See `CAMERA_SCANNER_README.md` for detailed documentation and `CAMERA_SCANNER_TODO.md` for known issues and next steps.
 
 ## Quick Start
 1. Create a virtual environment and install dependencies:

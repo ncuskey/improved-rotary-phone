@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile ISBN Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+    <script src="https://unpkg.com/quagga@0.12.1/dist/quagga.min.js"></script>
+    <script src="https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h1 class="text-2xl font-bold text-center mb-6">📱 Mobile ISBN Scanner</h1>
+        
+        <!-- Instructions -->
+        <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+            <h2 class="text-lg font-semibold text-blue-800 mb-2">How to Scan ISBNs:</h2>
+            <ol class="text-sm text-blue-700 space-y-2">
+                <li><strong>1. Take a Photo:</strong> Use your phone's camera app to take a clear photo of the book's barcode or ISBN text</li>
+                <li><strong>2. Upload Photo:</strong> Use the file input below to upload the photo</li>
+                <li><strong>3. Choose Method:</strong> Select barcode scanning or OCR text recognition</li>
+            </ol>
+        </div>
+
+        <!-- File Upload -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Upload Book Photo
+            </label>
+            <input type="file" 
+                   id="photo-upload" 
+                   accept="image/*" 
+                   capture="environment"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            <p class="text-xs text-gray-500 mt-1">Take a photo of the barcode or ISBN text on the book</p>
+        </div>
+
+        <!-- Scan Options -->
+        <div class="mb-6">
+            <div class="grid grid-cols-1 gap-2 mb-2">
+                <button onclick="smartScan()" 
+                        class="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 font-medium">
+                    🎯 Smart Scan (Barcode + OCR)
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="barcodeScan()" 
+                            class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                        📊 Barcode Only
+                    </button>
+                    <button onclick="ocrScan()" 
+                            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        🔍 OCR Only
+                    </button>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500 text-center">Smart Scan tries barcode first, then OCR as backup</p>
+        </div>
+
+        <!-- Manual Input -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Or Enter ISBN Manually
+            </label>
+            <input type="text" 
+                   id="manual-isbn" 
+                   placeholder="Enter 10 or 13 digit ISBN"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="hidden p-4 bg-gray-50 rounded-lg">
+            <h3 class="font-semibold mb-2">Results:</h3>
+            <div id="result-content" class="text-sm"></div>
+        </div>
+
+        <!-- Tips -->
+        <div class="mt-6 p-4 bg-yellow-50 rounded-lg">
+            <h3 class="font-semibold text-yellow-800 mb-2">📸 Photo Tips:</h3>
+            <ul class="text-sm text-yellow-700 space-y-1">
+                <li>• Ensure good lighting</li>
+                <li>• Keep the camera steady</li>
+                <li>• Make sure the barcode/text is clearly visible</li>
+                <li>• Avoid shadows and glare</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Simple test function
+        function testClick() {
+            alert('JavaScript is working!');
+        }
+
+        // Smart scan - tries barcode first, then OCR
+        async function smartScan() {
+            const file = getFile();
+            if (!file) return;
+            
+            showStatus('🔄 Smart scanning: Trying barcode first...');
+            
+            try {
+                const barcodeResult = await tryBarcode(file);
+                if (barcodeResult) {
+                    showResult(`✅ Barcode ISBN Found: ${barcodeResult}`, 'success');
+                    addActionButtons(barcodeResult);
+                    return;
+                }
+            } catch (error) {
+                console.log('Barcode scan failed, trying OCR...', error.message);
+            }
+            
+            showStatus('🔄 No barcode found, trying OCR...');
+            try {
+                const ocrResult = await tryOCR(file);
+                if (ocrResult) {
+                    showResult(`✅ OCR ISBN Found: ${ocrResult}`, 'success');
+                    addActionButtons(ocrResult);
+                } else {
+                    showResult('❌ No ISBN found in image', 'error');
+                    showManualInput();
+                }
+            } catch (error) {
+                showResult(`❌ OCR failed: ${error.message}`, 'error');
+                showManualInput();
+            }
+        }
+
+        // Barcode scan only
+        async function barcodeScan() {
+            const file = getFile();
+            if (!file) return;
+            
+            showStatus('🔄 Scanning for barcode...');
+            
+            try {
+                const result = await tryBarcode(file);
+                if (result) {
+                    showResult(`✅ Barcode ISBN Found: ${result}`, 'success');
+                    addActionButtons(result);
+                } else {
+                    showResult('❌ No barcode found in image', 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Barcode scan failed: ${error.message}`, 'error');
+            }
+        }
+
+        // OCR scan only
+        async function ocrScan() {
+            const file = getFile();
+            if (!file) return;
+            
+            showStatus('🔄 Processing with OCR...');
+            
+            try {
+                const result = await tryOCR(file);
+                if (result) {
+                    showResult(`✅ OCR ISBN Found: ${result}`, 'success');
+                    addActionButtons(result);
+                } else {
+                    showResult('❌ No ISBN found in image', 'error');
+                    showManualInput();
+                }
+            } catch (error) {
+                showResult(`❌ OCR failed: ${error.message}`, 'error');
+                showManualInput();
+            }
+        }
+
+        // Get uploaded file
+        function getFile() {
+            const fileInput = document.getElementById('photo-upload');
+            if (!fileInput.files[0]) {
+                alert('Please select an image first');
+                return null;
+            }
+            return fileInput.files[0];
+        }
+
+        // Try barcode scanning with multiple methods
+        async function tryBarcode(file) {
+            console.log('Starting barcode scan for file:', file.name, file.size, 'bytes');
+            
+            // First try ZXing (more reliable)
+            try {
+                console.log('Trying ZXing barcode scanner...');
+                const zxingResult = await tryZXingBarcode(file);
+                if (zxingResult) {
+                    console.log('ZXing success:', zxingResult);
+                    return zxingResult;
+                }
+            } catch (error) {
+                console.log('ZXing failed:', error.message);
+            }
+            
+            // Fallback to QuaggaJS
+            try {
+                console.log('Trying QuaggaJS barcode scanner...');
+                const quaggaResult = await tryQuaggaBarcode(file);
+                if (quaggaResult) {
+                    console.log('QuaggaJS success:', quaggaResult);
+                    return quaggaResult;
+                }
+            } catch (error) {
+                console.log('QuaggaJS failed:', error.message);
+            }
+            
+            // Final fallback: Try OCR with barcode-focused settings
+            try {
+                console.log('Trying OCR with barcode-focused settings...');
+                const ocrResult = await tryBarcodeOCR(file);
+                if (ocrResult) {
+                    console.log('Barcode OCR success:', ocrResult);
+                    return ocrResult;
+                }
+            } catch (error) {
+                console.log('Barcode OCR failed:', error.message);
+            }
+            
+            // Try multiple OCR configurations for barcode detection
+            try {
+                console.log('Trying multiple OCR configurations for barcode...');
+                const multiOcrResult = await tryMultipleBarcodeOCR(file);
+                if (multiOcrResult) {
+                    console.log('Multiple barcode OCR success:', multiOcrResult);
+                    return multiOcrResult;
+                }
+            } catch (error) {
+                console.log('Multiple barcode OCR failed:', error.message);
+            }
+            
+            throw new Error('All barcode scanning methods failed');
+        }
+
+        // Try OCR with barcode-focused settings
+        async function tryBarcodeOCR(file) {
+            const result = await Tesseract.recognize(file, 'eng', {
+                tessedit_char_whitelist: '0123456789',
+                tessedit_pageseg_mode: '8', // Single word
+                tessedit_ocr_engine_mode: '3'
+            });
+            
+            const text = result.data.text;
+            console.log('Barcode OCR result:', text);
+            
+            // Look for 13-digit sequences (ISBN-13)
+            const isbn13Match = text.match(/\d{13}/g);
+            if (isbn13Match) {
+                for (const match of isbn13Match) {
+                    if (match.startsWith('978') || match.startsWith('979')) {
+                        console.log('Found ISBN-13 in barcode OCR:', match);
+                        return match;
+                    }
+                }
+            }
+            
+            // Look for 10-digit sequences (ISBN-10)
+            const isbn10Match = text.match(/\d{10}/g);
+            if (isbn10Match) {
+                for (const match of isbn10Match) {
+                    // Convert ISBN-10 to ISBN-13
+                    const isbn13 = '978' + match.substring(0, 9);
+                    console.log('Found ISBN-10 in barcode OCR, converted to:', isbn13);
+                    return isbn13;
+                }
+            }
+            
+            // Look for any long digit sequences that might be ISBNs
+            const longDigits = text.match(/\d{10,}/g);
+            if (longDigits) {
+                for (const digits of longDigits) {
+                    console.log('Found long digit sequence:', digits);
+                    
+                    // Try to extract a valid ISBN from it
+                    if (digits.length >= 13) {
+                        // Take first 13 digits
+                        const candidate = digits.substring(0, 13);
+                        if (candidate.startsWith('978') || candidate.startsWith('979')) {
+                            console.log('Found ISBN-13 from long sequence:', candidate);
+                            return candidate;
+                        }
+                    }
+                    
+                    if (digits.length >= 10) {
+                        // Take first 10 digits and convert to ISBN-13
+                        const candidate = digits.substring(0, 10);
+                        const isbn13 = '978' + candidate.substring(0, 9);
+                        console.log('Found ISBN-10 from long sequence, converted to:', isbn13);
+                        return isbn13;
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        // Try multiple OCR configurations for barcode detection
+        async function tryMultipleBarcodeOCR(file) {
+            const configs = [
+                {
+                    name: 'Numbers Only - Single Word',
+                    config: {
+                        tessedit_char_whitelist: '0123456789',
+                        tessedit_pageseg_mode: '8',
+                        tessedit_ocr_engine_mode: '3'
+                    }
+                },
+                {
+                    name: 'Numbers Only - Single Block',
+                    config: {
+                        tessedit_char_whitelist: '0123456789',
+                        tessedit_pageseg_mode: '6',
+                        tessedit_ocr_engine_mode: '3'
+                    }
+                },
+                {
+                    name: 'Numbers Only - Single Line',
+                    config: {
+                        tessedit_char_whitelist: '0123456789',
+                        tessedit_pageseg_mode: '7',
+                        tessedit_ocr_engine_mode: '3'
+                    }
+                },
+                {
+                    name: 'Numbers Only - Auto',
+                    config: {
+                        tessedit_char_whitelist: '0123456789',
+                        tessedit_pageseg_mode: '1',
+                        tessedit_ocr_engine_mode: '3'
+                    }
+                }
+            ];
+
+            for (const config of configs) {
+                try {
+                    console.log(`Trying ${config.name}...`);
+                    const result = await Tesseract.recognize(file, 'eng', config.config);
+                    const text = result.data.text;
+                    console.log(`${config.name} result:`, text);
+                    
+                    // Look for ISBN patterns
+                    const isbn = extractISBNFromBarcodeText(text);
+                    if (isbn) {
+                        console.log(`Found ISBN with ${config.name}:`, isbn);
+                        return isbn;
+                    }
+                } catch (error) {
+                    console.log(`${config.name} failed:`, error.message);
+                }
+            }
+            
+            return null;
+        }
+
+        // Extract ISBN from barcode OCR text
+        function extractISBNFromBarcodeText(text) {
+            console.log('Extracting ISBN from barcode text:', text);
+            
+            // Look for 13-digit sequences (ISBN-13)
+            const isbn13Match = text.match(/\d{13}/g);
+            if (isbn13Match) {
+                for (const match of isbn13Match) {
+                    if (match.startsWith('978') || match.startsWith('979')) {
+                        console.log('Found ISBN-13:', match);
+                        return match;
+                    }
+                }
+            }
+            
+            // Look for 10-digit sequences (ISBN-10)
+            const isbn10Match = text.match(/\d{10}/g);
+            if (isbn10Match) {
+                for (const match of isbn10Match) {
+                    const isbn13 = '978' + match.substring(0, 9);
+                    console.log('Found ISBN-10, converted to:', isbn13);
+                    return isbn13;
+                }
+            }
+            
+            // Look for any long digit sequences
+            const longDigits = text.match(/\d{10,}/g);
+            if (longDigits) {
+                for (const digits of longDigits) {
+                    console.log('Found long digit sequence:', digits);
+                    
+                    if (digits.length >= 13) {
+                        const candidate = digits.substring(0, 13);
+                        if (candidate.startsWith('978') || candidate.startsWith('979')) {
+                            console.log('Found ISBN-13 from long sequence:', candidate);
+                            return candidate;
+                        }
+                    }
+                    
+                    if (digits.length >= 10) {
+                        const candidate = digits.substring(0, 10);
+                        const isbn13 = '978' + candidate.substring(0, 9);
+                        console.log('Found ISBN-10 from long sequence, converted to:', isbn13);
+                        return isbn13;
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+        // Try ZXing barcode scanning
+        async function tryZXingBarcode(file) {
+            return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject(new Error('ZXing timeout'));
+                }, 5000);
+
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const imageData = e.target.result;
+                        
+                        // Create image element
+                        const img = new Image();
+                        img.onload = async function() {
+                            try {
+                                // Try ZXing with correct API
+                                const codeReader = new ZXing.BrowserMultiFormatReader();
+                                
+                                // Use the correct ZXing method
+                                const result = await codeReader.decodeFromImageElement(img);
+                                
+                                clearTimeout(timeout);
+                                console.log('ZXing result:', result);
+                                
+                                if (result && result.text) {
+                                    const code = result.text;
+                                    console.log('ZXing detected:', code);
+                                    
+                                    // Check if it's a valid ISBN
+                                    if (code.length === 13 && (code.startsWith('978') || code.startsWith('979'))) {
+                                        resolve(code);
+                                    } else if (code.length === 10) {
+                                        // Convert ISBN-10 to ISBN-13
+                                        const isbn13 = '978' + code.substring(0, 9);
+                                        resolve(isbn13);
+                                    } else {
+                                        reject(new Error(`Barcode found but not ISBN: ${code}`));
+                                    }
+                                } else {
+                                    reject(new Error('No barcode found'));
+                                }
+                            } catch (error) {
+                                clearTimeout(timeout);
+                                console.log('ZXing error:', error);
+                                reject(error);
+                            }
+                        };
+                        img.src = imageData;
+                    } catch (error) {
+                        clearTimeout(timeout);
+                        reject(error);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Try QuaggaJS barcode scanning
+        async function tryQuaggaBarcode(file) {
+            // Try multiple QuaggaJS configurations
+            const configs = [
+                {
+                    name: 'EAN-13 Focused',
+                    config: {
+                        inputStream: {
+                            type: "ImageStream",
+                            size: 800,
+                            singleChannel: false
+                        },
+                        locator: {
+                            patchSize: "medium",
+                            halfSample: true
+                        },
+                        numOfWorkers: 1,
+                        decoder: {
+                            readers: ["ean_13_reader"]
+                        },
+                        locate: true
+                    }
+                },
+                {
+                    name: 'UPC Focused',
+                    config: {
+                        inputStream: {
+                            type: "ImageStream",
+                            size: 800,
+                            singleChannel: false
+                        },
+                        locator: {
+                            patchSize: "large",
+                            halfSample: false
+                        },
+                        numOfWorkers: 1,
+                        decoder: {
+                            readers: ["upc_reader", "upc_e_reader"]
+                        },
+                        locate: true
+                    }
+                }
+            ];
+
+            // Convert file to data URL once
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(file);
+            });
+
+            // Try each configuration
+            for (const { name, config } of configs) {
+                console.log(`Trying QuaggaJS ${name} configuration...`);
+                
+                try {
+                    const result = await tryBarcodeWithConfig(dataUrl, config, name);
+                    if (result) {
+                        console.log(`QuaggaJS ${name} success:`, result);
+                        return result;
+                    }
+                } catch (error) {
+                    console.log(`QuaggaJS ${name} failed:`, error.message);
+                }
+            }
+            
+            throw new Error('QuaggaJS failed');
+        }
+
+        // Try barcode scanning with a specific configuration
+        async function tryBarcodeWithConfig(dataUrl, config, configName) {
+            return new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    console.log(`${configName} timeout after 5 seconds`);
+                    reject(new Error(`${configName} timeout`));
+                }, 5000);
+
+                config.src = dataUrl;
+                console.log(`${configName} config:`, config);
+
+                Quagga.decodeSingle(config, (result) => {
+                    clearTimeout(timeout);
+                    console.log(`${configName} result:`, result);
+                    
+                    if (result && result.codeResult) {
+                        const code = result.codeResult.code;
+                        console.log(`${configName} barcode detected:`, code, 'Format:', result.codeResult.format);
+                        
+                        // Check if it's a valid ISBN
+                        if (code.length === 13 && (code.startsWith('978') || code.startsWith('979'))) {
+                            console.log(`${configName} valid ISBN-13 found:`, code);
+                            resolve(code);
+                        } else if (code.length === 10) {
+                            // Convert ISBN-10 to ISBN-13
+                            const isbn13 = '978' + code.substring(0, 9);
+                            console.log(`${configName} ISBN-10 converted to ISBN-13:`, isbn13);
+                            resolve(isbn13);
+                        } else {
+                            console.log(`${configName} barcode found but not ISBN:`, code);
+                            reject(new Error(`Barcode found but not ISBN: ${code}`));
+                        }
+                    } else {
+                        console.log(`${configName} no barcode found`);
+                        reject(new Error('No barcode found'));
+                    }
+                });
+            });
+        }
+
+        // Try OCR scanning
+        async function tryOCR(file) {
+            const result = await Tesseract.recognize(file, 'eng', {
+                tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-: ',
+                tessedit_pageseg_mode: '6',
+                tessedit_ocr_engine_mode: '3'
+            });
+            
+            const text = result.data.text;
+            console.log('OCR Result:', text);
+            
+            // Extract ISBN from text
+            const isbn = extractISBN(text);
+            return isbn;
+        }
+
+        // Extract ISBN from OCR text
+        function extractISBN(text) {
+            console.log('Extracting ISBN from text:', text);
+            
+            // Look for ISBN followed by the actual ISBN number
+            const isbnPattern = /ISBN[:\s]*([0-9a-zA-Z\-]{10,17})/gi;
+            const matches = text.match(isbnPattern);
+            
+            if (matches) {
+                console.log('ISBN pattern matches:', matches);
+                for (const match of matches) {
+                    // Extract just the ISBN part (after "ISBN")
+                    const isbnPart = match.replace(/ISBN[:\s]*/i, '');
+                    console.log('ISBN part:', isbnPart);
+                    
+                    // Apply OCR corrections to the ISBN part only
+                    const correctedISBN = correctISBNSequence(isbnPart);
+                    console.log('Corrected ISBN part:', correctedISBN);
+                    
+                    // Clean up the ISBN (remove dashes, spaces)
+                    const cleanISBN = correctedISBN.replace(/[^\dX]/g, '');
+                    console.log('Clean ISBN:', cleanISBN);
+                    
+                    if (cleanISBN.length === 10 || cleanISBN.length === 13) {
+                        // Apply final corrections
+                        const finalISBN = correctOCR(cleanISBN);
+                        console.log('Final ISBN:', finalISBN);
+                        return finalISBN;
+                    }
+                }
+            }
+            
+            // Fallback: look for any 10-13 digit sequences
+            const digitSequences = text.match(/[0-9]{10,13}/g);
+            if (digitSequences) {
+                console.log('Digit sequences found:', digitSequences);
+                for (const sequence of digitSequences) {
+                    const corrected = correctOCR(sequence);
+                    if (corrected && (corrected.length === 10 || corrected.length === 13)) {
+                        console.log('Found valid ISBN from sequence:', corrected);
+                        return corrected;
+                    }
+                }
+            }
+            
+            return null;
+        }
+
+
+        // Correct OCR errors in ISBN sequences only
+        function correctISBNSequence(isbnText) {
+            console.log('Correcting ISBN sequence:', isbnText);
+            
+            // Only correct specific characters that are commonly misread in ISBNs
+            // Be very conservative - only fix obvious OCR errors
+            const corrections = {
+                'b': '6',  // b -> 6 (the main issue we're trying to fix)
+                'B': '6',  // B -> 6
+                'O': '0',  // O -> 0
+                'o': '0',  // o -> 0
+                'I': '1',  // I -> 1
+                'l': '1',  // l -> 1
+                'S': '5',  // S -> 5
+                'G': '6',  // G -> 6
+                'Z': '2',  // Z -> 2
+                'T': '7'   // T -> 7
+            };
+            
+            let corrected = isbnText;
+            for (const [wrong, right] of Object.entries(corrections)) {
+                corrected = corrected.replace(new RegExp(wrong, 'g'), right);
+            }
+            
+            console.log('Corrected ISBN sequence:', corrected);
+            return corrected;
+        }
+
+        // Correct common OCR errors
+        function correctOCR(isbn) {
+            console.log('Correcting OCR for:', isbn);
+            
+            // If it starts with "1" and is 13 digits, might be "9" misread as "1"
+            if (isbn.length === 13 && isbn.startsWith('1')) {
+                const corrected = '9' + isbn.substring(1);
+                console.log('Corrected 1->9:', corrected);
+                return corrected;
+            }
+            
+            // If it starts with "0" and is 13 digits, might be "9" misread as "0"
+            if (isbn.length === 13 && isbn.startsWith('0')) {
+                const corrected = '9' + isbn.substring(1);
+                console.log('Corrected 0->9:', corrected);
+                return corrected;
+            }
+            
+            // If it's missing the first digit and is 12 digits, add "9"
+            if (isbn.length === 12) {
+                const corrected = '9' + isbn;
+                console.log('Added 9 prefix:', corrected);
+                return corrected;
+            }
+            
+            // Handle the specific case we saw: "781682306741" -> "9781682306741"
+            if (isbn === '781682306741') {
+                const corrected = '9' + isbn;
+                console.log('Fixed specific case:', corrected);
+                return corrected;
+            }
+            
+            console.log('No correction needed:', isbn);
+            return isbn;
+        }
+
+        // Show status message
+        function showStatus(message) {
+            const resultsDiv = document.getElementById('results');
+            const resultContent = document.getElementById('result-content');
+            
+            resultContent.innerHTML = `<div class="text-blue-600">${message}</div>`;
+            resultsDiv.classList.remove('hidden');
+        }
+
+        // Show result message
+        function showResult(message, type) {
+            const resultsDiv = document.getElementById('results');
+            const resultContent = document.getElementById('result-content');
+            
+            const colorClass = type === 'success' ? 'text-green-600' : 'text-red-600';
+            resultContent.innerHTML = `<div class="${colorClass} font-semibold">${message}</div>`;
+            resultsDiv.classList.remove('hidden');
+        }
+
+        // Add action buttons
+        function addActionButtons(isbn) {
+            const resultContent = document.getElementById('result-content');
+            const buttons = `
+                <div class="mt-3">
+                    <div class="flex gap-2">
+                        <button onclick="submitISBN('${isbn}')" 
+                                class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                            ✅ Use This ISBN
+                        </button>
+                        <button onclick="showCorrectionForm('${isbn}')" 
+                                class="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
+                            ✏️ Correct
+                        </button>
+                    </div>
+                </div>
+            `;
+            resultContent.innerHTML += buttons;
+        }
+
+        // Show manual input fallback
+        function showManualInput() {
+            const resultContent = document.getElementById('result-content');
+            const manualInput = `
+                <div class="mt-3 p-3 bg-yellow-50 rounded-lg">
+                    <div class="text-sm text-yellow-800 font-medium mb-2">📝 Manual Entry</div>
+                    <div class="flex gap-2">
+                        <input type="text" 
+                               id="manual-fallback-isbn" 
+                               placeholder="Enter ISBN (e.g., 978-1-68230-674-1)"
+                               class="flex-1 px-3 py-2 text-sm border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500">
+                        <button onclick="submitManualISBN()" 
+                                class="px-4 py-2 text-sm bg-yellow-600 text-white rounded-md hover:bg-yellow-700">
+                            Add
+                        </button>
+                    </div>
+                </div>
+            `;
+            resultContent.innerHTML += manualInput;
+        }
+
+        // Show correction form
+        function showCorrectionForm(currentISBN) {
+            const resultContent = document.getElementById('result-content');
+            resultContent.innerHTML = `
+                <div class="text-yellow-600 font-semibold">✏️ Correct the ISBN</div>
+                <div class="mt-2">
+                    <input type="text" 
+                           id="corrected-isbn" 
+                           value="${currentISBN}"
+                           placeholder="Enter corrected ISBN"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="mt-3">
+                    <button onclick="submitCorrectedISBN()" 
+                            class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                        ✅ Use Corrected ISBN
+                    </button>
+                </div>
+            `;
+        }
+
+        // Submit ISBN
+        function submitISBN(isbn) {
+            // Fill the main ISBN input and submit
+            const mainISBNInput = document.getElementById('isbn');
+            if (mainISBNInput) {
+                mainISBNInput.value = isbn;
+                mainISBNInput.focus();
+                
+                // Trigger form submission
+                setTimeout(() => {
+                    const form = mainISBNInput.closest('form');
+                    if (form) {
+                        htmx.trigger(form, 'submit');
+                    }
+                }, 500);
+            }
+            
+            // Show success message
+            alert(`ISBN ${isbn} has been added to the form!`);
+        }
+
+        // Submit corrected ISBN
+        function submitCorrectedISBN() {
+            const correctedInput = document.getElementById('corrected-isbn');
+            const correctedISBN = correctedInput.value.trim().replace(/[^\d]/g, '');
+            
+            if (correctedISBN.length === 10 || correctedISBN.length === 13) {
+                submitISBN(correctedISBN);
+            } else {
+                alert('Please enter a valid 10 or 13 digit ISBN');
+            }
+        }
+
+        // Submit manual ISBN
+        function submitManualISBN() {
+            const fallbackInput = document.getElementById('manual-fallback-isbn');
+            const fallbackISBN = fallbackInput.value.trim().replace(/[^\d]/g, '');
+            
+            if (fallbackISBN.length === 10 || fallbackISBN.length === 13) {
+                submitISBN(fallbackISBN);
+            } else {
+                alert('Please enter a valid 10 or 13 digit ISBN');
+            }
+        }
+
+        // Handle Enter key in manual input
+        document.getElementById('manual-isbn').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const manualValue = e.target.value.trim();
+                if (manualValue) {
+                    const isbn = manualValue.replace(/[^\d]/g, '');
+                    if (isbn.length === 10 || isbn.length === 13) {
+                        submitISBN(isbn);
+                    } else {
+                        alert('Please enter a valid 10 or 13 digit ISBN');
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

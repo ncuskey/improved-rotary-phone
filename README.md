@@ -115,7 +115,8 @@ If the 3D carousel doesn't appear:
 
 #### Deployment Synchronization
 The `isbn-web` shortcut uses a separate directory (`/Users/nickcuskey/ISBN`):
-- Copy updated files manually from development to deployment directory
+- **Automated sync**: Run `./sync_to_isbn.sh` to sync all changes automatically
+- **Manual sync**: Copy updated files from development to deployment directory
 - Key files to sync: `base.html`, `lot_details.html`, `lots_table.html`, `lots.py`, `service.py`
 - Restart the server after synchronization
 

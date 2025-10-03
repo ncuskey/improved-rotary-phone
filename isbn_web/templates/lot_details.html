@@ -9,12 +9,12 @@
     window.lotBooksData = {{ books_data | tojson }};
 </script>
 
-<div class="h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col overflow-hidden"
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col overflow-hidden"
      x-data="carouselData()"
      x-init="books = window.lotBooksData || []">
   
   <!-- Top Half: 3D Book Carousel -->
-  <div class="h-1/2 bg-gradient-to-br from-slate-100 to-slate-200 relative"
+  <div class="h-1/2 min-h-[50vh] sm:h-1/2 bg-gradient-to-br from-slate-100 to-slate-200 relative flex flex-col"
        @mouseenter="isHovering = true"
        @mouseleave="isHovering = false"
        @wheel.prevent="
@@ -23,7 +23,10 @@
            if (delta > 10) nextBook();
            else if (delta < -10) prevBook();
          }
-       ">
+       "
+       @touchstart="handleTouchStart($event)"
+       @touchmove="handleTouchMove($event)"
+       @touchend="handleTouchEnd($event)">
     
     <!-- Back Button -->
     <button onclick="window.history.back()"
@@ -33,29 +36,33 @@
       </svg>
     </button>
     
-    <!-- Hover indicator -->
-    <div x-show="isHovering && books.length > 1" 
+    <!-- Hover/Touch indicator -->
+    <div x-show="(isHovering || books.length > 1) && books.length > 1" 
          x-transition
          class="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
-      Scroll to browse books
+      <span class="hidden sm:inline">Scroll to browse books</span>
+      <span class="sm:hidden">Swipe to browse books</span>
     </div>
     
     <!-- 3D perspective container -->
-    <div class="relative h-full" style="perspective: 1000px;">
+    <div class="flex-1 relative" style="perspective: 1000px;">
       <div class="absolute inset-0 flex items-center justify-center">
         
         <!-- Books carousel -->
         <template x-for="(book, index) in books" :key="book.isbn">
           <div 
             @click="navigate(index)"
+            @touchstart="handleTouchStart($event)"
+            @touchmove="handleTouchMove($event)"
+            @touchend="handleTouchEnd($event)"
             :style="getBookStyle(index)"
             class="absolute cursor-pointer transition-all duration-500 ease-in-out">
             
             <!-- Book card -->
-            <div class="bg-white rounded-lg shadow-2xl p-6 w-64 h-80 border-2 border-gray-200 hover:border-blue-400 flex flex-col">
+            <div class="bg-white rounded-lg shadow-2xl p-3 sm:p-6 w-48 h-64 sm:w-64 sm:h-80 border-2 border-gray-200 hover:border-blue-400 flex flex-col">
               
               <!-- Book cover -->
-              <div class="h-40 rounded-md mb-4 relative overflow-hidden bg-gray-100">
+              <div class="h-24 sm:h-40 rounded-md mb-2 sm:mb-4 relative overflow-hidden bg-gray-100">
                 <!-- Book cover thumbnail -->
                 <img :src="'https://covers.openlibrary.org/b/isbn/' + book.isbn + '-M.jpg'"
                      :alt="book.metadata?.title || 'Book Cover'"
@@ -105,7 +112,7 @@
         <button @click="prevBook()" 
                 :disabled="currentIndex === 0"
                 :class="currentIndex === 0 ? 'opacity-30 cursor-not-allowed' : 'opacity-70 hover:opacity-100'"
-                class="absolute left-4 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900 p-3 rounded-full shadow-lg transition-all duration-200">
+                class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900 p-2 sm:p-3 rounded-full shadow-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
@@ -114,7 +121,7 @@
         <button @click="nextBook()" 
                 :disabled="currentIndex === books.length - 1"
                 :class="currentIndex === books.length - 1 ? 'opacity-30 cursor-not-allowed' : 'opacity-70 hover:opacity-100'"
-                class="absolute right-4 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900 p-3 rounded-full shadow-lg transition-all duration-200">
+                class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 bg-white/80 hover:bg-white text-gray-700 hover:text-gray-900 p-2 sm:p-3 rounded-full shadow-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
@@ -123,18 +130,18 @@
       </div>
       
       <!-- Progress dots -->
-      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 flex space-x-2" x-show="books.length > 1">
+      <div class="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 flex space-x-1 sm:space-x-2" x-show="books.length > 1">
         <template x-for="(book, index) in books" :key="'dot-' + index">
           <button @click="navigate(index)"
                   :class="index === currentIndex ? 'bg-blue-600' : 'bg-white/60 hover:bg-white/80'"
-                  class="w-3 h-3 rounded-full transition-all duration-200 shadow-lg"></button>
+                  class="w-3 h-3 sm:w-3 sm:h-3 rounded-full transition-all duration-200 shadow-lg min-w-[20px] min-h-[20px] flex items-center justify-center"></button>
         </template>
       </div>
     </div>
   </div>
   
   <!-- Bottom Half: Lot Details -->
-  <div class="h-1/2 overflow-y-auto p-6">
+  <div class="h-1/2 min-h-[50vh] sm:h-1/2 overflow-y-auto p-3 sm:p-6">
     
     <!-- Lot Header -->
     <div class="mb-6">
@@ -195,7 +202,7 @@
     </div>
     
     <!-- Financial Summary Cards -->
-    <div class="grid grid-cols-5 gap-4 mb-6">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 mb-6">
       <div class="bg-white rounded-lg p-4 shadow-sm border text-center">
         <div class="text-2xl font-bold text-gray-900">{{ stats.total_books }}</div>
         <div class="text-sm text-gray-500">Total Books</div>

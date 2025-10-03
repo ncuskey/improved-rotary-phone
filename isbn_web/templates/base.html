@@ -91,6 +91,10 @@
                 currentIndex: 0,
                 isHovering: false,
                 books: [],
+                touchStartX: 0,
+                touchEndX: 0,
+                touchStartY: 0,
+                isSwiping: false,
                 navigate(index) { 
                     this.currentIndex = index; 
                 },
@@ -100,22 +104,81 @@
                 prevBook() { 
                     if (this.currentIndex > 0) this.currentIndex--; 
                 },
+                handleTouchStart(e) {
+                    this.touchStartX = e.touches[0].clientX;
+                    this.touchStartY = e.touches[0].clientY;
+                    this.isSwiping = false;
+                    console.log('Touch start:', this.touchStartX, this.touchStartY);
+                },
+                handleTouchMove(e) {
+                    if (!this.touchStartX) return;
+                    
+                    const currentX = e.touches[0].clientX;
+                    const currentY = e.touches[0].clientY;
+                    const diffX = Math.abs(currentX - this.touchStartX);
+                    const diffY = Math.abs(currentY - this.touchStartY);
+                    
+                    // If horizontal movement is greater than vertical, it's a swipe
+                    if (diffX > diffY && diffX > 10) {
+                        this.isSwiping = true;
+                        e.preventDefault(); // Prevent scrolling
+                    }
+                },
+                handleTouchEnd(e) {
+                    if (!this.touchStartX) return;
+                    
+                    this.touchEndX = e.changedTouches[0].clientX;
+                    console.log('Touch end:', this.touchEndX, 'isSwiping:', this.isSwiping);
+                    
+                    if (this.isSwiping) {
+                        this.handleSwipe();
+                    }
+                    
+                    // Reset
+                    this.touchStartX = 0;
+                    this.touchEndX = 0;
+                    this.isSwiping = false;
+                },
+                handleSwipe() {
+                    const swipeThreshold = 50;
+                    const diff = this.touchStartX - this.touchEndX;
+                    
+                    console.log('Swipe diff:', diff, 'threshold:', swipeThreshold);
+                    
+                    if (Math.abs(diff) > swipeThreshold) {
+                        if (diff > 0) {
+                            // Swipe left - next book
+                            console.log('Swipe left - next book');
+                            this.nextBook();
+                        } else {
+                            // Swipe right - previous book
+                            console.log('Swipe right - previous book');
+                            this.prevBook();
+                        }
+                    }
+                },
                 getBookStyle(index) {
                     const diff = index - this.currentIndex;
                     const absDiff = Math.abs(diff);
                     
-                    // Calculate transforms
-                    const angle = diff * 15;           // degrees rotation
-                    const distance = absDiff * 120;    // horizontal spacing
-                    const depth = absDiff * 100;       // z-axis depth
-                    const verticalOffset = absDiff * 20; // upward arc
+                    // Mobile-optimized transforms (reduced complexity)
+                    const isMobile = window.innerWidth < 640;
+                    const angle = isMobile ? diff * 8 : diff * 15;           // degrees rotation (reduced for mobile)
+                    const distance = isMobile ? absDiff * 60 : absDiff * 120;    // horizontal spacing (reduced for mobile)
+                    const depth = isMobile ? absDiff * 40 : absDiff * 100;       // z-axis depth (reduced for mobile)
+                    const verticalOffset = isMobile ? 0 : absDiff * 20; // no upward arc on mobile
                     
                     const scale = Math.max(0.4, 1 - absDiff * 0.2);
                     const opacity = Math.max(0.2, 1 - absDiff * 0.3);
-                    const blur = absDiff > 0 ? absDiff * 2 : 0;
+                    const blur = isMobile ? (absDiff > 0 ? absDiff * 1 : 0) : (absDiff > 0 ? absDiff * 2 : 0);
+                    
+                    // Debug logging for mobile
+                    if (isMobile && index === this.currentIndex) {
+                        console.log('Mobile book style:', { diff, absDiff, angle, distance, depth, verticalOffset });
+                    }
                     
                     return {
-                        transform: `translateX(${diff * distance}px) translateZ(${-depth}px) translateY(${verticalOffset}px) rotateY(${-angle}deg) scale(${scale})`,
+                        transform: `translate3d(${diff * distance}px, ${verticalOffset}px, ${-depth}px) rotateY(${-angle}deg) scale(${scale})`,
                         opacity: opacity,
                         filter: `blur(${blur}px)`,
                         zIndex: 100 - absDiff

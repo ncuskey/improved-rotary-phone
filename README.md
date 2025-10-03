@@ -90,14 +90,24 @@ The web interface features a stunning 3D interactive carousel for viewing lot de
 1. Start the web server: `uvicorn isbn_web.main:app --reload`
 2. Navigate to the lots page and click on any lot
 3. Click "View Full Details" to see the 3D carousel
-4. Use mouse wheel, click navigation, or arrow buttons to browse books
+4. **Desktop**: Use mouse wheel, click navigation, or arrow buttons to browse books
+5. **Mobile**: Swipe left/right to navigate, or use touch-friendly arrow buttons
+
+### Mobile Features
+- **Touch Gestures**: Swipe left/right to navigate through books
+- **Responsive Design**: Optimized layout for mobile screens
+- **Touch-Friendly UI**: 44px minimum touch targets for accessibility
+- **Performance Optimized**: Reduced 3D complexity for mobile GPUs
+- **Progressive Enhancement**: Works on all devices with graceful degradation
 
 ### Technical Stack
 - **FastAPI**: Backend API with Jinja2 templates
 - **Alpine.js**: Reactive UI components and state management
 - **HTMX**: Dynamic updates without page refreshes
-- **Tailwind CSS**: Modern, utility-first styling
+- **Tailwind CSS**: Modern, utility-first styling with responsive design
 - **CSS 3D Transforms**: Smooth 3D animations and perspective
+- **Touch Gestures**: Mobile-optimized swipe navigation
+- **Progressive Enhancement**: Works on desktop and mobile devices
 
 ### Troubleshooting
 
@@ -112,6 +122,13 @@ If the 3D carousel doesn't appear:
 - Ensure the `carouselData()` function exists in `base.html`
 - Check that `window.lotBooksData` is populated in the page source
 - Restart the server to pick up template changes
+
+#### Mobile Issues
+If the carousel has issues on mobile devices:
+- **Cards positioned incorrectly**: Check if mobile transforms are being applied (console logs)
+- **Swipe not working**: Verify touch events are bound and check console for touch logs
+- **Performance issues**: Mobile uses reduced 3D complexity for better performance
+- **Viewport issues**: Ensure proper mobile viewport meta tag is present
 
 #### Deployment Synchronization
 The `isbn-web` shortcut uses a separate directory (`/Users/nickcuskey/ISBN`):

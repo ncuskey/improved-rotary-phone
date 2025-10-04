@@ -70,10 +70,10 @@
 ### 4. Mobile-Specific Features
 
 #### Progressive Web App (PWA)
-- Add web app manifest
-- Implement service worker for offline support
-- Add app icons and splash screens
-- Enable installation prompts
+- [x] Web app manifest (`site.webmanifest`) and favicon set live under `static/images`
+- [ ] Implement service worker for offline support
+- [ ] Add app icons and splash screens
+- [ ] Enable installation prompts
 
 #### Mobile UX Enhancements
 - Add haptic feedback for interactions

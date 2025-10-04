@@ -82,6 +82,15 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection:
      - HTMX-powered dynamic updates without page refreshes
      - Alpine.js for interactive components
 
+   **Mobile / API integrations:**
+   - `POST /isbn` – Scan-or-return core metadata for a single ISBN; the backend will
+     persist a fresh scan when the book is missing.
+   - `GET /api/books/all` – JSON payload of every stored book (matches GUI list order).
+   - `GET /api/lots/list.json` – JSON payload of the saved lot suggestions, including
+     embedded book metadata when available.
+   - These endpoints power the LotHelper iOS prototype; restart `isbn-web` after
+     deploying changes so the routes are reloaded.
+
 ## 3D Book Carousel
 
 The web interface features a stunning 3D interactive carousel for viewing lot details:
@@ -127,6 +136,9 @@ The web interface features a stunning 3D interactive carousel for viewing lot de
 If you see "Lot not found" when clicking on lots:
 - Ensure the lots table template uses `{{ lot.id }}` instead of `{{ loop.index0 }}`
 - Check that the route `/api/lots/{lot_id}` is working correctly
+- Verify JSON feeds for mobile clients:
+  - `curl http://localhost:8000/api/books/all`
+  - `curl http://localhost:8000/api/lots/list.json`
 
 #### Carousel Not Loading
 If the 3D carousel doesn't appear:

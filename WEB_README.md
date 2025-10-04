@@ -81,7 +81,16 @@ FastAPI provides automatic interactive API documentation:
 #### Books
 - `POST /api/books/scan` - Scan a single ISBN
 - `GET /api/books` - List all books (supports `?search=` parameter)
+- `GET /api/books/all` - JSON list of every stored book for mobile clients
 - `GET /api/books/{isbn}` - Get book details
+
+#### Lots
+- `GET /api/lots` - Render the HTML table of lots
+- `GET /api/lots/list` (`/api/lots/list.json`) - JSON feed of persisted lot suggestions
+- `GET /api/lots/{lot_id}` - Render lot details
+
+#### Utility
+- `POST /isbn` - Scan or fetch metadata for an ISBN (used by mobile clients)
 
 #### Pages
 - `GET /` - Main dashboard

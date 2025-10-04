@@ -1,7 +1,8 @@
 """API routes for book management."""
 from __future__ import annotations
 
-from typing import List, Optional
+from dataclasses import asdict
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -15,6 +16,62 @@ from ...config import settings
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))
+
+
+def _book_evaluation_to_dict(evaluation) -> Dict[str, Any]:
+    """Serialize a BookEvaluation into JSON-friendly dict."""
+    metadata = evaluation.metadata
+    metadata_dict: Dict[str, Any] | None = None
+    if metadata:
+        metadata_dict = asdict(metadata)
+        metadata_dict.pop("raw", None)
+        # Convert tuple fields to lists for JSON compatibility
+        for key in ("authors", "credited_authors", "categories", "identifiers"):
+            value = metadata_dict.get(key)
+            if isinstance(value, tuple):
+                metadata_dict[key] = list(value)
+
+    result: Dict[str, Any] = {
+        "isbn": evaluation.isbn,
+        "original_isbn": evaluation.original_isbn,
+        "condition": evaluation.condition,
+        "edition": evaluation.edition,
+        "quantity": evaluation.quantity,
+        "estimated_price": evaluation.estimated_price,
+        "probability_score": evaluation.probability_score,
+        "probability_label": evaluation.probability_label,
+        "justification": list(evaluation.justification) if evaluation.justification else [],
+        "metadata": metadata_dict,
+    }
+
+    if evaluation.market:
+        market = asdict(evaluation.market)
+        market.pop("raw_active", None)
+        market.pop("raw_sold", None)
+        result["market"] = market
+
+    if evaluation.booksrun:
+        booksrun = asdict(evaluation.booksrun)
+        booksrun.pop("raw", None)
+        result["booksrun"] = booksrun
+        result["booksrun_value_label"] = evaluation.booksrun_value_label
+        result["booksrun_value_ratio"] = evaluation.booksrun_value_ratio
+
+    if evaluation.rarity is not None:
+        result["rarity"] = evaluation.rarity
+
+    return result
+
+
+@router.get("/all", response_class=JSONResponse)
+async def get_all_books_json(
+    service: BookService = Depends(get_book_service),
+):
+    """Return all books and their metadata as JSON."""
+
+    evaluations = service.get_all_books()
+    payload = [_book_evaluation_to_dict(evaluation) for evaluation in evaluations]
+    return payload
 
 
 @router.post("/scan", response_class=HTMLResponse)

@@ -294,6 +294,10 @@ class BookService:
         rows = self.db.fetch_all_books()
         return [self._row_to_evaluation(row) for row in rows]
 
+    def get_all_books(self) -> List[BookEvaluation]:
+        """Return all books currently stored in the database."""
+        return self.list_books()
+
     def get_book(self, isbn: str) -> Optional[BookEvaluation]:
         normalized = normalise_isbn(isbn)
         if not normalized:
@@ -1641,7 +1645,6 @@ class BookService:
                     authors=tuple(meta.get("authors") or []),
                     credited_authors=tuple(meta.get("credited_authors") or []),
                     canonical_author=meta.get("canonical_author"),
-                    series=series_name,
                     published_year=meta.get("publication_year"),
                     published_raw=meta.get("published_date"),
                     page_count=meta.get("page_count"),

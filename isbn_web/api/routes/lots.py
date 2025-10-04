@@ -1,19 +1,51 @@
 """API routes for lot management."""
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
+from isbn_lot_optimizer.models import LotSuggestion
 from isbn_lot_optimizer.service import BookService
 
 from ..dependencies import get_book_service
 from ...config import settings
+from .books import _book_evaluation_to_dict
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))
+
+
+def _lot_suggestion_to_dict(lot: LotSuggestion) -> dict:
+    """Serialize a LotSuggestion for API responses."""
+
+    payload = {
+        "name": lot.name,
+        "strategy": lot.strategy,
+        "book_isbns": list(lot.book_isbns),
+        "estimated_value": lot.estimated_value,
+        "probability_score": lot.probability_score,
+        "probability_label": lot.probability_label,
+        "sell_through": lot.sell_through,
+        "justification": list(lot.justification),
+        "display_author_label": lot.display_author_label,
+        "canonical_author": lot.canonical_author,
+        "canonical_series": lot.canonical_series,
+        "series_name": lot.series_name,
+    }
+
+    lot_id = getattr(lot, "id", None)
+    if lot_id is not None:
+        payload["id"] = lot_id
+
+    if getattr(lot, "books", None):
+        payload["books"] = [_book_evaluation_to_dict(book) for book in lot.books]
+
+    market_blob = getattr(lot, "market_json", None)
+    if market_blob:
+        payload["market_json"] = market_blob
+
+    return payload
 
 
 @router.get("", response_class=HTMLResponse)
@@ -68,7 +100,20 @@ async def regenerate_lots(
     return response_html
 
 
-@router.get("/{lot_id}", response_class=HTMLResponse)
+@router.get("/all", response_class=JSONResponse)
+@router.get("/all.json", response_class=JSONResponse)
+@router.get("/list", response_class=JSONResponse)
+@router.get("/list.json", response_class=JSONResponse)
+async def get_all_lots_json(
+    service: BookService = Depends(get_book_service),
+):
+    """Return persisted lot suggestions as JSON."""
+
+    lots = service.list_lots()
+    return [_lot_suggestion_to_dict(lot) for lot in lots]
+
+
+@router.get("/{lot_id:int}", response_class=HTMLResponse)
 async def get_lot_detail(
     request: Request,
     lot_id: int,
@@ -103,7 +148,7 @@ async def get_lot_detail(
     )
 
 
-@router.get("/{lot_id}/details", response_class=HTMLResponse)
+@router.get("/{lot_id:int}/details", response_class=HTMLResponse)
 async def get_lot_details_page(
     request: Request,
     lot_id: int,
@@ -169,7 +214,7 @@ async def get_lot_details_page(
     )
 
 
-@router.get("/{lot_id}/edit", response_class=HTMLResponse)
+@router.get("/{lot_id:int}/edit", response_class=HTMLResponse)
 async def get_lot_edit_form(
     request: Request,
     lot_id: int,
@@ -199,7 +244,7 @@ async def get_lot_edit_form(
     )
 
 
-@router.put("/{lot_id}", response_class=HTMLResponse)
+@router.put("/{lot_id:int}", response_class=HTMLResponse)
 async def update_lot(
     request: Request,
     lot_id: int,
@@ -262,7 +307,7 @@ async def update_lot(
     )
 
 
-@router.delete("/{lot_id}/book/{book_id}", response_class=HTMLResponse)
+@router.delete("/{lot_id:int}/book/{book_id}", response_class=HTMLResponse)
 async def remove_book_from_lot(
     request: Request,
     lot_id: int,

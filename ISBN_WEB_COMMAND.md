@@ -115,6 +115,17 @@ Check the logs:
 tail -f /Users/nickcuskey/ISBN/logs/isbn-web.log
 ```
 
+If you still see older code responding (for example `/api/lots/all` returning a 422
+after you deploy a new route), confirm there are no lingering services started by
+launchd:
+
+```bash
+launchctl list | grep lothelper
+launchctl remove com.lothelper.webapp   # removes the background copy if present
+pkill -f 'uvicorn main:app'             # stop any pyenv shell launched server
+isbn-web                                # restart with the latest code
+```
+
 **Common issue: "No module named uvicorn"**
 
 If the logs show `No module named uvicorn`, the `isbn-web` script needs to use the virtual environment Python. The script should be configured to use:

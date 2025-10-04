@@ -90,6 +90,9 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection:
      embedded book metadata when available.
    - These endpoints power the LotHelper iOS prototype; restart `isbn-web` after
      deploying changes so the routes are reloaded.
+   - **iOS UI tip:** ship a minimal `LaunchScreen.storyboard` (white `systemBackground`
+     fill) and keep `UIWindow.appearance().backgroundColor = .systemBackground` so the
+     app renders flush with the device safe areas instead of letterboxing on hardware.
 
 ## 3D Book Carousel
 

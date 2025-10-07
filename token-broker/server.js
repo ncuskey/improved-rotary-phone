@@ -44,6 +44,82 @@ router.get("/token/ebay-browse", async (_req, res) => {
   }
 });
 
+// Track A: Marketplace Insights (sold comps) - requires eBay approval
+router.get("/sold/ebay", async (req, res) => {
+  try {
+    const { gtin, q, dateFrom, dateTo, marketplace = 'EBAY_US' } = req.query;
+
+    // For now, return 501 Not Implemented until MI access is granted
+    // TODO: Once eBay approves MI access:
+    // 1. Implement getUserAccessTokenWithRefresh() for User token with MI scope
+    // 2. Store refresh token securely
+    // 3. Enable the code below
+
+    res.status(501).json({
+      error: 'eBay Marketplace Insights not enabled on this app. Apply for access at https://developer.ebay.com/my/keys'
+    });
+
+    /* UNCOMMENT WHEN MI ACCESS IS GRANTED:
+
+    const term = gtin ?? q;
+    if (!term) return res.status(400).json({ error: 'Missing gtin or q parameter' });
+
+    // Get/refresh a USER access token with Marketplace Insights scope
+    const userAccessToken = await getUserAccessTokenWithRefresh();
+
+    // Build time filter (last 30 days by default)
+    const from = dateFrom ?? new Date(Date.now() - 30 * 864e5).toISOString();
+    const to = dateTo ?? new Date().toISOString();
+
+    const params = new URLSearchParams({
+      q: term,
+      filter: `lastSoldDate:[${from}..${to}]`,
+      limit: '100'
+    });
+
+    const r = await fetch(
+      `https://api.ebay.com/buy/marketplace_insights/v1_beta/item_sales/search?${params}`,
+      {
+        headers: {
+          Authorization: `Bearer ${userAccessToken}`,
+          'X-EBAY-C-MARKETPLACE-ID': marketplace
+        }
+      }
+    );
+
+    const json = await r.json();
+    if (r.status === 403) {
+      return res.status(501).json({
+        error: 'Not entitled for Marketplace Insights. Request access via Application Growth Check.'
+      });
+    }
+    if (!r.ok) return res.status(r.status).json({ error: json });
+
+    // Normalize to compact summary
+    const rows = (json.itemSales || []).map(it => ({
+      title: it.title,
+      price: Number(it.price?.value ?? 0),
+      currency: it.price?.currency ?? 'USD',
+      quantitySold: it.quantitySold ?? 1,
+      lastSoldDate: it.lastSoldDate
+    }));
+
+    const prices = rows.map(r => r.price).sort((a, b) => a - b);
+    const med = prices.length ? prices[(prices.length - 1) >> 1] : 0;
+
+    res.json({
+      count: rows.length,
+      min: prices[0] ?? 0,
+      median: med,
+      max: prices[prices.length - 1] ?? 0,
+      samples: rows.slice(0, 3) // 3 cheapest
+    });
+    */
+  } catch (e) {
+    res.status(500).json({ error: String(e) });
+  }
+});
+
 app.use(["/isbn", "/isbn-web", "/"], router);
 
 app.listen(PORT, () => console.log(`token broker on :${PORT}`));

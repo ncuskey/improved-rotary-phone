@@ -11,11 +11,13 @@ struct ScannerReviewView: View {
 
     // eBay pricing integration
     @StateObject private var pricing: ScannerPricingVM = {
-        let broker = EbayTokenBroker(config: TokenBrokerConfig(
+        let config = TokenBrokerConfig(
             baseURL: URL(string: "http://192.168.4.50:8787")!,
             prefix: ""
-        ))
-        return ScannerPricingVM(broker: broker, zip: "60601")
+        )
+        let broker = EbayTokenBroker(config: config)
+        let soldAPI = SoldAPI(config: config)
+        return ScannerPricingVM(broker: broker, soldAPI: soldAPI, zip: "60601")
     }()
 
     var body: some View {
@@ -95,16 +97,28 @@ struct ScannerReviewView: View {
     @ViewBuilder
     private var pricingPanel: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("eBay Comps")
-                .font(.headline)
+            // Mode toggle
+            HStack {
+                Text("eBay Comps")
+                    .font(.headline)
+
+                Spacer()
+
+                Picker("", selection: $pricing.mode) {
+                    Text("Active").tag(PricingMode.active)
+                    Text(soldLabel).tag(PricingMode.sold)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 180)
+            }
 
             if pricing.isLoading {
                 HStack(spacing: 8) {
                     ProgressView()
-                    Text("Checking active listings…")
+                    Text(pricing.mode == .active ? "Checking active listings…" : "Checking sold comps…")
                 }
                 .padding(.vertical, 4)
-            } else if let s = pricing.summary {
+            } else if let s = pricing.currentSummary {
                 // Stats row
                 HStack(spacing: 16) {
                     statView("Count", "\(s.count)")
@@ -127,14 +141,16 @@ struct ScannerReviewView: View {
                             Spacer()
                             VStack(alignment: .trailing, spacing: 2) {
                                 Text(formatUSD(row.delivered)).bold()
-                                Text("Item \(formatUSD(row.item))  ·  Ship \(formatUSD(row.ship))")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                if pricing.mode == .active {
+                                    Text("Item \(formatUSD(row.item))  ·  Ship \(formatUSD(row.ship))")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
                             }
                         }
                         .padding(.vertical, 2)
                     }
                 } else {
-                    Text("No active listings for this GTIN.")
+                    Text(pricing.mode == .active ? "No active listings for this GTIN." : "No sold history for this GTIN.")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
             } else if let err = pricing.error {
@@ -147,6 +163,13 @@ struct ScannerReviewView: View {
         .padding()
         .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
         .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
+    }
+
+    private var soldLabel: String {
+        if let sold = pricing.soldSummary {
+            return sold.isEstimate ? "Sold (est)" : "Sold"
+        }
+        return "Sold"
     }
 
     @ViewBuilder

@@ -12,14 +12,19 @@ Native iOS application for ISBN scanning and book cataloging with real-time eBay
 - Freeze-frame review with book preview
 
 ### 📊 Real-Time eBay Pricing
-- **Live market comparables** fetched during scan review
+- **Dual pricing modes**: Active listings + Sold comps
+- **Active listings** (Browse API):
+  - Current market comparables
+  - Resolved CALCULATED shipping
+  - 3 cheapest samples with item/ship breakdown
+- **Sold comps** (Track A/B):
+  - Track B: Conservative estimate from active (25th percentile for used, median for new)
+  - Track A: Real sold history from Marketplace Insights API (when approved)
+  - Label shows "Sold (est)" or "Sold" based on data source
 - Displays count, min, median, and max prices
-- Shows 3 cheapest listings with detailed breakdown:
-  - Item price
-  - Shipping cost
-  - Total delivered price
-- Resolves CALCULATED shipping rates via eBay Browse API
 - Contextual pricing based on US zip code
+- Segmented control for easy switching between modes
+- See [SOLD_COMPS.md](SOLD_COMPS.md) for detailed implementation guide
 
 ### 🔒 Secure Token Management
 - OAuth tokens obtained via server-side token broker

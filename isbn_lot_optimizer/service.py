@@ -2138,6 +2138,12 @@ class BookService:
                 unsold_count=unsold_count,
                 raw_active=payload.get("raw_active"),
                 raw_sold=payload.get("raw_sold"),
+                sold_comps_count=_to_int(payload.get("sold_comps_count")) if payload.get("sold_comps_count") is not None else None,
+                sold_comps_min=_to_float(payload.get("sold_comps_min")),
+                sold_comps_median=_to_float(payload.get("sold_comps_median")),
+                sold_comps_max=_to_float(payload.get("sold_comps_max")),
+                sold_comps_is_estimate=bool(payload.get("sold_comps_is_estimate", True)),
+                sold_comps_source=payload.get("sold_comps_source"),
             )
         justification_lines = (row["probability_reasons"] or "").split("\n") if row["probability_reasons"] else []
         evaluation = BookEvaluation(

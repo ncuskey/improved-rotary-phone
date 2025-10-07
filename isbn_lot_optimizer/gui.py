@@ -2898,51 +2898,90 @@ class BookEvaluatorGUI:
         else:
             self._set_status(f"No thumbnail available for {book.isbn}")
 
-        lines = [
-            f"Title: {book.metadata.title}",
-            f"ISBN: {book.isbn}",
-            f"Authors: {', '.join(book.metadata.authors) if book.metadata.authors else 'N/A'}",
-            f"Estimated price: ${book.estimated_price:.2f}",
-            f"Probability: {book.probability_label} ({book.probability_score:.1f})",
-            f"Condition: {book.condition}",
-            f"Quantity: {getattr(book, 'quantity', 1)}",
-        ]
-        if book.market and book.market.sell_through_rate is not None:
-            lines.append(f"Sell-through: {book.market.sell_through_rate:.0%}")
-        if book.market and book.market.sold_avg_price:
-            lines.append(f"Avg sold price: ${book.market.sold_avg_price:.2f}")
-        if book.rarity is not None:
-            lines.append(f"Rarity score: {book.rarity:.2f}")
+        # Build 4-column layout for better use of horizontal space
+        col1, col2, col3, col4 = [], [], [], []
+
+        # Column 1: Basic info
+        col1.append(f"Title: {book.metadata.title}")
+        col1.append(f"ISBN: {book.isbn}")
+        col1.append(f"Authors: {', '.join(book.metadata.authors) if book.metadata.authors else 'N/A'}")
+        col1.append(f"Condition: {book.condition}")
+        col1.append(f"Quantity: {getattr(book, 'quantity', 1)}")
         if book.edition:
-            lines.append(f"Edition notes: {book.edition}")
+            col1.append(f"Edition: {book.edition}")
+
+        # Column 2: Pricing & probability
+        col2.append(f"Estimated: ${book.estimated_price:.2f}")
+        col2.append(f"Probability: {book.probability_label}")
+        col2.append(f"Score: {book.probability_score:.1f}")
+        if book.rarity is not None:
+            col2.append(f"Rarity: {book.rarity:.2f}")
+        if book.market and book.market.sell_through_rate is not None:
+            col2.append(f"Sell-through: {book.market.sell_through_rate:.0%}")
+        if book.market and book.market.sold_avg_price:
+            col2.append(f"Avg sold: ${book.market.sold_avg_price:.2f}")
+
+        # Column 3: Sold comps (Track A/B)
+        if book.market and book.market.sold_comps_count is not None:
+            est_label = " (est)" if book.market.sold_comps_is_estimate else ""
+            col3.append(f"Sold Comps{est_label}:")
+            col3.append(f"  Count: {book.market.sold_comps_count}")
+            if book.market.sold_comps_min is not None:
+                col3.append(f"  Min: ${book.market.sold_comps_min:.2f}")
+            if book.market.sold_comps_median is not None:
+                col3.append(f"  Median: ${book.market.sold_comps_median:.2f}")
+            if book.market.sold_comps_max is not None:
+                col3.append(f"  Max: ${book.market.sold_comps_max:.2f}")
+            if book.market.sold_comps_source:
+                source_short = book.market.sold_comps_source.replace("marketplace_insights", "MI").replace("estimate", "est")
+                col3.append(f"  Source: {source_short}")
+
+        # Column 4: BooksRun offers
         offer = getattr(book, "booksrun", None)
         if offer is not None:
+            col4.append("BooksRun:")
             if offer.cash_price is not None:
-                lines.append(f"BooksRun cash offer: ${offer.cash_price:.2f}")
+                col4.append(f"  Cash: ${offer.cash_price:.2f}")
             if offer.store_credit is not None:
-                lines.append(f"BooksRun credit offer: ${offer.store_credit:.2f}")
+                col4.append(f"  Credit: ${offer.store_credit:.2f}")
             if book.booksrun_value_label:
                 if book.booksrun_value_ratio is not None:
-                    lines.append(
-                        f"BooksRun value: {book.booksrun_value_label} ({book.booksrun_value_ratio:.0%} of estimate)"
-                    )
+                    col4.append(f"  Value: {book.booksrun_value_label} ({book.booksrun_value_ratio:.0%})")
                 else:
-                    lines.append(f"BooksRun value: {book.booksrun_value_label}")
-            if getattr(offer, "url", None):
-                lines.append(f"BooksRun link: {offer.url}")
+                    col4.append(f"  Value: {book.booksrun_value_label}")
+
+        # Format columns side by side
+        max_rows = max(len(col1), len(col2), len(col3), len(col4))
+        lines = []
+        for i in range(max_rows):
+            c1 = col1[i] if i < len(col1) else ""
+            c2 = col2[i] if i < len(col2) else ""
+            c3 = col3[i] if i < len(col3) else ""
+            c4 = col4[i] if i < len(col4) else ""
+            # Use fixed widths for alignment
+            line = f"{c1:<40} {c2:<28} {c3:<28} {c4:<28}"
+            lines.append(line.rstrip())
+
+        # Add timestamp
         created_at = getattr(book, "created_at", None)
         if created_at:
+            lines.append("")
             lines.append(f"Scanned: {self._format_timestamp(created_at)}")
+
+        # Add lots section
         lots = self._lots_for_book(book.isbn)
         if lots:
             lines.append("")
             lines.append("Lots:")
             for name in lots:
                 lines.append(f" - {name}")
+
+        # Add justification section
         if book.justification:
             lines.append("")
             lines.append("Reasons:")
             lines.extend(f" - {reason}" for reason in book.justification)
+
         self._set_detail_text("\n".join(lines))
         if lots:
             self._link_lot_names(lots)

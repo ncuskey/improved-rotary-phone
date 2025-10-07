@@ -14,6 +14,8 @@ struct LotHelperApp: App {
     init() {
         let background = UIColor(named: "AppBackground") ?? .systemBackground
 
+        configureURLCache()
+
         // Ensure the root hosting controller's window uses the app background color.
         UIWindow.appearance().backgroundColor = background
 
@@ -33,6 +35,13 @@ struct LotHelperApp: App {
             UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
             UINavigationBar.appearance().compactAppearance = navAppearance
         }
+    }
+
+    private func configureURLCache() {
+        let memoryCapacity = 50 * 1024 * 1024 // 50 MB
+        let diskCapacity = 200 * 1024 * 1024 // 200 MB
+        let cache = URLCache(memoryCapacity: memoryCapacity, diskCapacity: diskCapacity)
+        URLCache.shared = cache
     }
 
     var sharedModelContainer: ModelContainer = {

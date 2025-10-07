@@ -186,13 +186,20 @@ struct LotSuggestionDTO: Codable, Identifiable, Hashable {
 enum BookAPI {
     static let baseURLString = "http://192.168.4.50:8000"
 
-    private static func decodeResponse<T: Decodable>(
-        _ type: T.Type,
-        from data: Data,
-        using decoder: JSONDecoder = JSONDecoder()
-    ) throws -> T {
-        decoder.keyDecodingStrategy = .useDefaultKeys
-        return try decoder.decode(type, from: data)
+    private static let session: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.waitsForConnectivity = true
+        configuration.requestCachePolicy = .returnCacheDataElseLoad
+        configuration.urlCache = URLCache.shared
+        return URLSession(configuration: configuration)
+    }()
+
+    private static func decodeOnWorker<T: Decodable>(_ type: T.Type, from data: Data) async throws -> T {
+        try await Task.detached(priority: .utility) {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .useDefaultKeys
+            return try decoder.decode(type, from: data)
+        }.value
     }
 
     /// Async/await variant for ISBN lookup.
@@ -208,7 +215,7 @@ enum BookAPI {
         let payload = ["isbn": isbn]
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
         if let json = String(data: data, encoding: .utf8) {
             print("🔎 Raw response JSON:\n\(json)")
@@ -222,7 +229,7 @@ enum BookAPI {
             throw BookAPIError.badStatus(code: http.statusCode, body: String(data: data, encoding: .utf8))
         }
 
-        return try decodeResponse(ISBNLookupResponse.self, from: data)
+        return try await decodeOnWorker(ISBNLookupResponse.self, from: data)
     }
 
     static func fetchBookInfo(_ isbn: String) async throws -> BookInfo {
@@ -272,7 +279,7 @@ enum BookAPI {
             throw URLError(.badURL)
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await session.data(from: url)
 
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
@@ -284,7 +291,7 @@ enum BookAPI {
             throw BookAPIError.badStatus(code: http.statusCode, body: body)
         }
 
-        return try decodeResponse([BookEvaluationRecord].self, from: data)
+        return try await decodeOnWorker([BookEvaluationRecord].self, from: data)
     }
 
     /// Completion-based wrapper for fetchAllBooks
@@ -306,7 +313,7 @@ enum BookAPI {
             throw URLError(.badURL)
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await session.data(from: url)
 
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
@@ -318,7 +325,7 @@ enum BookAPI {
             throw BookAPIError.badStatus(code: http.statusCode, body: body)
         }
 
-        return try decodeResponse([LotSuggestionDTO].self, from: data)
+        return try await decodeOnWorker([LotSuggestionDTO].self, from: data)
     }
 
     /// Completion-based wrapper for fetchAllLots

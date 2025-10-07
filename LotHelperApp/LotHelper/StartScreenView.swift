@@ -2,6 +2,8 @@ import SwiftUI
 
 struct StartScreenView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("scanner.autoSubmit") private var autoSubmit = true
+    @AppStorage("scanner.hapticsEnabled") private var hapticsEnabled = true
 
     @State private var isPresentingScanner = false
     @State private var scannedISBN: String?
@@ -52,6 +54,20 @@ struct StartScreenView: View {
                     .bodyStyle()
                     .foregroundStyle(DS.Color.textSecondary)
                     .padding(.top, DS.Spacing.sm)
+            }
+
+            if !autoSubmit, let pendingISBN = scannedISBN {
+                Button {
+                    performLookup(for: pendingISBN)
+                } label: {
+                    Label("Submit \(pendingISBN)", systemImage: "paperplane")
+                        .font(.body.weight(.semibold))
+                        .padding(.horizontal, DS.Spacing.xl)
+                        .padding(.vertical, max(DS.Spacing.sm, 12))
+                }
+                .buttonStyle(.borderedProminent)
+                .accessibilityLabel("Submit scanned ISBN \(pendingISBN)")
+                .padding(.top, DS.Spacing.sm)
             }
 
             if isLoading {
@@ -146,11 +162,13 @@ struct StartScreenView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, DS.Spacing.xl)
         .background(DS.Color.background)
+        .ignoresSafeArea(edges: .all)
         .fullScreenCover(isPresented: $isPresentingScanner) {
             ScannerModalView(onDismiss: { isPresentingScanner = false }, onCode: handleScan(code:))
         }
     }
 
+    @MainActor
     private func performLookup(for isbn: String) {
         let trimmed = isbn.trimmingCharacters(in: .whitespacesAndNewlines)
         let digitsOnly = trimmed.filter { $0.isNumber }
@@ -172,18 +190,26 @@ struct StartScreenView: View {
                         self.bookInfo = info
                         self.lastResult = info
                     }
+                    if hapticsEnabled {
+#if canImport(UIKit)
+                        haptic(.success)
+#endif
+                    }
                 } else {
                     self.animate {
                         self.errorMessage = "Lookup failed. Please check the server or ISBN and try again."
                     }
+                    if hapticsEnabled {
 #if canImport(UIKit)
-                    haptic(.error)
+                        haptic(.error)
 #endif
+                    }
                 }
             }
         }
     }
 
+    @MainActor
     private func handleScan(code: String) {
         let cleaned = code.filter { $0.isNumber }
 
@@ -191,18 +217,30 @@ struct StartScreenView: View {
             animate {
                 errorMessage = "That didn't look like a valid ISBN. Try again."
             }
+            if hapticsEnabled {
 #if canImport(UIKit)
-            haptic(.error)
+                haptic(.error)
 #endif
+            }
             isPresentingScanner = false
             return
         }
 
-#if canImport(UIKit)
-        haptic(.success)
-#endif
         isPresentingScanner = false
-        performLookup(for: cleaned)
+        if autoSubmit {
+            performLookup(for: cleaned)
+        } else {
+            animate {
+                scannedISBN = cleaned
+                errorMessage = nil
+                bookInfo = nil
+            }
+            if hapticsEnabled {
+#if canImport(UIKit)
+                haptic(.success)
+#endif
+            }
+        }
     }
 }
 
@@ -241,9 +279,13 @@ struct ScannerModalView: View {
     var onDismiss: () -> Void
     var onCode: (String) -> Void
 
+    @State private var isActive = true
+
     var body: some View {
         ZStack {
-            BarcodeScannerView(onScan: onCode)
+            BarcodeScannerView(isActive: $isActive, onScan: { code in
+                onCode(code)
+            })
                 .ignoresSafeArea()
 
             Color.black.opacity(0.25)
@@ -253,7 +295,10 @@ struct ScannerModalView: View {
             VStack {
                 HStack {
                     Spacer()
-                    Button(action: onDismiss) {
+                    Button(action: {
+                        isActive = false
+                        onDismiss()
+                    }) {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 28, weight: .semibold))
                             .foregroundStyle(.white)
@@ -278,7 +323,10 @@ struct ScannerModalView: View {
 
                 Spacer()
 
-                Button(action: onDismiss) {
+                Button(action: {
+                    isActive = false
+                    onDismiss()
+                }) {
                     Label("Cancel Scan", systemImage: "xmark")
                         .font(.body.weight(.semibold))
                         .padding(.horizontal, DS.Spacing.xl)
@@ -289,6 +337,8 @@ struct ScannerModalView: View {
                 .padding(.bottom, DS.Spacing.xl)
             }
         }
+        .onAppear { isActive = true }
+        .onDisappear { isActive = false }
     }
 }
 

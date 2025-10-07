@@ -22,16 +22,26 @@ lot recommendations in real time.
   CSV import/export workflows.
 - Headless utilities, including a bulk BooksRun SELL quote fetcher.
 
-## Mobile Camera Scanner
+## Mobile Camera Scanner & iOS App
 
-The web interface includes a mobile-optimized camera scanner for ISBN detection:
+The web interface includes a mobile-optimized camera scanner for ISBN detection, and a native iOS app provides full barcode scanning with real-time eBay pricing:
 
+### Web Scanner
 - **✅ OCR Text Recognition**: Successfully extracts ISBNs from book cover text
 - **❌ Barcode Scanning**: Currently not working (see `CAMERA_SCANNER_TODO.md`)
 - **📱 Mobile-First Design**: Optimized for smartphone use
 - **🔄 Fallback Options**: Manual input when camera fails
 
 **Status**: OCR functionality is working well, but barcode scanning needs fixes. See `CAMERA_SCANNER_README.md` for detailed documentation and `CAMERA_SCANNER_TODO.md` for known issues and next steps.
+
+### iOS App (LotHelper)
+- **✅ Native Barcode Scanner**: Fast, accurate ISBN/barcode scanning with tap-to-focus
+- **📊 Live eBay Pricing**: Real-time market comparables during scanning
+- **🔒 Secure Token Management**: eBay OAuth tokens handled server-side via token broker
+- **📱 Modern SwiftUI**: Beautiful, accessible interface with haptic feedback
+- **🔄 Seamless Integration**: Syncs with backend catalog via REST API
+
+**eBay Token Broker**: A lightweight Node.js service (`token-broker/`) provides OAuth tokens to the iOS app, keeping your eBay Production credentials secure on the server. Auto-starts with `isbn` or `isbn-web` commands.
 
 ## Quick Start
 1. Create a virtual environment and install dependencies:
@@ -46,8 +56,8 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection:
    ```bash
    # eBay APIs
    export EBAY_APP_ID=your-finding-app-id              # Finding API (sold/unsold)
-   export EBAY_CLIENT_ID=your-browse-client-id         # Browse API (active comps)
-   export EBAY_CLIENT_SECRET=your-browse-client-secret
+   export EBAY_CLIENT_ID=your-browse-client-id         # Browse API (active comps) + Token Broker
+   export EBAY_CLIENT_SECRET=your-browse-client-secret # Token Broker
    export EBAY_MARKETPLACE=EBAY_US                     # Optional (default: EBAY_US)
 
    # BooksRun (for SELL quotes)
@@ -57,6 +67,8 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection:
    export HTTP_PROXY=http://proxy:8080
    export HTTPS_PROXY=http://proxy:8080
    ```
+
+   **Token Broker**: The eBay token broker (`token-broker/`) auto-starts when you run `isbn` or `isbn-web`. It provides OAuth tokens to the iOS app on port 8787. No additional setup required—just set `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` in `.env`.
 
 3. Launch the application:
    

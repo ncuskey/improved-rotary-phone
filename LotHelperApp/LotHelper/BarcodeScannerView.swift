@@ -10,160 +10,223 @@ import SwiftUI
 #if canImport(UIKit)
 import UIKit
 import AVFoundation
-#endif
-
-#if canImport(UIKit)
-class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
-    var captureSession: AVCaptureSession?
-    var previewLayer: AVCaptureVideoPreviewLayer?
-    var lastScannedCode: String?
-    var lastScanTime = Date(timeIntervalSince1970: 0)
-    var onScan: ((String) -> Void)?
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        checkCameraAuthorization()
-    }
-
-    private func checkCameraAuthorization() {
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized:
-            setupSession()
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                DispatchQueue.main.async {
-                    if granted {
-                        self?.setupSession()
-                    } else {
-                        self?.showCameraDeniedUI()
-                    }
-                }
-            }
-        case .denied, .restricted:
-            showCameraDeniedUI()
-        @unknown default:
-            showCameraDeniedUI()
-        }
-    }
-
-    private func setupSession() {
-        let session = AVCaptureSession()
-
-        guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
-            showUnsupportedUI()
-            return
-        }
-
-        guard let videoInput = try? AVCaptureDeviceInput(device: videoCaptureDevice),
-              session.canAddInput(videoInput) else {
-            showUnsupportedUI()
-            return
-        }
-        session.addInput(videoInput)
-
-        let metadataOutput = AVCaptureMetadataOutput()
-        guard session.canAddOutput(metadataOutput) else {
-            showUnsupportedUI()
-            return
-        }
-        session.addOutput(metadataOutput)
-
-        metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
-
-        // Filter desired types by what the device actually supports to avoid configuration errors
-        let desired: [AVMetadataObject.ObjectType] = [.ean8, .ean13, .pdf417, .qr]
-        let supported = Set(metadataOutput.availableMetadataObjectTypes)
-        metadataOutput.metadataObjectTypes = desired.filter { supported.contains($0) }
-
-        let preview = AVCaptureVideoPreviewLayer(session: session)
-        preview.frame = view.layer.bounds
-        preview.videoGravity = .resizeAspectFill
-        view.layer.addSublayer(preview)
-
-        self.captureSession = session
-        self.previewLayer = preview
-        session.startRunning()
-    }
-
-    private func showCameraDeniedUI() {
-        let label = UILabel()
-        label.text = "Camera access is required to scan barcodes. Enable it in Settings."
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.textColor = .secondaryLabel
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            label.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
-            label.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20)
-        ])
-    }
-
-    private func showUnsupportedUI() {
-        let label = UILabel()
-        label.text = "This device does not support barcode scanning."
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        label.textColor = .secondaryLabel
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            label.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
-            label.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20)
-        ])
-    }
-
-    func metadataOutput(_ output: AVCaptureMetadataOutput,
-                        didOutput metadataObjects: [AVMetadataObject],
-                        from connection: AVCaptureConnection) {
-        guard let metadataObject = metadataObjects.first,
-              let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject,
-              let stringValue = readableObject.stringValue else { return }
-
-        // Debounce logic: Ignore duplicates scanned within 2 seconds
-        if stringValue == lastScannedCode && Date().timeIntervalSince(lastScanTime) < 2 {
-            return
-        }
-
-        lastScannedCode = stringValue
-        lastScanTime = Date()
-
-        onScan?(stringValue)
-        captureSession?.stopRunning()
-
-        print("🔍 Scanned code: \(stringValue)")
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        previewLayer?.frame = view.layer.bounds
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        if captureSession?.isRunning == true {
-            captureSession?.stopRunning()
-        }
-    }
-}
+import AudioToolbox
 
 struct BarcodeScannerView: UIViewControllerRepresentable {
-    var onScan: (String) -> Void = { _ in }
+    @Binding var isActive: Bool
+    var onScan: (String) -> Void
 
     func makeUIViewController(context: Context) -> ScannerViewController {
         let controller = ScannerViewController()
         controller.onScan = onScan
+        controller.setActive(isActive)
         return controller
     }
 
-    func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {}
+    func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {
+        uiViewController.onScan = onScan
+        uiViewController.setActive(isActive)
+    }
+}
+
+final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+    var onScan: ((String) -> Void)?
+
+    private let session = AVCaptureSession()
+    private var previewLayer: AVCaptureVideoPreviewLayer?
+    private var isSessionConfigured = false
+    private var isActive = true
+    private let sessionQueue = DispatchQueue(label: "com.lothelper.scanner.session")
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .black
+        configureIfNeeded()
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        view.addGestureRecognizer(tap)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        previewLayer?.frame = view.bounds
+    }
+
+    func setActive(_ active: Bool) {
+        guard isActive != active else { return }
+        isActive = active
+        if active {
+            startSessionIfPossible()
+        } else {
+            sessionQueue.async { [weak self] in
+                guard let self else { return }
+                if self.session.isRunning {
+                    self.session.stopRunning()
+                }
+            }
+        }
+    }
+
+    private func configureIfNeeded() {
+        guard !isSessionConfigured else { return }
+        isSessionConfigured = true
+
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            setupSession()
+            startSessionIfPossible()
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if granted {
+                        self.setupSession()
+                        self.startSessionIfPossible()
+                    } else {
+                        self.showPermissionDeniedUI()
+                    }
+                }
+            }
+        case .denied, .restricted:
+            showPermissionDeniedUI()
+        @unknown default:
+            showPermissionDeniedUI()
+        }
+    }
+
+    private func setupSession() {
+        session.beginConfiguration()
+        session.sessionPreset = .high
+
+        guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+              let input = try? AVCaptureDeviceInput(device: device),
+              session.canAddInput(input) else {
+            showCameraUnavailableUI()
+            session.commitConfiguration()
+            return
+        }
+        session.addInput(input)
+
+        let output = AVCaptureMetadataOutput()
+        guard session.canAddOutput(output) else {
+            showCameraUnavailableUI()
+            session.commitConfiguration()
+            return
+        }
+        session.addOutput(output)
+        output.metadataObjectTypes = [.ean13, .ean8, .upce, .code128, .qr]
+        output.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+
+        let layer = AVCaptureVideoPreviewLayer(session: session)
+        layer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(layer)
+        previewLayer = layer
+
+        session.commitConfiguration()
+    }
+
+    private func startSessionIfPossible() {
+        guard isActive, isSessionConfigured else { return }
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            if !self.session.isRunning {
+                self.session.startRunning()
+            }
+        }
+    }
+
+    // MARK: - Metadata delegate
+
+    func metadataOutput(_ output: AVCaptureMetadataOutput,
+                        didOutput metadataObjects: [AVMetadataObject],
+                        from connection: AVCaptureConnection) {
+        guard isActive,
+              let object = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
+              let value = object.stringValue, !value.isEmpty else { return }
+
+        isActive = false
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            if self.session.isRunning {
+                self.session.stopRunning()
+            }
+        }
+
+        AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+        onScan?(value)
+    }
+
+    // MARK: - Fallback UIs
+
+    private func showPermissionDeniedUI() {
+        let label = makeLabel(text: "Camera permission denied.\nEnable access in Settings to scan barcodes.")
+        view.addSubview(label)
+        constrain(label)
+    }
+
+    private func showCameraUnavailableUI() {
+        let label = makeLabel(text: "Camera unavailable on this device.")
+        view.addSubview(label)
+        constrain(label)
+    }
+
+    private func makeLabel(text: String) -> UILabel {
+        let label = UILabel()
+        label.text = text
+        label.numberOfLines = 0
+        label.textAlignment = .center
+        label.textColor = .secondaryLabel
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }
+
+    private func constrain(_ label: UILabel) {
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            label.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20)
+        ])
+    }
+
+    // MARK: - Tap to focus
+
+    @objc private func handleTap(_ recognizer: UITapGestureRecognizer) {
+        let location = recognizer.location(in: view)
+        guard let layer = previewLayer,
+              let input = session.inputs.first as? AVCaptureDeviceInput else { return }
+
+        let devicePoint = layer.captureDevicePointConverted(fromLayerPoint: location)
+        let device = input.device
+
+        do {
+            try device.lockForConfiguration()
+
+            if device.isFocusPointOfInterestSupported {
+                device.focusPointOfInterest = devicePoint
+                if device.isFocusModeSupported(.autoFocus) {
+                    device.focusMode = .autoFocus
+                }
+            }
+
+            if device.isExposurePointOfInterestSupported {
+                device.exposurePointOfInterest = devicePoint
+                if device.isExposureModeSupported(.continuousAutoExposure) {
+                    device.exposureMode = .continuousAutoExposure
+                }
+            }
+
+            device.unlockForConfiguration()
+        } catch {
+#if DEBUG
+            print("Focus configuration failed: \(error)")
+#endif
+        }
+    }
 }
 #else
 struct BarcodeScannerView: View {
+    @Binding var isActive: Bool
     var onScan: (String) -> Void = { _ in }
     var body: some View {
         Text("Barcode scanning is not supported on this platform.")

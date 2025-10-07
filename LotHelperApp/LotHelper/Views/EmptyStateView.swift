@@ -26,6 +26,8 @@ struct EmptyStateView: View {
             Button(actionTitle, action: action)
                 .buttonStyle(.borderedProminent)
                 .accessibilityLabel(actionTitle)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.vertical, 12)
         }
         .padding(DS.Spacing.xl)
         .frame(maxWidth: .infinity)

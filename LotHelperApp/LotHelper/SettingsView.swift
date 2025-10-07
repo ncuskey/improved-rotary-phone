@@ -1,25 +1,26 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @AppStorage("scanner.autoSubmit") private var autoSubmit = true
+    @AppStorage("scanner.hapticsEnabled") private var hapticsEnabled = true
+    @AppStorage("data.useLocalServer") private var useLocalServer = true
+    @AppStorage("data.useProductionAPI") private var useProductionAPI = false
+
+    @Environment(\.openURL) private var openURL
+
+    private let privacyURL = URL(string: "https://clevergirl.ai/privacy")!
+    private let licensesURL = URL(string: "https://clevergirl.ai/licenses")!
+    private let feedbackURL = URL(string: "mailto:lothelper@clevergirl.ai?subject=LotHelper%20Feedback")!
+
     var body: some View {
         NavigationStack {
             List {
-                Section("Appearance") {
-                    Label("Brand theme enabled", systemImage: "paintbrush.pointed")
-                        .font(.system(.subheadline, design: .rounded)).foregroundStyle(DS.Color.textSecondary)
-                }
-
-                Section("About") {
-                    VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                        Text("LotHelper")
-                            .bodyStyle().fontWeight(.semibold)
-                        Text(appVersion)
-                            .font(.caption)
-                            .foregroundStyle(DS.Color.textSecondary)
-                    }
-                    .padding(.vertical, DS.Spacing.xs)
-                }
+                scannerSection
+                dataSourcesSection
+                aboutSection
+                linksSection
             }
+            .tint(DS.Color.primary)
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(DS.Color.background)
@@ -27,10 +28,69 @@ struct SettingsView: View {
         }
     }
 
+    private var scannerSection: some View {
+        Section("Scanner") {
+            Toggle(isOn: $autoSubmit) {
+                Label("Auto-submit after scan", systemImage: "bolt.badge.clock")
+            }
+            Toggle(isOn: $hapticsEnabled) {
+                Label("Vibration feedback", systemImage: "waveform.path")
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var dataSourcesSection: some View {
+        Section("Data Sources") {
+            Toggle(isOn: $useLocalServer) {
+                Label("Use local server", systemImage: "server.rack")
+            }
+            Toggle(isOn: $useProductionAPI) {
+                Label("Use production API", systemImage: "antenna.radiowaves.left.and.right")
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var aboutSection: some View {
+        Section("About") {
+            HStack {
+                Text("App Version")
+                Spacer()
+                Text(appVersion)
+                    .font(.caption)
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .accessibilityLabel("Version \(appVersion)")
+            }
+        }
+    }
+
+    private var linksSection: some View {
+        Section("Links") {
+            Button {
+                openURL(privacyURL)
+            } label: {
+                Label("Privacy Policy", systemImage: "lock.shield")
+            }
+
+            Button {
+                openURL(licensesURL)
+            } label: {
+                Label("Open Source Licenses", systemImage: "doc.text.magnifyingglass")
+            }
+
+            Button {
+                openURL(feedbackURL)
+            } label: {
+                Label("Send Feedback", systemImage: "envelope")
+            }
+        }
+    }
+
     private var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
-        return "Version \(version) (\(build))"
+        return "\(version) (\(build))"
     }
 }
 

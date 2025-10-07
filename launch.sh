@@ -69,6 +69,11 @@ fi
 #   set +a
 # fi
 
+# Start the token broker if not already running
+if [ -x "$PROJECT_DIR/token-broker/start-broker.sh" ]; then
+  "$PROJECT_DIR/token-broker/start-broker.sh" || true
+fi
+
 # Run the application from the project directory so relative paths behave as expected
 cd "$PROJECT_DIR"
 

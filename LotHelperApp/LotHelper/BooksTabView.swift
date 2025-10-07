@@ -9,8 +9,18 @@ struct BooksTabView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("Loading books…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    ScrollView {
+                        LazyVStack(spacing: DS.Spacing.md) {
+                            ForEach(0..<6, id: \.self) { _ in
+                                BookCardView(book: .placeholder)
+                                    .redacted(reason: .placeholder)
+                            }
+                        }
+                        .padding(.vertical, DS.Spacing.md)
+                        .padding(.horizontal, DS.Spacing.xl)
+                    }
+                    .scrollIndicators(.hidden)
+                    .background(DS.Color.background)
                 } else if let errorMessage {
                     EmptyStateView(
                         systemImage: "exclamationmark.triangle",
@@ -42,6 +52,7 @@ struct BooksTabView: View {
                         .padding(.vertical, DS.Spacing.md)
                         .padding(.horizontal, DS.Spacing.xl)
                     }
+                    .scrollIndicators(.hidden)
                     .background(DS.Color.background)
                     .refreshable { await loadBooks() }
                     .navigationDestination(for: BookEvaluationRecord.self) { record in

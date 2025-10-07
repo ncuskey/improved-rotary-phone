@@ -9,8 +9,13 @@ struct LotRecommendationsView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("Loading lots…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    List(Array(repeating: LotSuggestionDTO.placeholder, count: 5), id: \.name) { lot in
+                        LotSummaryRow(lot: lot)
+                    }
+                    .listStyle(.plain)
+                    .scrollDisabled(true)
+                    .redacted(reason: .placeholder)
+                    .background(DS.Color.background)
                 } else if let errorMessage {
                     EmptyStateView(
                         systemImage: "exclamationmark.triangle",
@@ -72,6 +77,28 @@ struct LotRecommendationsView: View {
     }
 }
 
+private extension LotSuggestionDTO {
+    static var placeholder: LotSuggestionDTO {
+        LotSuggestionDTO(
+            lotID: nil,
+            name: "Sample Lot",
+            strategy: "placeholder.strategy",
+            bookIsbns: Array(repeating: "0000000000", count: 3),
+            estimatedValue: 0,
+            probabilityScore: 0,
+            probabilityLabel: "",
+            sellThrough: nil,
+            justification: nil,
+            displayAuthorLabel: "",
+            canonicalAuthor: nil,
+            canonicalSeries: nil,
+            seriesName: nil,
+            books: nil,
+            marketJson: nil
+        )
+    }
+}
+
 private struct LotSummaryRow: View {
     let lot: LotSuggestionDTO
 
@@ -98,6 +125,7 @@ private struct LotSummaryRow: View {
             }
         }
         .padding(.vertical, DS.Spacing.sm)
+        .contentShape(Rectangle())
     }
 }
 

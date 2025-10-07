@@ -3,9 +3,14 @@ import SwiftUI
 struct LastScanSummary: View {
     let book: BookInfo
 
+    private var coverURL: URL? {
+        guard !book.thumbnail.isEmpty else { return nil }
+        return URL(string: book.thumbnail)
+    }
+
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
-            if let url = URL(string: book.thumbnail), !book.thumbnail.isEmpty {
+            if let url = coverURL {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):
@@ -13,16 +18,18 @@ struct LastScanSummary: View {
                             .resizable()
                             .scaledToFill()
                     case .failure:
-                        Rectangle().fill(DS.Color.cardBg)
-                            .overlay(Image(systemName: "book.closed").foregroundStyle(DS.Color.textSecondary))
+                        placeholder
                     default:
-                        Rectangle().fill(DS.Color.cardBg)
-                            .overlay(ProgressView())
+                        placeholder.overlay(ProgressView())
                     }
                 }
-                .frame(width: 48, height: 72)
+                .frame(width: 60, height: 90)
                 .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
                 .accessibilityHidden(true)
+            } else {
+                placeholder
+                    .frame(width: 60, height: 90)
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
             }
 
             VStack(alignment: .leading, spacing: 4) {
@@ -55,6 +62,11 @@ struct LastScanSummary: View {
         .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
         .accessibilityElement(children: .combine)
     }
+
+    private var placeholder: some View {
+        Rectangle().fill(DS.Color.cardBg)
+            .overlay(Image(systemName: "book.closed").foregroundStyle(DS.Color.textSecondary))
+    }
 }
 
 #Preview {
@@ -74,3 +86,4 @@ struct LastScanSummary: View {
     .padding()
     .background(DS.Color.background)
 }
+

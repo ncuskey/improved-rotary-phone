@@ -9,6 +9,14 @@ struct BookCardView: View {
         let score: String?
 
         var coverURL: URL? { URL(string: thumbnail) }
+        var coverRequest: URLRequest? {
+            guard let url = coverURL else { return nil }
+            var request = URLRequest(url: url)
+            request.cachePolicy = .returnCacheDataElseLoad
+            return request
+        }
+
+        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil)
     }
 
     let book: Book
@@ -85,3 +93,4 @@ struct BookCardView: View {
     .padding()
     .background(DS.Color.background)
 }
+

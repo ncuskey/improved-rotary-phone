@@ -808,7 +808,7 @@ class BookEvaluatorGUI:
                     progress_cb=progress,
                 )
             except Exception as exc:  # pragma: no cover - UI error path
-                self.root.after(0, lambda: handle_error(exc))
+                self.root.after(0, lambda e=exc: handle_error(e))
                 return
             self.root.after(0, lambda: handle_success(count))
 

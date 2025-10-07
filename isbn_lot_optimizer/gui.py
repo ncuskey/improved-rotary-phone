@@ -36,6 +36,178 @@ from .constants import COVER_CHOICES
 from .utils import normalise_isbn, isbn10_to_isbn13, compute_isbn10_check_digit
 from .author_match import cluster_authors
 
+
+# -----------------------------
+# Book Attributes Dialog
+# -----------------------------
+class BookAttributesDialog(Toplevel):
+    """Dialog for selecting book-specific attributes during scanning."""
+
+    def __init__(self, parent, initial_condition="Good", initial_edition=None):
+        super().__init__(parent)
+        self.title("Book Attributes")
+        self.geometry("500x450")
+        self.resizable(False, False)
+        self.transient(parent)
+        self.grab_set()
+
+        self.result = None
+
+        # Variables
+        self.condition_var = tk.StringVar(value=initial_condition)
+        self.cover_type_var = tk.StringVar(value="Unknown")
+        self.signed_var = tk.BooleanVar(value=False)
+        self.first_edition_var = tk.BooleanVar(value=False)
+        self.printing_var = tk.StringVar(value="")
+        self.edition_notes_var = tk.StringVar(value=initial_edition or "")
+
+        self._build_ui()
+        self._update_summary()
+
+        # Center on parent
+        self.update_idletasks()
+        x = parent.winfo_x() + (parent.winfo_width() // 2) - (self.winfo_width() // 2)
+        y = parent.winfo_y() + (parent.winfo_height() // 2) - (self.winfo_height() // 2)
+        self.geometry(f"+{x}+{y}")
+
+    def _build_ui(self):
+        # Main frame
+        main_frame = ttk.Frame(self, padding=15)
+        main_frame.pack(fill="both", expand=True)
+
+        # Condition section
+        ttk.Label(main_frame, text="Condition", font=("", 10, "bold")).grid(row=0, column=0, sticky="w", pady=(0, 5))
+        condition_frame = ttk.Frame(main_frame)
+        condition_frame.grid(row=1, column=0, sticky="ew", pady=(0, 15))
+
+        conditions = ["Acceptable", "Good", "Very Good", "Like New", "New"]
+        for i, cond in enumerate(conditions):
+            ttk.Radiobutton(
+                condition_frame,
+                text=cond,
+                variable=self.condition_var,
+                value=cond,
+                command=self._update_summary
+            ).grid(row=0, column=i, padx=5)
+
+        # Format section
+        ttk.Label(main_frame, text="Format", font=("", 10, "bold")).grid(row=2, column=0, sticky="w", pady=(0, 5))
+        cover_frame = ttk.Frame(main_frame)
+        cover_frame.grid(row=3, column=0, sticky="ew", pady=(0, 15))
+        ttk.Label(cover_frame, text="Cover Type:").grid(row=0, column=0, sticky="w")
+        cover_combo = ttk.Combobox(
+            cover_frame,
+            textvariable=self.cover_type_var,
+            values=["Hardcover", "Paperback", "Trade Paperback", "Mass Market", "Unknown"],
+            state="readonly",
+            width=20
+        )
+        cover_combo.grid(row=0, column=1, padx=(5, 0))
+        cover_combo.bind("<<ComboboxSelected>>", lambda _: self._update_summary())
+
+        # Edition Details section
+        ttk.Label(main_frame, text="Edition Details", font=("", 10, "bold")).grid(row=4, column=0, sticky="w", pady=(0, 5))
+        edition_frame = ttk.Frame(main_frame)
+        edition_frame.grid(row=5, column=0, sticky="ew", pady=(0, 15))
+
+        ttk.Checkbutton(
+            edition_frame,
+            text="First Edition",
+            variable=self.first_edition_var,
+            command=self._update_summary
+        ).grid(row=0, column=0, sticky="w", pady=3)
+
+        ttk.Label(edition_frame, text="Printing:").grid(row=1, column=0, sticky="w", pady=3)
+        printing_combo = ttk.Combobox(
+            edition_frame,
+            textvariable=self.printing_var,
+            values=["", "First Printing", "Second Printing", "Later Printing", "Book Club Edition"],
+            width=25
+        )
+        printing_combo.grid(row=1, column=1, padx=(5, 0), sticky="w", pady=3)
+        printing_combo.bind("<<ComboboxSelected>>", lambda _: self._update_summary())
+        printing_combo.bind("<KeyRelease>", lambda _: self._update_summary())
+
+        ttk.Label(edition_frame, text="Custom Notes:").grid(row=2, column=0, sticky="w", pady=3)
+        notes_entry = ttk.Entry(edition_frame, textvariable=self.edition_notes_var, width=30)
+        notes_entry.grid(row=2, column=1, padx=(5, 0), sticky="w", pady=3)
+        notes_entry.bind("<KeyRelease>", lambda _: self._update_summary())
+
+        # Special Attributes section
+        ttk.Label(main_frame, text="Special Attributes", font=("", 10, "bold")).grid(row=6, column=0, sticky="w", pady=(0, 5))
+        special_frame = ttk.Frame(main_frame)
+        special_frame.grid(row=7, column=0, sticky="ew", pady=(0, 15))
+
+        ttk.Checkbutton(
+            special_frame,
+            text="Signed / Autographed",
+            variable=self.signed_var,
+            command=self._update_summary
+        ).grid(row=0, column=0, sticky="w")
+
+        # Summary section
+        ttk.Label(main_frame, text="Summary", font=("", 10, "bold")).grid(row=8, column=0, sticky="w", pady=(0, 5))
+        self.summary_label = ttk.Label(main_frame, text="", foreground="gray", wraplength=450, justify="left")
+        self.summary_label.grid(row=9, column=0, sticky="w", pady=(0, 15))
+
+        # Buttons
+        button_frame = ttk.Frame(main_frame)
+        button_frame.grid(row=10, column=0, sticky="e")
+
+        ttk.Button(button_frame, text="Cancel", command=self._cancel).pack(side="right", padx=(5, 0))
+        ttk.Button(button_frame, text="OK", command=self._ok).pack(side="right")
+
+    def _update_summary(self):
+        parts = []
+        parts.append(f"Condition: {self.condition_var.get()}")
+        if self.cover_type_var.get() != "Unknown":
+            parts.append(f"Format: {self.cover_type_var.get()}")
+
+        edition_parts = []
+        if self.first_edition_var.get():
+            edition_parts.append("First Edition")
+        if self.printing_var.get():
+            edition_parts.append(self.printing_var.get())
+        if self.edition_notes_var.get():
+            edition_parts.append(self.edition_notes_var.get())
+        if edition_parts:
+            parts.append(f"Edition: {', '.join(edition_parts)}")
+
+        if self.signed_var.get():
+            parts.append("Signed")
+
+        self.summary_label.config(text=" • ".join(parts) if parts else "No special attributes")
+
+    def _ok(self):
+        # Build edition string
+        edition_parts = []
+        if self.first_edition_var.get():
+            edition_parts.append("First Edition")
+        if self.printing_var.get():
+            edition_parts.append(self.printing_var.get())
+        if self.edition_notes_var.get():
+            edition_parts.append(self.edition_notes_var.get())
+
+        self.result = {
+            "condition": self.condition_var.get(),
+            "edition": ", ".join(edition_parts) if edition_parts else None,
+            "cover_type": self.cover_type_var.get() if self.cover_type_var.get() != "Unknown" else None,
+            "printing": self.printing_var.get() if self.printing_var.get() else None,
+            "signed": self.signed_var.get(),
+        }
+        self.destroy()
+
+    def _cancel(self):
+        self.result = None
+        self.destroy()
+
+    @staticmethod
+    def show(parent, initial_condition="Good", initial_edition=None):
+        """Show dialog and return result dict or None if cancelled."""
+        dialog = BookAttributesDialog(parent, initial_condition, initial_edition)
+        parent.wait_window(dialog)
+        return dialog.result
+
 # Optional cover image support is imported lazily in _load_cover_image to avoid a hard dependency
 # on PIL/requests at import time and to prevent static analysis errors when they aren't installed.
 
@@ -443,8 +615,22 @@ class BookEvaluatorGUI:
             messagebox.showwarning("Invalid ISBN", "Could not recognise that ISBN. Please check the digits and try again.")
             return
 
-        condition = self.condition_var.get() or "Good"
-        edition = self.edition_var.get().strip() or None
+        # Show attributes dialog
+        attrs = BookAttributesDialog.show(
+            self.root,
+            initial_condition=self.condition_var.get() or "Good",
+            initial_edition=self.edition_var.get().strip() or None
+        )
+
+        if not attrs:
+            # User cancelled
+            return
+
+        condition = attrs["condition"]
+        edition = attrs["edition"]
+        cover_type = attrs["cover_type"]
+        printing = attrs["printing"]
+        signed = attrs["signed"]
 
         existing = self.service.get_book(normalized)
         if existing:
@@ -481,6 +667,21 @@ class BookEvaluatorGUI:
         def task() -> None:
             try:
                 evaluation = self.service.scan_isbn(isbn, condition=condition, edition=edition)
+
+                # Update additional attributes
+                update_fields = {}
+                if cover_type:
+                    update_fields["cover_type"] = cover_type
+                if printing:
+                    update_fields["printing"] = printing
+                if signed is not None:
+                    update_fields["signed"] = signed
+
+                if update_fields:
+                    self.service.update_book_fields(isbn, update_fields)
+                    # Refresh evaluation
+                    evaluation = self.service.get_book(isbn) or evaluation
+
             except Exception as exc:
                 self._set_status(f"Scan failed: {exc}")
                 messagebox.showerror("Scan failed", str(exc))

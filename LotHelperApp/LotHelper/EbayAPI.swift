@@ -164,6 +164,24 @@ struct SoldSummary: Sendable, Decodable {
     let median: Double
     let max: Double
     let samples: [SoldSample]
+
+    private enum CodingKeys: String, CodingKey {
+        case count
+        case min
+        case median
+        case max
+        case samples
+    }
+
+    // Ensure Decodable conformance is not main-actor isolated in Swift 6
+    nonisolated init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.count = try c.decode(Int.self, forKey: .count)
+        self.min = try c.decode(Double.self, forKey: .min)
+        self.median = try c.decode(Double.self, forKey: .median)
+        self.max = try c.decode(Double.self, forKey: .max)
+        self.samples = try c.decode([SoldSample].self, forKey: .samples)
+    }
 }
 
 // MARK: - eBay Browse API

@@ -161,6 +161,8 @@ class DatabaseManager:
                     probability_label, probability_score, probability_reasons,
                     sell_through, ebay_active_count, ebay_sold_count, ebay_currency,
                     metadata_json, market_json, booksrun_json, source_json,
+                    sold_comps_count, sold_comps_min, sold_comps_median, sold_comps_max,
+                    sold_comps_is_estimate, sold_comps_source,
                     created_at, updated_at
                 ) VALUES (
                     :isbn, :title, :authors, :publication_year, :edition, :condition,
@@ -168,6 +170,8 @@ class DatabaseManager:
                     :probability_label, :probability_score, :probability_reasons,
                     :sell_through, :ebay_active_count, :ebay_sold_count, :ebay_currency,
                     :metadata_json, :market_json, :booksrun_json, :source_json,
+                    :sold_comps_count, :sold_comps_min, :sold_comps_median, :sold_comps_max,
+                    :sold_comps_is_estimate, :sold_comps_source,
                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
                 ON CONFLICT(isbn) DO UPDATE SET
@@ -190,6 +194,12 @@ class DatabaseManager:
                     market_json=excluded.market_json,
                     booksrun_json=excluded.booksrun_json,
                     source_json=excluded.source_json,
+                    sold_comps_count=excluded.sold_comps_count,
+                    sold_comps_min=excluded.sold_comps_min,
+                    sold_comps_median=excluded.sold_comps_median,
+                    sold_comps_max=excluded.sold_comps_max,
+                    sold_comps_is_estimate=excluded.sold_comps_is_estimate,
+                    sold_comps_source=excluded.sold_comps_source,
                     updated_at=CURRENT_TIMESTAMP;
                 """,
                 data,

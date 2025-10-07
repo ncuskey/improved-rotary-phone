@@ -201,16 +201,17 @@ class BookService:
         booksrun_offer: Optional[BooksRunOffer] = None
         if include_market:
             booksrun_offer = self._fetch_booksrun_offer(normalized, condition=condition)
+        v2_stats_result = None
         try:
-            v2_stats = fetch_market_stats_v2(normalized)
-            median_price = v2_stats.get("median_price")
+            v2_stats_result = fetch_market_stats_v2(normalized)
+            median_price = v2_stats_result.get("median_price")
             if isinstance(median_price, (int, float)):
                 evaluation.estimated_price = max(10.0, float(median_price))
         except Exception:
             pass
 
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
-        self._persist_book(evaluation)
+        self._persist_book(evaluation, v2_stats=v2_stats_result)
         if recalc_lots:
             self.recalculate_lots()
         return evaluation
@@ -275,9 +276,10 @@ class BookService:
 
         self._register_book_in_series_index(evaluation)
         # Try Browse API median as a better price anchor; keep $10 minimum rule
+        v2_stats_result = None
         try:
-            v2_stats = fetch_market_stats_v2(isbn)
-            median_price = v2_stats.get("median_price")
+            v2_stats_result = fetch_market_stats_v2(isbn)
+            median_price = v2_stats_result.get("median_price")
             if isinstance(median_price, (int, float)):
                 evaluation.estimated_price = max(10.0, float(median_price))
         except Exception:
@@ -285,7 +287,7 @@ class BookService:
 
         booksrun_offer = self._fetch_booksrun_offer(isbn, condition=existing.condition)
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
-        self._persist_book(evaluation)
+        self._persist_book(evaluation, v2_stats=v2_stats_result)
         if recalc_lots:
             self.recalculate_lots()
         return evaluation
@@ -1584,17 +1586,19 @@ class BookService:
             booksrun_offer = self._fetch_booksrun_offer(normalized, condition=existing.condition)
         else:
             booksrun_offer = getattr(existing, "booksrun", None)
+        # Store v2_stats for sold comps persistence
+        v2_stats_result = None
         if requery_market:
             try:
-                v2_stats = fetch_market_stats_v2(normalized)
-                median_price = v2_stats.get("median_price")
+                v2_stats_result = fetch_market_stats_v2(normalized)
+                median_price = v2_stats_result.get("median_price")
                 if isinstance(median_price, (int, float)):
                     evaluation.estimated_price = max(10.0, float(median_price))
             except Exception:
                 pass
 
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
-        self._persist_book(evaluation)
+        self._persist_book(evaluation, v2_stats=v2_stats_result)
         return evaluation
 
     def _build_metadata_from_payload(
@@ -1961,7 +1965,7 @@ class BookService:
         )
         return offer
 
-    def _persist_book(self, evaluation: BookEvaluation) -> None:
+    def _persist_book(self, evaluation: BookEvaluation, v2_stats: Optional[Dict[str, Any]] = None) -> None:
         metadata_dict = asdict(evaluation.metadata)
         metadata_dict["authors"] = list(metadata_dict.get("authors") or [])
         metadata_dict["credited_authors"] = list(metadata_dict.get("credited_authors") or [])
@@ -1969,6 +1973,22 @@ class BookService:
             metadata_dict["categories"] = list(metadata_dict.get("categories") or [])
         metadata_dict = enrich_authorship(metadata_dict)
         market_dict = asdict(evaluation.market) if evaluation.market else {}
+
+        # Merge sold comps from v2_stats into market_dict if available
+        if v2_stats:
+            if "sold_comps_count" in v2_stats:
+                market_dict["sold_comps_count"] = v2_stats["sold_comps_count"]
+            if "sold_comps_min" in v2_stats:
+                market_dict["sold_comps_min"] = v2_stats["sold_comps_min"]
+            if "sold_comps_median" in v2_stats:
+                market_dict["sold_comps_median"] = v2_stats["sold_comps_median"]
+            if "sold_comps_max" in v2_stats:
+                market_dict["sold_comps_max"] = v2_stats["sold_comps_max"]
+            if "sold_comps_is_estimate" in v2_stats:
+                market_dict["sold_comps_is_estimate"] = v2_stats["sold_comps_is_estimate"]
+            if "sold_comps_source" in v2_stats:
+                market_dict["sold_comps_source"] = v2_stats["sold_comps_source"]
+
         booksrun_dict = asdict(evaluation.booksrun) if evaluation.booksrun else {}
         if evaluation.booksrun_value_label:
             booksrun_dict["value_label"] = evaluation.booksrun_value_label
@@ -2000,6 +2020,16 @@ class BookService:
                 "quantity": max(1, int(getattr(evaluation, "quantity", 1) or 1)),
             },
         }
+
+        # Add sold comps columns if available from v2_stats
+        if v2_stats:
+            payload["sold_comps_count"] = v2_stats.get("sold_comps_count")
+            payload["sold_comps_min"] = v2_stats.get("sold_comps_min")
+            payload["sold_comps_median"] = v2_stats.get("sold_comps_median")
+            payload["sold_comps_max"] = v2_stats.get("sold_comps_max")
+            payload["sold_comps_is_estimate"] = v2_stats.get("sold_comps_is_estimate", True)
+            payload["sold_comps_source"] = v2_stats.get("sold_comps_source")
+
         self.db.upsert_book(payload)
 
     def _row_to_evaluation(self, row) -> BookEvaluation:

@@ -41,6 +41,7 @@ class SoldCompsResult(TypedDict):
     samples: List[PriceSample]
     is_estimate: bool  # True = Track B estimate, False = Track A real data
     source: str  # "estimate" or "marketplace_insights"
+    last_sold_date: Optional[str]  # ISO 8601 date of last sold item (Track A only)
 
 
 @dataclass
@@ -149,6 +150,7 @@ class EbaySoldComps:
             "samples": samples,
             "is_estimate": False,
             "source": "marketplace_insights",
+            "last_sold_date": data.get("lastSoldDate"),  # ISO 8601 date from MI API
         }
 
     def _get_estimated_sold_comps(self, gtin: str, max_samples: int) -> Optional[SoldCompsResult]:
@@ -213,6 +215,7 @@ class EbaySoldComps:
             "samples": samples,
             "is_estimate": True,
             "source": "estimate",
+            "last_sold_date": None,  # Not available for estimates
         }
 
 

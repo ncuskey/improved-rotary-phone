@@ -1988,6 +1988,8 @@ class BookService:
                 market_dict["sold_comps_is_estimate"] = v2_stats["sold_comps_is_estimate"]
             if "sold_comps_source" in v2_stats:
                 market_dict["sold_comps_source"] = v2_stats["sold_comps_source"]
+            if "sold_comps_last_sold_date" in v2_stats:
+                market_dict["sold_comps_last_sold_date"] = v2_stats["sold_comps_last_sold_date"]
 
         booksrun_dict = asdict(evaluation.booksrun) if evaluation.booksrun else {}
         if evaluation.booksrun_value_label:
@@ -2144,6 +2146,7 @@ class BookService:
                 sold_comps_max=_to_float(payload.get("sold_comps_max")),
                 sold_comps_is_estimate=bool(payload.get("sold_comps_is_estimate", True)),
                 sold_comps_source=payload.get("sold_comps_source"),
+                sold_comps_last_sold_date=payload.get("sold_comps_last_sold_date"),
             )
         justification_lines = (row["probability_reasons"] or "").split("\n") if row["probability_reasons"] else []
         evaluation = BookEvaluation(

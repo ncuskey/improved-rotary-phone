@@ -65,6 +65,7 @@ class EbayMarketStats:
     sold_comps_max: Optional[float] = None
     sold_comps_is_estimate: bool = True  # True = Track B estimate, False = Track A real
     sold_comps_source: Optional[str] = None  # "estimate" or "marketplace_insights"
+    sold_comps_last_sold_date: Optional[str] = None  # ISO 8601 date (Track A only)
 
 
 @dataclass

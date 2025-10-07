@@ -2932,6 +2932,15 @@ class BookEvaluatorGUI:
                 col3.append(f"  Median: ${book.market.sold_comps_median:.2f}")
             if book.market.sold_comps_max is not None:
                 col3.append(f"  Max: ${book.market.sold_comps_max:.2f}")
+            if book.market.sold_comps_last_sold_date:
+                # Format ISO date to readable format (YYYY-MM-DD)
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(book.market.sold_comps_last_sold_date.replace('Z', '+00:00'))
+                    date_str = dt.strftime("%Y-%m-%d")
+                    col3.append(f"  Last sold: {date_str}")
+                except Exception:
+                    col3.append(f"  Last sold: {book.market.sold_comps_last_sold_date[:10]}")
             if book.market.sold_comps_source:
                 source_short = book.market.sold_comps_source.replace("marketplace_insights", "MI").replace("estimate", "est")
                 col3.append(f"  Source: {source_short}")

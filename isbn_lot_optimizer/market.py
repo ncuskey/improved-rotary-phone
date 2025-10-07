@@ -107,6 +107,7 @@ def fetch_market_stats_v2(isbn: str, include_sold_comps: bool = True) -> Dict[st
                     stats["sold_comps_max"] = sold["max"]
                     stats["sold_comps_is_estimate"] = sold["is_estimate"]
                     stats["sold_comps_source"] = sold["source"]
+                    stats["sold_comps_last_sold_date"] = sold.get("last_sold_date")
             except Exception:
                 # Don't fail entire fetch if sold comps unavailable
                 pass

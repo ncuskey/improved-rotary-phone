@@ -85,6 +85,11 @@ class ISBNRequest(BaseModel):
     """Schema for incoming ISBN lookup requests."""
 
     isbn: str
+    condition: str | None = None
+    edition: str | None = None
+    cover_type: str | None = None
+    printing: str | None = None
+    signed: bool | None = None
 
 
 @app.post("/isbn")
@@ -100,6 +105,8 @@ async def isbn_lookup(
         try:
             book = service.scan_isbn(
                 raw_isbn=data.isbn,
+                condition=data.condition or "Good",
+                edition=data.edition,
                 include_market=False,
                 recalc_lots=False,
             )
@@ -110,6 +117,22 @@ async def isbn_lookup(
                 status_code=502,
                 detail=f"Failed to fetch metadata for ISBN {data.isbn.strip() or data.isbn}",
             ) from exc
+
+    # Update attributes if provided (even if book already exists)
+    if data.cover_type or data.printing or data.signed is not None:
+        update_fields = {}
+        if data.cover_type:
+            update_fields["cover_type"] = data.cover_type
+        if data.printing:
+            update_fields["printing"] = data.printing
+        if data.signed is not None:
+            update_fields["signed"] = 1 if data.signed else 0
+        if update_fields:
+            try:
+                service.update_book_fields(data.isbn, update_fields)
+                book = service.get_book(data.isbn)  # Refresh
+            except Exception:
+                pass  # Don't fail if attributes update fails
 
     metadata = book.metadata
 

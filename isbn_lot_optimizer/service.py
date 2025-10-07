@@ -420,6 +420,11 @@ class BookService:
             elif key == "printing":
                 raw_meta["printing"] = value if value else None
                 metadata_changed = True
+            elif key == "signed":
+                try:
+                    column_updates["signed"] = int(value) if value else 0
+                except Exception:
+                    column_updates["signed"] = 0
             else:
                 raw_meta[key] = value
                 metadata_changed = True

@@ -58,6 +58,13 @@ class EbayMarketStats:
     unsold_count: Optional[int] = None
     raw_active: Optional[Dict[str, Any]] = None
     raw_sold: Optional[Dict[str, Any]] = None
+    # Sold comps from eBay (Track A/B)
+    sold_comps_count: Optional[int] = None
+    sold_comps_min: Optional[float] = None
+    sold_comps_median: Optional[float] = None
+    sold_comps_max: Optional[float] = None
+    sold_comps_is_estimate: bool = True  # True = Track B estimate, False = Track A real
+    sold_comps_source: Optional[str] = None  # "estimate" or "marketplace_insights"
 
 
 @dataclass

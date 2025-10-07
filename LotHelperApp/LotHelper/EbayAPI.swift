@@ -8,9 +8,14 @@ struct TokenBrokerConfig: Sendable {
     let baseURL: URL
     /// "", "/isbn", or "/isbn-web"
     let prefix: String
+    /// Fully-resolved endpoint URL for the token broker
+    let endpoint: URL
 
-    var endpoint: URL {
-        // Build URL without using main-actor isolated URL.append(path:)
+    init(baseURL: URL, prefix: String) {
+        self.baseURL = baseURL
+        self.prefix = prefix
+
+        // Build URL without using main-actor isolated APIs
         var base = baseURL.absoluteString
         // Ensure no trailing slash on base
         if base.hasSuffix("/") { base.removeLast() }
@@ -20,8 +25,7 @@ struct TokenBrokerConfig: Sendable {
         if !pref.isEmpty { base += "/\(pref)" }
         base += "/token/ebay-browse"
 
-        // Force-unwrap is acceptable here because inputs are controlled and previously valid URLs
-        return URL(string: base) ?? baseURL
+        self.endpoint = URL(string: base) ?? baseURL
     }
 }
 
@@ -146,7 +150,7 @@ struct PriceSummary {
 
 // MARK: - Sold Comps Models (Track A - Marketplace Insights)
 
-struct SoldSample: Decodable {
+struct SoldSample: Sendable, Decodable {
     let title: String
     let price: Double
     let currency: String
@@ -154,7 +158,7 @@ struct SoldSample: Decodable {
     let lastSoldDate: String?
 }
 
-struct SoldSummary: Decodable {
+struct SoldSummary: Sendable, Decodable {
     let count: Int
     let min: Double
     let median: Double
@@ -479,10 +483,11 @@ final class ScannerPricingVM: ObservableObject {
 
         Task {
             // Load both in parallel
-            async let activeTask = loadActive(gtin: gtin)
-            async let soldTask = loadSold(gtin: gtin)
+            async let activeTask: Void = loadActive(gtin: gtin)
+            async let soldTask: Void = loadSold(gtin: gtin)
 
-            _ = await (activeTask, soldTask)
+            await activeTask
+            await soldTask
             self.isLoading = false
         }
     }

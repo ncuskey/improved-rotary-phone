@@ -81,9 +81,37 @@ def browse_active_by_isbn(isbn: str, limit: int = 50, marketplace: str = MARKETP
     return stats
 
 
-def fetch_market_stats_v2(isbn: str) -> Dict[str, Any]:
+def fetch_market_stats_v2(isbn: str, include_sold_comps: bool = True) -> Dict[str, Any]:
+    """
+    Fetch market stats including active listings and sold comps.
+
+    Args:
+        isbn: ISBN to lookup
+        include_sold_comps: If True, also fetch sold comps (Track A/B)
+
+    Returns:
+        Dict with active stats and optionally sold comps
+    """
     try:
-        return browse_active_by_isbn(isbn)
+        stats = browse_active_by_isbn(isbn)
+
+        # Add sold comps if requested
+        if include_sold_comps:
+            try:
+                from .ebay_sold_comps import get_sold_comps
+                sold = get_sold_comps(isbn)
+                if sold:
+                    stats["sold_comps_count"] = sold["count"]
+                    stats["sold_comps_min"] = sold["min"]
+                    stats["sold_comps_median"] = sold["median"]
+                    stats["sold_comps_max"] = sold["max"]
+                    stats["sold_comps_is_estimate"] = sold["is_estimate"]
+                    stats["sold_comps_source"] = sold["source"]
+            except Exception:
+                # Don't fail entire fetch if sold comps unavailable
+                pass
+
+        return stats
     except Exception as e:
         return {"error": str(e), "source": "browse"}
 

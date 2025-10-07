@@ -5,6 +5,7 @@ import re
 import sqlite3
 import os
 import logging
+import threading
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -48,7 +49,7 @@ class DatabaseManager:
         self.db_path = Path(db_path)
         if not self.db_path.parent.exists():
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn: Optional[sqlite3.Connection] = None
+        self._local = threading.local()  # Thread-local storage for connections
         self._initialise()
 
     def _initialise(self) -> None:
@@ -101,25 +102,25 @@ class DatabaseManager:
 
     def _get_connection(self) -> sqlite3.Connection:
         """
-        Get or create a persistent database connection.
+        Get or create a thread-local database connection.
 
-        Previously created a new connection each time (inefficient).
-        Now maintains a single connection throughout the manager's lifetime.
+        SQLite connections must be used in the same thread they were created in.
+        This uses thread-local storage to ensure each thread gets its own connection.
         """
-        if self._conn is None:
-            self._conn = sqlite3.connect(self.db_path)
-            self._conn.row_factory = sqlite3.Row
-        return self._conn
+        if not hasattr(self._local, 'conn') or self._local.conn is None:
+            self._local.conn = sqlite3.connect(self.db_path)
+            self._local.conn.row_factory = sqlite3.Row
+        return self._local.conn
 
     def close(self) -> None:
-        """Close the database connection if open."""
-        if self._conn is not None:
+        """Close the database connection for the current thread."""
+        if hasattr(self._local, 'conn') and self._local.conn is not None:
             try:
-                self._conn.close()
+                self._local.conn.close()
             except Exception:
                 pass
             finally:
-                self._conn = None
+                self._local.conn = None
 
     def _ensure_lot_justification(self, conn: sqlite3.Connection) -> None:
         cursor = conn.execute("PRAGMA table_info(lots)")

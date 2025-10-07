@@ -206,17 +206,12 @@ class BookService:
             v2_stats_result = fetch_market_stats_v2(normalized)
 
             # Prioritize sold comps median over active listings median
-            price_to_use = None
-
-            # First choice: Sold comps median (Track A/B)
+            # Sold comps: Use actual market data without enforcing minimum
+            # Active listings: Apply $10 minimum (seller asking prices are less reliable)
             if v2_stats_result.get("sold_comps_median") is not None:
-                price_to_use = v2_stats_result["sold_comps_median"]
-            # Second choice: Active listings median
+                evaluation.estimated_price = float(v2_stats_result["sold_comps_median"])
             elif v2_stats_result.get("median_price") is not None:
-                price_to_use = v2_stats_result["median_price"]
-
-            if price_to_use and isinstance(price_to_use, (int, float)):
-                evaluation.estimated_price = max(10.0, float(price_to_use))
+                evaluation.estimated_price = max(10.0, float(v2_stats_result["median_price"]))
         except Exception:
             pass
 
@@ -291,17 +286,12 @@ class BookService:
             v2_stats_result = fetch_market_stats_v2(isbn)
 
             # Prioritize sold comps median over active listings median
-            price_to_use = None
-
-            # First choice: Sold comps median (Track A/B)
+            # Sold comps: Use actual market data without enforcing minimum
+            # Active listings: Apply $10 minimum (seller asking prices are less reliable)
             if v2_stats_result.get("sold_comps_median") is not None:
-                price_to_use = v2_stats_result["sold_comps_median"]
-            # Second choice: Active listings median
+                evaluation.estimated_price = float(v2_stats_result["sold_comps_median"])
             elif v2_stats_result.get("median_price") is not None:
-                price_to_use = v2_stats_result["median_price"]
-
-            if price_to_use and isinstance(price_to_use, (int, float)):
-                evaluation.estimated_price = max(10.0, float(price_to_use))
+                evaluation.estimated_price = max(10.0, float(v2_stats_result["median_price"]))
         except Exception:
             pass
 

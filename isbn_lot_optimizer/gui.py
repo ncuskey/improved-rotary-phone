@@ -985,8 +985,23 @@ class BookEvaluatorGUI:
         self.root.update_idletasks()
         self._start_progress("refresh", "Refresh", total)
 
-        def progress(done: int, total_count: int) -> None:
+        def progress(done: int, total_count: int, evaluation) -> None:
             self.root.after(0, self._update_progress, "refresh", done, total_count)
+            # Show real-time book details in status bar
+            if evaluation:
+                title = evaluation.metadata.title or evaluation.isbn
+                price = f"${evaluation.estimated_price:.2f}"
+
+                # Show sold comps info if available
+                status_parts = [f"[{done}/{total_count}] {title} → {price}"]
+                if evaluation.market:
+                    if evaluation.market.sold_comps_median:
+                        comp_type = "est" if evaluation.market.sold_comps_is_estimate else "real"
+                        status_parts.append(f"(comps: ${evaluation.market.sold_comps_median:.2f} {comp_type})")
+                    elif evaluation.market.active_median_price:
+                        status_parts.append(f"(active: ${evaluation.market.active_median_price:.2f})")
+
+                self.root.after(0, self._set_status, " ".join(status_parts))
 
         def handle_error(exc: Exception) -> None:
             self._refresh_thread = None

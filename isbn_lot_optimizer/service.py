@@ -491,8 +491,17 @@ class BookService:
         *,
         requery_market: bool = True,
         requery_metadata: bool = False,
-        progress_cb: Optional[Callable[[int, int], None]] = None,
+        progress_cb: Optional[Callable[[int, int, Optional[Any]], None]] = None,
     ) -> int:
+        """
+        Refresh market data for multiple books.
+
+        Args:
+            isbns: ISBNs to refresh
+            requery_market: Re-fetch market stats
+            requery_metadata: Re-fetch book metadata
+            progress_cb: Optional callback(done, total, evaluation) for progress updates
+        """
         normalized_isbns: List[str] = []
         for raw in isbns:
             norm = normalise_isbn(raw)
@@ -501,7 +510,7 @@ class BookService:
         total = len(normalized_isbns)
         if progress_cb:
             try:
-                progress_cb(0, total)
+                progress_cb(0, total, None)
             except Exception:
                 pass
         refreshed = 0
@@ -515,7 +524,7 @@ class BookService:
                 refreshed += 1
             if progress_cb:
                 try:
-                    progress_cb(index, total)
+                    progress_cb(index, total, evaluation)
                 except Exception:
                     pass
         if refreshed:

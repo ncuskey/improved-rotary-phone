@@ -57,6 +57,19 @@ def _book_evaluation_to_dict(evaluation) -> Dict[str, Any]:
         result["booksrun_value_label"] = evaluation.booksrun_value_label
         result["booksrun_value_ratio"] = evaluation.booksrun_value_ratio
 
+    if evaluation.bookscouter:
+        bookscouter = asdict(evaluation.bookscouter)
+        bookscouter.pop("raw", None)
+        # Convert offers list to dict format
+        if "offers" in bookscouter:
+            bookscouter["offers"] = [
+                asdict(offer) if hasattr(offer, "__dict__") else offer
+                for offer in bookscouter["offers"]
+            ]
+        result["bookscouter"] = bookscouter
+        result["bookscouter_value_label"] = evaluation.bookscouter_value_label
+        result["bookscouter_value_ratio"] = evaluation.bookscouter_value_ratio
+
     if evaluation.rarity is not None:
         result["rarity"] = evaluation.rarity
 

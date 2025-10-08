@@ -111,6 +111,42 @@ struct BookMetadataDetails: Codable, Hashable {
     }
 }
 
+struct VendorOffer: Codable, Hashable {
+    let vendorName: String
+    let vendorId: String
+    let price: Double
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case vendorName = "vendor_name"
+        case vendorId = "vendor_id"
+        case price
+        case updatedAt = "updated_at"
+    }
+}
+
+struct BookScouterResult: Codable, Hashable {
+    let isbn10: String
+    let isbn13: String
+    let offers: [VendorOffer]
+    let bestPrice: Double
+    let bestVendor: String?
+    let totalVendors: Int
+
+    enum CodingKeys: String, CodingKey {
+        case isbn10 = "isbn_10"
+        case isbn13 = "isbn_13"
+        case offers
+        case bestPrice = "best_price"
+        case bestVendor = "best_vendor"
+        case totalVendors = "total_vendors"
+    }
+
+    var topOffers: [VendorOffer] {
+        Array(offers.sorted { $0.price > $1.price }.prefix(3))
+    }
+}
+
 struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let isbn: String
     let originalIsbn: String?
@@ -124,6 +160,9 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let metadata: BookMetadataDetails?
     let booksrunValueLabel: String?
     let booksrunValueRatio: Double?
+    let bookscouter: BookScouterResult?
+    let bookscouterValueLabel: String?
+    let bookscouterValueRatio: Double?
     let rarity: Double?
 
     var id: String { isbn }
@@ -141,6 +180,9 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
         case metadata
         case booksrunValueLabel = "booksrun_value_label"
         case booksrunValueRatio = "booksrun_value_ratio"
+        case bookscouter
+        case bookscouterValueLabel = "bookscouter_value_label"
+        case bookscouterValueRatio = "bookscouter_value_ratio"
         case rarity
     }
 }
@@ -271,6 +313,76 @@ enum BookAPI {
     /// Completion-based convenience wrapper matching the original API
     static func postISBNToBackend(_ isbn: String, completion: @escaping (BookInfo?) -> Void) {
         fetchBookInfo(isbn, completion: completion)
+    }
+
+    /// Post ISBN with book attributes
+    static func postISBNWithAttributes(
+        _ isbn: String,
+        condition: String?,
+        edition: String?,
+        coverType: String?,
+        printing: String?,
+        signed: Bool?,
+        completion: @escaping (BookInfo?) -> Void
+    ) {
+        Task {
+            do {
+                guard let url = URL(string: "\(baseURLString)/isbn") else {
+                    throw URLError(.badURL)
+                }
+
+                var payload: [String: Any] = ["isbn": isbn]
+                if let condition = condition { payload["condition"] = condition }
+                if let edition = edition { payload["edition"] = edition }
+                if let coverType = coverType { payload["cover_type"] = coverType }
+                if let printing = printing { payload["printing"] = printing }
+                if let signed = signed { payload["signed"] = signed }
+
+                let jsonData = try JSONSerialization.data(withJSONObject: payload)
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.httpBody = jsonData
+
+                let (data, response) = try await session.data(for: request)
+
+                guard let http = response as? HTTPURLResponse else {
+                    throw URLError(.badServerResponse)
+                }
+
+                if !(200...299).contains(http.statusCode) {
+                    let body = String(data: data, encoding: .utf8)
+                    print("❌ POST /isbn failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+                    throw BookAPIError.badStatus(code: http.statusCode, body: body)
+                }
+
+                let lookup = try await decodeOnWorker(ISBNLookupResponse.self, from: data)
+                let resolvedISBN = lookup.isbn ?? isbn
+                let authors = lookup.authors ?? (lookup.author.map { [$0] } ?? [])
+                let primaryAuthor = lookup.author ?? authors.first ?? "Unknown Author"
+                let title = lookup.title ?? "Untitled"
+                let thumbnail = (lookup.thumbnail?.isEmpty == false)
+                    ? lookup.thumbnail!
+                    : "https://covers.openlibrary.org/b/isbn/\(resolvedISBN)-M.jpg"
+
+                let info = BookInfo(
+                    isbn: resolvedISBN,
+                    title: title,
+                    author: primaryAuthor,
+                    authors: authors,
+                    subtitle: lookup.subtitle,
+                    description: lookup.description,
+                    publishedYear: lookup.publishedYear,
+                    thumbnail: thumbnail,
+                    categories: lookup.categories ?? []
+                )
+
+                await MainActor.run { completion(info) }
+            } catch {
+                print("POST /isbn with attributes error: \(error)")
+                await MainActor.run { completion(nil) }
+            }
+        }
     }
 
     /// Fetch all books from the /api/books/all endpoint

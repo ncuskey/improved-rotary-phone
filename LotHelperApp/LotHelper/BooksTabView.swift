@@ -118,6 +118,7 @@ private struct BookDetailView: View {
         List {
             coverSection
             overviewSection
+            bookscouterSection
             metadataSection
             justificationSection
         }
@@ -168,6 +169,59 @@ private struct BookDetailView: View {
             if let probability = record.probabilityLabel, !probability.isEmpty {
                 Text("Probability: \(probability)")
                     .bodyStyle()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var bookscouterSection: some View {
+        if let bookscouter = record.bookscouter, bookscouter.totalVendors > 0 {
+            Section("BookScouter Buyback Offers") {
+                HStack {
+                    Text("Best Offer")
+                        .bodyStyle()
+                    Spacer()
+                    Text(formattedCurrency(bookscouter.bestPrice))
+                        .bodyStyle()
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.green)
+                }
+
+                if let vendor = bookscouter.bestVendor {
+                    Text("from \(vendor)")
+                        .font(.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+
+                HStack {
+                    Text("Total Vendors")
+                        .bodyStyle()
+                    Spacer()
+                    Text("\(bookscouter.totalVendors)")
+                        .bodyStyle()
+                }
+
+                if !bookscouter.topOffers.isEmpty {
+                    VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+                        Text("Top Offers")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(DS.Color.textSecondary)
+
+                        ForEach(bookscouter.topOffers, id: \.vendorId) { offer in
+                            HStack {
+                                Text(offer.vendorName)
+                                    .font(.caption)
+                                Spacer()
+                                Text(formattedCurrency(offer.price))
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(.green)
+                            }
+                        }
+                    }
+                    .padding(.top, DS.Spacing.sm)
+                }
             }
         }
     }
@@ -263,6 +317,20 @@ private struct BookDetailView: View {
                 ),
                 booksrunValueLabel: nil,
                 booksrunValueRatio: nil,
+                bookscouter: BookScouterResult(
+                    isbn10: "0670855032",
+                    isbn13: "9780670855032",
+                    offers: [
+                        VendorOffer(vendorName: "TextbookAgent", vendorId: "70", price: 17.30, updatedAt: "2025-01-15"),
+                        VendorOffer(vendorName: "BooksRun", vendorId: "809", price: 13.44, updatedAt: "2025-01-15"),
+                        VendorOffer(vendorName: "World of Books", vendorId: "836", price: 12.25, updatedAt: "2025-01-15")
+                    ],
+                    bestPrice: 17.30,
+                    bestVendor: "TextbookAgent",
+                    totalVendors: 3
+                ),
+                bookscouterValueLabel: "High",
+                bookscouterValueRatio: 0.93,
                 rarity: nil
             )
         )

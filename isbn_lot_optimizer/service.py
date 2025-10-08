@@ -22,6 +22,8 @@ from .bookscouter import (
     BookScouterAPIError,
     DEFAULT_BASE_URL as BOOKSCOUTER_DEFAULT_BASE_URL,
     fetch_offers as fetch_bookscouter_offers,
+    fetch_metadata as fetch_bookscouter_metadata,
+    fetch_metadata_batch as fetch_bookscouter_metadata_batch,
 )
 from .constants import (
     BOOKSRUN_FALLBACK_KEY,
@@ -196,8 +198,39 @@ class BookService:
         if not normalized:
             raise ValueError(f"Unrecognised ISBN: {original_isbn}")
 
-        metadata_payload = fetch_metadata(self.metadata_session, normalized, delay=self.metadata_delay)
-        metadata = self._build_metadata_from_payload(normalized, metadata_payload)
+        # OPTIMIZATION: Try BookScouter metadata FIRST (gets metadata + Amazon rank in ONE call)
+        # Only fall back to Google Books if BookScouter fails or lacks data
+        metadata: Optional[BookMetadata] = None
+        amazon_rank: Optional[int] = None
+        bookscouter_metadata_raw: Optional[Dict[str, Any]] = None
+
+        if include_market and self.bookscouter_api_key:
+            try:
+                bookscouter_metadata_raw = fetch_bookscouter_metadata(
+                    normalized,
+                    api_key=self.bookscouter_api_key,
+                    base_url=self.bookscouter_base_url,
+                    timeout=int(self.bookscouter_timeout),
+                    session=self._bookscouter_session,
+                )
+                if bookscouter_metadata_raw:
+                    # Extract Amazon rank
+                    rank_value = bookscouter_metadata_raw.get("AmazonSalesRank")
+                    if rank_value:
+                        try:
+                            amazon_rank = int(rank_value)
+                        except (ValueError, TypeError):
+                            pass
+
+                    # Try to build metadata from BookScouter
+                    metadata = self._build_metadata_from_bookscouter(normalized, bookscouter_metadata_raw)
+            except BookScouterAPIError:
+                pass  # Fall back to Google Books
+
+        # Fallback to Google Books if BookScouter didn't provide metadata
+        if metadata is None:
+            metadata_payload = fetch_metadata(self.metadata_session, normalized, delay=self.metadata_delay)
+            metadata = self._build_metadata_from_payload(normalized, metadata_payload)
 
         existing_row = self.db.fetch_book(normalized)
         existing_quantity = 1
@@ -227,14 +260,21 @@ class BookService:
                 max_results=self.ebay_entries,
             )
 
-        # Fetch BookScouter data early to get Amazon rank for probability scoring
+        # Fetch BookScouter offers (skip metadata fetch since we already did it above)
         booksrun_offer: Optional[BooksRunOffer] = None
         bookscouter_result: Optional[BookScouterResult] = None
-        amazon_rank: Optional[int] = None
         if include_market:
             booksrun_offer = self._fetch_booksrun_offer(normalized, condition=condition)
-            bookscouter_result = self._fetch_bookscouter_offers(normalized)
-            if bookscouter_result:
+
+            # Only fetch offers, not metadata (we already got metadata + Amazon rank above)
+            fetch_amazon_rank_flag = (amazon_rank is None)  # Only if we don't have it yet
+            bookscouter_result = self._fetch_bookscouter_offers_internal(
+                normalized,
+                fetch_amazon_rank=fetch_amazon_rank_flag
+            )
+
+            # If we didn't get Amazon rank from metadata call, try to get it from offers result
+            if amazon_rank is None and bookscouter_result:
                 amazon_rank = bookscouter_result.amazon_sales_rank
 
         evaluation = build_book_evaluation(
@@ -1918,6 +1958,129 @@ class BookService:
             metadata = BookMetadata(isbn=normalized, title="Unknown Title")
         return metadata
 
+    def _build_metadata_from_bookscouter(
+        self,
+        normalized: str,
+        bookscouter_metadata: Optional[Dict[str, Any]],
+    ) -> Optional[BookMetadata]:
+        """
+        Convert BookScouter metadata format to our BookMetadata model.
+
+        BookScouter provides: Title, Author (list), Isbn10, Isbn13, Publisher,
+        Published, Binding, Edition, NumberOfPages, Image, AmazonSalesRank
+
+        Returns None if metadata is invalid or incomplete.
+        """
+        if not isinstance(bookscouter_metadata, dict):
+            return None
+
+        # Must have at least a title
+        title = bookscouter_metadata.get("Title")
+        if not title:
+            return None
+
+        # Convert author list to tuple
+        authors_list = bookscouter_metadata.get("Author", [])
+        if isinstance(authors_list, str):
+            authors_list = [authors_list]
+        elif not isinstance(authors_list, list):
+            authors_list = []
+        authors = tuple(str(a).strip() for a in authors_list if a)
+
+        # Extract publication year from Published field (e.g., "2019-01-15" or "2019")
+        published_year = None
+        published_raw = bookscouter_metadata.get("Published")
+        if published_raw:
+            try:
+                year_str = str(published_raw).split("-")[0]
+                published_year = int(year_str)
+            except (ValueError, IndexError):
+                pass
+
+        # Get page count
+        page_count = None
+        pages_val = bookscouter_metadata.get("NumberOfPages")
+        if pages_val:
+            try:
+                page_count = int(pages_val)
+            except (ValueError, TypeError):
+                pass
+
+        # Build enriched metadata dict for series detection
+        meta = {
+            "title": title,
+            "authors": list(authors),
+            "page_count": page_count,
+            "publication_year": published_year,
+            "published_date": published_raw,
+            "cover_url": bookscouter_metadata.get("Image"),
+            "publisher": bookscouter_metadata.get("Publisher"),
+            "source": "bookscouter",
+        }
+
+        # Enrich with canonical authorship
+        meta = enrich_authorship(meta)
+
+        # Try to detect series info
+        try:
+            meta = attach_series(meta, normalized, session=self.metadata_session)
+        except Exception:
+            pass
+
+        series_info_obj = meta.get("series")
+        series_info: Dict[str, Any] = series_info_obj if isinstance(series_info_obj, dict) else {}
+        series_name = meta.get("series_name") or series_info.get("name")
+        series_index = meta.get("series_index")
+        if series_index is None and series_info:
+            idx_val = series_info.get("index")
+            if isinstance(idx_val, (int, str)) and str(idx_val).isdigit():
+                try:
+                    series_index = int(idx_val)
+                except Exception:
+                    series_index = None
+
+        series_id = meta.get("series_id")
+        if not series_id:
+            ids = series_info.get("id") or {}
+            if isinstance(ids, dict):
+                series_id = (
+                    ids.get("openlibrary_work")
+                    or ids.get("wikidata_qid")
+                    or ids.get("work_qid")
+                    or ids.get("id")
+                )
+            if not series_id:
+                name_val = series_info.get("name")
+                if isinstance(name_val, str):
+                    series_id = name_val
+
+        try:
+            return BookMetadata(
+                isbn=normalized,
+                title=title,
+                subtitle=None,  # BookScouter doesn't provide subtitle
+                authors=authors,
+                credited_authors=tuple(meta.get("credited_authors") or authors),
+                canonical_author=meta.get("canonical_author"),
+                published_year=published_year,
+                published_raw=published_raw,
+                page_count=page_count,
+                categories=(),  # BookScouter doesn't provide categories
+                average_rating=None,  # BookScouter doesn't provide ratings
+                ratings_count=None,
+                thumbnail=bookscouter_metadata.get("Image"),
+                description=None,  # BookScouter doesn't provide description
+                categories_str=None,
+                cover_url=bookscouter_metadata.get("Image"),
+                series_name=series_name,
+                series_index=series_index,
+                series_id=series_id,
+                source="bookscouter",
+                raw=bookscouter_metadata,
+            )
+        except Exception:
+            return None
+
     def _register_book_in_series_index(self, evaluation: BookEvaluation) -> None:
         isbn = getattr(evaluation, "isbn", None)
         if not isbn or isbn in self._series_index_registered_isbns:
@@ -2117,6 +2280,20 @@ class BookService:
 
     def _fetch_bookscouter_offers(self, isbn: str) -> Optional[BookScouterResult]:
         """Fetch multi-vendor buyback offers from BookScouter API."""
+        return self._fetch_bookscouter_offers_internal(isbn, fetch_amazon_rank=True)
+
+    def _fetch_bookscouter_offers_internal(
+        self,
+        isbn: str,
+        fetch_amazon_rank: bool = True
+    ) -> Optional[BookScouterResult]:
+        """
+        Fetch multi-vendor buyback offers from BookScouter API.
+
+        Args:
+            isbn: ISBN to look up
+            fetch_amazon_rank: If False, skips the /book metadata call (optimization)
+        """
         if not self.bookscouter_api_key:
             return None
         try:
@@ -2124,6 +2301,7 @@ class BookService:
                 isbn,
                 api_key=self.bookscouter_api_key,
                 use_recent=False,  # Use cached prices for speed
+                fetch_amazon_rank=fetch_amazon_rank,
                 base_url=self.bookscouter_base_url,
                 timeout=int(self.bookscouter_timeout),
                 session=self._bookscouter_session,

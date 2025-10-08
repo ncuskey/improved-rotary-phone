@@ -3,6 +3,28 @@ BulkHelper: Optimize book combinations for multi-vendor buyback.
 
 This module analyzes BookScouter vendor offers across your catalog and suggests
 optimal book combinations to maximize profit while meeting vendor minimums.
+
+Two-Phase Optimization Strategy:
+---------------------------------
+Phase 1 (Greedy Assignment):
+  - Sort vendors by average offer price (prioritize high-value vendors)
+  - Each vendor greedily selects books by price (highest first)
+  - Books can only be assigned to one vendor
+
+Phase 2 (Rescue & Redistribution):
+  - Identify bundles below minimum (these have $0 value, not sum of prices!)
+  - For each failing bundle:
+    * TRY RESCUE: Move books from successful bundles with low opportunity cost
+      - Only move if source bundle stays above minimum
+      - Opportunity cost = difference between current and new vendor's offer
+    * IF RESCUE FAILS: Redistribute failing bundle's books to maximize total profit
+      - Assign each book to best alternative vendor that can accept it
+
+Key Principle:
+  Bundle value = total_price IF meets_minimum ELSE 0.0
+
+This ensures we maximize actual sellable value, not theoretical totals that
+can't be realized due to minimums.
 """
 
 from __future__ import annotations
@@ -128,11 +150,13 @@ def optimize_vendor_bundles(
     """
     Optimize book assignments to vendors to maximize total profit.
 
-    Strategy:
-    1. Group offers by vendor
-    2. For each vendor, select books using greedy algorithm (highest price first)
-    3. Only include vendors where we can meet their minimum
-    4. Each book can only be assigned to one vendor (highest bidder wins)
+    Two-phase strategy:
+    1. Phase 1: Greedy assignment by vendor priority (highest avg price first)
+    2. Phase 2: Rescue failing bundles (below minimum = $0 value)
+       - Try moving low-opportunity-cost books from successful bundles
+       - If rescue fails, redistribute failing bundle books to maximize total profit
+
+    Key principle: Bundles below minimum have ZERO value, not sum of individual prices.
 
     Args:
         offers: List of all book-vendor offer combinations
@@ -145,16 +169,21 @@ def optimize_vendor_bundles(
     if vendor_minimums is None:
         vendor_minimums = VENDOR_MINIMUMS
 
+    # Group offers by ISBN (all vendors for each book)
+    offers_by_isbn: Dict[str, List[BookOffer]] = defaultdict(list)
+    for offer in offers:
+        offers_by_isbn[offer.isbn].append(offer)
+
     # Group offers by vendor
     vendor_offers: Dict[str, List[BookOffer]] = defaultdict(list)
     for offer in offers:
         vendor_offers[offer.vendor_id].append(offer)
 
-    # Track which books have been assigned
+    # === PHASE 1: Initial greedy assignment ===
     assigned_isbns: set[str] = set()
+    isbn_to_vendor: Dict[str, str] = {}  # Track which vendor got each ISBN
 
-    # Create bundles for each vendor
-    bundles: List[VendorBundle] = []
+    all_bundles: Dict[str, VendorBundle] = {}  # vendor_id -> bundle
 
     # Sort vendors by average offer price (prioritize high-value vendors)
     vendor_avg_prices = []
@@ -166,9 +195,8 @@ def optimize_vendor_bundles(
 
     vendor_avg_prices.sort(key=lambda x: x[1], reverse=True)
 
-    # Process each vendor
+    # Build initial bundles
     for vendor_id, avg_price, vendor_offer_list in vendor_avg_prices:
-        # Get vendor name from first offer
         vendor_name = vendor_offer_list[0].vendor_name if vendor_offer_list else f"Vendor {vendor_id}"
         minimum = vendor_minimums.get(vendor_id, 10.0)
 
@@ -178,56 +206,216 @@ def optimize_vendor_bundles(
             minimum_required=minimum,
         )
 
-        # Sort this vendor's offers by price (highest first)
+        # Sort offers by price (highest first)
         sorted_offers = sorted(vendor_offer_list, key=lambda x: x.price, reverse=True)
 
-        # Greedily add books until we meet minimum or run out
         for offer in sorted_offers:
-            # Skip if book already assigned to another vendor
             if offer.isbn in assigned_isbns:
                 continue
-
-            # Skip if we've hit max books for this vendor
             if len(bundle.books) >= max_books_per_vendor:
                 break
 
-            # Add this book
             bundle.add_book(offer)
             assigned_isbns.add(offer.isbn)
+            isbn_to_vendor[offer.isbn] = vendor_id
 
-            # If we've met the minimum and have a good bundle, we can stop
-            # But we might want to keep adding if prices are still high
+            # Stop if we've met minimum and have decent buffer
             if bundle.meets_minimum and bundle.total_value >= minimum * 1.5:
                 break
 
-        # Only include bundles that meet the minimum
-        if bundle.meets_minimum:
-            bundles.append(bundle)
+        all_bundles[vendor_id] = bundle
+
+    # === PHASE 2: Rescue failing bundles ===
+    failing_bundles = [b for b in all_bundles.values() if not b.meets_minimum]
+    successful_bundles = [b for b in all_bundles.values() if b.meets_minimum]
+
+    for failing_bundle in failing_bundles:
+        needed = failing_bundle.get_remaining_needed()
+
+        # Try to rescue by pulling books from successful bundles
+        rescued = _try_rescue_bundle(
+            failing_bundle,
+            successful_bundles,
+            offers_by_isbn,
+            isbn_to_vendor,
+            vendor_minimums,
+        )
+
+        if not rescued:
+            # Can't rescue - redistribute this bundle's books to maximize profit
+            _redistribute_bundle(
+                failing_bundle,
+                successful_bundles,
+                offers_by_isbn,
+                isbn_to_vendor,
+                max_books_per_vendor,
+            )
+
+    # Rebuild final bundles list (only successful ones have value)
+    final_bundles = [b for b in all_bundles.values() if b.meets_minimum]
 
     # Calculate totals
-    total_value = sum(b.total_value for b in bundles)
-    total_books = sum(b.books_count for b in bundles)
-    vendors_used = len(bundles)
+    total_value = sum(b.total_value for b in final_bundles)
+    total_books = sum(b.books_count for b in final_bundles)
+    vendors_used = len(final_bundles)
 
-    # Find unassigned books with offers
-    unassigned = []
-    for offer in offers:
-        if offer.isbn not in assigned_isbns:
-            unassigned.append(offer)
+    # Find unassigned books
+    final_assigned_isbns = set()
+    for bundle in final_bundles:
+        for book in bundle.books:
+            final_assigned_isbns.add(book.isbn)
 
-    # Deduplicate unassigned (keep best offer per ISBN)
     unassigned_by_isbn: Dict[str, BookOffer] = {}
-    for offer in unassigned:
-        if offer.isbn not in unassigned_by_isbn or offer.price > unassigned_by_isbn[offer.isbn].price:
-            unassigned_by_isbn[offer.isbn] = offer
+    for isbn, isbn_offers in offers_by_isbn.items():
+        if isbn not in final_assigned_isbns:
+            # Keep best offer for this ISBN
+            best_offer = max(isbn_offers, key=lambda o: o.price)
+            unassigned_by_isbn[isbn] = best_offer
 
     return BulkOptimizationResult(
-        bundles=bundles,
+        bundles=final_bundles,
         total_value=total_value,
         total_books=total_books,
         vendors_used=vendors_used,
         unassigned_books=list(unassigned_by_isbn.values()),
     )
+
+
+def _try_rescue_bundle(
+    failing_bundle: VendorBundle,
+    successful_bundles: List[VendorBundle],
+    offers_by_isbn: Dict[str, List[BookOffer]],
+    isbn_to_vendor: Dict[str, str],
+    vendor_minimums: Dict[str, float],
+) -> bool:
+    """
+    Try to rescue a failing bundle by moving books from successful bundles.
+
+    Strategy: Look for books in successful bundles where:
+    1. The book has an offer from the failing vendor
+    2. Moving it won't drop the source bundle below minimum
+    3. The opportunity cost is low (small difference between offers)
+
+    Returns:
+        True if bundle was rescued (now meets minimum), False otherwise
+    """
+    needed = failing_bundle.get_remaining_needed()
+    if needed <= 0:
+        return True
+
+    # Find candidate books to steal from successful bundles
+    candidates: List[Tuple[float, BookOffer, VendorBundle]] = []  # (opportunity_cost, offer, source_bundle)
+
+    for source_bundle in successful_bundles:
+        # How much buffer does this bundle have above minimum?
+        buffer = source_bundle.total_value - source_bundle.minimum_required
+
+        for book in source_bundle.books:
+            # Does failing bundle have an offer for this book?
+            book_offers = offers_by_isbn.get(book.isbn, [])
+            failing_vendor_offer = None
+            for offer in book_offers:
+                if offer.vendor_id == failing_bundle.vendor_id:
+                    failing_vendor_offer = offer
+                    break
+
+            if not failing_vendor_offer:
+                continue
+
+            # Would removing this book drop source below minimum?
+            if book.price > buffer:
+                continue  # Can't afford to lose this book
+
+            # Calculate opportunity cost (what we lose by moving it)
+            opportunity_cost = book.price - failing_vendor_offer.price
+
+            candidates.append((opportunity_cost, failing_vendor_offer, source_bundle))
+
+    if not candidates:
+        return False
+
+    # Sort by opportunity cost (lowest first - best moves)
+    candidates.sort(key=lambda x: x[0])
+
+    # Try moving books until we meet minimum
+    moved_value = 0.0
+    for opp_cost, offer, source_bundle in candidates:
+        # Remove book from source bundle
+        book_to_remove = None
+        for book in source_bundle.books:
+            if book.isbn == offer.isbn:
+                book_to_remove = book
+                break
+
+        if not book_to_remove:
+            continue
+
+        source_bundle.books.remove(book_to_remove)
+        source_bundle.total_value -= book_to_remove.price
+        source_bundle.books_count -= book_to_remove.quantity
+        source_bundle.meets_minimum = source_bundle.total_value >= source_bundle.minimum_required
+
+        # Add book to failing bundle
+        failing_bundle.add_book(offer)
+        isbn_to_vendor[offer.isbn] = failing_bundle.vendor_id
+
+        if failing_bundle.meets_minimum:
+            return True
+
+    return failing_bundle.meets_minimum
+
+
+def _redistribute_bundle(
+    failing_bundle: VendorBundle,
+    successful_bundles: List[VendorBundle],
+    offers_by_isbn: Dict[str, List[BookOffer]],
+    isbn_to_vendor: Dict[str, str],
+    max_books_per_vendor: int,
+) -> None:
+    """
+    Redistribute a failing bundle's books to successful bundles to maximize total profit.
+
+    Since this bundle can't meet minimum (value = $0), we reassign its books to
+    vendors who will pay the most and can accept them.
+    """
+    # Remove all books from failing bundle
+    books_to_redistribute = list(failing_bundle.books)
+    failing_bundle.books.clear()
+    failing_bundle.total_value = 0.0
+    failing_bundle.books_count = 0
+    failing_bundle.meets_minimum = False
+
+    # For each book, find best alternative vendor from successful bundles
+    for book in books_to_redistribute:
+        book_offers = offers_by_isbn.get(book.isbn, [])
+
+        # Find best offer from successful bundles
+        best_offer = None
+        best_bundle = None
+
+        for offer in sorted(book_offers, key=lambda o: o.price, reverse=True):
+            # Find the bundle for this vendor
+            target_bundle = None
+            for bundle in successful_bundles:
+                if bundle.vendor_id == offer.vendor_id:
+                    target_bundle = bundle
+                    break
+
+            if not target_bundle:
+                continue
+
+            # Check if bundle can accept more books
+            if len(target_bundle.books) >= max_books_per_vendor:
+                continue
+
+            best_offer = offer
+            best_bundle = target_bundle
+            break
+
+        if best_offer and best_bundle:
+            # Add to best bundle
+            best_bundle.add_book(best_offer)
+            isbn_to_vendor[best_offer.isbn] = best_bundle.vendor_id
 
 
 def suggest_additional_books(

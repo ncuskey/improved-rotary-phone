@@ -156,7 +156,11 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
               let object = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
               let value = object.stringValue, !value.isEmpty else { return }
 
-        handleSuccessfulScan(value)
+        // Validate that this is an ISBN format before processing
+        if isValidISBNFormat(value) {
+            handleSuccessfulScan(value)
+        }
+        // If not a valid ISBN, OCR will continue trying to find printed ISBN
     }
 
     // MARK: - Video data delegate (OCR)
@@ -170,14 +174,35 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
 
         let request = VNRecognizeTextRequest { [weak self] request, error in
             guard let self else { return }
-            guard error == nil,
-                  let observations = request.results as? [VNRecognizedTextObservation] else { return }
+
+            if let error = error {
+#if DEBUG
+                print("OCR Error: \(error)")
+#endif
+                return
+            }
+
+            guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
+
+#if DEBUG
+            if !observations.isEmpty {
+                print("OCR found \(observations.count) text regions")
+                for (idx, obs) in observations.prefix(5).enumerated() {
+                    if let candidate = obs.topCandidates(1).first {
+                        print("  [\(idx)] \(candidate.string) (confidence: \(candidate.confidence))")
+                    }
+                }
+            }
+#endif
 
             self.processOCRResults(observations)
         }
 
-        request.recognitionLevel = .fast
+        // Use accurate recognition for better ISBN detection
+        request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false
+        request.recognitionLanguages = ["en-US"]
+        request.minimumTextHeight = 0.03  // Smaller text detection
 
         let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up, options: [:])
         try? handler.perform([request])
@@ -204,14 +229,26 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
                                        .replacingOccurrences(of: " ", with: "")
                                        .uppercased()
 
+#if DEBUG
+                print("Found potential ISBN: '\(rawISBN)' -> '\(cleanISBN)'")
+#endif
+
                 // Validate ISBN format
                 if isValidISBNFormat(cleanISBN) {
+#if DEBUG
+                    print("✅ Valid ISBN found: \(cleanISBN)")
+#endif
                     DispatchQueue.main.async { [weak self] in
                         guard let self, self.isActive else { return }
                         self.handleSuccessfulScan(cleanISBN)
                     }
                     return
                 }
+#if DEBUG
+                else {
+                    print("❌ Invalid ISBN format: \(cleanISBN)")
+                }
+#endif
             }
         }
     }

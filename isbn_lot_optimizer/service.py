@@ -227,6 +227,16 @@ class BookService:
                 max_results=self.ebay_entries,
             )
 
+        # Fetch BookScouter data early to get Amazon rank for probability scoring
+        booksrun_offer: Optional[BooksRunOffer] = None
+        bookscouter_result: Optional[BookScouterResult] = None
+        amazon_rank: Optional[int] = None
+        if include_market:
+            booksrun_offer = self._fetch_booksrun_offer(normalized, condition=condition)
+            bookscouter_result = self._fetch_bookscouter_offers(normalized)
+            if bookscouter_result:
+                amazon_rank = bookscouter_result.amazon_sales_rank
+
         evaluation = build_book_evaluation(
             isbn=normalized,
             original_isbn=original_isbn,
@@ -234,16 +244,11 @@ class BookService:
             market=market_stats,
             condition=condition,
             edition=edition,
+            amazon_rank=amazon_rank,
         )
         evaluation.quantity = max(1, existing_quantity)
 
         self._register_book_in_series_index(evaluation)
-        # Try Browse API median as a better price anchor; keep $10 minimum rule
-        booksrun_offer: Optional[BooksRunOffer] = None
-        bookscouter_result: Optional[BookScouterResult] = None
-        if include_market:
-            booksrun_offer = self._fetch_booksrun_offer(normalized, condition=condition)
-            bookscouter_result = self._fetch_bookscouter_offers(normalized)
         v2_stats_result = None
         try:
             v2_stats_result = fetch_market_stats_v2(normalized)
@@ -313,6 +318,11 @@ class BookService:
             except Exception:
                 market_stats = None
 
+        # Extract Amazon rank from existing bookscouter data if available
+        amazon_rank = None
+        if existing.bookscouter:
+            amazon_rank = existing.bookscouter.amazon_sales_rank
+
         evaluation = build_book_evaluation(
             isbn=existing.isbn,
             original_isbn=existing.original_isbn,
@@ -320,6 +330,7 @@ class BookService:
             market=market_stats,
             condition=existing.condition,
             edition=existing.edition,
+            amazon_rank=amazon_rank,
         )
         evaluation.quantity = max(1, getattr(existing, "quantity", 1))
 
@@ -1787,6 +1798,11 @@ class BookService:
                 except Exception:
                     market_stats = None
 
+        # Extract Amazon rank from existing bookscouter data if available
+        amazon_rank = None
+        if existing.bookscouter:
+            amazon_rank = existing.bookscouter.amazon_sales_rank
+
         evaluation = build_book_evaluation(
             isbn=existing.isbn,
             original_isbn=existing.original_isbn,
@@ -1794,6 +1810,7 @@ class BookService:
             market=market_stats,
             condition=existing.condition,
             edition=existing.edition,
+            amazon_rank=amazon_rank,
         )
         evaluation.quantity = max(1, getattr(existing, "quantity", 1))
 

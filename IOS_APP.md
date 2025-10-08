@@ -43,6 +43,10 @@ Native iOS application for ISBN scanning and book cataloging with real-time eBay
 - Real-time book metadata lookup
 - Catalog synchronization
 - Lot recommendations
+- **BookScouter multi-vendor buyback data**
+  - Best offer from 14+ vendors
+  - Top 3 offers per book
+  - Vendor names and pricing
 
 ## Architecture
 
@@ -168,7 +172,7 @@ ipconfig getifaddr en1  # Ethernet
 
 ### Backend (Port 8000)
 - `POST /isbn` - Book metadata lookup
-- `GET /api/books/all` - Fetch all books
+- `GET /api/books/all` - Fetch all books (includes BookScouter data)
 - `GET /api/lots/list.json` - Fetch lot recommendations
 
 ### Token Broker (Port 8787)
@@ -219,7 +223,8 @@ ipconfig getifaddr en1  # Ethernet
 ### Swift Files
 - `LotHelperApp/LotHelper/EbayAPI.swift` - eBay integration
 - `LotHelperApp/LotHelper/ScannerReviewView.swift` - Scanner UI with pricing
-- `LotHelperApp/LotHelper/BookAPI.swift` - Backend REST client
+- `LotHelperApp/LotHelper/BookAPI.swift` - Backend REST client, BookScouter models
+- `LotHelperApp/LotHelper/BooksTabView.swift` - Books list and detail view with BookScouter UI
 - `LotHelperApp/LotHelper/BarcodeScannerView.swift` - Camera scanner
 
 ### Token Broker

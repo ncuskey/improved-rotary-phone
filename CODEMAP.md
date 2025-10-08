@@ -18,13 +18,14 @@
   - eBay params: `--ebay-app-id`, `--ebay-global-id`, `--ebay-delay`, `--ebay-entries`
   - Lots refresh: `--refresh-lot-signals`, `--limit`
   - Author tools: `--author-search`, `--author-threshold`, `--author-limit`, `--list-author-clusters`
-- `gui.py` – Tkinter application that manages scanning, lot display, status bar progress, author cleanup, and BooksRun refresh:
+- `gui.py` – Tkinter application that manages scanning, lot display, status bar progress, author cleanup, and BookScouter refresh:
   - Per-cluster, case-by-case approvals in Author Cleanup
   - Optional sample book thumbnails (Pillow/requests-backed), cached under `~/.isbn_lot_optimizer/covers/`
   - Background task progress via `_start_progress`, `_update_progress`, `_finish_progress`
-- `service.py` – Domain logic for book storage, metadata/market refresh, series indexing, BooksRun refresh, and lot recomputation. Used by both GUI and CLI flows. Manages HTTP session reuse and database connection lifecycle.
+  - Bulk Buyback Helper dialog for optimizing vendor book assignments
+- `service.py` – Domain logic for book storage, metadata/market refresh, series indexing, BookScouter refresh, and lot recomputation. Used by both GUI and CLI flows. Manages HTTP session reuse and database connection lifecycle.
 - `database.py` – SQLite access layer with connection pooling. DatabaseManager class provides schema creation, query helpers, and persistent connection reuse for improved performance.
-- `models.py` – Data classes representing books, lots, market stats, and metadata payloads.
+- `models.py` – Data classes representing books, lots, market stats, metadata payloads, and BookScouter vendor offers.
 - `metadata.py` – Google Books/Open Library lookups plus enrichment helpers.
 - `market.py` – eBay Finding API integration (sold/unsold and pricing) with Browse API fallback for active comps; market snapshot builders.
 - `lot_market.py` – Lot-level market snapshots combining eBay Browse (active medians) and Finding (sold medians) for author/series/theme queries with on-disk caching.
@@ -37,6 +38,8 @@
 - `author_aliases.py` – Unified author canonicalization with manual alias mapping and regex normalization. Consolidated from multiple implementations.
 - `probability.py` – Probability scoring logic (condition weights, demand keywords, single-item <$10 bundling rule).
 - `booksrun.py` – Internal BooksRun integration helpers (simple SELL endpoint support).
+- `bookscouter.py` – BookScouter API client for multi-vendor buyback offers (14+ vendors including BooksRun). Rate-limited to 60 calls/minute.
+- `bulk_helper.py` – Vendor bundle optimization algorithm that maximizes profit while meeting vendor minimums ($5-$10 per vendor). Uses greedy assignment strategy.
 - `services/hardcover.py` – Hardcover GraphQL client with conservative rate limiting, retries, and parsing helpers.
 - `services/series_resolver.py` – Series schema ensure, caching (7d TTL), Hardcover lookups, peers upsert, and book row updates.
 
@@ -52,6 +55,7 @@
 ## Data & Persistence
 - Default SQLite catalogue path: `~/.isbn_lot_optimizer/catalog.db` (created on demand).
 - Series metadata columns on `books`: `series_name`, `series_slug`, `series_id_hardcover`, `series_position`, `series_confidence`, `series_last_checked`
+- BookScouter data stored in `bookscouter_json` column (full JSON blob with all vendor offers)
 - `series_peers` table persists peer titles for a series (ordered by position when available; title otherwise)
 - `hc_cache` table caches Hardcover payloads (7d TTL) to reduce repeated calls
 - Cover thumbnails cached under `~/.isbn_lot_optimizer/covers/` with SHA-256 filenames.
@@ -59,14 +63,27 @@
 - Lot market snapshot cache: `~/.isbn_lot_optimizer/lot_cache.json`
 
 ## Background Tasks & Progress
-- Long-running jobs (cover prefetch, refresh, imports, BooksRun refresh) run in background threads.
-- Progress is routed through `_start_progress`, `_update_progress`, and `_finish_progress` in `gui.py`; service-level loops can provide callbacks (e.g. `BookService.refresh_books(progress_cb=...)`).
+- Long-running jobs (cover prefetch, refresh, imports, BookScouter refresh) run in background threads.
+- Progress is routed through `_start_progress`, `_update_progress`, and `_finish_progress` in `gui.py`; service-level loops can provide callbacks (e.g. `BookService.refresh_books(progress_cb=...)`) that include evaluation objects for real-time status updates.
 
 ## CLI Entrypoints
 - App (GUI/CLI): `python -m isbn_lot_optimizer`
   - Series refresh one-shot: `python -m isbn_lot_optimizer --refresh-series --limit 500`
 - Backfill series script: `python -m isbn_lot_optimizer.scripts.backfill_series --db ~/.isbn_lot_optimizer/catalog.db --limit 500 --only-missing --stale-days 30`
 - BooksRun bulk quotes: `python -m lothelper booksrun-sell --in isbns.csv --out quotes.csv [--format parquet] [--sleep 0.1]`
+
+## Vendor Buyback Features
+- **BookScouter Integration**: Multi-vendor buyback aggregation replacing single-vendor BooksRun
+  - API rate limit: 60 calls/minute (enforced with 1.1s delay), 7000 calls/day
+  - Returns offers from 14+ vendors including BooksRun, eCampus, Valore, TextbookRush, etc.
+  - GUI displays best offer, vendor count, and top 3 offers per book
+  - Status bar shows real-time data during refresh (book title, price, best offer, vendor count)
+- **Bulk Buyback Helper**: Optimization tool under Tools menu
+  - Maximizes total profit by assigning books to highest bidders
+  - Respects vendor minimums ($5-$10 per vendor)
+  - Greedy algorithm prioritizes high-value vendors
+  - Tabbed interface shows bundles per vendor with value calculations
+  - Tracks unassigned books (below minimums or no offers)
 
 ## Testing & Tooling
 - Tests live under `tests/` and use `pytest`; covers BooksRun client and CLI paths.

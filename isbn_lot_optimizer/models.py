@@ -81,6 +81,27 @@ class BooksRunOffer:
 
 
 @dataclass
+class VendorOffer:
+    """Single vendor buyback offer from BookScouter."""
+    vendor_name: str
+    vendor_id: str
+    price: float
+    updated_at: str
+
+
+@dataclass
+class BookScouterResult:
+    """Aggregated buyback offers from multiple vendors via BookScouter API."""
+    isbn_10: str
+    isbn_13: str
+    offers: Sequence[VendorOffer] = field(default_factory=list)
+    best_price: float = 0.0
+    best_vendor: Optional[str] = None
+    total_vendors: int = 0
+    raw: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class BookEvaluation:
     isbn: str
     original_isbn: str
@@ -98,6 +119,10 @@ class BookEvaluation:
     booksrun: Optional[BooksRunOffer] = None
     booksrun_value_label: Optional[str] = None
     booksrun_value_ratio: Optional[float] = None
+    # BookScouter multi-vendor buyback data
+    bookscouter: Optional[BookScouterResult] = None
+    bookscouter_value_label: Optional[str] = None
+    bookscouter_value_ratio: Optional[float] = None
 
 
 @dataclass

@@ -77,6 +77,7 @@ class DatabaseManager:
                     metadata_json TEXT,
                     market_json TEXT,
                     booksrun_json TEXT,
+                    bookscouter_json TEXT,
                     source_json TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -99,6 +100,7 @@ class DatabaseManager:
             )
             self._ensure_lot_justification(conn)
             self._ensure_booksrun_column(conn)
+            self._ensure_bookscouter_column(conn)
 
     def _get_connection(self) -> sqlite3.Connection:
         """
@@ -134,6 +136,12 @@ class DatabaseManager:
         if "booksrun_json" not in columns:
             conn.execute("ALTER TABLE books ADD COLUMN booksrun_json TEXT")
 
+    def _ensure_bookscouter_column(self, conn: sqlite3.Connection) -> None:
+        cursor = conn.execute("PRAGMA table_info(books)")
+        columns = {row[1] for row in cursor.fetchall()}
+        if "bookscouter_json" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN bookscouter_json TEXT")
+
     # ------------------------------------------------------------------
     # Book persistence helpers
 
@@ -142,6 +150,7 @@ class DatabaseManager:
         data["metadata_json"] = json.dumps(data.get("metadata_json", {}))
         data["market_json"] = json.dumps(data.get("market_json", {}))
         data["booksrun_json"] = json.dumps(data.get("booksrun_json", {}))
+        data["bookscouter_json"] = json.dumps(data.get("bookscouter_json", {}))
         data["source_json"] = json.dumps(data.get("source_json", {}))
         data.setdefault("probability_reasons", "")
         data.setdefault("condition", "Good")
@@ -160,7 +169,7 @@ class DatabaseManager:
                     estimated_price, price_reference, rarity,
                     probability_label, probability_score, probability_reasons,
                     sell_through, ebay_active_count, ebay_sold_count, ebay_currency,
-                    metadata_json, market_json, booksrun_json, source_json,
+                    metadata_json, market_json, booksrun_json, bookscouter_json, source_json,
                     sold_comps_count, sold_comps_min, sold_comps_median, sold_comps_max,
                     sold_comps_is_estimate, sold_comps_source,
                     created_at, updated_at
@@ -169,7 +178,7 @@ class DatabaseManager:
                     :estimated_price, :price_reference, :rarity,
                     :probability_label, :probability_score, :probability_reasons,
                     :sell_through, :ebay_active_count, :ebay_sold_count, :ebay_currency,
-                    :metadata_json, :market_json, :booksrun_json, :source_json,
+                    :metadata_json, :market_json, :booksrun_json, :bookscouter_json, :source_json,
                     :sold_comps_count, :sold_comps_min, :sold_comps_median, :sold_comps_max,
                     :sold_comps_is_estimate, :sold_comps_source,
                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
@@ -193,6 +202,7 @@ class DatabaseManager:
                     metadata_json=excluded.metadata_json,
                     market_json=excluded.market_json,
                     booksrun_json=excluded.booksrun_json,
+                    bookscouter_json=excluded.bookscouter_json,
                     source_json=excluded.source_json,
                     sold_comps_count=excluded.sold_comps_count,
                     sold_comps_min=excluded.sold_comps_min,

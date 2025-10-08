@@ -18,7 +18,18 @@ from .booksrun import (
     fetch_offer as fetch_booksrun_offer,
     normalise_condition as normalize_booksrun_condition,
 )
-from .constants import BOOKSRUN_FALLBACK_KEY, BOOKSRUN_FALLBACK_AFFILIATE, COVER_CHOICES, TITLE_NORMALIZER
+from .bookscouter import (
+    BookScouterAPIError,
+    DEFAULT_BASE_URL as BOOKSCOUTER_DEFAULT_BASE_URL,
+    fetch_offers as fetch_bookscouter_offers,
+)
+from .constants import (
+    BOOKSRUN_FALLBACK_KEY,
+    BOOKSRUN_FALLBACK_AFFILIATE,
+    BOOKSCOUTER_FALLBACK_KEY,
+    COVER_CHOICES,
+    TITLE_NORMALIZER,
+)
 from .database import DatabaseManager
 from .metadata import create_http_session, enrich_authorship, fetch_metadata
 from .series_index import (
@@ -27,7 +38,16 @@ from .series_index import (
     now_ts,
     parse_series_volume_hint,
 )
-from .models import BookEvaluation, BookMetadata, BooksRunOffer, EbayMarketStats, LotCandidate, LotSuggestion
+from .models import (
+    BookEvaluation,
+    BookMetadata,
+    BookScouterResult,
+    BooksRunOffer,
+    EbayMarketStats,
+    LotCandidate,
+    LotSuggestion,
+    VendorOffer,
+)
 from .probability import build_book_evaluation
 from .lots import build_lots_with_strategies, generate_lot_suggestions
 from .series_catalog import get_or_fetch_series_for_authors
@@ -64,6 +84,9 @@ class BookService:
         booksrun_affiliate_id: Optional[str] = None,
         booksrun_base_url: Optional[str] = None,
         booksrun_timeout: Optional[float] = None,
+        bookscouter_api_key: Optional[str] = None,
+        bookscouter_base_url: Optional[str] = None,
+        bookscouter_timeout: Optional[float] = None,
     ) -> None:
         self.db = DatabaseManager(database_path)
         self.metadata_session = create_http_session()
@@ -115,6 +138,23 @@ class BookService:
             else float(timeout_env) if timeout_env else 15.0
         )
         self._booksrun_session: Optional[requests.Session] = None
+
+        # BookScouter API configuration
+        bookscouter_key_env = os.getenv("apiKey") or os.getenv("BOOKSCOUTER_API_KEY")
+        self.bookscouter_api_key = (
+            bookscouter_api_key
+            if bookscouter_api_key is not None
+            else (bookscouter_key_env or BOOKSCOUTER_FALLBACK_KEY)
+        )
+        bookscouter_base_url_env = os.getenv("BOOKSCOUTER_BASE_URL")
+        self.bookscouter_base_url = bookscouter_base_url or bookscouter_base_url_env or BOOKSCOUTER_DEFAULT_BASE_URL
+        bookscouter_timeout_env = os.getenv("BOOKSCOUTER_TIMEOUT")
+        self.bookscouter_timeout = (
+            float(bookscouter_timeout)
+            if bookscouter_timeout is not None
+            else float(bookscouter_timeout_env) if bookscouter_timeout_env else 15.0
+        )
+        self._bookscouter_session: Optional[requests.Session] = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -199,8 +239,10 @@ class BookService:
         self._register_book_in_series_index(evaluation)
         # Try Browse API median as a better price anchor; keep $10 minimum rule
         booksrun_offer: Optional[BooksRunOffer] = None
+        bookscouter_result: Optional[BookScouterResult] = None
         if include_market:
             booksrun_offer = self._fetch_booksrun_offer(normalized, condition=condition)
+            bookscouter_result = self._fetch_bookscouter_offers(normalized)
         v2_stats_result = None
         try:
             v2_stats_result = fetch_market_stats_v2(normalized)
@@ -216,6 +258,7 @@ class BookService:
             pass
 
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
+        self._apply_bookscouter_to_evaluation(evaluation, bookscouter_result)
         self._persist_book(evaluation, v2_stats=v2_stats_result)
         if recalc_lots:
             self.recalculate_lots()
@@ -296,7 +339,9 @@ class BookService:
             pass
 
         booksrun_offer = self._fetch_booksrun_offer(isbn, condition=existing.condition)
+        bookscouter_result = self._fetch_bookscouter_offers(isbn)
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
+        self._apply_bookscouter_to_evaluation(evaluation, bookscouter_result)
         self._persist_book(evaluation, v2_stats=v2_stats_result)
         if recalc_lots:
             self.recalculate_lots()
@@ -535,11 +580,12 @@ class BookService:
         self,
         *,
         delay: Optional[float] = None,
-        progress_cb: Optional[Callable[[int, int], None]] = None,
+        progress_cb: Optional[Callable[[int, int, Optional[Any]], None]] = None,
     ) -> int:
         """
-        Refresh BooksRun offers for all books without touching eBay stats/metadata.
+        Refresh BooksRun/BookScouter offers for all books without touching eBay stats/metadata.
         Polite rate limiting via 'delay' seconds between calls (default from BOOKSRUN_DELAY or 0.2).
+        Progress callback receives (done, total, evaluation) for real-time status updates.
         """
         try:
             rows = self.db.fetch_all_books()
@@ -563,11 +609,13 @@ class BookService:
             return 0
 
         # Determine delay
+        # BookScouter API limit: 60 calls/minute = 1 call per second minimum
+        # Use 1.1 seconds for safety margin to avoid rate limiting
         if delay is None:
             try:
-                delay = float(os.getenv("BOOKSRUN_DELAY", "0.2"))
+                delay = float(os.getenv("BOOKSCOUTER_DELAY", "1.1"))
             except Exception:
-                delay = 0.2
+                delay = 1.1
 
         # Ensure a session for connection reuse
         if self._booksrun_session is None:
@@ -578,6 +626,7 @@ class BookService:
 
         count = 0
         for idx, isbn in enumerate(isbns, start=1):
+            evaluation = None
             try:
                 evaluation = self._refresh_single_book(
                     isbn,
@@ -592,7 +641,7 @@ class BookService:
                 pass
             if progress_cb:
                 try:
-                    progress_cb(idx, total)
+                    progress_cb(idx, total, evaluation)
                 except Exception:
                     pass
             if idx < total and delay and delay > 0:
@@ -1608,8 +1657,10 @@ class BookService:
 
         if requery_booksrun or requery_market or not getattr(existing, "booksrun", None):
             booksrun_offer = self._fetch_booksrun_offer(normalized, condition=existing.condition)
+            bookscouter_result = self._fetch_bookscouter_offers(normalized)
         else:
             booksrun_offer = getattr(existing, "booksrun", None)
+            bookscouter_result = getattr(existing, "bookscouter", None)
         # Store v2_stats for sold comps persistence
         v2_stats_result = None
         if requery_market:
@@ -1632,6 +1683,7 @@ class BookService:
                 pass
 
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
+        self._apply_bookscouter_to_evaluation(evaluation, bookscouter_result)
         self._persist_book(evaluation, v2_stats=v2_stats_result)
         return evaluation
 
@@ -1902,6 +1954,25 @@ class BookService:
             offer.url = self._booksrun_fallback_url(isbn)
         return offer
 
+    def _fetch_bookscouter_offers(self, isbn: str) -> Optional[BookScouterResult]:
+        """Fetch multi-vendor buyback offers from BookScouter API."""
+        if not self.bookscouter_api_key:
+            return None
+        try:
+            result = fetch_bookscouter_offers(
+                isbn,
+                api_key=self.bookscouter_api_key,
+                use_recent=False,  # Use cached prices for speed
+                base_url=self.bookscouter_base_url,
+                timeout=int(self.bookscouter_timeout),
+                session=self._bookscouter_session,
+            )
+            return result
+        except BookScouterAPIError:
+            return None
+        except Exception:
+            return None
+
     def _booksrun_fallback_url(self, isbn: str) -> str:
         root = (self.booksrun_base_url or BOOKSRUN_DEFAULT_BASE_URL).rstrip("/")
         return f"{root}/sell-textbooks/{isbn}"
@@ -1962,6 +2033,28 @@ class BookService:
         evaluation.booksrun_value_ratio = round(ratio, 3)
         evaluation.booksrun_value_label = self._classify_booksrun_ratio(ratio)
 
+    def _apply_bookscouter_to_evaluation(
+        self,
+        evaluation: BookEvaluation,
+        result: Optional[BookScouterResult],
+    ) -> None:
+        """Apply BookScouter multi-vendor buyback data to evaluation."""
+        evaluation.bookscouter = result
+        evaluation.bookscouter_value_label = None
+        evaluation.bookscouter_value_ratio = None
+        if not result or result.best_price <= 0:
+            evaluation.bookscouter_value_label = "No Offers"
+            return
+        try:
+            est_price = float(evaluation.estimated_price)
+        except Exception:
+            est_price = 0.0
+        if est_price <= 0:
+            return
+        ratio = result.best_price / max(est_price, 1e-6)
+        evaluation.bookscouter_value_ratio = round(ratio, 3)
+        evaluation.bookscouter_value_label = self._classify_booksrun_ratio(ratio)  # Reuse same classification
+
     def _booksrun_from_blob(self, isbn: str, blob: Any) -> Optional[BooksRunOffer]:
         if not isinstance(blob, dict) or not blob:
             return None
@@ -1999,6 +2092,45 @@ class BookService:
         )
         return offer
 
+    def _bookscouter_from_blob(self, isbn: str, blob: Any) -> Optional[BookScouterResult]:
+        """Parse BookScouter data from database blob."""
+        if not isinstance(blob, dict) or not blob:
+            return None
+
+        isbn_10 = blob.get("isbn_10", "")
+        isbn_13 = blob.get("isbn_13", "")
+        best_price = self._safe_float(blob.get("best_price")) or 0.0
+        best_vendor = blob.get("best_vendor")
+        total_vendors = int(blob.get("total_vendors") or 0)
+
+        # Parse vendor offers
+        offers_data = blob.get("offers", [])
+        offers = []
+        if isinstance(offers_data, list):
+            for offer_dict in offers_data:
+                if isinstance(offer_dict, dict):
+                    vendor_offer = VendorOffer(
+                        vendor_name=offer_dict.get("vendor_name", ""),
+                        vendor_id=str(offer_dict.get("vendor_id", "")),
+                        price=float(offer_dict.get("price", 0)),
+                        updated_at=offer_dict.get("updated_at", ""),
+                    )
+                    offers.append(vendor_offer)
+
+        raw_payload = blob.get("raw", {})
+        if not isinstance(raw_payload, dict):
+            raw_payload = {}
+
+        return BookScouterResult(
+            isbn_10=isbn_10,
+            isbn_13=isbn_13,
+            offers=offers,
+            best_price=best_price,
+            best_vendor=best_vendor,
+            total_vendors=total_vendors,
+            raw=raw_payload,
+        )
+
     def _persist_book(self, evaluation: BookEvaluation, v2_stats: Optional[Dict[str, Any]] = None) -> None:
         metadata_dict = asdict(evaluation.metadata)
         metadata_dict["authors"] = list(metadata_dict.get("authors") or [])
@@ -2030,6 +2162,13 @@ class BookService:
             booksrun_dict["value_label"] = evaluation.booksrun_value_label
         if evaluation.booksrun_value_ratio is not None:
             booksrun_dict["value_ratio"] = evaluation.booksrun_value_ratio
+
+        bookscouter_dict = asdict(evaluation.bookscouter) if evaluation.bookscouter else {}
+        if evaluation.bookscouter_value_label:
+            bookscouter_dict["value_label"] = evaluation.bookscouter_value_label
+        if evaluation.bookscouter_value_ratio is not None:
+            bookscouter_dict["value_ratio"] = evaluation.bookscouter_value_ratio
+
         payload = {
             "isbn": evaluation.isbn,
             "title": evaluation.metadata.title,
@@ -2050,6 +2189,7 @@ class BookService:
             "metadata_json": metadata_dict,
             "market_json": market_dict,
             "booksrun_json": booksrun_dict,
+            "bookscouter_json": bookscouter_dict,
             "source_json": {
                 "condition": evaluation.condition,
                 "edition": evaluation.edition,
@@ -2065,6 +2205,14 @@ class BookService:
             payload["sold_comps_max"] = v2_stats.get("sold_comps_max")
             payload["sold_comps_is_estimate"] = v2_stats.get("sold_comps_is_estimate", True)
             payload["sold_comps_source"] = v2_stats.get("sold_comps_source")
+        else:
+            # Set defaults when not querying market data
+            payload["sold_comps_count"] = None
+            payload["sold_comps_min"] = None
+            payload["sold_comps_median"] = None
+            payload["sold_comps_max"] = None
+            payload["sold_comps_is_estimate"] = None
+            payload["sold_comps_source"] = None
 
         self.db.upsert_book(payload)
 
@@ -2084,6 +2232,18 @@ class BookService:
             booksrun_blob = json.loads(booksrun_blob_raw) if booksrun_blob_raw else {}
         except Exception:
             booksrun_blob = {}
+
+        bookscouter_blob_raw = None
+        try:
+            if "bookscouter_json" in row.keys():
+                bookscouter_blob_raw = row["bookscouter_json"]
+        except Exception:
+            bookscouter_blob_raw = None
+        try:
+            bookscouter_blob = json.loads(bookscouter_blob_raw) if bookscouter_blob_raw else {}
+        except Exception:
+            bookscouter_blob = {}
+
         source_raw = None
         try:
             if "source_json" in row.keys():
@@ -2200,6 +2360,10 @@ class BookService:
         )
         booksrun_offer = self._booksrun_from_blob(row["isbn"], booksrun_blob)
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
+
+        bookscouter_result = self._bookscouter_from_blob(row["isbn"], bookscouter_blob)
+        self._apply_bookscouter_to_evaluation(evaluation, bookscouter_result)
+
         try:
             if "created_at" in row.keys():
                 setattr(evaluation, "created_at", row["created_at"])

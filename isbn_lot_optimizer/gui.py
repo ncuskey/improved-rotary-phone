@@ -35,6 +35,7 @@ from .service import BookService
 from .constants import COVER_CHOICES
 from .utils import normalise_isbn, isbn10_to_isbn13, compute_isbn10_check_digit
 from .author_match import cluster_authors
+from .bulk_helper import extract_offers_from_books, optimize_vendor_bundles, format_bundle_summary
 
 
 # -----------------------------
@@ -208,6 +209,208 @@ class BookAttributesDialog(Toplevel):
         parent.wait_window(dialog)
         return dialog.result
 
+
+# -----------------------------
+# Bulk Helper Dialog
+# -----------------------------
+class BulkHelperDialog(Toplevel):
+    """Dialog for optimizing book combinations for vendor buybacks."""
+
+    def __init__(self, parent, service):
+        super().__init__(parent)
+        self.title("Bulk Buyback Helper")
+        self.geometry("900x700")
+        self.resizable(True, True)
+        self.transient(parent)
+        self.service = service
+
+        self._build_ui()
+        self._run_optimization()
+
+        # Center on parent
+        self.update_idletasks()
+        x = parent.winfo_x() + (parent.winfo_width() // 2) - (self.winfo_width() // 2)
+        y = parent.winfo_y() + (parent.winfo_height() // 2) - (self.winfo_height() // 2)
+        self.geometry(f"+{x}+{y}")
+
+    def _build_ui(self):
+        # Main container
+        main_frame = ttk.Frame(self, padding=15)
+        main_frame.pack(fill="both", expand=True)
+
+        # Header
+        header = ttk.Label(
+            main_frame,
+            text="Bulk Buyback Optimization",
+            font=("", 14, "bold")
+        )
+        header.pack(pady=(0, 10))
+
+        desc = ttk.Label(
+            main_frame,
+            text="Optimized book combinations to maximize profit while meeting vendor minimums",
+            foreground="gray"
+        )
+        desc.pack(pady=(0, 15))
+
+        # Summary frame
+        summary_frame = ttk.LabelFrame(main_frame, text="Optimization Summary", padding=10)
+        summary_frame.pack(fill="x", pady=(0, 15))
+
+        self.summary_label = ttk.Label(summary_frame, text="Analyzing...", justify="left")
+        self.summary_label.pack(anchor="w")
+
+        # Results notebook (tabs for each vendor)
+        self.notebook = ttk.Notebook(main_frame)
+        self.notebook.pack(fill="both", expand=True, pady=(0, 15))
+
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill="x")
+
+        ttk.Button(button_frame, text="Close", command=self.destroy).pack(side="right")
+        ttk.Button(button_frame, text="Refresh", command=self._run_optimization).pack(side="right", padx=(0, 5))
+
+    def _run_optimization(self):
+        """Run the optimization algorithm and display results."""
+        self.summary_label.config(text="Analyzing catalog...")
+        self.update_idletasks()
+
+        # Clear existing tabs
+        for tab in self.notebook.tabs():
+            self.notebook.forget(tab)
+
+        # Get all books with BookScouter data
+        books = self.service.list_books()
+        books_with_offers = [b for b in books if getattr(b, "bookscouter", None) and b.bookscouter.total_vendors > 0]
+
+        if not books_with_offers:
+            self.summary_label.config(
+                text="No books with buyback offers found.\n\n"
+                     "Tip: Use 'Refresh BookScouter (All)' to fetch current buyback prices."
+            )
+            return
+
+        # Extract offers and optimize
+        offers = extract_offers_from_books(books_with_offers)
+        result = optimize_vendor_bundles(offers)
+
+        # Update summary
+        summary_text = (
+            f"Total Value: ${result.total_value:.2f}\n"
+            f"Books Assigned: {result.total_books}\n"
+            f"Vendors Used: {result.vendors_used}\n"
+            f"Unassigned Books: {len(result.unassigned_books)}"
+        )
+        self.summary_label.config(text=summary_text)
+
+        # Create tab for each vendor bundle
+        for bundle in sorted(result.bundles, key=lambda b: b.total_value, reverse=True):
+            self._create_bundle_tab(bundle)
+
+        # Create tab for unassigned books
+        if result.unassigned_books:
+            self._create_unassigned_tab(result.unassigned_books)
+
+    def _create_bundle_tab(self, bundle):
+        """Create a tab showing books for a specific vendor."""
+        # Create frame for this tab
+        tab_frame = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(tab_frame, text=f"{bundle.vendor_name[:20]} (${bundle.total_value:.2f})")
+
+        # Vendor info header
+        info_frame = ttk.Frame(tab_frame)
+        info_frame.pack(fill="x", pady=(0, 10))
+
+        status_icon = "✓" if bundle.meets_minimum else "✗"
+        status_color = "green" if bundle.meets_minimum else "red"
+
+        info_text = (
+            f"{status_icon} {bundle.vendor_name}\n"
+            f"Minimum Required: ${bundle.minimum_required:.2f}\n"
+            f"Total Value: ${bundle.total_value:.2f}\n"
+            f"Books: {bundle.books_count}"
+        )
+
+        info_label = ttk.Label(info_frame, text=info_text, justify="left", foreground=status_color)
+        info_label.pack(anchor="w")
+
+        # Books table
+        columns = ("isbn", "title", "price", "condition", "qty")
+        tree = ttk.Treeview(tab_frame, columns=columns, show="headings", height=15)
+
+        tree.heading("isbn", text="ISBN")
+        tree.heading("title", text="Title")
+        tree.heading("price", text="Price")
+        tree.heading("condition", text="Condition")
+        tree.heading("qty", text="Qty")
+
+        tree.column("isbn", width=120)
+        tree.column("title", width=350)
+        tree.column("price", width=80, anchor="e")
+        tree.column("condition", width=100)
+        tree.column("qty", width=50, anchor="center")
+
+        for book in sorted(bundle.books, key=lambda b: b.price, reverse=True):
+            tree.insert("", "end", values=(
+                book.isbn,
+                book.title[:50],
+                f"${book.price:.2f}",
+                book.condition,
+                book.quantity
+            ))
+
+        tree.pack(fill="both", expand=True)
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(tab_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+
+    def _create_unassigned_tab(self, unassigned_books):
+        """Create a tab showing books that weren't assigned to any vendor."""
+        tab_frame = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(tab_frame, text=f"Unassigned ({len(unassigned_books)})")
+
+        # Info
+        info_label = ttk.Label(
+            tab_frame,
+            text="These books have offers but weren't assigned (bundle didn't meet minimum or lower priority):",
+            wraplength=800,
+            justify="left"
+        )
+        info_label.pack(anchor="w", pady=(0, 10))
+
+        # Books table
+        columns = ("isbn", "title", "best_vendor", "best_price")
+        tree = ttk.Treeview(tab_frame, columns=columns, show="headings", height=15)
+
+        tree.heading("isbn", text="ISBN")
+        tree.heading("title", text="Title")
+        tree.heading("best_vendor", text="Best Vendor")
+        tree.heading("best_price", text="Best Price")
+
+        tree.column("isbn", width=120)
+        tree.column("title", width=350)
+        tree.column("best_vendor", width=250)
+        tree.column("best_price", width=100, anchor="e")
+
+        for book in sorted(unassigned_books, key=lambda b: b.price, reverse=True):
+            tree.insert("", "end", values=(
+                book.isbn,
+                book.title[:50],
+                book.vendor_name,
+                f"${book.price:.2f}"
+            ))
+
+        tree.pack(fill="both", expand=True)
+
+    @staticmethod
+    def show(parent, service):
+        """Show the Bulk Helper dialog."""
+        dialog = BulkHelperDialog(parent, service)
+        parent.wait_window(dialog)
+
+
 # Optional cover image support is imported lazily in _load_cover_image to avoid a hard dependency
 # on PIL/requests at import time and to prevent static analysis errors when they aren't installed.
 
@@ -374,11 +577,11 @@ class BookEvaluatorGUI:
         clear_db_button = ttk.Button(input_frame, text="Clear Database", command=self._on_clear_database)
         clear_db_button.grid(row=0, column=10, padx=5)
 
-        # Refresh all BooksRun offers (bulk)
-        refresh_booksrun_all_button = ttk.Button(
-            input_frame, text="Refresh BooksRun (All)", command=self.refresh_booksrun_all
+        # Refresh all BookScouter offers (bulk)
+        refresh_bookscouter_all_button = ttk.Button(
+            input_frame, text="Refresh BookScouter (All)", command=self.refresh_bookscouter_all
         )
-        refresh_booksrun_all_button.grid(row=0, column=11, padx=5)
+        refresh_bookscouter_all_button.grid(row=0, column=11, padx=5)
 
         # Search row
         ttk.Label(input_frame, text="Search:").grid(row=1, column=0, sticky="w", pady=(8, 0))
@@ -429,9 +632,9 @@ class BookEvaluatorGUI:
             "quantity",
             "condition",
             "sell_through",
-            "booksrun_cash",
-            "booksrun_credit",
-            "booksrun_value",
+            "bookscouter_best",
+            "bookscouter_vendors",
+            "bookscouter_value",
             "scanned",
         )
         self.books_tree = ttk.Treeview(
@@ -442,13 +645,13 @@ class BookEvaluatorGUI:
             selectmode="extended",
         )
         heading_overrides = {
-            "booksrun_cash": "BooksRun Cash",
-            "booksrun_credit": "BooksRun Credit",
-            "booksrun_value": "BooksRun Value",
+            "bookscouter_best": "Best Offer",
+            "bookscouter_vendors": "Vendors",
+            "bookscouter_value": "Value",
         }
         for col in book_columns:
             heading = heading_overrides.get(col, col.replace("_", " ").title())
-            cast = _as_float if col in {"price", "booksrun_cash", "booksrun_credit"} else (_as_int if col in {"quantity"} else None)
+            cast = _as_float if col in {"price", "bookscouter_best"} else (_as_int if col in {"quantity", "bookscouter_vendors"} else None)
             self.books_tree.heading(col, text=heading, command=lambda c=col, func=cast: _tree_sortby(self.books_tree, c, cast=func))
         self.books_tree.column("isbn", width=130, anchor="w")
         self.books_tree.column("title", width=260, anchor="w")
@@ -461,9 +664,9 @@ class BookEvaluatorGUI:
         self.books_tree.column("quantity", width=70, anchor="center")
         self.books_tree.column("condition", width=100, anchor="w")
         self.books_tree.column("sell_through", width=110, anchor="w")
-        self.books_tree.column("booksrun_cash", width=110, anchor="e")
-        self.books_tree.column("booksrun_credit", width=110, anchor="e")
-        self.books_tree.column("booksrun_value", width=120, anchor="w")
+        self.books_tree.column("bookscouter_best", width=100, anchor="e")
+        self.books_tree.column("bookscouter_vendors", width=80, anchor="center")
+        self.books_tree.column("bookscouter_value", width=120, anchor="w")
         self.books_tree.column("scanned", width=150, anchor="w")
         self.books_tree.bind("<<TreeviewSelect>>", self._on_book_select)
         self.books_tree.bind("<Double-1>", self._on_books_double_click)
@@ -559,7 +762,9 @@ class BookEvaluatorGUI:
 
         tools = tk.Menu(menubar, tearoff=0)
         tools.add_command(label="Refresh Selected Book(s)", command=self.refresh_selected)
-        tools.add_command(label="Refresh BooksRun (All)", command=self.refresh_booksrun_all)
+        tools.add_command(label="Refresh BookScouter (All)", command=self.refresh_bookscouter_all)
+        tools.add_command(label="Bulk Buyback Helper…", command=self._open_bulk_helper)
+        tools.add_separator()
         tools.add_command(label="Author Cleanup…", command=self._open_author_cleanup)
         tools.add_command(label="Refresh Series Catalog", command=self._refresh_series_catalog)
         tools.add_command(label="Bulk Remove Sold (Paste…)", command=self._open_bulk_remove_paste)
@@ -739,46 +944,62 @@ class BookEvaluatorGUI:
     def _on_refresh_selected(self) -> None:
         self.refresh_selected()
 
-    def refresh_booksrun_all(self, *_args) -> None:
+    def refresh_bookscouter_all(self, *_args) -> None:
         """
-        Refresh BooksRun offers for all stored books with polite rate limiting.
-        Uses the service.refresh_booksrun_all method and shows a determinate progress bar.
+        Refresh BookScouter offers for all stored books with polite rate limiting.
+        Uses the service.refresh_booksrun_all method (which now also fetches BookScouter).
         """
         if self._refresh_thread and self._refresh_thread.is_alive():
-            messagebox.showinfo("BooksRun Refresh", "A refresh is already in progress. Please wait for it to finish.")
+            messagebox.showinfo("BookScouter Refresh", "A refresh is already in progress. Please wait for it to finish.")
             return
 
         confirm = messagebox.askyesno(
-            "Refresh BooksRun (All)",
-            "This will query BooksRun for all books in your catalog.\n\nProceed?",
+            "Refresh BookScouter (All)",
+            "This will query BookScouter for all books in your catalog.\n\nNote: Rate limit is 60 calls/min, 7000 calls/day.\n\nProceed?",
         )
         if not confirm:
-            self._set_status("BooksRun refresh cancelled.")
+            self._set_status("BookScouter refresh cancelled.")
             return
 
         # Start progress; total will be updated by progress callback
-        self._set_status("Refreshing BooksRun offers for all books…")
-        self._start_progress("booksrun", "BooksRun", 1)
+        self._set_status("Refreshing BookScouter offers for all books…")
+        self._start_progress("bookscouter", "BookScouter", 1)
 
-        def progress(done: int, total_count: int) -> None:
+        def progress(done: int, total_count: int, evaluation) -> None:
             # Update progress from worker thread safely
-            self.root.after(0, self._update_progress, "booksrun", done, total_count)
+            self.root.after(0, self._update_progress, "bookscouter", done, total_count)
+
+            # Show real-time book details in status bar
+            if evaluation:
+                title = evaluation.metadata.title or evaluation.isbn
+                price = f"${evaluation.estimated_price:.2f}"
+
+                # Show BookScouter info if available
+                status_parts = [f"[{done}/{total_count}] {title} → {price}"]
+                if hasattr(evaluation, 'bookscouter') and evaluation.bookscouter:
+                    if evaluation.bookscouter.best_price > 0:
+                        status_parts.append(f"(BookScouter: ${evaluation.bookscouter.best_price:.2f}, {evaluation.bookscouter.total_vendors} vendors)")
+                    else:
+                        status_parts.append("(BookScouter: no offers)")
+
+                self.root.after(0, self._set_status, " ".join(status_parts))
 
         def handle_error(exc: Exception) -> None:
             self._refresh_thread = None
-            self._reset_progress("booksrun")
-            messagebox.showerror("BooksRun Refresh", f"Refresh failed:\n{exc}")
-            self._set_status("BooksRun refresh failed.")
+            self._reset_progress("bookscouter")
+            messagebox.showerror("BookScouter Refresh", f"Refresh failed:\n{exc}")
+            self._set_status("BookScouter refresh failed.")
 
         def handle_success(count: int) -> None:
             self._refresh_thread = None
             self.reload_tables()
-            self._finish_progress("booksrun", label="BooksRun", delay_ms=1200)
-            self._set_status(f"Refreshed BooksRun offers for {count} book(s).")
+            self._finish_progress("bookscouter", label="BookScouter", delay_ms=1200)
+            self._set_status(f"Refreshed BookScouter offers for {count} book(s).")
 
         def worker() -> None:
             try:
-                # Delay between calls defaults from env BOOKSRUN_DELAY or 0.2s inside service
+                # BookScouter is now fetched alongside other market data in refresh_booksrun_all
+                # This queries BookScouter API with rate limiting (60/min, 7000/day)
                 count = self.service.refresh_booksrun_all(progress_cb=progress)
             except Exception as exc:  # pragma: no cover - UI path
                 self.root.after(0, lambda: handle_error(exc))
@@ -787,6 +1008,10 @@ class BookEvaluatorGUI:
 
         self._refresh_thread = threading.Thread(target=worker, daemon=True)
         self._refresh_thread.start()
+
+    def _open_bulk_helper(self) -> None:
+        """Open the Bulk Buyback Helper dialog."""
+        BulkHelperDialog.show(self.root, self.service)
 
     def _open_author_cleanup(self) -> None:
         """
@@ -2095,20 +2320,20 @@ class BookEvaluatorGUI:
             probability = f"{book.probability_label} ({book.probability_score:.0f})"
             scanned = self._format_timestamp(getattr(book, "created_at", None))
             quantity = str(getattr(book, "quantity", 1))
-            booksrun_cash = ""
-            booksrun_credit = ""
-            booksrun_value = book.booksrun_value_label or ""
-            offer = getattr(book, "booksrun", None)
-            if offer is not None:
-                if offer.cash_price is not None:
-                    booksrun_cash = f"${offer.cash_price:.2f}"
-                if offer.store_credit is not None:
-                    booksrun_credit = f"${offer.store_credit:.2f}"
-            if booksrun_value and book.booksrun_value_ratio is not None:
+            bookscouter_best = ""
+            bookscouter_vendors = ""
+            bookscouter_value = book.bookscouter_value_label or ""
+            result = getattr(book, "bookscouter", None)
+            if result is not None:
+                if result.best_price > 0:
+                    bookscouter_best = f"${result.best_price:.2f}"
+                if result.total_vendors > 0:
+                    bookscouter_vendors = str(result.total_vendors)
+            if bookscouter_value and book.bookscouter_value_ratio is not None:
                 try:
-                    booksrun_value = f"{booksrun_value} ({book.booksrun_value_ratio:.0%})"
+                    bookscouter_value = f"{bookscouter_value} ({book.bookscouter_value_ratio:.0%})"
                 except Exception:
-                    booksrun_value = booksrun_value
+                    bookscouter_value = bookscouter_value
             self.books_tree.insert(
                 "",
                 "end",
@@ -2125,9 +2350,9 @@ class BookEvaluatorGUI:
                     quantity,
                     book.condition,
                     sell_through,
-                    booksrun_cash,
-                    booksrun_credit,
-                    booksrun_value,
+                    bookscouter_best,
+                    bookscouter_vendors,
+                    bookscouter_value,
                     scanned,
                 ),
             )
@@ -2161,20 +2386,20 @@ class BookEvaluatorGUI:
             probability = f"{book.probability_label} ({book.probability_score:.0f})"
             scanned = self._format_timestamp(getattr(book, "created_at", None))
             quantity = str(getattr(book, "quantity", 1))
-            booksrun_cash = ""
-            booksrun_credit = ""
-            booksrun_value = book.booksrun_value_label or ""
-            offer = getattr(book, "booksrun", None)
-            if offer is not None:
-                if offer.cash_price is not None:
-                    booksrun_cash = f"${offer.cash_price:.2f}"
-                if offer.store_credit is not None:
-                    booksrun_credit = f"${offer.store_credit:.2f}"
-            if booksrun_value and book.booksrun_value_ratio is not None:
+            bookscouter_best = ""
+            bookscouter_vendors = ""
+            bookscouter_value = book.bookscouter_value_label or ""
+            result = getattr(book, "bookscouter", None)
+            if result is not None:
+                if result.best_price > 0:
+                    bookscouter_best = f"${result.best_price:.2f}"
+                if result.total_vendors > 0:
+                    bookscouter_vendors = str(result.total_vendors)
+            if bookscouter_value and book.bookscouter_value_ratio is not None:
                 try:
-                    booksrun_value = f"{booksrun_value} ({book.booksrun_value_ratio:.0%})"
+                    bookscouter_value = f"{bookscouter_value} ({book.bookscouter_value_ratio:.0%})"
                 except Exception:
-                    booksrun_value = booksrun_value
+                    bookscouter_value = bookscouter_value
             self.books_tree.insert(
                 "",
                 "end",
@@ -2191,9 +2416,9 @@ class BookEvaluatorGUI:
                     quantity,
                     book.condition,
                     sell_through,
-                    booksrun_cash,
-                    booksrun_credit,
-                    booksrun_value,
+                    bookscouter_best,
+                    bookscouter_vendors,
+                    bookscouter_value,
                     scanned,
                 ),
             )
@@ -3161,19 +3386,27 @@ class BookEvaluatorGUI:
                 source_short = book.market.sold_comps_source.replace("marketplace_insights", "MI").replace("estimate", "est")
                 col3.append(f"  Source: {source_short}")
 
-        # Column 4: BooksRun offers
-        offer = getattr(book, "booksrun", None)
-        if offer is not None:
-            col4.append("BooksRun:")
-            if offer.cash_price is not None:
-                col4.append(f"  Cash: ${offer.cash_price:.2f}")
-            if offer.store_credit is not None:
-                col4.append(f"  Credit: ${offer.store_credit:.2f}")
-            if book.booksrun_value_label:
-                if book.booksrun_value_ratio is not None:
-                    col4.append(f"  Value: {book.booksrun_value_label} ({book.booksrun_value_ratio:.0%})")
+        # Column 4: BookScouter offers
+        result = getattr(book, "bookscouter", None)
+        if result is not None and result.total_vendors > 0:
+            col4.append(f"BookScouter ({result.total_vendors} vendors):")
+            if result.best_price > 0:
+                col4.append(f"  Best: ${result.best_price:.2f}")
+                if result.best_vendor:
+                    # Truncate long vendor names
+                    vendor = result.best_vendor[:25] + "…" if len(result.best_vendor) > 25 else result.best_vendor
+                    col4.append(f"    ({vendor})")
+            if book.bookscouter_value_label:
+                if book.bookscouter_value_ratio is not None:
+                    col4.append(f"  Value: {book.bookscouter_value_label} ({book.bookscouter_value_ratio:.0%})")
                 else:
-                    col4.append(f"  Value: {book.booksrun_value_label}")
+                    col4.append(f"  Value: {book.bookscouter_value_label}")
+            # Show top 3 offers
+            if result.offers and len(result.offers) > 1:
+                col4.append("  Top offers:")
+                for offer in sorted(result.offers, key=lambda x: x.price, reverse=True)[:3]:
+                    vendor = offer.vendor_name[:20] + "…" if len(offer.vendor_name) > 20 else offer.vendor_name
+                    col4.append(f"    ${offer.price:.2f} - {vendor}")
 
         # Format columns side by side
         max_rows = max(len(col1), len(col2), len(col3), len(col4))

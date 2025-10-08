@@ -16,7 +16,9 @@ Tables (created as needed): `books`, `lots`
 - **EBAY_APP_ID** (optional): eBay Finding API App ID for sold/unsold history and pricing statistics.
 - **EBAY_CLIENT_ID** / **EBAY_CLIENT_SECRET** (optional): eBay Browse API client credentials to enable active comps and median pricing.
 - **EBAY_MARKETPLACE** (optional): eBay marketplace ID for Browse API requests. Default: `EBAY_US` (aka `EBAY-US` in Finding).
-- **BOOKSRUN_KEY** (optional): BooksRun API key for SELL quote fetching (GUI refresh and `lothelper` CLI).
+- **BOOKSCOUTER_API_KEY** or **apiKey** (optional): BookScouter API key for multi-vendor buyback offers (replaces BooksRun). GUI refresh and Bulk Buyback Helper.
+- **BOOKSCOUTER_DELAY** (optional): Delay in seconds between BookScouter API calls. Default: `1.1` (to stay within 60 calls/minute limit).
+- **BOOKSRUN_KEY** (optional): BooksRun API key for SELL quote fetching (`lothelper` CLI only - GUI now uses BookScouter).
 - **BOOKSRUN_AFFILIATE_ID** (optional): BooksRun affiliate ID for tracking.
 - **HARDCOVER_API_TOKEN** (optional but recommended): Hardcover API token used for series detection. Include the "Bearer " prefix, e.g. `Bearer eyJ...`.
 - **HARDCOVER_GRAPHQL_ENDPOINT** (optional): Override the Hardcover API endpoint. Default: `https://api.hardcover.app/graphql`.
@@ -36,7 +38,11 @@ export EBAY_CLIENT_ID=your-browse-client-id
 export EBAY_CLIENT_SECRET=your-browse-client-secret
 export EBAY_MARKETPLACE=EBAY_US
 
-# BooksRun (bulk SELL quotes / GUI BooksRun refresh)
+# BookScouter (multi-vendor buyback - replaces BooksRun in GUI)
+export BOOKSCOUTER_API_KEY=your-bookscouter-api-key
+export BOOKSCOUTER_DELAY=1.1
+
+# BooksRun (bulk SELL quotes via lothelper CLI)
 export BOOKSRUN_KEY=your-booksrun-api-key
 
 # Optional proxy
@@ -85,10 +91,27 @@ Notes:
 - Browse API is used for active comps and medians when `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` are configured; bearer tokens are cached in `~/.isbn_lot_optimizer/ebay_bearer.json`.
 - Lot market snapshots (`lot_market.py`) combine Browse active medians and (optionally) Finding sold medians for author/series/theme queries, with results cached in `~/.isbn_lot_optimizer/lot_cache.json`.
 
-## BooksRun Integration
-- The GUI can refresh BooksRun offers for all stored books.
-- A separate headless CLI exists under the `lothelper` package:
+## BookScouter Integration
+- **GUI Integration**: Replaces BooksRun with multi-vendor buyback aggregation
+  - "Refresh BookScouter (All)" button refreshes offers for all books
+  - Displays best offer, vendor count, and top 3 offers per book
+  - Real-time status updates show book details during refresh
+  - Rate-limited to 60 calls/minute (1.1s delay) to comply with API limits
+- **Bulk Buyback Helper**: Tools → Bulk Buyback Helper…
+  - Optimizes book assignments across vendors to maximize total profit
+  - Respects vendor minimums ($5-$10 per vendor)
+  - Shows bundles per vendor with value calculations and book lists
+  - Tracks unassigned books (below minimums or no offers)
+- **API Details**:
+  - Rate limit: 60 calls/minute, 7000 calls/day
+  - Returns offers from 14+ vendors: BooksRun, eCampus, Valore, TextbookRush, ValoreBooks, SellBackYourBook, BookByte, TextbookRecycling, Powell's Books, Cash4Books, BookDeal, MyBookBuyer, Ziffit, World of Books
+  - Data stored in `bookscouter_json` column (full vendor offer JSON)
+- Requires `BOOKSCOUTER_API_KEY` or `apiKey` in environment or `.env`
+
+## BooksRun CLI Integration
+- A separate headless CLI exists under the `lothelper` package for direct BooksRun SELL quotes:
   ```bash
   python -m lothelper booksrun-sell --in isbns.csv --out booksrun_sell_quotes.csv
   ```
-- Requires `BOOKSRUN_KEY` in the environment or `.env`.
+- Requires `BOOKSRUN_KEY` in the environment or `.env`
+- **Note**: The GUI now uses BookScouter instead of BooksRun for buyback offers

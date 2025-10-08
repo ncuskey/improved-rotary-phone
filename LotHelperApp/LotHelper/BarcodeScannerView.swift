@@ -162,8 +162,8 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
     // MARK: - Video data delegate (OCR)
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
-        // Throttle OCR attempts to every 0.5 seconds for performance
-        guard isActive, Date().timeIntervalSince(lastOCRAttempt) > 0.5 else { return }
+        // Throttle OCR attempts to every 0.2 seconds for faster detection
+        guard isActive, Date().timeIntervalSince(lastOCRAttempt) > 0.2 else { return }
         lastOCRAttempt = Date()
 
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
@@ -184,8 +184,9 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
     }
 
     private func processOCRResults(_ observations: [VNRecognizedTextObservation]) {
-        // Look for ISBN patterns in recognized text
-        let isbnPattern = #"(?:ISBN[:\s-]?)?(\d{10}|\d{13}|\d{9}[X])"#
+        // Look for ISBN patterns in recognized text (with or without dashes/spaces)
+        let isbnPattern = #"(?:ISBN[:\s-]?)?([0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx](?:[\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx])?)"#
+
         let regex = try? NSRegularExpression(pattern: isbnPattern, options: [.caseInsensitive])
 
         for observation in observations {
@@ -196,13 +197,18 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
             let range = NSRange(text.startIndex..<text.endIndex, in: text)
             if let match = regex?.firstMatch(in: text, range: range),
                let isbnRange = Range(match.range(at: 1), in: text) {
-                let isbn = String(text[isbnRange])
+                let rawISBN = String(text[isbnRange])
+
+                // Remove dashes and spaces to get clean ISBN
+                let cleanISBN = rawISBN.replacingOccurrences(of: "-", with: "")
+                                       .replacingOccurrences(of: " ", with: "")
+                                       .uppercased()
 
                 // Validate ISBN format
-                if isValidISBNFormat(isbn) {
+                if isValidISBNFormat(cleanISBN) {
                     DispatchQueue.main.async { [weak self] in
                         guard let self, self.isActive else { return }
-                        self.handleSuccessfulScan(isbn)
+                        self.handleSuccessfulScan(cleanISBN)
                     }
                     return
                 }

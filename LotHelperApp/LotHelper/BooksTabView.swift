@@ -327,7 +327,8 @@ private struct BookDetailView: View {
                     ],
                     bestPrice: 17.30,
                     bestVendor: "TextbookAgent",
-                    totalVendors: 3
+                    totalVendors: 3,
+                    amazonSalesRank: 15432
                 ),
                 bookscouterValueLabel: "High",
                 bookscouterValueRatio: 0.93,

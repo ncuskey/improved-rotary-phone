@@ -158,9 +158,17 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
 
         // Validate that this is an ISBN format before processing
         if isValidISBNFormat(value) {
+#if DEBUG
+            print("✅ Barcode scanner found valid ISBN: \(value)")
+#endif
             handleSuccessfulScan(value)
+        } else {
+#if DEBUG
+            print("❌ Barcode scanner rejected non-ISBN: \(value) (length: \(value.count))")
+            print("   OCR will continue looking for printed ISBN...")
+#endif
+            // Don't handle the scan - let OCR continue trying to find printed ISBN
         }
-        // If not a valid ISBN, OCR will continue trying to find printed ISBN
     }
 
     // MARK: - Video data delegate (OCR)
@@ -176,15 +184,15 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
             guard let self else { return }
 
             if let error = error {
-#if DEBUG
+                #if DEBUG
                 print("OCR Error: \(error)")
-#endif
+                #endif
                 return
             }
 
             guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
 
-#if DEBUG
+            #if DEBUG
             if !observations.isEmpty {
                 print("OCR found \(observations.count) text regions")
                 for (idx, obs) in observations.prefix(5).enumerated() {
@@ -193,7 +201,7 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
                     }
                 }
             }
-#endif
+            #endif
 
             self.processOCRResults(observations)
         }
@@ -229,26 +237,24 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
                                        .replacingOccurrences(of: " ", with: "")
                                        .uppercased()
 
-#if DEBUG
+                #if DEBUG
                 print("Found potential ISBN: '\(rawISBN)' -> '\(cleanISBN)'")
-#endif
+                #endif
 
-                // Validate ISBN format
                 if isValidISBNFormat(cleanISBN) {
-#if DEBUG
+                    #if DEBUG
                     print("✅ Valid ISBN found: \(cleanISBN)")
-#endif
+                    #endif
                     DispatchQueue.main.async { [weak self] in
                         guard let self, self.isActive else { return }
                         self.handleSuccessfulScan(cleanISBN)
                     }
                     return
-                }
-#if DEBUG
-                else {
+                } else {
+                    #if DEBUG
                     print("❌ Invalid ISBN format: \(cleanISBN)")
+                    #endif
                 }
-#endif
             }
         }
     }
@@ -344,9 +350,9 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
 
             device.unlockForConfiguration()
         } catch {
-#if DEBUG
+            #if DEBUG
             print("Focus configuration failed: \(error)")
-#endif
+            #endif
         }
     }
 }
@@ -356,7 +362,7 @@ struct BarcodeScannerView: View {
     var onScan: (String) -> Void = { _ in }
     var body: some View {
         Text("Barcode scanning is not supported on this platform.")
-            .foregroundStyle(DS.Color.textSecondary)
+            .foregroundStyle(.secondary)
     }
 }
 #endif

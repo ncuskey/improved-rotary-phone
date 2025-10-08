@@ -41,6 +41,11 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
     private let visionQueue = DispatchQueue(label: "com.lothelper.scanner.vision")
     private var lastOCRAttempt = Date.distantPast
 
+    // Candidate accumulation
+    private var candidateISBNs: Set<String> = []
+    private var scanStartTime = Date()
+    private var hasScannedBarcode = false
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .black
@@ -156,19 +161,22 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
               let object = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
               let value = object.stringValue, !value.isEmpty else { return }
 
-        // Validate that this is an ISBN format before processing
+        hasScannedBarcode = true
+
+        // Add to candidates if valid ISBN
         if isValidISBNFormat(value) {
 #if DEBUG
-            print("✅ Barcode scanner found valid ISBN: \(value)")
+            print("📷 Barcode found valid ISBN: \(value)")
 #endif
-            handleSuccessfulScan(value)
+            addCandidate(value, source: "barcode")
         } else {
 #if DEBUG
-            print("❌ Barcode scanner rejected non-ISBN: \(value) (length: \(value.count))")
-            print("   OCR will continue looking for printed ISBN...")
+            print("📷 Barcode rejected non-ISBN: \(value) (length: \(value.count))")
 #endif
-            // Don't handle the scan - let OCR continue trying to find printed ISBN
         }
+
+        // Check if we should evaluate candidates
+        checkAndSelectBestCandidate()
     }
 
     // MARK: - Video data delegate (OCR)
@@ -243,11 +251,12 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
 
                 if isValidISBNFormat(cleanISBN) {
                     #if DEBUG
-                    print("✅ Valid ISBN found: \(cleanISBN)")
+                    print("📝 OCR found valid ISBN: \(cleanISBN)")
                     #endif
                     DispatchQueue.main.async { [weak self] in
                         guard let self, self.isActive else { return }
-                        self.handleSuccessfulScan(cleanISBN)
+                        self.addCandidate(cleanISBN, source: "OCR")
+                        self.checkAndSelectBestCandidate()
                     }
                     return
                 } else {
@@ -258,6 +267,51 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
             }
         }
     }
+
+    // MARK: - Candidate Management
+
+    private func addCandidate(_ isbn: String, source: String) {
+        candidateISBNs.insert(isbn)
+#if DEBUG
+        print("  Added candidate from \(source): \(isbn) (total: \(candidateISBNs.count))")
+#endif
+    }
+
+    private func checkAndSelectBestCandidate() {
+        let elapsed = Date().timeIntervalSince(scanStartTime)
+
+        // Wait for both barcode and OCR to have a chance (1 second window)
+        // OR if we already have an ISBN from OCR after barcode failed
+        let shouldSelect = elapsed > 1.0 || (hasScannedBarcode && !candidateISBNs.isEmpty)
+
+        if shouldSelect && !candidateISBNs.isEmpty {
+            selectBestCandidate()
+        }
+    }
+
+    private func selectBestCandidate() {
+        guard !candidateISBNs.isEmpty else { return }
+
+        // Prefer ISBN-13 over ISBN-10 (more specific)
+        let isbn13s = candidateISBNs.filter { $0.count == 13 }
+        let isbn10s = candidateISBNs.filter { $0.count == 10 }
+
+        let bestISBN: String
+        if !isbn13s.isEmpty {
+            bestISBN = isbn13s.first!
+        } else {
+            bestISBN = isbn10s.first!
+        }
+
+#if DEBUG
+        print("🎯 Selected best ISBN: \(bestISBN) from \(candidateISBNs.count) candidate(s)")
+        print("   All candidates: \(candidateISBNs.sorted())")
+#endif
+
+        handleSuccessfulScan(bestISBN)
+    }
+
+    // MARK: - ISBN Validation
 
     private func isValidISBNFormat(_ isbn: String) -> Bool {
         // ISBN-10: 9 digits + check digit (0-9 or X)

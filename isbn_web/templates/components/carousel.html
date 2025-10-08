@@ -76,14 +76,26 @@
               <p class="text-sm text-gray-600 mb-2 truncate" x-text="book.metadata?.authors?.[0] || 'Unknown Author'"></p>
               <p class="text-xs text-gray-500 mb-3 font-mono" x-text="book.isbn"></p>
               
-              <div class="mt-auto">
+              <div class="mt-auto space-y-2">
                 <div class="flex items-center justify-between text-sm">
                   <span class="text-gray-600">Condition:</span>
                   <span class="font-semibold" x-text="book.condition || 'N/A'"></span>
                 </div>
-                <div class="flex items-center justify-between mt-2">
-                  <span class="text-gray-600">Price:</span>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 text-sm">eBay Price:</span>
                   <span class="font-bold text-green-600 text-lg" x-text="'$' + (book.estimated_price?.toFixed(2) || '0.00')"></span>
+                </div>
+
+                <!-- BookScouter buyback -->
+                <div x-show="book.bookscouter && book.bookscouter.total_vendors > 0"
+                     class="pt-2 border-t border-gray-200">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-600">Buyback:</span>
+                    <span class="font-semibold text-blue-600"
+                          x-text="'$' + (book.bookscouter?.best_price?.toFixed(2) || '0.00')"></span>
+                  </div>
+                  <div class="text-xs text-gray-500 text-right"
+                       x-text="(book.bookscouter?.total_vendors || 0) + ' vendors'"></div>
                 </div>
               </div>
             </div>

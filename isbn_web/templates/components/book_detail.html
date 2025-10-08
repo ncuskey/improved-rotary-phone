@@ -81,14 +81,30 @@
             </div>
             {% endif %}
 
-            {% if book.booksrun and book.booksrun.cash_price %}
+            {% if book.bookscouter and book.bookscouter.total_vendors > 0 %}
             <div>
-                <span class="text-gray-500 block">BooksRun</span>
-                <span class="font-semibold text-blue-600">${{ "%.2f"|format(book.booksrun.cash_price) }}</span>
+                <span class="text-gray-500 block">Buyback</span>
+                <span class="font-semibold text-blue-600">${{ "%.2f"|format(book.bookscouter.best_price) }}</span>
+                <div class="text-xs text-gray-400">{{ book.bookscouter.total_vendors }} vendors</div>
             </div>
             {% endif %}
         </div>
     </div>
+
+    <!-- BookScouter Details - Collapsible -->
+    {% if book.bookscouter and book.bookscouter.total_vendors > 0 %}
+    <details class="text-xs flex-shrink-0 mb-2">
+        <summary class="text-gray-500 cursor-pointer hover:text-gray-700 font-medium">Top Buyback Offers</summary>
+        <div class="space-y-1 mt-1.5">
+            {% for offer in book.bookscouter.offers[:3] %}
+            <div class="flex justify-between items-center py-0.5">
+                <span class="text-gray-700 text-xs">{{ offer.vendor_name }}</span>
+                <span class="font-medium text-blue-600">${{ "%.2f"|format(offer.price) }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
 
     <!-- Market Stats - Collapsible/Hidden by default -->
     <details class="text-xs flex-shrink-0 mb-2">

@@ -56,6 +56,7 @@ from .market import fetch_single_market_stat, fetch_market_stats_v2
 from .lot_market import market_snapshot_for_lot
 from .lot_scoring import score_lot
 from .utils import normalise_isbn, read_isbn_csv
+from .book_routing import route_book, route_books, RoutingDecision
 
 # Re-export for backward compatibility (gui.py imports this)
 # New code should import from constants.py directly
@@ -355,6 +356,31 @@ class BookService:
         """Return all books currently stored in the database."""
         return self.list_books()
 
+    def route_book(self, isbn: str) -> Optional[RoutingDecision]:
+        """
+        Determine optimal sales channel for a single book.
+
+        Args:
+            isbn: ISBN of the book to route
+
+        Returns:
+            RoutingDecision with channel recommendation, or None if book not found
+        """
+        book = self.get_book(isbn)
+        if not book:
+            return None
+        return route_book(book)
+
+    def route_all_books(self) -> Dict[str, RoutingDecision]:
+        """
+        Route all books in the catalog to their optimal sales channels.
+
+        Returns:
+            Dict mapping ISBN to RoutingDecision
+        """
+        books = self.list_books()
+        return route_books(books)
+
     def get_book(self, isbn: str) -> Optional[BookEvaluation]:
         normalized = normalise_isbn(isbn)
         if not normalized:
@@ -652,6 +678,124 @@ class BookService:
 
         if count:
             self.recalculate_lots()
+        return count
+
+    def refresh_bookscouter_smart(
+        self,
+        *,
+        max_age_days: int = 30,
+        delay: Optional[float] = None,
+        progress_cb: Optional[Callable[[int, int, Optional[Any]], None]] = None,
+    ) -> int:
+        """
+        Intelligently refresh BookScouter data only for books with stale or missing data.
+
+        This method avoids redundant API calls by only fetching:
+        - Books that have never had BookScouter data fetched (bookscouter_fetched_at IS NULL)
+        - Books whose BookScouter data is older than max_age_days
+
+        Args:
+            max_age_days: Maximum age in days before data is considered stale (default: 30)
+            delay: Seconds to wait between API calls (default: 1.1s for rate limiting)
+            progress_cb: Optional callback receiving (done, total, evaluation)
+
+        Returns:
+            Number of books successfully refreshed
+
+        Example:
+            # Refresh only books with data older than 7 days
+            count = service.refresh_bookscouter_smart(max_age_days=7)
+            print(f"Refreshed {count} books")
+        """
+        try:
+            rows = self.db.fetch_books_needing_bookscouter_refresh(max_age_days=max_age_days)
+        except Exception:
+            rows = []
+
+        isbns: list[str] = []
+        for row in rows:
+            try:
+                code = row["isbn"]
+            except Exception:
+                code = None
+            if code:
+                isbns.append(str(code))
+
+        total = len(isbns)
+        if total == 0:
+            if progress_cb:
+                try:
+                    progress_cb(0, 0, None)
+                except Exception:
+                    pass
+            return 0
+
+        # Determine delay (BookScouter API limit: 60 calls/minute)
+        if delay is None:
+            try:
+                delay = float(os.getenv("BOOKSCOUTER_DELAY", "1.1"))
+            except Exception:
+                delay = 1.1
+
+        # Ensure a session for connection reuse
+        if self._bookscouter_session is None:
+            try:
+                self._bookscouter_session = requests.Session()
+            except Exception:
+                self._bookscouter_session = None
+
+        count = 0
+        for idx, isbn in enumerate(isbns, start=1):
+            evaluation = None
+            try:
+                # Fetch and persist BookScouter data
+                result = self._fetch_bookscouter_offers(isbn)
+                if result:
+                    # Serialize to JSON
+                    blob = {
+                        "isbn_10": result.isbn_10,
+                        "isbn_13": result.isbn_13,
+                        "best_price": result.best_price,
+                        "best_vendor": result.best_vendor,
+                        "total_vendors": result.total_vendors,
+                        "amazon_sales_rank": result.amazon_sales_rank,
+                        "offers": [
+                            {
+                                "vendor_name": offer.vendor_name,
+                                "vendor_id": offer.vendor_id,
+                                "price": offer.price,
+                                "updated_at": offer.updated_at,
+                            }
+                            for offer in result.offers
+                        ],
+                        "raw": result.raw,
+                    }
+                    # Use the new method that updates timestamp
+                    self.db.update_book_bookscouter_json(isbn, blob)
+                    count += 1
+
+                    # Get full evaluation for progress callback
+                    evaluation = self.get_book(isbn)
+
+            except Exception:
+                # Continue on errors
+                pass
+
+            if progress_cb:
+                try:
+                    progress_cb(idx, total, evaluation)
+                except Exception:
+                    pass
+
+            if idx < total and delay and delay > 0:
+                try:
+                    time.sleep(delay)
+                except Exception:
+                    pass
+
+        if count:
+            self.recalculate_lots()
+
         return count
 
     def rename_authors(
@@ -2103,6 +2247,15 @@ class BookService:
         best_vendor = blob.get("best_vendor")
         total_vendors = int(blob.get("total_vendors") or 0)
 
+        # Parse Amazon Sales Rank
+        amazon_rank = None
+        rank_value = blob.get("amazon_sales_rank")
+        if rank_value is not None:
+            try:
+                amazon_rank = int(rank_value)
+            except (ValueError, TypeError):
+                pass
+
         # Parse vendor offers
         offers_data = blob.get("offers", [])
         offers = []
@@ -2128,6 +2281,7 @@ class BookService:
             best_price=best_price,
             best_vendor=best_vendor,
             total_vendors=total_vendors,
+            amazon_sales_rank=amazon_rank,
             raw=raw_payload,
         )
 

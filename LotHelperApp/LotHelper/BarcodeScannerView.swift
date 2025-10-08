@@ -64,6 +64,14 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
         guard isActive != active else { return }
         isActive = active
         if active {
+            // Reset candidate state for new scan session
+            candidateISBNs.removeAll()
+            scanStartTime = Date()
+            hasScannedBarcode = false
+            lastOCRAttempt = Date.distantPast
+#if DEBUG
+            print("\n🔄 Starting new scan session")
+#endif
             startSessionIfPossible()
         } else {
             sessionQueue.async { [weak self] in
@@ -225,8 +233,9 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
     }
 
     private func processOCRResults(_ observations: [VNRecognizedTextObservation]) {
-        // Look for ISBN patterns in recognized text (with or without dashes/spaces)
-        let isbnPattern = #"(?:ISBN[:\s-]?)?([0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx](?:[\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx])?)"#
+        // Look for ISBN patterns in recognized text - MUST have "ISBN" prefix
+        // This prevents false matches from UPC barcodes or other numbers
+        let isbnPattern = #"ISBN[\s:-]?([0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx](?:[\s-]?[0-9Xx][\s-]?[0-9Xx][\s-]?[0-9Xx])?)"#
 
         let regex = try? NSRegularExpression(pattern: isbnPattern, options: [.caseInsensitive])
 
@@ -316,15 +325,70 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
     private func isValidISBNFormat(_ isbn: String) -> Bool {
         // ISBN-10: 9 digits + check digit (0-9 or X)
         if isbn.count == 10 {
-            let digits = isbn.prefix(9)
-            let check = isbn.suffix(1)
-            return digits.allSatisfy { $0.isNumber } && (check.first?.isNumber == true || check == "X")
+            return isValidISBN10(isbn)
         }
         // ISBN-13: 13 digits
         if isbn.count == 13 {
-            return isbn.allSatisfy { $0.isNumber }
+            return isValidISBN13(isbn)
         }
         return false
+    }
+
+    private func isValidISBN10(_ isbn: String) -> Bool {
+        guard isbn.count == 10 else { return false }
+
+        let digits = isbn.prefix(9)
+        let checkChar = isbn.last!
+
+        guard digits.allSatisfy({ $0.isNumber }) else { return false }
+        guard checkChar.isNumber || checkChar == "X" else { return false }
+
+        // Calculate ISBN-10 checksum
+        var sum = 0
+        for (index, char) in digits.enumerated() {
+            if let digit = char.wholeNumberValue {
+                sum += digit * (10 - index)
+            }
+        }
+
+        // Add check digit
+        let checkValue: Int
+        if checkChar == "X" {
+            checkValue = 10
+        } else if let digit = checkChar.wholeNumberValue {
+            checkValue = digit
+        } else {
+            return false
+        }
+        sum += checkValue
+
+        // Valid if sum is divisible by 11
+        return sum % 11 == 0
+    }
+
+    private func isValidISBN13(_ isbn: String) -> Bool {
+        guard isbn.count == 13 else { return false }
+        guard isbn.allSatisfy({ $0.isNumber }) else { return false }
+
+        // ISBN-13 must start with 978 or 979
+        guard isbn.hasPrefix("978") || isbn.hasPrefix("979") else {
+#if DEBUG
+            print("❌ Invalid ISBN-13: must start with 978 or 979, got: \(isbn.prefix(3))")
+#endif
+            return false
+        }
+
+        // Calculate ISBN-13 checksum
+        var sum = 0
+        for (index, char) in isbn.enumerated() {
+            if let digit = char.wholeNumberValue {
+                let weight = (index % 2 == 0) ? 1 : 3
+                sum += digit * weight
+            }
+        }
+
+        // Valid if sum is divisible by 10
+        return sum % 10 == 0
     }
 
     private func handleSuccessfulScan(_ value: String) {

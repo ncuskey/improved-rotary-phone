@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests  # type: ignore[reportMissingImports]
 
@@ -40,6 +41,7 @@ class BookScouterResult:
     best_price: float = 0.0
     best_vendor: Optional[str] = None
     total_vendors: int = 0
+    amazon_sales_rank: Optional[int] = None  # Lower rank = more popular/higher demand
     raw: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -48,6 +50,7 @@ def fetch_offers(
     *,
     api_key: str,
     use_recent: bool = False,
+    fetch_amazon_rank: bool = True,
     base_url: str = DEFAULT_BASE_URL,
     timeout: int = DEFAULT_TIMEOUT,
     session: Optional[requests.Session] = None,
@@ -60,6 +63,7 @@ def fetch_offers(
         api_key: BookScouter API key
         use_recent: If True, use recentPrices endpoint (fresh data, slower).
                    If False, use cachedPrices endpoint (cached data, faster).
+        fetch_amazon_rank: If True, also fetch metadata to get Amazon Sales Rank.
         base_url: Base URL for BookScouter API
         timeout: Request timeout in seconds
         session: Optional requests.Session for connection pooling
@@ -113,11 +117,37 @@ def fetch_offers(
     except json.JSONDecodeError as exc:
         raise BookScouterAPIError("BookScouter response was not valid JSON") from exc
 
+    # Optionally fetch metadata to get Amazon Sales Rank
+    amazon_rank = None
+    if fetch_amazon_rank:
+        try:
+            metadata = fetch_metadata(
+                isbn,
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                session=session
+            )
+            if metadata:
+                # Parse AmazonSalesRank - can be int or string
+                rank_value = metadata.get("AmazonSalesRank")
+                if rank_value:
+                    try:
+                        amazon_rank = int(rank_value)
+                    except (ValueError, TypeError):
+                        pass  # Ignore invalid rank values
+        except BookScouterAPIError:
+            # Don't fail the whole request if metadata fetch fails
+            pass
+
     # Parse the response
-    return _parse_response(payload)
+    return _parse_response(payload, amazon_rank=amazon_rank)
 
 
-def _parse_response(payload: Dict[str, Any]) -> Optional[BookScouterResult]:
+def _parse_response(
+    payload: Dict[str, Any],
+    amazon_rank: Optional[int] = None
+) -> Optional[BookScouterResult]:
     """Parse BookScouter API response into BookScouterResult."""
     if not isinstance(payload, dict):
         return None
@@ -174,6 +204,7 @@ def _parse_response(payload: Dict[str, Any]) -> Optional[BookScouterResult]:
         best_price=best_price,
         best_vendor=best_vendor,
         total_vendors=len(offers),
+        amazon_sales_rank=amazon_rank,
         raw=payload
     )
 
@@ -239,3 +270,126 @@ def fetch_metadata(
         return None
 
     return payload.get("book")
+
+
+def fetch_offers_batch(
+    isbns: List[str],
+    *,
+    api_key: str,
+    use_recent: bool = False,
+    fetch_amazon_rank: bool = True,
+    base_url: str = DEFAULT_BASE_URL,
+    timeout: int = DEFAULT_TIMEOUT,
+    max_workers: int = 10,
+) -> Dict[str, Optional[BookScouterResult]]:
+    """
+    Fetch buyback offers for multiple ISBNs in parallel.
+
+    This function uses ThreadPoolExecutor to make concurrent API requests,
+    significantly improving performance when fetching data for many books.
+
+    Args:
+        isbns: List of ISBN-10 or ISBN-13 to look up
+        api_key: BookScouter API key
+        use_recent: If True, use recentPrices endpoint (fresh data, slower)
+        fetch_amazon_rank: If True, also fetch metadata for Amazon Sales Rank
+        base_url: Base URL for BookScouter API
+        timeout: Request timeout in seconds per request
+        max_workers: Maximum number of concurrent requests (default: 10)
+
+    Returns:
+        Dict mapping ISBN to BookScouterResult (or None if not found/failed)
+
+    Example:
+        >>> results = fetch_offers_batch(
+        ...     ["9780441013593", "9780765326355"],
+        ...     api_key="your_key"
+        ... )
+        >>> for isbn, result in results.items():
+        ...     if result:
+        ...         print(f"{isbn}: ${result.best_price}")
+    """
+    session = requests.Session()
+    results: Dict[str, Optional[BookScouterResult]] = {}
+
+    def fetch_single(isbn: str) -> tuple[str, Optional[BookScouterResult]]:
+        """Helper function to fetch a single ISBN's data."""
+        try:
+            result = fetch_offers(
+                isbn,
+                api_key=api_key,
+                use_recent=use_recent,
+                fetch_amazon_rank=fetch_amazon_rank,
+                base_url=base_url,
+                timeout=timeout,
+                session=session,
+            )
+            return (isbn, result)
+        except BookScouterAPIError:
+            # Return None for failed requests instead of raising
+            return (isbn, None)
+
+    # Execute all requests in parallel
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(fetch_single, isbn): isbn for isbn in isbns}
+
+        for future in as_completed(futures):
+            isbn, result = future.result()
+            results[isbn] = result
+
+    session.close()
+    return results
+
+
+def fetch_metadata_batch(
+    isbns: List[str],
+    *,
+    api_key: str,
+    base_url: str = DEFAULT_BASE_URL,
+    timeout: int = DEFAULT_TIMEOUT,
+    max_workers: int = 10,
+) -> Dict[str, Optional[Dict[str, Any]]]:
+    """
+    Fetch book metadata for multiple ISBNs in parallel.
+
+    This is useful when you only need metadata (including Amazon Sales Rank)
+    without the pricing data.
+
+    Args:
+        isbns: List of ISBN-10 or ISBN-13 to look up
+        api_key: BookScouter API key
+        base_url: Base URL for BookScouter API
+        timeout: Request timeout in seconds per request
+        max_workers: Maximum number of concurrent requests (default: 10)
+
+    Returns:
+        Dict mapping ISBN to metadata dict (or None if not found/failed)
+    """
+    session = requests.Session()
+    results: Dict[str, Optional[Dict[str, Any]]] = {}
+
+    def fetch_single(isbn: str) -> tuple[str, Optional[Dict[str, Any]]]:
+        """Helper function to fetch a single ISBN's metadata."""
+        try:
+            metadata = fetch_metadata(
+                isbn,
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                session=session,
+            )
+            return (isbn, metadata)
+        except BookScouterAPIError:
+            # Return None for failed requests instead of raising
+            return (isbn, None)
+
+    # Execute all requests in parallel
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(fetch_single, isbn): isbn for isbn in isbns}
+
+        for future in as_completed(futures):
+            isbn, metadata = future.result()
+            results[isbn] = metadata
+
+    session.close()
+    return results

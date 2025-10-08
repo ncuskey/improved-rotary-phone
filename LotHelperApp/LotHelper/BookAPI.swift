@@ -132,6 +132,7 @@ struct BookScouterResult: Codable, Hashable {
     let bestPrice: Double
     let bestVendor: String?
     let totalVendors: Int
+    let amazonSalesRank: Int?  // Lower rank = more popular/higher demand
 
     enum CodingKeys: String, CodingKey {
         case isbn10 = "isbn_10"
@@ -140,6 +141,7 @@ struct BookScouterResult: Codable, Hashable {
         case bestPrice = "best_price"
         case bestVendor = "best_vendor"
         case totalVendors = "total_vendors"
+        case amazonSalesRank = "amazon_sales_rank"
     }
 
     var topOffers: [VendorOffer] {

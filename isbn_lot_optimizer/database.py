@@ -101,6 +101,8 @@ class DatabaseManager:
             self._ensure_lot_justification(conn)
             self._ensure_booksrun_column(conn)
             self._ensure_bookscouter_column(conn)
+            self._ensure_bookscouter_fetched_at(conn)
+            self._ensure_api_fetch_timestamps(conn)
 
     def _get_connection(self) -> sqlite3.Connection:
         """
@@ -141,6 +143,36 @@ class DatabaseManager:
         columns = {row[1] for row in cursor.fetchall()}
         if "bookscouter_json" not in columns:
             conn.execute("ALTER TABLE books ADD COLUMN bookscouter_json TEXT")
+
+    def _ensure_bookscouter_fetched_at(self, conn: sqlite3.Connection) -> None:
+        cursor = conn.execute("PRAGMA table_info(books)")
+        columns = {row[1] for row in cursor.fetchall()}
+        if "bookscouter_fetched_at" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN bookscouter_fetched_at TEXT")
+            # Create index for efficient staleness queries
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_books_bookscouter_fetched_at
+                ON books(bookscouter_fetched_at)
+            """)
+
+    def _ensure_api_fetch_timestamps(self, conn: sqlite3.Connection) -> None:
+        """Ensure timestamp columns exist for tracking API fetch freshness."""
+        cursor = conn.execute("PRAGMA table_info(books)")
+        columns = {row[1] for row in cursor.fetchall()}
+
+        if "market_fetched_at" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN market_fetched_at TEXT")
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_books_market_fetched_at
+                ON books(market_fetched_at)
+            """)
+
+        if "metadata_fetched_at" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN metadata_fetched_at TEXT")
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_books_metadata_fetched_at
+                ON books(metadata_fetched_at)
+            """)
 
     # ------------------------------------------------------------------
     # Book persistence helpers
@@ -216,11 +248,16 @@ class DatabaseManager:
             )
 
     def update_book_market_json(self, isbn: str, market_blob: Dict[str, Any]) -> None:
+        """Update market data and set market_fetched_at timestamp."""
         payload = json.dumps(market_blob or {}, ensure_ascii=False)
         _log("update_market", isbn=isbn, bytes=len(payload))
         with self._get_connection() as conn:
             conn.execute(
-                "UPDATE books SET market_json = ?, updated_at = CURRENT_TIMESTAMP WHERE isbn = ?",
+                """UPDATE books
+                   SET market_json = ?,
+                       market_fetched_at = CURRENT_TIMESTAMP,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE isbn = ?""",
                 (payload, isbn),
             )
 
@@ -230,6 +267,20 @@ class DatabaseManager:
         with self._get_connection() as conn:
             conn.execute(
                 "UPDATE books SET source_json = ?, updated_at = CURRENT_TIMESTAMP WHERE isbn = ?",
+                (payload, isbn),
+            )
+
+    def update_book_bookscouter_json(self, isbn: str, bookscouter_blob: Dict[str, Any]) -> None:
+        """Update BookScouter data and set fetched_at timestamp."""
+        payload = json.dumps(bookscouter_blob or {}, ensure_ascii=False)
+        _log("update_bookscouter", isbn=isbn, bytes=len(payload))
+        with self._get_connection() as conn:
+            conn.execute(
+                """UPDATE books
+                   SET bookscouter_json = ?,
+                       bookscouter_fetched_at = CURRENT_TIMESTAMP,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE isbn = ?""",
                 (payload, isbn),
             )
 
@@ -338,6 +389,97 @@ class DatabaseManager:
             rows = cursor.fetchall()
         return list(rows)
 
+    def fetch_books_needing_bookscouter_refresh(
+        self,
+        max_age_days: int = 30
+    ) -> List[sqlite3.Row]:
+        """
+        Fetch books that need BookScouter data refresh.
+
+        Returns books where:
+        - bookscouter_fetched_at is NULL (never fetched), OR
+        - bookscouter_fetched_at is older than max_age_days
+
+        Args:
+            max_age_days: Maximum age in days before data is considered stale
+
+        Returns:
+            List of book rows that need refresh
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT * FROM books
+                WHERE bookscouter_fetched_at IS NULL
+                   OR bookscouter_fetched_at < datetime('now', '-' || ? || ' days')
+                ORDER BY probability_score DESC, title COLLATE NOCASE
+                """,
+                (max_age_days,),
+            )
+            rows = cursor.fetchall()
+        return list(rows)
+
+    def fetch_books_needing_market_refresh(
+        self,
+        max_age_days: int = 30
+    ) -> List[sqlite3.Row]:
+        """
+        Fetch books that need eBay market data refresh.
+
+        Returns books where:
+        - market_fetched_at is NULL (never fetched), OR
+        - market_fetched_at is older than max_age_days
+
+        Args:
+            max_age_days: Maximum age in days before data is considered stale
+
+        Returns:
+            List of book rows that need refresh
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT * FROM books
+                WHERE market_fetched_at IS NULL
+                   OR market_fetched_at < datetime('now', '-' || ? || ' days')
+                ORDER BY probability_score DESC, title COLLATE NOCASE
+                """,
+                (max_age_days,),
+            )
+            rows = cursor.fetchall()
+        return list(rows)
+
+    def fetch_books_needing_metadata_refresh(
+        self,
+        max_age_days: int = 90
+    ) -> List[sqlite3.Row]:
+        """
+        Fetch books that need metadata refresh.
+
+        Returns books where:
+        - metadata_fetched_at is NULL (never fetched), OR
+        - metadata_fetched_at is older than max_age_days
+
+        Args:
+            max_age_days: Maximum age in days before data is considered stale
+                         (default: 90, metadata changes less frequently)
+
+        Returns:
+            List of book rows that need refresh
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT * FROM books
+                WHERE metadata_fetched_at IS NULL
+                   OR metadata_fetched_at < datetime('now', '-' || ? || ' days')
+                ORDER BY probability_score DESC, title COLLATE NOCASE
+                """,
+                (max_age_days,),
+            )
+            rows = cursor.fetchall()
+        return list(rows)
+
     # ------------------------------------------------------------------
     # Lot persistence helpers
 
@@ -425,6 +567,7 @@ class DatabaseManager:
                   authors = COALESCE(:authors, authors),
                   publication_year = COALESCE(:publication_year, publication_year),
                   metadata_json = :metadata_json,
+                  metadata_fetched_at = CURRENT_TIMESTAMP,
                   updated_at = CURRENT_TIMESTAMP
                 WHERE isbn = :isbn
             """, {

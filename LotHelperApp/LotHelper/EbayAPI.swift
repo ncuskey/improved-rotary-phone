@@ -146,6 +146,7 @@ struct PriceSummary {
     let max: Double
     let samples: [PriceSample]
     let isEstimate: Bool // Track B: true for estimated sold from active listings
+    let lastSoldDate: String? // ISO 8601 date from MI API (Track A only)
 }
 
 // MARK: - Sold Comps Models (Track A - Marketplace Insights)
@@ -164,6 +165,7 @@ struct SoldSummary: Sendable, Decodable {
     let median: Double
     let max: Double
     let samples: [SoldSample]
+    let lastSoldDate: String?
 
     private enum CodingKeys: String, CodingKey {
         case count
@@ -171,6 +173,7 @@ struct SoldSummary: Sendable, Decodable {
         case median
         case max
         case samples
+        case lastSoldDate = "last_sold_date"
     }
 
     // Ensure Decodable conformance is not main-actor isolated in Swift 6
@@ -181,6 +184,7 @@ struct SoldSummary: Sendable, Decodable {
         self.median = try c.decode(Double.self, forKey: .median)
         self.max = try c.decode(Double.self, forKey: .max)
         self.samples = try c.decode([SoldSample].self, forKey: .samples)
+        self.lastSoldDate = try c.decodeIfPresent(String.self, forKey: .lastSoldDate)
     }
 }
 
@@ -312,7 +316,8 @@ enum EbayBrowseAPI {
             median: median,
             max: max,
             samples: Array(samples.prefix(3)),
-            isEstimate: false
+            isEstimate: false,
+            lastSoldDate: nil // Active listings don't have sold dates
         )
     }
 
@@ -403,7 +408,8 @@ enum EbayBrowseAPI {
             median: median,
             max: max,
             samples: Array(allSamples.prefix(3)),
-            isEstimate: true
+            isEstimate: true,
+            lastSoldDate: nil // Track B estimates don't have real sold dates
         )
     }
 }
@@ -544,7 +550,8 @@ final class ScannerPricingVM: ObservableObject {
                             ship: 0
                         )
                     },
-                    isEstimate: false
+                    isEstimate: false,
+                    lastSoldDate: sold.lastSoldDate
                 )
             }
         } catch let err as NSError where err.code == 501 {

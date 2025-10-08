@@ -8,6 +8,8 @@ struct ScannerReviewView: View {
     @State private var book: BookInfo?
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showAttributesSheet = false
+    @State private var bookAttributes = BookAttributes()
 
     // eBay pricing integration
     @StateObject private var pricing: ScannerPricingVM = {
@@ -71,7 +73,7 @@ struct ScannerReviewView: View {
                             .buttonStyle(.bordered)
                             .frame(minHeight: 44)
 
-                            Button(action: accept) {
+                            Button(action: { showAttributesSheet = true }) {
                                 Label("Accept", systemImage: "checkmark")
                                     .frame(maxWidth: .infinity)
                             }
@@ -89,6 +91,15 @@ struct ScannerReviewView: View {
             }
             .background(DS.Color.background.ignoresSafeArea())
             .navigationTitle("Scan")
+            .sheet(isPresented: $showAttributesSheet) {
+                BookAttributesSheet(attributes: $bookAttributes)
+                    .onDisappear {
+                        if showAttributesSheet == false {
+                            // Sheet was dismissed, accept with attributes
+                            accept()
+                        }
+                    }
+            }
         }
     }
 
@@ -125,6 +136,20 @@ struct ScannerReviewView: View {
                     statView("$ Min", s.min, currency: "USD")
                     statView("$ Median", s.median, currency: "USD")
                     statView("$ Max", s.max, currency: "USD")
+                }
+
+                // Last sold date (if available)
+                if pricing.mode == .sold, let lastSold = s.lastSoldDate {
+                    HStack {
+                        Text("Last sold:")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(formatDate(lastSold))
+                            .font(.caption)
+                            .bold()
+                        Spacer()
+                    }
+                    .padding(.top, 4)
                 }
 
                 // Samples (3 cheapest)
@@ -199,6 +224,18 @@ struct ScannerReviewView: View {
         }
     }
 
+    private func formatDate(_ isoString: String) -> String {
+        let formatter = ISO8601DateFormatter()
+        guard let date = formatter.date(from: isoString) else {
+            return isoString  // Fallback to raw string if parsing fails
+        }
+
+        let displayFormatter = DateFormatter()
+        displayFormatter.dateStyle = .medium
+        displayFormatter.timeStyle = .none
+        return displayFormatter.string(from: date)
+    }
+
     private var idleCard: some View {
         VStack(spacing: DS.Spacing.sm) {
             Image(systemName: "barcode.viewfinder")
@@ -254,9 +291,19 @@ struct ScannerReviewView: View {
 
     private func accept() {
         guard let code = scannedCode else { return }
-        BookAPI.postISBNToBackend(code) { _ in
+
+        BookAPI.postISBNWithAttributes(
+            code,
+            condition: bookAttributes.condition,
+            edition: bookAttributes.editionNotes,
+            coverType: bookAttributes.coverType == "Unknown" ? nil : bookAttributes.coverType,
+            printing: bookAttributes.printing.isEmpty ? nil : bookAttributes.printing,
+            signed: bookAttributes.signed
+        ) { _ in
             DispatchQueue.main.async {
-                rescan()
+                // Reset attributes for next scan
+                self.bookAttributes = BookAttributes()
+                self.rescan()
             }
         }
     }

@@ -1,9 +1,17 @@
 import SwiftUI
+import SwiftData
 
 struct LotRecommendationsView: View {
+    // Optional BookScouter integration inputs
+    var bookscouter: Bool = false
+    var bookscouterValueLabel: String = ""
+    var bookscouterValueRatio: Double = 0.0
+
+    @Environment(\.modelContext) private var modelContext
     @State private var lots: [LotSuggestionDTO] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    private var cacheManager: CacheManager { CacheManager(modelContext: modelContext) }
 
     var body: some View {
         NavigationStack {
@@ -59,20 +67,34 @@ struct LotRecommendationsView: View {
     @MainActor
     private func initialLoadIfNeeded() async {
         if lots.isEmpty && !isLoading {
-            await loadLots()
+            // Load from cache first
+            let cachedLots = cacheManager.getCachedLots()
+            if !cachedLots.isEmpty {
+                lots = cachedLots
+            }
+
+            // Fetch fresh data in background if cache is expired or empty
+            if cacheManager.isLotsExpired() || cachedLots.isEmpty {
+                await loadLots()
+            }
         }
     }
 
     @MainActor
     private func loadLots() async {
-        isLoading = true
+        isLoading = lots.isEmpty // Only show loading if we have no data
         errorMessage = nil
         do {
-            lots = try await BookAPI.fetchAllLots()
+            let freshLots = try await BookAPI.fetchAllLots()
+            lots = freshLots
+            cacheManager.saveLots(freshLots)
             isLoading = false
         } catch {
             isLoading = false
-            errorMessage = "Failed to load lots: \(error.localizedDescription)"
+            // Only show error if we have no cached data to display
+            if lots.isEmpty {
+                errorMessage = "Failed to load lots: \(error.localizedDescription)"
+            }
         }
     }
 }
@@ -244,6 +266,9 @@ private struct LotDetailView: View {
                         ),
                         booksrunValueLabel: nil,
                         booksrunValueRatio: nil,
+                        bookscouter: nil,
+                        bookscouterValueLabel: nil as String?,
+                        bookscouterValueRatio: nil as Double?,
                         rarity: nil
                     )
                 ],

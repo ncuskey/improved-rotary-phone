@@ -1,9 +1,12 @@
 import SwiftUI
+import SwiftData
 
 struct BooksTabView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var books: [BookEvaluationRecord] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    private var cacheManager: CacheManager { CacheManager(modelContext: modelContext) }
 
     var body: some View {
         NavigationStack {
@@ -69,20 +72,34 @@ struct BooksTabView: View {
     @MainActor
     private func initialLoadIfNeeded() async {
         if books.isEmpty && !isLoading {
-            await loadBooks()
+            // Load from cache first
+            let cachedBooks = cacheManager.getCachedBooks()
+            if !cachedBooks.isEmpty {
+                books = cachedBooks
+            }
+
+            // Fetch fresh data in background if cache is expired or empty
+            if cacheManager.isBooksExpired() || cachedBooks.isEmpty {
+                await loadBooks()
+            }
         }
     }
 
     @MainActor
     private func loadBooks() async {
-        isLoading = true
+        isLoading = books.isEmpty // Only show loading if we have no data
         errorMessage = nil
         do {
-            books = try await BookAPI.fetchAllBooks()
+            let freshBooks = try await BookAPI.fetchAllBooks()
+            books = freshBooks
+            cacheManager.saveBooks(freshBooks)
             isLoading = false
         } catch {
             isLoading = false
-            errorMessage = "Failed to load books: \(error.localizedDescription)"
+            // Only show error if we have no cached data to display
+            if books.isEmpty {
+                errorMessage = "Failed to load books: \(error.localizedDescription)"
+            }
         }
     }
 }

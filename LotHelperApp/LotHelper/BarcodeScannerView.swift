@@ -11,6 +11,7 @@ import SwiftUI
 import UIKit
 import AVFoundation
 import AudioToolbox
+import Vision
 
 struct BarcodeScannerView: UIViewControllerRepresentable {
     @Binding var isActive: Bool
@@ -29,7 +30,7 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
     }
 }
 
-final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate, AVCaptureVideoDataOutputSampleBufferDelegate {
     var onScan: ((String) -> Void)?
 
     private let session = AVCaptureSession()
@@ -37,6 +38,8 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
     private var isSessionConfigured = false
     private var isActive = true
     private let sessionQueue = DispatchQueue(label: "com.lothelper.scanner.session")
+    private let visionQueue = DispatchQueue(label: "com.lothelper.scanner.vision")
+    private var lastOCRAttempt = Date.distantPast
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -107,15 +110,24 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
         }
         session.addInput(input)
 
-        let output = AVCaptureMetadataOutput()
-        guard session.canAddOutput(output) else {
+        // Barcode metadata output
+        let metadataOutput = AVCaptureMetadataOutput()
+        guard session.canAddOutput(metadataOutput) else {
             showCameraUnavailableUI()
             session.commitConfiguration()
             return
         }
-        session.addOutput(output)
-        output.metadataObjectTypes = [.ean13, .ean8, .upce, .code128, .qr]
-        output.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+        session.addOutput(metadataOutput)
+        metadataOutput.metadataObjectTypes = [.ean13, .ean8, .upce, .code128, .qr]
+        metadataOutput.setMetadataObjectsDelegate(self, queue: DispatchQueue.main)
+
+        // Video data output for OCR text recognition
+        let videoOutput = AVCaptureVideoDataOutput()
+        videoOutput.setSampleBufferDelegate(self, queue: visionQueue)
+        videoOutput.alwaysDiscardsLateVideoFrames = true
+        if session.canAddOutput(videoOutput) {
+            session.addOutput(videoOutput)
+        }
 
         let layer = AVCaptureVideoPreviewLayer(session: session)
         layer.videoGravity = .resizeAspectFill
@@ -135,7 +147,7 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
         }
     }
 
-    // MARK: - Metadata delegate
+    // MARK: - Metadata delegate (Barcode)
 
     func metadataOutput(_ output: AVCaptureMetadataOutput,
                         didOutput metadataObjects: [AVMetadataObject],
@@ -143,6 +155,77 @@ final class ScannerViewController: UIViewController, AVCaptureMetadataOutputObje
         guard isActive,
               let object = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
               let value = object.stringValue, !value.isEmpty else { return }
+
+        handleSuccessfulScan(value)
+    }
+
+    // MARK: - Video data delegate (OCR)
+
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        // Throttle OCR attempts to every 0.5 seconds for performance
+        guard isActive, Date().timeIntervalSince(lastOCRAttempt) > 0.5 else { return }
+        lastOCRAttempt = Date()
+
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+
+        let request = VNRecognizeTextRequest { [weak self] request, error in
+            guard let self else { return }
+            guard error == nil,
+                  let observations = request.results as? [VNRecognizedTextObservation] else { return }
+
+            self.processOCRResults(observations)
+        }
+
+        request.recognitionLevel = .fast
+        request.usesLanguageCorrection = false
+
+        let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up, options: [:])
+        try? handler.perform([request])
+    }
+
+    private func processOCRResults(_ observations: [VNRecognizedTextObservation]) {
+        // Look for ISBN patterns in recognized text
+        let isbnPattern = #"(?:ISBN[:\s-]?)?(\d{10}|\d{13}|\d{9}[X])"#
+        let regex = try? NSRegularExpression(pattern: isbnPattern, options: [.caseInsensitive])
+
+        for observation in observations {
+            guard let candidate = observation.topCandidates(1).first else { continue }
+            let text = candidate.string
+
+            // Try to find ISBN in the text
+            let range = NSRange(text.startIndex..<text.endIndex, in: text)
+            if let match = regex?.firstMatch(in: text, range: range),
+               let isbnRange = Range(match.range(at: 1), in: text) {
+                let isbn = String(text[isbnRange])
+
+                // Validate ISBN format
+                if isValidISBNFormat(isbn) {
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self, self.isActive else { return }
+                        self.handleSuccessfulScan(isbn)
+                    }
+                    return
+                }
+            }
+        }
+    }
+
+    private func isValidISBNFormat(_ isbn: String) -> Bool {
+        // ISBN-10: 9 digits + check digit (0-9 or X)
+        if isbn.count == 10 {
+            let digits = isbn.prefix(9)
+            let check = isbn.suffix(1)
+            return digits.allSatisfy { $0.isNumber } && (check.first?.isNumber == true || check == "X")
+        }
+        // ISBN-13: 13 digits
+        if isbn.count == 13 {
+            return isbn.allSatisfy { $0.isNumber }
+        }
+        return false
+    }
+
+    private func handleSuccessfulScan(_ value: String) {
+        guard isActive else { return }
 
         isActive = false
         sessionQueue.async { [weak self] in

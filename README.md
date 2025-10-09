@@ -38,8 +38,15 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
 **Status**: OCR functionality is working well, but barcode scanning needs fixes. See `CAMERA_SCANNER_README.md` for detailed documentation and `CAMERA_SCANNER_TODO.md` for known issues and next steps.
 
 ### iOS App (LotHelper)
-- **✅ Native Barcode Scanner**: Fast, accurate ISBN/barcode scanning with tap-to-focus
-- **📊 Live eBay Pricing**: Real-time market comparables during scanning
+- **✅ Native Barcode Scanner**: Fast, accurate ISBN/barcode scanning with OCR text recognition and tap-to-focus
+- **📊 Real-Time Triage Evaluation**: Complete profitability analysis during scanning:
+  - Probability score with color-coded badges (Strong/Worth/Risky/Pass)
+  - Estimated resale price vs BookScouter buyback floor
+  - Amazon sales rank with demand tier indicators
+  - Top 3 justification reasons explaining the score
+  - Rarity and series badges for collectible books
+- **💰 Live eBay Pricing**: Real-time active and sold comps with price statistics
+- **✅ Accept/Reject Workflow**: Make informed keep/reject decisions before adding books to catalog
 - **🔒 Secure Token Management**: eBay OAuth tokens handled server-side via token broker
 - **📱 Modern SwiftUI**: Beautiful, accessible interface with haptic feedback
 - **🔄 Seamless Integration**: Syncs with backend catalog via REST API

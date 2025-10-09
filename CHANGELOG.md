@@ -2,7 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2025-01-08
+## [Unreleased] - 2025-01-09
+
+### Added
+- **iOS Scanner Triage Workflow**: Complete book profitability evaluation during scanning
+  - Real-time evaluation panel showing probability score, pricing, Amazon rank, and justification
+  - Accept/Reject buttons for immediate keep/discard decisions
+  - Scan → Evaluate → Accept/Reject workflow eliminates need to review books later
+  - Color-coded probability badges (Green/Blue/Orange/Red for Strong/Worth/Risky/Pass)
+  - Estimated resale price vs BookScouter buyback floor comparison
+  - Amazon sales rank badges with demand tier color coding
+  - Top 3 justification reasons explaining probability score
+  - Rarity and series badges for collectible books
+- **Mobile API Endpoints**:
+  - `GET /api/books/{isbn}/evaluate` - Complete evaluation data for triage
+  - `DELETE /api/books/{isbn}/json` - Book deletion for reject workflow
+  - `GET /api/books/stats` - Database statistics for mobile access
+- **Scanner Layout Optimization**:
+  - Expanded evaluation panel to use bottom 2/3 of screen (up from 1/3)
+  - Top 1/3: Camera scanner with barcode reticle
+  - Bottom 2/3: Scrollable book preview, eBay comps, evaluation panel, and action buttons
+
+### Technical Improvements
+- **ISBN Normalization**: Fixed ISBN-10 to ISBN-13 conversion (handles X check digits correctly)
+- **Market Data Integration**: Changed mobile scan endpoint to include_market=True for complete data
+- **Retry Logic**: Added exponential backoff (1s, 2s, 3s delays) for evaluation fetch race conditions
+- **Error Handling**: Improved error messages and console logging for debugging
+- **Backend ISBN Resolution**: Use server-normalized ISBN for evaluation endpoint calls
+
+### Fixed
+- eBay Browse API error 12001 by normalizing all ISBNs to 13-digit format before API calls
+- 404 errors on evaluation endpoint due to race condition between scan submission and data processing
+- ISBN-10 with X check digit not being properly converted (e.g., 034529906X → 9780345299062)
+- Evaluation panel not displaying due to missing market data in database
+
+## [Previous] - 2025-01-08
 
 ### Added
 - **Database Statistics Feature**:

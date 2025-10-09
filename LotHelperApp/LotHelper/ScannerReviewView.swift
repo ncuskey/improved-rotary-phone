@@ -557,7 +557,7 @@ struct ScannerReviewView: View {
         }
     }
 
-    private func fetchEvaluation(for isbn: String) {
+    private func fetchEvaluation(for isbn: String, retryCount: Int = 0) {
         isLoadingEvaluation = true
         Task {
             do {
@@ -565,6 +565,25 @@ struct ScannerReviewView: View {
                 await MainActor.run {
                     evaluation = eval
                     isLoadingEvaluation = false
+                }
+            } catch let error as BookAPIError {
+                // Handle 404 - book might not be processed yet, retry
+                if case .badStatus(let code, _) = error, code == 404, retryCount < 3 {
+                    // Wait longer and retry (exponential backoff)
+                    let delay = Double(retryCount + 1) * 1.0
+                    await MainActor.run {
+                        print("⏳ Book not ready yet, retrying in \(delay)s (attempt \(retryCount + 1)/3)...")
+                    }
+                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    await MainActor.run {
+                        self.fetchEvaluation(for: isbn, retryCount: retryCount + 1)
+                    }
+                } else {
+                    await MainActor.run {
+                        isLoadingEvaluation = false
+                        errorMessage = "Evaluation failed: \(error.localizedDescription)"
+                        print("❌ Evaluation fetch error: \(error)")
+                    }
                 }
             } catch {
                 await MainActor.run {

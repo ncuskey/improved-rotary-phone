@@ -432,6 +432,181 @@ class BookService:
         books = self.list_books()
         return route_books(books)
 
+    def batch_refresh_amazon_ranks(
+        self,
+        *,
+        batch_size: int = 50,
+        force_all: bool = False,
+        limit: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Batch refresh Amazon Sales Ranks for books in the database.
+
+        This uses BookScouter's batch metadata API to efficiently fetch Amazon ranks
+        for multiple books at once, respecting rate limits (60 calls/minute).
+
+        Args:
+            batch_size: Number of ISBNs to process per batch (default 50)
+            force_all: If True, refresh all books; if False, only refresh books missing Amazon rank
+            limit: Maximum number of books to process (None = all)
+
+        Returns:
+            Dict with stats: {
+                "total_books": int,
+                "updated": int,
+                "failed": int,
+                "skipped": int,
+                "batches": int,
+            }
+        """
+        if not self.bookscouter_api_key:
+            return {
+                "error": "BookScouter API key not configured",
+                "total_books": 0,
+                "updated": 0,
+                "failed": 0,
+                "skipped": 0,
+                "batches": 0,
+            }
+
+        # Get all books from database
+        all_books = self.list_books()
+
+        # Filter books that need Amazon rank refresh
+        if force_all:
+            books_to_refresh = all_books
+        else:
+            books_to_refresh = [
+                book for book in all_books
+                if not book.bookscouter or book.bookscouter.amazon_sales_rank is None
+            ]
+
+        # Apply limit if specified
+        if limit is not None and limit > 0:
+            books_to_refresh = books_to_refresh[:limit]
+
+        total_books = len(books_to_refresh)
+        if total_books == 0:
+            return {
+                "total_books": 0,
+                "updated": 0,
+                "failed": 0,
+                "skipped": 0,
+                "batches": 0,
+            }
+
+        # Split into batches
+        isbns = [book.isbn for book in books_to_refresh]
+        batches = [isbns[i:i + batch_size] for i in range(0, len(isbns), batch_size)]
+
+        updated = 0
+        failed = 0
+        skipped = 0
+
+        from .bookscouter import fetch_metadata_batch
+        import time
+
+        for batch_idx, isbn_batch in enumerate(batches, 1):
+            print(f"Processing batch {batch_idx}/{len(batches)} ({len(isbn_batch)} books)...")
+
+            try:
+                # Fetch metadata for batch (includes Amazon ranks)
+                results = fetch_metadata_batch(
+                    isbn_batch,
+                    api_key=self.bookscouter_api_key,
+                    base_url=self.bookscouter_base_url,
+                    timeout=int(self.bookscouter_timeout),
+                    max_workers=10,  # Parallel requests within batch
+                )
+
+                # Update each book with new Amazon rank
+                for isbn, metadata_raw in results.items():
+                    if metadata_raw is None:
+                        failed += 1
+                        continue
+
+                    # Extract Amazon rank
+                    rank_value = metadata_raw.get("AmazonSalesRank")
+                    if not rank_value:
+                        skipped += 1
+                        continue
+
+                    try:
+                        amazon_rank = int(rank_value)
+                    except (ValueError, TypeError):
+                        skipped += 1
+                        continue
+
+                    # Get existing book
+                    existing = self.get_book(isbn)
+                    if not existing:
+                        skipped += 1
+                        continue
+
+                    # Rebuild evaluation with new Amazon rank
+                    evaluation = build_book_evaluation(
+                        isbn=existing.isbn,
+                        original_isbn=existing.original_isbn,
+                        metadata=existing.metadata,
+                        market=existing.market,
+                        condition=existing.condition,
+                        edition=existing.edition,
+                        amazon_rank=amazon_rank,
+                    )
+                    evaluation.quantity = max(1, getattr(existing, "quantity", 1))
+
+                    # Preserve existing market data
+                    if hasattr(existing, 'booksrun'):
+                        self._apply_booksrun_to_evaluation(evaluation, existing.booksrun)
+
+                    # Update or create BookScouterResult with new Amazon rank
+                    if existing.bookscouter:
+                        # Update existing result with new rank
+                        from dataclasses import replace
+                        updated_bookscouter = replace(
+                            existing.bookscouter,
+                            amazon_sales_rank=amazon_rank
+                        )
+                        self._apply_bookscouter_to_evaluation(evaluation, updated_bookscouter)
+                    else:
+                        # Create minimal result with just the rank
+                        from .bookscouter import BookScouterResult
+                        bookscouter_result = BookScouterResult(
+                            isbn_10=metadata_raw.get("Isbn10", ""),
+                            isbn_13=metadata_raw.get("Isbn13", isbn),
+                            offers=[],
+                            best_price=0.0,
+                            best_vendor=None,
+                            total_vendors=0,
+                            amazon_sales_rank=amazon_rank,
+                            raw=metadata_raw,
+                        )
+                        self._apply_bookscouter_to_evaluation(evaluation, bookscouter_result)
+
+                    # Persist updated evaluation
+                    self._persist_book(evaluation)
+                    updated += 1
+
+                # Rate limiting: Wait between batches to stay under 60 calls/minute
+                # Each batch makes ~batch_size parallel calls
+                if batch_idx < len(batches):
+                    # Conservative wait: 1.2 seconds per book in batch
+                    wait_time = len(isbn_batch) * 1.2
+                    print(f"Waiting {wait_time:.1f}s before next batch (rate limiting)...")
+                    time.sleep(wait_time)
+
+            except Exception as e:
+                print(f"Batch {batch_idx} failed: {e}")
+                failed += len(isbn_batch)
+
+        return {
+            "total_books": total_books,
+            "updated": updated,
+            "failed": failed,
+            "skipped": skipped,
+            "batches": len(batches),
+        }
+
     def get_book(self, isbn: str) -> Optional[BookEvaluation]:
         normalized = normalise_isbn(isbn)
         if not normalized:

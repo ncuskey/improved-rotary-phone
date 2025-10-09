@@ -59,6 +59,12 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="Fetch eBay actives+sold comps for candidate lots, score them, persist to market_json")
     parser.add_argument("--refresh-series", action="store_true",
         help="Refresh series metadata from Hardcover for rows missing series and exit")
+    parser.add_argument("--refresh-amazon-ranks", action="store_true",
+        help="Batch refresh Amazon Sales Ranks from BookScouter for books missing this data")
+    parser.add_argument("--force-refresh-amazon", action="store_true",
+        help="Force refresh Amazon ranks for ALL books, not just missing ones")
+    parser.add_argument("--batch-size", type=int, default=50,
+        help="Batch size for Amazon rank refresh (default: 50, max 50 to stay under rate limits)")
     parser.add_argument("--limit", type=int, default=None,
         help="Optional limit for number of rows to process during refresh")
 
@@ -281,6 +287,44 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
                 conn_series.close()
             except Exception:
                 pass
+        raise SystemExit(0)
+
+    # Handle Amazon rank refresh before initializing service
+    if args.refresh_amazon_ranks:
+        service = BookService(
+            database_path=database_path,
+            ebay_app_id=args.ebay_app_id,
+            ebay_global_id=args.ebay_global_id,
+            ebay_delay=args.ebay_delay,
+            ebay_entries=args.ebay_entries,
+            metadata_delay=args.metadata_delay,
+        )
+
+        try:
+            print("🔄 Starting Amazon Sales Rank batch refresh...")
+            print(f"Batch size: {args.batch_size}")
+            print(f"Mode: {'Force refresh ALL books' if args.force_refresh_amazon else 'Only books missing Amazon rank'}")
+            print()
+
+            result = service.batch_refresh_amazon_ranks(
+                batch_size=args.batch_size,
+                force_all=args.force_refresh_amazon,
+                limit=args.limit,
+            )
+
+            if "error" in result:
+                print(f"❌ Error: {result['error']}")
+            else:
+                print()
+                print("✅ Amazon rank refresh complete!")
+                print(f"   Total books processed: {result['total_books']}")
+                print(f"   Updated: {result['updated']}")
+                print(f"   Failed: {result['failed']}")
+                print(f"   Skipped: {result['skipped']}")
+                print(f"   Batches: {result['batches']}")
+        finally:
+            service.close()
+
         raise SystemExit(0)
 
     service = BookService(

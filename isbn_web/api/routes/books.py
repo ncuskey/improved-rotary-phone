@@ -18,6 +18,31 @@ router = APIRouter()
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))
 
 
+@router.get("/stats")
+async def get_database_statistics(
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Get comprehensive database statistics.
+
+    Returns metrics including:
+    - Database file size
+    - Book counts and coverage
+    - Storage breakdown per API source
+    - Probability distribution
+    - Price statistics
+    - Data freshness timestamps
+    """
+    try:
+        stats = service.get_database_statistics()
+        return JSONResponse(content=stats)
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "message": "Failed to retrieve statistics"}
+        )
+
+
 def _book_evaluation_to_dict(evaluation) -> Dict[str, Any]:
     """Serialize a BookEvaluation into JSON-friendly dict."""
     metadata = evaluation.metadata

@@ -480,8 +480,9 @@ struct ScannerReviewView: View {
             printing: bookAttributes.printing.isEmpty ? nil : bookAttributes.printing,
             signed: bookAttributes.signed
         ) { _ in
-            // After submission, fetch full evaluation for triage
-            DispatchQueue.main.async {
+            // Wait a moment for backend to complete scan processing
+            // Backend needs time to fetch market data, calculate probability, etc.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 self.fetchEvaluation(for: isbn)
             }
         }

@@ -567,8 +567,9 @@ struct ScannerReviewView: View {
                 }
             } catch {
                 await MainActor.run {
-                    // Don't show error - evaluation is optional
                     isLoadingEvaluation = false
+                    errorMessage = "Evaluation failed: \(error.localizedDescription)"
+                    print("❌ Evaluation fetch error: \(error)")
                 }
             }
         }

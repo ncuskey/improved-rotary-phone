@@ -64,7 +64,7 @@ class HardcoverClient:
         _limiter.acquire()
         headers = {
             "content-type": "application/json",
-            "authorization": self.token,
+            "authorization": f"Bearer {self.token}",  # Hardcover API requires "Bearer " prefix
             "user-agent": self.user_agent,
         }
         payload = {"query": query, "variables": variables or {}}

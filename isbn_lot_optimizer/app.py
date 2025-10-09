@@ -3,11 +3,21 @@ from __future__ import annotations
 # Load .env from project root so env vars are available everywhere
 try:
     import importlib
+    from pathlib import Path
 
     _dotenv = importlib.import_module("dotenv")  # type: ignore
     _load = getattr(_dotenv, "load_dotenv", None)
     if callable(_load):
-        _load()
+        # Try multiple locations for .env file
+        potential_env_paths = [
+            Path.cwd() / ".env",  # Current directory
+            Path(__file__).parent.parent / ".env",  # Project root
+            Path.home() / "ISBN" / ".env",  # Explicit ISBN directory
+        ]
+        for env_path in potential_env_paths:
+            if env_path.exists():
+                _load(env_path, override=True)
+                break
 except Exception:
     # Ignore if python-dotenv is not installed or any error occurs
     pass

@@ -280,6 +280,30 @@ async def update_book(
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+@router.delete("/{isbn}/json")
+async def delete_book_json(
+    isbn: str,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """Delete a single book (JSON response for mobile)."""
+    normalized_isbn = normalise_isbn(isbn)
+
+    if not normalized_isbn:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid ISBN", "isbn": isbn}
+        )
+
+    try:
+        service.delete_books([normalized_isbn])
+        return JSONResponse(content={"message": "Book deleted", "isbn": normalized_isbn})
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "isbn": normalized_isbn}
+        )
+
+
 @router.delete("/{isbn}", response_class=HTMLResponse)
 async def delete_book(
     isbn: str,

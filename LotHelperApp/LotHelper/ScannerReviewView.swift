@@ -74,23 +74,35 @@ struct ScannerReviewView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
-                        HStack(spacing: DS.Spacing.md) {
+                        // Show Accept/Reject after evaluation loads
+                        if evaluation != nil {
+                            HStack(spacing: DS.Spacing.md) {
+                                Button(action: reject) {
+                                    Label("Reject", systemImage: "xmark")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(.red)
+                                .frame(minHeight: 44)
+
+                                Button(action: acceptAndContinue) {
+                                    Label("Accept", systemImage: "checkmark")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .frame(minHeight: 44)
+                            }
+                            .padding(.top, DS.Spacing.sm)
+                        } else if scannedCode != nil && !isLoadingEvaluation {
+                            // Show just Rescan if we have a scan but no evaluation yet
                             Button(action: rescan) {
                                 Label("Rescan", systemImage: "arrow.clockwise")
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.bordered)
                             .frame(minHeight: 44)
-
-                            Button(action: { showAttributesSheet = true }) {
-                                Label("Accept", systemImage: "checkmark")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .frame(minHeight: 44)
-                            .disabled(scannedCode == nil)
+                            .padding(.top, DS.Spacing.sm)
                         }
-                        .padding(.top, DS.Spacing.sm)
                     }
                 }
                 .frame(height: geo.size.height / 3)
@@ -327,18 +339,6 @@ struct ScannerReviewView: View {
                     }
                 }
             }
-
-            // Action button
-            Button(action: {
-                // Reset for next scan
-                bookAttributes = BookAttributes()
-                rescan()
-            }) {
-                Label("Next Book", systemImage: "arrow.forward")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .frame(minHeight: 44)
         }
         .padding()
         .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -464,9 +464,33 @@ struct ScannerReviewView: View {
         scannedCode = normalizedCode
         errorMessage = nil
         book = nil
+        evaluation = nil
+
+        // Fetch preview and eBay comps immediately
         fetchPreview(for: normalizedCode)
         pricing.load(for: normalizedCode)
+
+        // Submit book with attributes to backend and fetch full evaluation
+        submitAndEvaluate(normalizedCode)
+
         provideHaptic(.success)
+    }
+
+    private func submitAndEvaluate(_ isbn: String) {
+        // Submit book to backend with current attributes
+        BookAPI.postISBNWithAttributes(
+            isbn,
+            condition: bookAttributes.condition,
+            edition: bookAttributes.editionNotes,
+            coverType: bookAttributes.coverType == "Unknown" ? nil : bookAttributes.coverType,
+            printing: bookAttributes.printing.isEmpty ? nil : bookAttributes.printing,
+            signed: bookAttributes.signed
+        ) { _ in
+            // After submission, fetch full evaluation for triage
+            DispatchQueue.main.async {
+                self.fetchEvaluation(for: isbn)
+            }
+        }
     }
 
     /// Convert ISBN-10 to ISBN-13 if needed (eBay requires 13-digit GTIN)
@@ -510,20 +534,30 @@ struct ScannerReviewView: View {
         isScanning = true
     }
 
-    private func accept() {
-        guard let code = scannedCode else { return }
+    private func acceptAndContinue() {
+        // Book is already in database, just move to next scan
+        bookAttributes = BookAttributes()
+        rescan()
+        provideHaptic(.success)
+    }
 
-        BookAPI.postISBNWithAttributes(
-            code,
-            condition: bookAttributes.condition,
-            edition: bookAttributes.editionNotes,
-            coverType: bookAttributes.coverType == "Unknown" ? nil : bookAttributes.coverType,
-            printing: bookAttributes.printing.isEmpty ? nil : bookAttributes.printing,
-            signed: bookAttributes.signed
-        ) { _ in
-            DispatchQueue.main.async {
-                // Fetch full evaluation for triage
-                self.fetchEvaluation(for: code)
+    private func reject() {
+        guard let isbn = scannedCode else { return }
+
+        // Delete the book from the database
+        Task {
+            do {
+                try await BookAPI.deleteBook(isbn)
+                await MainActor.run {
+                    bookAttributes = BookAttributes()
+                    rescan()
+                    provideHaptic(.success)
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to reject book: \(error.localizedDescription)"
+                    provideHaptic(.error)
+                }
             }
         }
     }

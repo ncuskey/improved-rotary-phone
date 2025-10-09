@@ -421,6 +421,28 @@ enum BookAPI {
         }
     }
 
+    /// Delete a book from the database
+    static func deleteBook(_ isbn: String) async throws {
+        guard let url = URL(string: "\(baseURLString)/api/books/\(isbn)/json") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ DELETE /api/books/\(isbn)/json failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+    }
+
     /// Fetch all books from the /api/books/all endpoint
     static func fetchAllBooks() async throws -> [BookEvaluationRecord] {
         guard let url = URL(string: "\(baseURLString)/api/books/all") else {

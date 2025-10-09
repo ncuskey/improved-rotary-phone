@@ -99,130 +99,89 @@ class HardcoverClient:
     # search Book by ISBN (per_page=1)
     def find_book_by_isbn(self, isbn: str) -> Dict[str, Any]:
         query = """
-        query FindBookByIsbn($q: String!, $pp: Int!, $page: Int!) {
-          search(query: $q, query_type: "Book", per_page: $pp, page: $page) {
-            results {
-              found
-              page
-              out_of
-              hits {
-                document {
-                  title
-                  author_names
-                  isbns
-                  slug
-                  series_names
-                  featured_series {
-                    details
-                    position
-                    unreleased
-                    id
-                    series {
-                      id
-                      name
-                      slug
-                      books_count
-                      primary_books_count
-                    }
-                  }
-                }
-              }
-            }
+        query FindBookByIsbn($q: String!, $queryType: String!, $pp: Int!, $page: Int!) {
+          search(query: $q, query_type: $queryType, per_page: $pp, page: $page) {
             ids
             query_type
+            page
+            per_page
+            results
           }
         }
         """
-        variables = {"q": isbn, "pp": 1, "page": 1}
+        variables = {"q": isbn, "queryType": "book", "pp": 1, "page": 1}
         return self._post(query, variables)
 
     # search Series by name or slug; depending on index, books may not be embedded
     def search_series(self, name_or_slug: str, per_page: int = 50, page: int = 1) -> Dict[str, Any]:
         query = """
-        query SeriesSearch($q: String!, $pp: Int!, $page: Int!) {
-          search(query: $q, query_type: "Series", per_page: $pp, page: $page) {
-            results {
-              found
-              page
-              out_of
-              hits {
-                document {
-                  id
-                  name
-                  slug
-                  books_count
-                  primary_books_count
-                }
-              }
-            }
+        query SeriesSearch($q: String!, $queryType: String!, $pp: Int!, $page: Int!) {
+          search(query: $q, query_type: $queryType, per_page: $pp, page: $page) {
+            ids
             query_type
+            page
+            per_page
+            results
           }
         }
         """
-        variables = {"q": name_or_slug, "pp": per_page, "page": page}
+        variables = {"q": name_or_slug, "queryType": "series", "pp": per_page, "page": page}
         return self._post(query, variables)
 
     # fallback: pull books by series name as Book search, then filter client-side to the target series
     def search_books_by_series_name(self, series_name: str, per_page: int = 50, page: int = 1) -> Dict[str, Any]:
         query = """
-        query BooksBySeriesName($q: String!, $pp: Int!, $page: Int!) {
-          search(query: $q, query_type: "Book", per_page: $pp, page: $page) {
-            results {
-              found
-              page
-              out_of
-              hits {
-                document {
-                  title
-                  author_names
-                  isbns
-                  slug
-                  series_names
-                  featured_series {
-                    details
-                    position
-                    series { id name slug }
-                  }
-                }
-              }
-            }
+        query BooksBySeriesName($q: String!, $queryType: String!, $pp: Int!, $page: Int!) {
+          search(query: $q, query_type: $queryType, per_page: $pp, page: $page) {
+            ids
             query_type
+            page
+            per_page
+            results
           }
         }
         """
-        variables = {"q": series_name, "pp": per_page, "page": page}
+        variables = {"q": series_name, "queryType": "book", "pp": per_page, "page": page}
         return self._post(query, variables)
 
     # helpers to parse the known shapes
     @staticmethod
     def parse_book_hit(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         try:
-            hits = data["data"]["search"]["results"]["hits"]
+            # The 'results' field from GraphQL is a JSON string containing Typesense response
+            results_str = data.get("data", {}).get("search", {}).get("results")
+            if not results_str:
+                return None
+
+            # Parse the JSON string
+            results = json.loads(results_str) if isinstance(results_str, str) else results_str
+
+            # Typesense returns: {found, hits: [{document: {...}, ...}], ...}
+            hits = results.get("hits", [])
             if not hits:
                 return None
-            doc = hits[0]["document"]
-            featured = doc.get("featured_series") or {}
-            series_obj = (featured.get("series") or {}) if isinstance(featured, dict) else {}
-            pos_raw = None
-            if isinstance(featured, dict):
-                pos_raw = featured.get("position") or featured.get("details")
-            try:
-                pos = float(pos_raw) if pos_raw is not None else None
-            except Exception:
-                pos = None
-            series_names = doc.get("series_names") or []
-            series_name = series_obj.get("name") or (series_names[0] if series_names else None)
+
+            doc = hits[0].get("document", {})
+
+            # Extract series information from series_names array
+            series_names = doc.get("series_names", [])
+            series_name = series_names[0] if series_names else None
+
+            # Try to extract position from title if it contains series info
+            # (Typesense doesn't return structured series data in basic search)
+            series_position = None
+
             return {
                 "title": doc.get("title"),
-                "authors": doc.get("author_names") or [],
-                "isbns": doc.get("isbns") or [],
+                "authors": doc.get("author_names", []),
+                "isbns": doc.get("isbns", []),
                 "slug": doc.get("slug"),
                 "series_name": series_name,
-                "series_slug": series_obj.get("slug"),
-                "series_id_hc": series_obj.get("id"),
-                "series_position": pos,
+                "series_slug": None,  # Not available in Typesense search
+                "series_id_hc": None,  # Not available in Typesense search
+                "series_position": series_position,
             }
-        except Exception:
+        except Exception as e:
             return None
 
     @staticmethod
@@ -232,46 +191,46 @@ class HardcoverClient:
 
         want = norm(target_series_name)
         try:
-            hits = data["data"]["search"]["results"]["hits"] or []
+            # Parse Typesense results JSON
+            results_str = data.get("data", {}).get("search", {}).get("results")
+            if not results_str:
+                return []
+
+            results = json.loads(results_str) if isinstance(results_str, str) else results_str
+            hits = results.get("hits", [])
         except Exception:
             hits = []
+
         peers: List[Dict[str, Any]] = []
         for h in hits:
-            doc = h.get("document") or {}
-            fs = doc.get("featured_series") or {}
-            sname = None
-            if isinstance(fs, dict):
-                sname = (fs.get("series") or {}).get("name")
-            if not sname:
-                # fall back to series_names array
-                names = doc.get("series_names") or []
-                sname = next((n for n in names if norm(n) == want), None)
+            doc = h.get("document", {})
+
+            # Check series_names array for matching series
+            names = doc.get("series_names", [])
+            sname = next((n for n in names if norm(n) == want), None)
+
             if not sname or norm(sname) != want:
                 continue
-            pos_raw = fs.get("position") if isinstance(fs, dict) else None
-            if pos_raw is None and isinstance(fs, dict):
-                pos_raw = fs.get("details")
-            try:
-                pos = float(pos_raw) if pos_raw is not None else None
-            except Exception:
-                pos = None
+
+            # Position not available in Typesense search - would need separate query
+            pos = None
+
             # prefer ISBN-13
-            isbns_list = doc.get("isbns") or []
+            isbns_list = doc.get("isbns", [])
             isbn13s = [x for x in isbns_list if isinstance(x, str) and len(x) == 13]
+
             peers.append(
                 {
                     "title": doc.get("title"),
-                    "authors": doc.get("author_names") or [],
+                    "authors": doc.get("author_names", []),
                     "isbn13s": isbn13s,
                     "position": pos,
                     "slug": doc.get("slug"),
                 }
             )
-        # sort peers
+
+        # sort peers by title since position not available
         if peers:
-            have_ord = sum(1 for p in peers if isinstance(p.get("position"), (int, float))) >= int(0.7 * len(peers))
-            if have_ord:
-                peers.sort(key=lambda p: (p.get("position") is None, p.get("position")))
-            else:
-                peers.sort(key=lambda p: (p.get("title") or "").lower())
+            peers.sort(key=lambda p: (p.get("title") or "").lower())
+
         return peers

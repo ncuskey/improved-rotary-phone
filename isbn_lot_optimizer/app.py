@@ -332,47 +332,50 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
     # Optional one-shot: refresh series from Hardcover then exit
     if args.refresh_series:
-        # Use the current database path
-        import sqlite3
-        from .services.hardcover import HardcoverClient
-        from .services.series_resolver import ensure_series_schema, get_series_for_isbn, update_book_row_with_series
+        service = BookService(
+            database_path=database_path,
+            ebay_app_id=args.ebay_app_id,
+            ebay_global_id=args.ebay_global_id,
+            ebay_delay=args.ebay_delay,
+            ebay_entries=args.ebay_entries,
+            metadata_delay=args.metadata_delay,
+        )
 
-        db_path_series = ensure_database_path(args.database)
-        conn_series = sqlite3.connect(db_path_series)
+        # Ensure series schema exists
+        from .services.series_resolver import ensure_series_schema
+        ensure_series_schema(service.db._get_connection())
+
         try:
-            ensure_series_schema(conn_series)
-            hc = HardcoverClient()
-            cur = conn_series.cursor()
-            # Select candidates (only-missing by default). Respect --limit or use 500 default.
-            limit = args.limit if args.limit is not None else 500
-            cur.execute(
-                """
-                SELECT isbn FROM books
-                WHERE (series_name IS NULL OR series_name = '')
-                  AND isbn IS NOT NULL
-                  AND length(isbn)=13
-                ORDER BY updated_at DESC
-                LIMIT ?
-                """,
-                (int(limit),),
+            print("📚 Starting series metadata refresh from Hardcover API...")
+            print(f"Mode: Only books missing series information")
+            if args.limit:
+                print(f"Limit: {args.limit} books")
+            print()
+
+            result = service.batch_refresh_series(
+                force_all=False,
+                limit=args.limit if args.limit is not None else 500,
+                skip_recently_checked=True,
+                recent_threshold_days=7,
             )
-            rows = [r[0] for r in cur.fetchall()]
-            for code in rows:
-                try:
-                    series = get_series_for_isbn(conn_series, code, hc)
-                    if series.get("confidence", 0) >= 0.6 and series.get("series_name"):
-                        update_book_row_with_series(conn_series, code, series)
-                    else:
-                        cur.execute("UPDATE books SET series_last_checked = CURRENT_TIMESTAMP WHERE isbn = ?", (code,))
-                        conn_series.commit()
-                except Exception:
-                    cur.execute("UPDATE books SET series_last_checked = CURRENT_TIMESTAMP WHERE isbn = ?", (code,))
-                    conn_series.commit()
+
+            if "error" in result:
+                print(f"❌ Error: {result['error']}")
+            else:
+                print()
+                print("✅ Series refresh complete!")
+                print(f"   Total books processed: {result['total_books']}")
+                print(f"   Updated with series: {result['updated']}")
+                print(f"   No series found: {result['skipped']}")
+                print(f"   Failed: {result['failed']}")
+                print(f"   Cache hits: {result['cached']}")
+
+                if result['cached'] > 0:
+                    cache_pct = round(100 * result['cached'] / result['total_books'], 1)
+                    print(f"   Cache efficiency: {cache_pct}% (saved {result['cached']} API calls)")
         finally:
-            try:
-                conn_series.close()
-            except Exception:
-                pass
+            service.close()
+
         raise SystemExit(0)
 
     # Handle Amazon rank refresh before initializing service

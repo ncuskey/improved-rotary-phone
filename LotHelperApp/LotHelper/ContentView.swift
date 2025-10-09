@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     var body: some View {
@@ -27,6 +28,7 @@ struct ContentView: View {
 
 #Preview("App Shell") {
     ContentView()
+        .modelContainer(for: [CachedBook.self, CachedLot.self], inMemory: true)
 }
 
 // NOTE: This preview referenced `LotDetailView`, which isn't currently in scope.
@@ -83,3 +85,4 @@ struct ContentView: View {
 //     }
 // }
 #endif
+

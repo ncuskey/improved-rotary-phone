@@ -583,6 +583,12 @@ class BookEvaluatorGUI:
         )
         refresh_bookscouter_all_button.grid(row=0, column=11, padx=5)
 
+        # Refresh all Series info (bulk)
+        refresh_series_all_button = ttk.Button(
+            input_frame, text="Refresh Series (All)", command=self.refresh_series_all
+        )
+        refresh_series_all_button.grid(row=0, column=12, padx=5)
+
         # Search row
         ttk.Label(input_frame, text="Search:").grid(row=1, column=0, sticky="w", pady=(8, 0))
         search_entry = ttk.Entry(input_frame, textvariable=self.search_var, width=40)
@@ -763,6 +769,7 @@ class BookEvaluatorGUI:
         tools = tk.Menu(menubar, tearoff=0)
         tools.add_command(label="Refresh Selected Book(s)", command=self.refresh_selected)
         tools.add_command(label="Refresh BookScouter (All)", command=self.refresh_bookscouter_all)
+        tools.add_command(label="Refresh Series (All)", command=self.refresh_series_all)
         tools.add_command(label="Bulk Buyback Helper…", command=self._open_bulk_helper)
         tools.add_separator()
         tools.add_command(label="Author Cleanup…", command=self._open_author_cleanup)
@@ -943,6 +950,92 @@ class BookEvaluatorGUI:
 
     def _on_refresh_selected(self) -> None:
         self.refresh_selected()
+
+    def refresh_series_all(self, *_args) -> None:
+        """
+        Refresh series information from Hardcover API for all books missing series data.
+        """
+        if self._refresh_thread and self._refresh_thread.is_alive():
+            messagebox.showinfo("Series Refresh", "A refresh is already in progress. Please wait for it to finish.")
+            return
+
+        # Check if HARDCOVER_API_TOKEN is set
+        import os
+        if not os.environ.get("HARDCOVER_API_TOKEN", "").strip():
+            messagebox.showerror(
+                "Series Refresh",
+                "HARDCOVER_API_TOKEN environment variable is not set.\n\n"
+                "Please set your Hardcover API token to use series detection."
+            )
+            return
+
+        confirm = messagebox.askyesno(
+            "Refresh Series (All)",
+            "This will query Hardcover API for books missing series information.\n\n"
+            "Note: Rate limit is 60 calls/min. Uses smart caching to minimize API calls.\n\n"
+            "Proceed?",
+        )
+        if not confirm:
+            self._set_status("Series refresh cancelled.")
+            return
+
+        # Ensure series schema
+        from .services.series_resolver import ensure_series_schema
+        try:
+            ensure_series_schema(self.service.db._get_connection())
+        except Exception as e:
+            messagebox.showerror("Series Refresh", f"Failed to initialize series schema:\n{e}")
+            return
+
+        # Start progress
+        self._set_status("Refreshing series information…")
+        self._start_progress("series", "Series", 1)
+
+        def handle_error(exc: Exception) -> None:
+            self._refresh_thread = None
+            self._reset_progress("series")
+            messagebox.showerror("Series Refresh", f"Refresh failed:\n{exc}")
+            self._set_status("Series refresh failed.")
+
+        def handle_success(result: dict) -> None:
+            self._refresh_thread = None
+            self.reload_tables()
+            self._finish_progress("series", label="Series", delay_ms=1200)
+
+            # Show detailed results
+            msg = f"Series refresh complete!\n\n"
+            msg += f"Books processed: {result['total_books']}\n"
+            msg += f"Updated with series: {result['updated']}\n"
+            msg += f"No series found: {result['skipped']}\n"
+            msg += f"Failed: {result['failed']}\n"
+            msg += f"Cache hits: {result['cached']}"
+
+            if result['cached'] > 0 and result['total_books'] > 0:
+                cache_pct = round(100 * result['cached'] / result['total_books'], 1)
+                msg += f"\n\nCache efficiency: {cache_pct}%"
+
+            messagebox.showinfo("Series Refresh", msg)
+            self._set_status(f"Series refresh complete: {result['updated']} books updated.")
+
+        def worker() -> None:
+            try:
+                result = self.service.batch_refresh_series(
+                    force_all=False,
+                    limit=None,  # Process all books missing series
+                    skip_recently_checked=True,
+                    recent_threshold_days=7,
+                )
+
+                if "error" in result:
+                    raise RuntimeError(result["error"])
+
+            except Exception as exc:
+                self.root.after(0, lambda: handle_error(exc))
+                return
+            self.root.after(0, lambda: handle_success(result))
+
+        self._refresh_thread = threading.Thread(target=worker, daemon=True)
+        self._refresh_thread.start()
 
     def refresh_bookscouter_all(self, *_args) -> None:
         """

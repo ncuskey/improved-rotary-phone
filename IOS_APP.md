@@ -48,7 +48,34 @@ Native iOS application for ISBN scanning and book cataloging with real-time eBay
   - Top 3 offers per book
   - Vendor names and pricing
 
+### 💾 Local Data Caching
+- **SwiftData persistence** for books and lots
+- Instant app startup with cached data
+- 1-hour cache expiration with automatic background refresh
+- Thumbnail caching via URLCache (50MB memory, 200MB disk)
+- Graceful degradation when network unavailable
+
 ## Architecture
+
+### Data Persistence
+
+The app uses **SwiftData** for local caching of books and lots:
+
+**Models**:
+- `CachedBook` - Stores `BookEvaluationRecord` with flattened metadata
+- `CachedLot` - Stores `LotSuggestionDTO` with book references
+
+**Key Features**:
+- Arrays stored as JSON strings to avoid CoreData transformer warnings
+- Automatic cache invalidation after 1 hour
+- Load-cache-first strategy: shows cached data instantly, refreshes in background
+- Database auto-cleanup on schema changes
+
+**Files**:
+- `LotHelperApp/LotHelper/CachedBook.swift` - SwiftData models
+- `LotHelperApp/LotHelper/CacheManager.swift` - Cache operations
+- `LotHelperApp/LotHelper/BooksTabView.swift` - Books with caching
+- `LotHelperApp/LotHelper/LotRecommendationsView.swift` - Lots with caching
 
 ### Token Broker
 The token broker is a lightweight Node.js Express server that handles eBay OAuth:
@@ -226,6 +253,9 @@ ipconfig getifaddr en1  # Ethernet
 - `LotHelperApp/LotHelper/BookAPI.swift` - Backend REST client, BookScouter models
 - `LotHelperApp/LotHelper/BooksTabView.swift` - Books list and detail view with BookScouter UI
 - `LotHelperApp/LotHelper/BarcodeScannerView.swift` - Camera scanner
+- `LotHelperApp/LotHelper/CachedBook.swift` - SwiftData cache models
+- `LotHelperApp/LotHelper/CacheManager.swift` - Cache management
+- `LotHelperApp/LotHelper/LotRecommendationsView.swift` - Lots view with caching
 
 ### Token Broker
 - `token-broker/server.js` - Express server
@@ -268,6 +298,7 @@ Modify `pricingPanel` in `ScannerReviewView.swift`:
 
 ## Future Enhancements
 
+- [x] Local data caching for offline viewing
 - [ ] Offline mode with local pricing cache
 - [ ] Batch scanning with queue management
 - [ ] Price alerts for valuable books
@@ -276,6 +307,7 @@ Modify `pricingPanel` in `ScannerReviewView.swift`:
 - [ ] Export scans to CSV/JSON
 - [ ] Multiple marketplace support (UK, DE, etc.)
 - [ ] Shipping calculator for seller perspective
+- [ ] Configurable cache expiration time
 
 ## Credits
 

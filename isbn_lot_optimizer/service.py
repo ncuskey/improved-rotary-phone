@@ -607,6 +607,165 @@ class BookService:
             "batches": len(batches),
         }
 
+    def batch_refresh_series(
+        self,
+        *,
+        force_all: bool = False,
+        limit: Optional[int] = None,
+        skip_recently_checked: bool = True,
+        recent_threshold_days: int = 7,
+    ) -> Dict[str, Any]:
+        """
+        Batch refresh series information from Hardcover API for books in the database.
+
+        Uses smart strategies to optimize API usage:
+        - Skips books checked recently (default: within 7 days)
+        - Uses local cache (7-day TTL)
+        - Respects rate limits (60 req/min)
+        - Only processes books missing series data by default
+
+        Args:
+            force_all: If True, refresh all books; if False, only refresh books missing series
+            limit: Maximum number of books to process (None = all)
+            skip_recently_checked: Skip books checked within recent_threshold_days
+            recent_threshold_days: Number of days to consider "recently checked"
+
+        Returns:
+            Dict with stats: {
+                "total_books": int,
+                "updated": int,
+                "failed": int,
+                "skipped": int,
+                "cached": int,
+            }
+        """
+        import os
+        from datetime import datetime, timedelta
+
+        # Check for Hardcover API token
+        hardcover_token = os.environ.get("HARDCOVER_API_TOKEN", "").strip()
+        if not hardcover_token:
+            return {
+                "error": "HARDCOVER_API_TOKEN not configured in environment",
+                "total_books": 0,
+                "updated": 0,
+                "failed": 0,
+                "skipped": 0,
+                "cached": 0,
+            }
+
+        # Get database connection
+        conn = self.db._get_connection()
+
+        # Build query to find candidate books
+        conditions = []
+        if not force_all:
+            conditions.append("(series_name IS NULL OR series_name = '')")
+
+        if skip_recently_checked:
+            cutoff = datetime.now() - timedelta(days=recent_threshold_days)
+            cutoff_str = cutoff.strftime("%Y-%m-%d %H:%M:%S")
+            conditions.append(f"(series_last_checked IS NULL OR series_last_checked < '{cutoff_str}')")
+
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+        query = f"""
+            SELECT isbn FROM books
+            WHERE {where_clause}
+            AND isbn IS NOT NULL
+            AND length(isbn) = 13
+            ORDER BY updated_at DESC
+        """
+
+        if limit is not None and limit > 0:
+            query += f" LIMIT {limit}"
+
+        rows = conn.execute(query).fetchall()
+        isbns = [row[0] for row in rows]
+
+        total_books = len(isbns)
+        if total_books == 0:
+            return {
+                "total_books": 0,
+                "updated": 0,
+                "failed": 0,
+                "skipped": 0,
+                "cached": 0,
+            }
+
+        # Import series resolution functions
+        from .services.hardcover import HardcoverClient
+        from .services.series_resolver import get_series_for_isbn, update_book_row_with_series
+
+        try:
+            hc = HardcoverClient()
+        except RuntimeError as e:
+            return {
+                "error": str(e),
+                "total_books": total_books,
+                "updated": 0,
+                "failed": 0,
+                "skipped": 0,
+                "cached": 0,
+            }
+
+        updated = 0
+        failed = 0
+        skipped = 0
+        cached = 0
+
+        # Process each ISBN
+        for idx, isbn in enumerate(isbns, 1):
+            if idx % 10 == 0 or idx == total_books:
+                print(f"Processing {idx}/{total_books} books...")
+
+            try:
+                # Check cache first to track cache hits
+                from .services.series_resolver import cache_get
+                cache_key = f"book:isbn:{isbn}"
+                cached_data = cache_get(conn, cache_key)
+                was_cached = cached_data is not None
+
+                # Get series info (will use cache if available)
+                series_info = get_series_for_isbn(conn, isbn, hc)
+
+                if was_cached:
+                    cached += 1
+
+                # Check confidence threshold
+                if series_info.get("confidence", 0) >= 0.6 and series_info.get("series_name"):
+                    update_book_row_with_series(conn, isbn, series_info)
+                    updated += 1
+                else:
+                    # Mark as checked even if no series found
+                    conn.execute(
+                        "UPDATE books SET series_last_checked = CURRENT_TIMESTAMP WHERE isbn = ?",
+                        (isbn,)
+                    )
+                    conn.commit()
+                    skipped += 1
+
+            except Exception as e:
+                print(f"  Failed for ISBN {isbn}: {e}")
+                failed += 1
+                # Mark as checked to avoid retrying immediately
+                try:
+                    conn.execute(
+                        "UPDATE books SET series_last_checked = CURRENT_TIMESTAMP WHERE isbn = ?",
+                        (isbn,)
+                    )
+                    conn.commit()
+                except Exception:
+                    pass
+
+        return {
+            "total_books": total_books,
+            "updated": updated,
+            "failed": failed,
+            "skipped": skipped,
+            "cached": cached,
+        }
+
     def get_database_statistics(self) -> Dict[str, Any]:
         """
         Collect comprehensive statistics about the database.

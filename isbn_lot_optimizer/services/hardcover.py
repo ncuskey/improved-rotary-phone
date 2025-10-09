@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, List
 from urllib import request as urlrequest, error as urlerror
 
 
-HARDCOVER_GRAPHQL_ENDPOINT = "https://api.hardcover.app/graphql"
+HARDCOVER_GRAPHQL_ENDPOINT = "https://api.hardcover.app/v1/graphql"
 HARDCOVER_API_TOKEN = os.environ.get("HARDCOVER_API_TOKEN", "").strip()
 
 

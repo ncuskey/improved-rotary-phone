@@ -114,12 +114,6 @@ struct ScannerReviewView: View {
             .navigationTitle("Scan")
             .sheet(isPresented: $showAttributesSheet) {
                 BookAttributesSheet(attributes: $bookAttributes)
-                    .onDisappear {
-                        if showAttributesSheet == false {
-                            // Sheet was dismissed, accept with attributes
-                            accept()
-                        }
-                    }
             }
         }
     }
@@ -638,3 +632,4 @@ private struct ReticleView: View {
         ScannerReviewView()
     }
 }
+

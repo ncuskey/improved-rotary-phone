@@ -387,6 +387,40 @@ enum BookAPI {
         }
     }
 
+    /// Fetch full evaluation for a single book (for triage)
+    static func fetchBookEvaluation(_ isbn: String) async throws -> BookEvaluationRecord {
+        guard let url = URL(string: "\(baseURLString)/api/books/\(isbn)/evaluate") else {
+            throw URLError(.badURL)
+        }
+
+        let (data, response) = try await session.data(from: url)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ GET /api/books/\(isbn)/evaluate failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        return try await decodeOnWorker(BookEvaluationRecord.self, from: data)
+    }
+
+    /// Completion-based wrapper for fetchBookEvaluation
+    static func fetchBookEvaluation(_ isbn: String, completion: @escaping (BookEvaluationRecord?) -> Void) {
+        Task {
+            do {
+                let evaluation = try await fetchBookEvaluation(isbn)
+                await MainActor.run { completion(evaluation) }
+            } catch {
+                print("Fetch evaluation error: \(error)")
+                await MainActor.run { completion(nil) }
+            }
+        }
+    }
+
     /// Fetch all books from the /api/books/all endpoint
     static func fetchAllBooks() async throws -> [BookEvaluationRecord] {
         guard let url = URL(string: "\(baseURLString)/api/books/all") else {

@@ -189,6 +189,43 @@ async def list_books(
     )
 
 
+@router.get("/{isbn}/evaluate")
+async def get_book_evaluation_json(
+    isbn: str,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Get full evaluation data for a book as JSON (mobile-friendly endpoint).
+
+    Returns complete triage information including:
+    - Probability score and label
+    - Estimated resale price
+    - Justification/reasoning
+    - BookScouter offers
+    - Amazon sales rank
+    - Rarity score
+    - Series information
+    - Market data (eBay comps)
+    """
+    normalized_isbn = normalise_isbn(isbn)
+
+    if not normalized_isbn:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid ISBN", "isbn": isbn}
+        )
+
+    book = service.get_book(normalized_isbn)
+
+    if not book:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Book not found", "isbn": normalized_isbn}
+        )
+
+    return JSONResponse(content=_book_evaluation_to_dict(book))
+
+
 @router.get("/{isbn}", response_class=HTMLResponse)
 async def get_book_detail(
     request: Request,

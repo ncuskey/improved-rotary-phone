@@ -6,7 +6,9 @@ struct ScannerReviewView: View {
     @State private var isScanning = true
     @State private var scannedCode: String?
     @State private var book: BookInfo?
+    @State private var evaluation: BookEvaluationRecord?
     @State private var isLoading = false
+    @State private var isLoadingEvaluation = false
     @State private var errorMessage: String?
     @State private var showAttributesSheet = false
     @State private var bookAttributes = BookAttributes()
@@ -56,6 +58,13 @@ struct ScannerReviewView: View {
                         // eBay pricing panel
                         if scannedCode != nil {
                             pricingPanel
+                        }
+
+                        // Evaluation panel (probability, pricing, justification)
+                        if isLoadingEvaluation {
+                            evaluationLoadingPanel
+                        } else if let evaluation {
+                            evaluationPanel(evaluation)
                         }
 
                         if let errorMessage {
@@ -198,6 +207,182 @@ struct ScannerReviewView: View {
     }
 
     @ViewBuilder
+    private var evaluationLoadingPanel: some View {
+        VStack(spacing: 8) {
+            HStack {
+                ProgressView()
+                Text("Analyzing book...")
+                    .font(.subheadline)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private func evaluationPanel(_ eval: BookEvaluationRecord) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header with probability score
+            HStack {
+                Text("Triage Assessment")
+                    .font(.headline)
+
+                Spacer()
+
+                if let score = eval.probabilityScore, let label = eval.probabilityLabel {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(probabilityColor(for: label))
+                            .frame(width: 8, height: 8)
+                        Text(label)
+                            .font(.subheadline)
+                            .bold()
+                            .foregroundStyle(probabilityColor(for: label))
+                        Text("\(Int(score))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(probabilityColor(for: label).opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
+                }
+            }
+
+            Divider()
+
+            // Pricing comparison
+            HStack(spacing: 16) {
+                if let estimated = eval.estimatedPrice {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Estimated Value")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(formatUSD(estimated))
+                            .font(.title3)
+                            .bold()
+                    }
+                }
+
+                if let bookscouter = eval.bookscouter, bookscouter.bestPrice > 0 {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Buyback Floor")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(formatUSD(bookscouter.bestPrice))
+                            .font(.title3)
+                            .bold()
+                            .foregroundStyle(.green)
+                    }
+                }
+            }
+
+            // Amazon rank and rarity badges
+            HStack(spacing: 10) {
+                if let rank = eval.bookscouter?.amazonSalesRank {
+                    Label("\(formatRank(rank))", systemImage: "chart.line.uptrend.xyaxis")
+                        .font(.caption)
+                        .foregroundStyle(rankColor(for: rank))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(rankColor(for: rank).opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
+                }
+
+                if let rarity = eval.rarity, rarity > 0.5 {
+                    Label("Rare", systemImage: "star.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
+                }
+
+                if let series = eval.metadata?.categories?.first, !series.isEmpty {
+                    Label(series, systemImage: "books.vertical")
+                        .font(.caption)
+                        .foregroundStyle(.blue)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.blue.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
+                        .lineLimit(1)
+                }
+            }
+
+            // Justification (top 3 reasons)
+            if let justification = eval.justification, !justification.isEmpty {
+                Divider()
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Key Factors")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    ForEach(Array(justification.prefix(3)), id: \.self) { reason in
+                        HStack(alignment: .top, spacing: 6) {
+                            Text("•")
+                                .foregroundStyle(.secondary)
+                            Text(reason)
+                                .font(.caption)
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+            }
+
+            // Action button
+            Button(action: {
+                // Reset for next scan
+                bookAttributes = BookAttributes()
+                rescan()
+            }) {
+                Label("Next Book", systemImage: "arrow.forward")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .frame(minHeight: 44)
+        }
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
+    }
+
+    // MARK: - Helpers
+
+    private func probabilityColor(for label: String) -> Color {
+        switch label.lowercased() {
+        case let s where s.contains("strong"):
+            return .green
+        case let s where s.contains("worth"):
+            return .blue
+        case let s where s.contains("risky"):
+            return .orange
+        default:
+            return .red
+        }
+    }
+
+    private func rankColor(for rank: Int) -> Color {
+        if rank < 50_000 {
+            return .green
+        } else if rank < 100_000 {
+            return .blue
+        } else if rank < 300_000 {
+            return .orange
+        } else {
+            return .secondary
+        }
+    }
+
+    private func formatRank(_ rank: Int) -> String {
+        if rank < 1000 {
+            return "#\(rank)"
+        } else if rank < 100_000 {
+            return "#\(rank / 1000)k"
+        } else {
+            return "#\(rank / 1000)k"
+        }
+    }
+
+    @ViewBuilder
     private func statView(_ title: String, _ value: Double, currency: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title).font(.caption).foregroundStyle(.secondary)
@@ -285,7 +470,9 @@ struct ScannerReviewView: View {
         errorMessage = nil
         scannedCode = nil
         book = nil
+        evaluation = nil
         isLoading = false
+        isLoadingEvaluation = false
         isScanning = true
     }
 
@@ -301,9 +488,26 @@ struct ScannerReviewView: View {
             signed: bookAttributes.signed
         ) { _ in
             DispatchQueue.main.async {
-                // Reset attributes for next scan
-                self.bookAttributes = BookAttributes()
-                self.rescan()
+                // Fetch full evaluation for triage
+                self.fetchEvaluation(for: code)
+            }
+        }
+    }
+
+    private func fetchEvaluation(for isbn: String) {
+        isLoadingEvaluation = true
+        Task {
+            do {
+                let eval = try await BookAPI.fetchBookEvaluation(isbn)
+                await MainActor.run {
+                    evaluation = eval
+                    isLoadingEvaluation = false
+                }
+            } catch {
+                await MainActor.run {
+                    // Don't show error - evaluation is optional
+                    isLoadingEvaluation = false
+                }
             }
         }
     }

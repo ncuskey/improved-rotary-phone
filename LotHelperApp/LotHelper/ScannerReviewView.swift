@@ -479,11 +479,14 @@ struct ScannerReviewView: View {
             coverType: bookAttributes.coverType == "Unknown" ? nil : bookAttributes.coverType,
             printing: bookAttributes.printing.isEmpty ? nil : bookAttributes.printing,
             signed: bookAttributes.signed
-        ) { _ in
+        ) { bookInfo in
+            // Use the ISBN returned by the backend (it's properly normalized)
+            let finalIsbn = bookInfo?.isbn ?? isbn
+
             // Wait a moment for backend to complete scan processing
             // Backend needs time to fetch market data, calculate probability, etc.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.fetchEvaluation(for: isbn)
+                self.fetchEvaluation(for: finalIsbn)
             }
         }
     }

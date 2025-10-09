@@ -107,7 +107,7 @@ async def isbn_lookup(
                 raw_isbn=data.isbn,
                 condition=data.condition or "Good",
                 edition=data.edition,
-                include_market=False,
+                include_market=True,  # Fetch market data for mobile triage
                 recalc_lots=False,
             )
         except ValueError as exc:

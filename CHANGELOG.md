@@ -2,7 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2024-12-19
+## [Unreleased] - 2025-01-08
+
+### Added
+- **Database Statistics Feature**:
+  - Comprehensive `--stats` CLI command showing storage usage, coverage, and efficiency
+  - GUI menu option: Tools → Database Statistics...
+  - Displays: file size, book counts, API response sizes, probability distribution, price stats, data freshness
+  - Scrollable modal dialog with monospace formatting
+- **Smart Series Refresh**:
+  - Hardcover API integration for series metadata detection
+  - Intelligent 7-day caching to minimize API calls
+  - Batch processing with rate limiting (60 req/min)
+  - Skip recently checked books option
+  - GUI button: "Refresh Series (All)" in toolbar and Tools menu
+  - CLI: `--refresh-series` with limit and force options
+  - Shows cache efficiency statistics
+- **Amazon Sales Rank Integration**:
+  - BookScouter API batch refresh for Amazon sales ranks
+  - Incorporated into probability scoring (0-15 points based on rank tiers)
+  - Fallback probability calculation when eBay data unavailable
+  - Batch refresh: `--refresh-amazon-ranks` with configurable batch sizes
+  - Smart rate limiting and progress tracking
+- **API Optimization**:
+  - Reduced API calls by 33% per book (3→2 calls)
+  - BookScouter now primary metadata source (includes Amazon rank)
+  - Google Books used as fallback only
+  - Improved .env file loading from multiple locations
+
+### Technical Improvements
+- Fixed Hardcover API integration for new Typesense search schema
+- Updated GraphQL queries for current API structure
+- Added "Bearer" prefix to Hardcover authorization header
+- Improved error handling and user feedback for all refresh operations
+- Enhanced probability scoring with Amazon rank factor
+
+### Fixed
+- Resolved Hardcover API authentication issues (401 errors)
+- Fixed GraphQL query structure for Typesense results format
+- Corrected authorization header format for Hardcover API
+- Fixed .env loading to search multiple potential file locations
+
+## [Previous] - 2024-12-19
 
 ### Added
 - **3D Book Carousel**: Stunning interactive carousel for lot details page

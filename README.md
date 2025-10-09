@@ -10,6 +10,9 @@ lot recommendations in real time.
 - **Multi-Interface Support**: Tkinter desktop GUI, FastAPI web interface, and CLI tools
 - **3D Interactive Carousel**: Beautiful lot details page with 3D book carousel featuring real book covers
 - **Mobile Camera Scanner**: Smartphone camera integration for ISBN scanning (OCR working, barcode scanning in progress)
+- **Database Statistics**: Comprehensive metrics showing storage usage, API efficiency, data coverage, and freshness
+- **Smart Series Detection**: Hardcover API integration with caching and intelligent rate limiting
+- **Amazon Sales Rank**: BookScouter integration with batch refresh and probability scoring
 - Barcode-friendly GUI for scanning ISBNs with condition and edition tracking.
 - Background refresh jobs with unified progress feedback for cover prefetching,
   metadata/market updates, and BooksRun offer refresh.
@@ -62,6 +65,12 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
 
    # BooksRun (for SELL quotes)
    export BOOKSRUN_KEY=your-booksrun-api-key
+
+   # BookScouter (for multi-vendor quotes and Amazon rank)
+   export BOOKSCOUTER_API_KEY=your-bookscouter-api-key
+
+   # Hardcover API (for series metadata)
+   export HARDCOVER_API_TOKEN=your-hardcover-jwt-token  # Get from hardcover.app settings
 
    # Optional proxy settings
    export HTTP_PROXY=http://proxy:8080
@@ -193,6 +202,16 @@ python -m isbn_lot_optimizer --no-gui --refresh-metadata-missing --limit 500 --m
 # Refresh candidate lots with market signals (uses Finding API if EBAY_APP_ID is set;
 # also uses Browse API medians when EBAY_CLIENT_ID/SECRET are set)
 python -m isbn_lot_optimizer --no-gui --refresh-lot-signals --limit 50
+
+# Database statistics and monitoring
+python -m isbn_lot_optimizer --no-gui --stats  # Comprehensive database metrics
+
+# Series metadata refresh (Hardcover API)
+python -m isbn_lot_optimizer --no-gui --refresh-series --limit 100
+
+# Amazon rank refresh (BookScouter API)
+python -m isbn_lot_optimizer --no-gui --refresh-amazon-ranks --limit 100
+python -m isbn_lot_optimizer --no-gui --refresh-amazon-ranks --force-refresh-amazon
 
 # Author utilities from the local catalog
 python -m isbn_lot_optimizer --no-gui --list-author-clusters

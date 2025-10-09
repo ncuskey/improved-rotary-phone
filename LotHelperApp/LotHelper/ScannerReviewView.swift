@@ -38,9 +38,7 @@ struct ScannerReviewView: View {
                         .padding(.horizontal, 28)
                 )
 
-                Spacer(minLength: geo.size.height / 3)
-
-                // Bottom third – preview + actions
+                // Bottom two-thirds – preview + evaluation + actions
                 ScrollView {
                     VStack(spacing: DS.Spacing.md) {
                         if isLoading {
@@ -105,7 +103,7 @@ struct ScannerReviewView: View {
                         }
                     }
                 }
-                .frame(height: geo.size.height / 3)
+                .frame(height: geo.size.height * 2 / 3)
                 .padding(.horizontal)
                 .padding(.bottom, DS.Spacing.xl)
                 .background(DS.Color.background.opacity(0.95))

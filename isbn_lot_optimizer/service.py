@@ -607,6 +607,182 @@ class BookService:
             "batches": len(batches),
         }
 
+    def get_database_statistics(self) -> Dict[str, Any]:
+        """
+        Collect comprehensive statistics about the database.
+
+        Returns detailed metrics including:
+        - Storage size and breakdown
+        - Book counts and coverage
+        - Average API response sizes
+        - Data freshness metrics
+        """
+        import sys
+        from pathlib import Path
+
+        stats = {}
+
+        # Database file size
+        db_path = Path(self.db.db_path)
+        if db_path.exists():
+            db_size_bytes = db_path.stat().st_size
+            stats['database_file_size_mb'] = round(db_size_bytes / (1024 * 1024), 2)
+            stats['database_file_size_bytes'] = db_size_bytes
+        else:
+            stats['database_file_size_mb'] = 0
+            stats['database_file_size_bytes'] = 0
+
+        # Get raw database connection for direct queries
+        conn = self.db._get_connection()
+
+        # Total book count
+        total_books = conn.execute("SELECT COUNT(*) FROM books").fetchone()[0]
+        stats['total_books'] = total_books
+
+        if total_books == 0:
+            return stats
+
+        # Coverage statistics
+        metadata_count = conn.execute(
+            "SELECT COUNT(*) FROM books WHERE metadata_json IS NOT NULL AND metadata_json != ''"
+        ).fetchone()[0]
+        market_count = conn.execute(
+            "SELECT COUNT(*) FROM books WHERE market_json IS NOT NULL AND market_json != ''"
+        ).fetchone()[0]
+        booksrun_count = conn.execute(
+            "SELECT COUNT(*) FROM books WHERE booksrun_json IS NOT NULL AND booksrun_json != ''"
+        ).fetchone()[0]
+        bookscouter_count = conn.execute(
+            "SELECT COUNT(*) FROM books WHERE bookscouter_json IS NOT NULL AND bookscouter_json != ''"
+        ).fetchone()[0]
+
+        stats['coverage'] = {
+            'metadata': {'count': metadata_count, 'percentage': round(100 * metadata_count / total_books, 1)},
+            'market': {'count': market_count, 'percentage': round(100 * market_count / total_books, 1)},
+            'booksrun': {'count': booksrun_count, 'percentage': round(100 * booksrun_count / total_books, 1)},
+            'bookscouter': {'count': bookscouter_count, 'percentage': round(100 * bookscouter_count / total_books, 1)},
+        }
+
+        # Storage size breakdown - average and total sizes per field
+        fields_to_measure = [
+            ('metadata_json', 'metadata'),
+            ('market_json', 'market'),
+            ('booksrun_json', 'booksrun'),
+            ('bookscouter_json', 'bookscouter'),
+        ]
+
+        storage_breakdown = {}
+        for field_name, label in fields_to_measure:
+            result = conn.execute(f"""
+                SELECT
+                    COUNT(*) as count,
+                    AVG(LENGTH({field_name})) as avg_size,
+                    SUM(LENGTH({field_name})) as total_size
+                FROM books
+                WHERE {field_name} IS NOT NULL AND {field_name} != ''
+            """).fetchone()
+
+            count, avg_size, total_size = result
+            storage_breakdown[label] = {
+                'count': count or 0,
+                'avg_size_bytes': round(avg_size or 0, 1),
+                'avg_size_kb': round((avg_size or 0) / 1024, 2),
+                'total_size_bytes': total_size or 0,
+                'total_size_kb': round((total_size or 0) / 1024, 2),
+                'total_size_mb': round((total_size or 0) / (1024 * 1024), 2),
+            }
+
+        stats['storage_breakdown'] = storage_breakdown
+
+        # Data freshness - when was data last fetched?
+        freshness = {}
+        for field, label in [
+            ('metadata_fetched_at', 'metadata'),
+            ('market_fetched_at', 'market'),
+            ('bookscouter_fetched_at', 'bookscouter'),
+        ]:
+            result = conn.execute(f"""
+                SELECT
+                    MIN({field}) as oldest,
+                    MAX({field}) as newest,
+                    COUNT(*) as with_timestamp
+                FROM books
+                WHERE {field} IS NOT NULL
+            """).fetchone()
+
+            oldest, newest, with_ts = result
+            freshness[label] = {
+                'oldest': oldest,
+                'newest': newest,
+                'count_with_timestamp': with_ts or 0,
+            }
+
+        stats['freshness'] = freshness
+
+        # Amazon rank coverage
+        amazon_rank_count = conn.execute("""
+            SELECT COUNT(*) FROM books
+            WHERE bookscouter_json IS NOT NULL
+            AND json_extract(bookscouter_json, '$.amazon_sales_rank') IS NOT NULL
+        """).fetchone()[0]
+
+        stats['amazon_rank_coverage'] = {
+            'count': amazon_rank_count,
+            'percentage': round(100 * amazon_rank_count / total_books, 1) if total_books > 0 else 0,
+        }
+
+        # Series coverage
+        series_count = conn.execute(
+            "SELECT COUNT(*) FROM books WHERE series_name IS NOT NULL AND series_name != ''"
+        ).fetchone()[0]
+
+        stats['series_coverage'] = {
+            'count': series_count,
+            'percentage': round(100 * series_count / total_books, 1),
+        }
+
+        # Probability distribution
+        prob_dist = conn.execute("""
+            SELECT
+                probability_label,
+                COUNT(*) as count
+            FROM books
+            WHERE probability_label IS NOT NULL
+            GROUP BY probability_label
+            ORDER BY
+                CASE probability_label
+                    WHEN 'Excellent' THEN 1
+                    WHEN 'Good' THEN 2
+                    WHEN 'Fair' THEN 3
+                    WHEN 'Poor' THEN 4
+                    ELSE 5
+                END
+        """).fetchall()
+
+        stats['probability_distribution'] = {
+            row[0]: {'count': row[1], 'percentage': round(100 * row[1] / total_books, 1)}
+            for row in prob_dist
+        }
+
+        # Price statistics
+        price_stats = conn.execute("""
+            SELECT
+                MIN(estimated_price) as min_price,
+                AVG(estimated_price) as avg_price,
+                MAX(estimated_price) as max_price
+            FROM books
+            WHERE estimated_price IS NOT NULL AND estimated_price > 0
+        """).fetchone()
+
+        if price_stats and price_stats[0] is not None:
+            stats['price_statistics'] = {
+                'min': round(price_stats[0], 2),
+                'avg': round(price_stats[1], 2),
+                'max': round(price_stats[2], 2),
+            }
+
+        return stats
+
     def get_book(self, isbn: str) -> Optional[BookEvaluation]:
         normalized = normalise_isbn(isbn)
         if not normalized:

@@ -91,6 +91,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         action="store_true",
         help="List clusters of similar author names in the catalog and exit.",
     )
+    parser.add_argument(
+        "--stats",
+        action="store_true",
+        help="Display comprehensive database statistics and exit.",
+    )
 
     args = parser.parse_args(argv)
 
@@ -149,6 +154,87 @@ def ensure_database_path(path: Path) -> Path:
 def main(argv: Optional[Sequence[str]] = None) -> None:
     args = parse_args(argv)
     database_path = ensure_database_path(args.database)
+
+    # Fast path: database statistics
+    if args.stats:
+        service = BookService(
+            database_path=database_path,
+            ebay_app_id=args.ebay_app_id,
+            ebay_global_id=args.ebay_global_id,
+            ebay_delay=args.ebay_delay,
+            ebay_entries=args.ebay_entries,
+            metadata_delay=args.metadata_delay,
+        )
+        try:
+            stats = service.get_database_statistics()
+
+            print("\n" + "=" * 70)
+            print("DATABASE STATISTICS")
+            print("=" * 70)
+
+            # Database size
+            print(f"\n📊 STORAGE")
+            print(f"  Database file: {stats['database_file_size_mb']:.2f} MB ({stats['database_file_size_bytes']:,} bytes)")
+
+            # Book counts
+            print(f"\n📚 CATALOG")
+            print(f"  Total books: {stats['total_books']:,}")
+
+            if stats['total_books'] > 0:
+                # Coverage
+                print(f"\n📈 DATA COVERAGE")
+                for source, data in stats['coverage'].items():
+                    print(f"  {source.capitalize():12s}: {data['count']:4,} books ({data['percentage']:5.1f}%)")
+
+                # Amazon rank
+                ar = stats['amazon_rank_coverage']
+                print(f"  Amazon rank : {ar['count']:4,} books ({ar['percentage']:5.1f}%)")
+
+                # Series
+                sr = stats['series_coverage']
+                print(f"  Series info : {sr['count']:4,} books ({sr['percentage']:5.1f}%)")
+
+                # Storage breakdown
+                print(f"\n💾 STORAGE BREAKDOWN (per API source)")
+                print(f"  {'Source':<12} {'Count':>6} {'Avg Size':>12} {'Total':>12}")
+                print(f"  {'-' * 12} {'-' * 6} {'-' * 12} {'-' * 12}")
+                for source, data in stats['storage_breakdown'].items():
+                    avg_display = f"{data['avg_size_kb']:.2f} KB" if data['avg_size_kb'] > 0 else "—"
+                    if data['total_size_mb'] >= 1:
+                        total_display = f"{data['total_size_mb']:.2f} MB"
+                    else:
+                        total_display = f"{data['total_size_kb']:.2f} KB"
+                    print(f"  {source.capitalize():<12} {data['count']:>6,} {avg_display:>12} {total_display:>12}")
+
+                # Probability distribution
+                if stats.get('probability_distribution'):
+                    print(f"\n🎯 PROBABILITY DISTRIBUTION")
+                    for label, data in stats['probability_distribution'].items():
+                        bar_width = int(data['percentage'] / 2)  # Scale to max 50 chars
+                        bar = '█' * bar_width
+                        print(f"  {label:10s}: {bar} {data['count']:3,} ({data['percentage']:5.1f}%)")
+
+                # Price statistics
+                if stats.get('price_statistics'):
+                    ps = stats['price_statistics']
+                    print(f"\n💰 PRICE STATISTICS")
+                    print(f"  Min: ${ps['min']:>8.2f}")
+                    print(f"  Avg: ${ps['avg']:>8.2f}")
+                    print(f"  Max: ${ps['max']:>8.2f}")
+
+                # Data freshness
+                print(f"\n🕐 DATA FRESHNESS")
+                for source, data in stats['freshness'].items():
+                    if data['count_with_timestamp'] > 0:
+                        print(f"  {source.capitalize():12s}: {data['count_with_timestamp']:4,} records")
+                        print(f"    Oldest: {data['oldest']}")
+                        print(f"    Newest: {data['newest']}")
+
+            print("\n" + "=" * 70 + "\n")
+
+        finally:
+            service.close()
+        raise SystemExit(0)
 
     # Fast path: author matching utilities
     if args.author_search or args.list_author_clusters:

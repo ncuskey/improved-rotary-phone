@@ -776,6 +776,7 @@ class BookEvaluatorGUI:
         tools.add_command(label="Refresh Series Catalog", command=self._refresh_series_catalog)
         tools.add_command(label="Bulk Remove Sold (Paste…)", command=self._open_bulk_remove_paste)
         tools.add_separator()
+        tools.add_command(label="Database Statistics…", command=self._show_database_statistics)
         tools.add_command(label="Show Cover Cache Info", command=self._show_cover_cache_info)
         tools.add_command(label="Show Cover Sources", command=self._show_cover_sources)
         menubar.add_cascade(label="Research", menu=research)
@@ -3371,6 +3372,130 @@ class BookEvaluatorGUI:
             if isbn in lot.book_isbns:
                 names.append(lot.name)
         return names
+
+    def _show_database_statistics(self) -> None:
+        """Display comprehensive database statistics in a dialog."""
+        try:
+            stats = self.service.get_database_statistics()
+
+            # Build the message with formatted statistics
+            lines = [
+                "DATABASE STATISTICS",
+                "=" * 60,
+                "",
+                "📊 STORAGE",
+                f"  Database file: {stats['database_file_size_mb']:.2f} MB ({stats['database_file_size_bytes']:,} bytes)",
+                "",
+                "📚 CATALOG",
+                f"  Total books: {stats['total_books']:,}",
+            ]
+
+            if stats['total_books'] > 0:
+                # Coverage
+                lines.extend([
+                    "",
+                    "📈 DATA COVERAGE",
+                ])
+                for source, data in stats['coverage'].items():
+                    lines.append(f"  {source.capitalize():12s}: {data['count']:4,} books ({data['percentage']:5.1f}%)")
+
+                # Amazon rank
+                ar = stats['amazon_rank_coverage']
+                lines.append(f"  Amazon rank : {ar['count']:4,} books ({ar['percentage']:5.1f}%)")
+
+                # Series
+                sr = stats['series_coverage']
+                lines.append(f"  Series info : {sr['count']:4,} books ({sr['percentage']:5.1f}%)")
+
+                # Storage breakdown
+                lines.extend([
+                    "",
+                    "💾 STORAGE BREAKDOWN (per API source)",
+                    f"  {'Source':<12} {'Count':>6} {'Avg Size':>12} {'Total':>12}",
+                    f"  {'-' * 12} {'-' * 6} {'-' * 12} {'-' * 12}",
+                ])
+                for source, data in stats['storage_breakdown'].items():
+                    avg_display = f"{data['avg_size_kb']:.2f} KB" if data['avg_size_kb'] > 0 else "—"
+                    if data['total_size_mb'] >= 1:
+                        total_display = f"{data['total_size_mb']:.2f} MB"
+                    else:
+                        total_display = f"{data['total_size_kb']:.2f} KB"
+                    lines.append(f"  {source.capitalize():<12} {data['count']:>6,} {avg_display:>12} {total_display:>12}")
+
+                # Probability distribution
+                if stats.get('probability_distribution'):
+                    lines.extend([
+                        "",
+                        "🎯 PROBABILITY DISTRIBUTION",
+                    ])
+                    for label, data in stats['probability_distribution'].items():
+                        bar_width = int(data['percentage'] / 2)
+                        bar = '█' * bar_width
+                        lines.append(f"  {label:10s}: {data['count']:3,} ({data['percentage']:5.1f}%)")
+
+                # Price statistics
+                if stats.get('price_statistics'):
+                    ps = stats['price_statistics']
+                    lines.extend([
+                        "",
+                        "💰 PRICE STATISTICS",
+                        f"  Min: ${ps['min']:>8.2f}",
+                        f"  Avg: ${ps['avg']:>8.2f}",
+                        f"  Max: ${ps['max']:>8.2f}",
+                    ])
+
+                # Data freshness
+                if stats.get('freshness'):
+                    lines.extend([
+                        "",
+                        "🕐 DATA FRESHNESS",
+                    ])
+                    for source, data in stats['freshness'].items():
+                        if data['count_with_timestamp'] > 0:
+                            lines.append(f"  {source.capitalize():12s}: {data['count_with_timestamp']:4,} records")
+                            lines.append(f"    Oldest: {data['oldest']}")
+                            lines.append(f"    Newest: {data['newest']}")
+
+            message = "\n".join(lines)
+
+            # Show in a scrollable message box
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Database Statistics")
+            dialog.geometry("700x600")
+
+            # Make it modal
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            # Add text widget with scrollbar
+            frame = ttk.Frame(dialog, padding=10)
+            frame.pack(fill=tk.BOTH, expand=True)
+
+            text_widget = tk.Text(frame, wrap=tk.NONE, font=("Courier", 10))
+            scrollbar_y = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=text_widget.yview)
+            scrollbar_x = ttk.Scrollbar(frame, orient=tk.HORIZONTAL, command=text_widget.xview)
+            text_widget.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
+
+            scrollbar_y.pack(side=tk.RIGHT, fill=tk.Y)
+            scrollbar_x.pack(side=tk.BOTTOM, fill=tk.X)
+            text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            text_widget.insert("1.0", message)
+            text_widget.configure(state=tk.DISABLED)
+
+            # Close button
+            button_frame = ttk.Frame(dialog, padding=(10, 0, 10, 10))
+            button_frame.pack(fill=tk.X)
+            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+
+            # Center the dialog
+            dialog.update_idletasks()
+            x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
+            y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
+            dialog.geometry(f"+{x}+{y}")
+
+        except Exception as e:
+            messagebox.showerror("Statistics Error", f"Failed to retrieve statistics:\n{e}")
 
     def _show_cover_cache_info(self) -> None:
         loaded = sum(1 for img in self._image_cache.values() if img is not None)

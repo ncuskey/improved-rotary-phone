@@ -458,12 +458,46 @@ struct ScannerReviewView: View {
     private func handleScan(_ code: String) {
         guard isScanning else { return }
         isScanning = false
-        scannedCode = code
+
+        // Normalize to ISBN-13 for eBay GTIN parameter
+        let normalizedCode = normalizeToISBN13(code)
+        scannedCode = normalizedCode
         errorMessage = nil
         book = nil
-        fetchPreview(for: code)
-        pricing.load(for: code)
+        fetchPreview(for: normalizedCode)
+        pricing.load(for: normalizedCode)
         provideHaptic(.success)
+    }
+
+    /// Convert ISBN-10 to ISBN-13 if needed (eBay requires 13-digit GTIN)
+    private func normalizeToISBN13(_ isbn: String) -> String {
+        let digits = isbn.filter { $0.isNumber }
+
+        // Already ISBN-13
+        if digits.count == 13 {
+            return digits
+        }
+
+        // Convert ISBN-10 to ISBN-13
+        if digits.count == 10 {
+            let base = "978" + digits.prefix(9)
+            let checksum = calculateISBN13Checksum(base)
+            return base + String(checksum)
+        }
+
+        // Invalid length - return as-is and let API handle error
+        return digits
+    }
+
+    /// Calculate ISBN-13 check digit
+    private func calculateISBN13Checksum(_ first12: String) -> Int {
+        let weights = [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3]
+        let sum = zip(first12, weights).reduce(0) { sum, pair in
+            let digit = Int(String(pair.0)) ?? 0
+            return sum + (digit * pair.1)
+        }
+        let remainder = sum % 10
+        return remainder == 0 ? 0 : 10 - remainder
     }
 
     private func rescan() {

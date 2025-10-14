@@ -12,6 +12,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 CURRENT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = CURRENT_DIR.parent
@@ -38,6 +40,19 @@ async def lifespan(app: FastAPI):
     cleanup_book_service()
 
 
+class NoCacheMiddleware(BaseHTTPMiddleware):
+    """Middleware to add cache-control headers to prevent browser caching during development."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        # Add no-cache headers for HTML and API responses
+        if isinstance(response, Response):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
+
 # Initialize FastAPI app
 app = FastAPI(
     title="ISBN Lot Optimizer",
@@ -45,6 +60,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Add no-cache middleware to prevent browser caching issues
+app.add_middleware(NoCacheMiddleware)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="static")

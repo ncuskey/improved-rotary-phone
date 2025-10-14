@@ -61,16 +61,19 @@ async def list_lots(
     """
     lots = service.list_lots()
 
+    # Convert lots to serializable dictionaries for Alpine.js
+    lots_data = [_lot_suggestion_to_dict(lot) for lot in lots]
+
     # Prepare response with lot count update script
     response_html = templates.TemplateResponse(
         "components/lots_table.html",
-        {"request": request, "lots": lots},
+        {"request": request, "lots": lots_data},
     )
-    
+
     # Add HTMX trigger to update lot count
     lot_count = len(lots)
     response_html.headers["HX-Trigger-After-Swap"] = f'{{"updateLotCount": {{"count": {lot_count}}}}}'
-    
+
     return response_html
 
 
@@ -87,16 +90,19 @@ async def regenerate_lots(
     # Regenerate lots
     lots = service.recompute_lots()
 
+    # Convert lots to serializable dictionaries for Alpine.js
+    lots_data = [_lot_suggestion_to_dict(lot) for lot in lots]
+
     # Prepare response with lot count update script
     response_html = templates.TemplateResponse(
         "components/lots_table.html",
-        {"request": request, "lots": lots},
+        {"request": request, "lots": lots_data},
     )
-    
+
     # Add HTMX trigger to update lot count
     lot_count = len(lots)
     response_html.headers["HX-Trigger-After-Swap"] = f'{{"updateLotCount": {{"count": {lot_count}}}}}'
-    
+
     return response_html
 
 
@@ -142,9 +148,25 @@ async def get_lot_detail(
     # Get books in this lot
     books = service.get_books_for_lot(lot)
 
+    # Convert books to serializable format for Alpine.js/carousel
+    books_data = []
+    for book in books:
+        book_data = {
+            "isbn": book.isbn,
+            "condition": book.condition,
+            "estimated_price": book.estimated_price,
+            "metadata": {
+                "title": book.metadata.title if book.metadata else "Unknown Title",
+                "authors": list(book.metadata.authors) if book.metadata and book.metadata.authors else [],
+                "published_year": book.metadata.published_year if book.metadata else None,
+                "series_name": book.metadata.series_name if book.metadata else None,
+            } if book.metadata else None
+        }
+        books_data.append(book_data)
+
     return templates.TemplateResponse(
         "components/lot_detail.html",
-        {"request": request, "lot": lot, "books": books},
+        {"request": request, "lot": lot, "books": books_data},
     )
 
 

@@ -111,9 +111,9 @@
 </div>
 
 <!-- Lot Detail Modal -->
-<div id="lot-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
-        <div class="flex justify-between items-center mb-4">
+<div id="lot-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-hidden h-full w-full z-50 flex items-center justify-center">
+    <div class="relative mx-auto p-5 border w-11/12 max-w-6xl h-[85vh] shadow-lg rounded-md bg-white flex flex-col">
+        <div class="flex justify-between items-center mb-4 flex-shrink-0">
             <h3 class="text-lg font-semibold text-gray-900">Lot Details</h3>
             <button onclick="document.getElementById('lot-modal').classList.add('hidden')"
                     class="text-gray-400 hover:text-gray-600">
@@ -122,7 +122,7 @@
                 </svg>
             </button>
         </div>
-        <div id="lot-modal-content">
+        <div id="lot-modal-content" class="flex-1 overflow-hidden">
             <!-- Content loaded via HTMX -->
         </div>
     </div>

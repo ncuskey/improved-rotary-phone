@@ -1,91 +1,209 @@
 <!-- Lots table component - must be wrapped in flex-1 overflow-auto container -->
-<div id="lots-table">
-    {% if lots %}
-    <table class="w-full divide-y divide-gray-200">
+<script id="lots-data" type="application/json">
+{{ lots | tojson | safe }}
+</script>
+<div id="lots-table"
+     x-data="{
+       lots: [],
+       sortColumn: null,
+       sortDirection: 'asc',
+       loadingLotId: null,
+       init() {
+         const dataScript = document.getElementById('lots-data');
+         if (dataScript) {
+           this.lots = JSON.parse(dataScript.textContent);
+         }
+       },
+       sort(column) {
+         if (this.sortColumn === column) {
+           this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+         } else {
+           this.sortColumn = column;
+           this.sortDirection = 'asc';
+         }
+       },
+       loadLot(event, lotId) {
+         // Skip if clicking on a link
+         if (event.target.tagName === 'A' || event.target.closest('a')) {
+           return;
+         }
+         // Prevent duplicate calls
+         if (this.loadingLotId === lotId) {
+           return;
+         }
+         console.log('Loading lot:', lotId);
+         this.loadingLotId = lotId;
+
+         htmx.ajax('GET', `/api/lots/${lotId}`, {
+           target: '#lot-detail',
+           swap: 'innerHTML'
+         });
+
+         // Reset after a short delay
+         setTimeout(() => { this.loadingLotId = null; }, 100);
+       },
+       get sortedLots() {
+         if (!this.sortColumn) return this.lots;
+
+         const sorted = [...this.lots].sort((a, b) => {
+           let aVal, bVal;
+
+           switch(this.sortColumn) {
+             case 'name':
+               aVal = a.name || '';
+               bVal = b.name || '';
+               break;
+             case 'strategy':
+               aVal = a.strategy || '';
+               bVal = b.strategy || '';
+               break;
+             case 'books':
+               aVal = Array.isArray(a.book_isbns) ? a.book_isbns.length : 0;
+               bVal = Array.isArray(b.book_isbns) ? b.book_isbns.length : 0;
+               break;
+             case 'value':
+               aVal = a.estimated_value || 0;
+               bVal = b.estimated_value || 0;
+               break;
+             case 'probability':
+               aVal = a.probability_score || 0;
+               bVal = b.probability_score || 0;
+               break;
+             case 'sellthrough':
+               aVal = a.sell_through || 0;
+               bVal = b.sell_through || 0;
+               break;
+             default:
+               return 0;
+           }
+
+           if (typeof aVal === 'string') {
+             return this.sortDirection === 'asc'
+               ? aVal.localeCompare(bVal)
+               : bVal.localeCompare(aVal);
+           } else {
+             return this.sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+           }
+         });
+
+         return sorted;
+       }
+     }">
+    <table class="w-full divide-y divide-gray-200" x-show="lots.length > 0">
         <thead class="bg-gray-50 sticky top-0 z-10">
             <tr>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Strategy</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Books</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Est. Value</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Probability</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Sell-Through</th>
+                <th scope="col" @click="sort('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none">
+                    <div class="flex items-center gap-1">
+                        <span>Name</span>
+                        <svg x-show="sortColumn === 'name'" class="w-4 h-4" :class="sortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                    </div>
+                </th>
+                <th scope="col" @click="sort('strategy')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none">
+                    <div class="flex items-center gap-1">
+                        <span>Strategy</span>
+                        <svg x-show="sortColumn === 'strategy'" class="w-4 h-4" :class="sortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                    </div>
+                </th>
+                <th scope="col" @click="sort('books')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none">
+                    <div class="flex items-center gap-1">
+                        <span>Books</span>
+                        <svg x-show="sortColumn === 'books'" class="w-4 h-4" :class="sortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                    </div>
+                </th>
+                <th scope="col" @click="sort('value')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none">
+                    <div class="flex items-center gap-1">
+                        <span>Est. Value</span>
+                        <svg x-show="sortColumn === 'value'" class="w-4 h-4" :class="sortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                    </div>
+                </th>
+                <th scope="col" @click="sort('probability')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none">
+                    <div class="flex items-center gap-1">
+                        <span>Probability</span>
+                        <svg x-show="sortColumn === 'probability'" class="w-4 h-4" :class="sortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                    </div>
+                </th>
+                <th scope="col" @click="sort('sellthrough')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:bg-gray-100 select-none">
+                    <div class="flex items-center gap-1">
+                        <span>Sell-Through</span>
+                        <svg x-show="sortColumn === 'sellthrough'" class="w-4 h-4" :class="sortDirection === 'desc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                        </svg>
+                    </div>
+                </th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-            {% for lot in lots %}
-            <tr class="table-row hover:bg-gray-50 {% if selected_lot_id and lot.id == selected_lot_id %}table-row-selected{% endif %}"
-                hx-get="/api/lots/{{ lot.id }}"
-                hx-target="#lot-detail"
-                hx-swap="innerHTML">
-                <td class="px-4 py-3 text-sm text-gray-900">
-                    <div class="flex items-center gap-2">
-                        <div class="font-medium truncate max-w-xs" title="{{ lot.name }}">{{ lot.name }}</div>
-                        <a href="/api/lots/{{ lot.id }}/details" 
-                           class="inline-flex items-center px-2 py-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-                           title="View in 3D Carousel">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                            </svg>
-                        </a>
-                    </div>
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm">
-                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                        {{ lot.strategy }}
-                    </span>
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                    {% if lot.book_isbns %}
-                        {% if lot.book_isbns is string %}
-                            {{ lot.book_isbns.split(',')|length }}
-                        {% else %}
-                            {{ lot.book_isbns|length }}
-                        {% endif %}
-                    {% else %}
-                        0
-                    {% endif %}
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    {% if lot.estimated_value %}
-                        <span class="font-semibold text-green-600">${{ "%.2f"|format(lot.estimated_value) }}</span>
-                    {% else %}
-                        <span class="text-gray-400">—</span>
-                    {% endif %}
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm">
-                    {% if lot.probability_label %}
-                        {% if lot.probability_label == 'Excellent' %}
-                            <span class="badge badge-success">{{ lot.probability_label }}</span>
-                        {% elif lot.probability_label == 'Good' %}
-                            <span class="badge badge-info">{{ lot.probability_label }}</span>
-                        {% elif lot.probability_label == 'Fair' %}
-                            <span class="badge badge-warning">{{ lot.probability_label }}</span>
-                        {% else %}
-                            <span class="badge badge-danger">{{ lot.probability_label }}</span>
-                        {% endif %}
-                        {% if lot.probability_score %}
-                            <span class="text-xs text-gray-500 ml-1">{{ "%.0f"|format(lot.probability_score * 100) }}%</span>
-                        {% endif %}
-                    {% else %}
-                        <span class="text-gray-400">—</span>
-                    {% endif %}
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                    {% if lot.sell_through is not none %}
-                        {{ "%.0f"|format(lot.sell_through * 100) }}%
-                    {% else %}
-                        <span class="text-gray-400">—</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
+            <template x-for="lot in sortedLots" :key="lot.id">
+                <tr class="table-row hover:bg-gray-50"
+                    @click="loadLot($event, lot.id)">
+                    <td class="px-4 py-3 text-sm text-gray-900">
+                        <div class="flex items-center gap-2">
+                            <div class="font-medium truncate max-w-xs" :title="lot.name" x-text="lot.name"></div>
+                            <a :href="`/api/lots/${lot.id}/details`"
+                               @click.stop
+                               class="inline-flex items-center px-2 py-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                               title="View in 3D Carousel">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800" x-text="lot.strategy"></span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                        <span x-text="Array.isArray(lot.book_isbns) ? lot.book_isbns.length : 0"></span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <template x-if="lot.estimated_value">
+                            <span class="font-semibold text-green-600" x-text="'$' + lot.estimated_value.toFixed(2)"></span>
+                        </template>
+                        <template x-if="!lot.estimated_value">
+                            <span class="text-gray-400">—</span>
+                        </template>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm">
+                        <template x-if="lot.probability_label">
+                            <div>
+                                <span :class="{
+                                    'badge badge-success': lot.probability_label === 'Excellent',
+                                    'badge badge-info': lot.probability_label === 'Good',
+                                    'badge badge-warning': lot.probability_label === 'Fair',
+                                    'badge badge-danger': lot.probability_label !== 'Excellent' && lot.probability_label !== 'Good' && lot.probability_label !== 'Fair'
+                                }" x-text="lot.probability_label"></span>
+                                <span x-show="lot.probability_score" class="text-xs text-gray-500 ml-1" x-text="Math.round(lot.probability_score * 100) + '%'"></span>
+                            </div>
+                        </template>
+                        <template x-if="!lot.probability_label">
+                            <span class="text-gray-400">—</span>
+                        </template>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <template x-if="lot.sell_through !== null && lot.sell_through !== undefined">
+                            <span x-text="Math.round(lot.sell_through * 100) + '%'"></span>
+                        </template>
+                        <template x-if="lot.sell_through === null || lot.sell_through === undefined">
+                            <span class="text-gray-400">—</span>
+                        </template>
+                    </td>
+                </tr>
+            </template>
         </tbody>
     </table>
 
-    {% else %}
-    <div class="flex items-center justify-center p-8">
+    <div x-show="lots.length === 0" class="flex items-center justify-center p-8">
         <div class="text-center">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -102,5 +220,4 @@
             </div>
         </div>
     </div>
-    {% endif %}
 </div>

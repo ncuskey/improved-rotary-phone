@@ -19,7 +19,7 @@ if str(PROJECT_ROOT) not in sys.path:  # Ensure package imports work when run as
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from isbn_web.api.dependencies import cleanup_book_service, get_book_service
-from isbn_web.api.routes import actions, books, events, lots
+from isbn_web.api.routes import actions, books, covers, events, lots
 from isbn_web.config import settings
 
 if TYPE_CHECKING:  # pragma: no cover - import only for typing
@@ -58,6 +58,7 @@ app.include_router(books.router, prefix="/api/books", tags=["books"])
 app.include_router(lots.router, prefix="/api/lots", tags=["lots"])
 app.include_router(actions.router, prefix="/api/actions", tags=["actions"])
 app.include_router(events.router, prefix="/api/events", tags=["events"])
+app.include_router(covers.router, prefix="/api", tags=["covers"])
 
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))

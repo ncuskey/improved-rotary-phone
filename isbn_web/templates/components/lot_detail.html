@@ -1,23 +1,36 @@
 {% if lot %}
-<div class="space-y-4">
-    <!-- Lot Header -->
-    <div class="border-b border-gray-200 pb-4">
-        <h4 class="text-xl font-bold text-gray-900 mb-2">{{ lot.name }}</h4>
-        <div class="flex items-center gap-2">
-            <span class="badge badge-info">{{ lot.strategy }}</span>
-            {% if lot.probability_label %}
-                {% if lot.probability_label == 'Excellent' %}
-                    <span class="badge badge-success">{{ lot.probability_label }}</span>
-                {% elif lot.probability_label == 'Good' %}
-                    <span class="badge badge-info">{{ lot.probability_label }}</span>
-                {% elif lot.probability_label == 'Fair' %}
-                    <span class="badge badge-warning">{{ lot.probability_label }}</span>
-                {% else %}
-                    <span class="badge badge-danger">{{ lot.probability_label }}</span>
-                {% endif %}
-            {% endif %}
-        </div>
+<div class="flex flex-col h-full">
+    <!-- Carousel Section - Top Third -->
+    <div class="h-1/3 min-h-[300px] bg-gradient-to-br from-slate-100 to-slate-200 rounded-t-lg overflow-hidden relative">
+        {% if books %}
+            {% include 'components/carousel.html' %}
+        {% else %}
+            <div class="h-full flex items-center justify-center text-gray-500">
+                <p>No books to display</p>
+            </div>
+        {% endif %}
     </div>
+
+    <!-- Lot Details Section - Bottom Two Thirds -->
+    <div class="h-2/3 overflow-y-auto p-4 space-y-4">
+        <!-- Lot Header -->
+        <div class="border-b border-gray-200 pb-4">
+            <h4 class="text-xl font-bold text-gray-900 mb-2">{{ lot.name }}</h4>
+            <div class="flex items-center gap-2">
+                <span class="badge badge-info">{{ lot.strategy }}</span>
+                {% if lot.probability_label %}
+                    {% if lot.probability_label == 'Excellent' %}
+                        <span class="badge badge-success">{{ lot.probability_label }}</span>
+                    {% elif lot.probability_label == 'Good' %}
+                        <span class="badge badge-info">{{ lot.probability_label }}</span>
+                    {% elif lot.probability_label == 'Fair' %}
+                        <span class="badge badge-warning">{{ lot.probability_label }}</span>
+                    {% else %}
+                        <span class="badge badge-danger">{{ lot.probability_label }}</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
 
     <!-- Lot Metrics -->
     <div class="grid grid-cols-2 gap-4">
@@ -117,18 +130,19 @@
         {% endif %}
     </div>
 
-    <!-- Actions -->
-    <div class="border-t border-gray-200 pt-4 flex gap-2">
-        <a href="/api/lots/{{ lot.id }}/details" 
-           class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center transition-colors">
-            View Full Details
-        </a>
-        <button class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-            Create eBay Listing
-        </button>
-        <button class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
-            Export Details
-        </button>
+        <!-- Actions -->
+        <div class="border-t border-gray-200 pt-4 flex gap-2">
+            <a href="/api/lots/{{ lot.id }}/details"
+               class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-center transition-colors">
+                View Full Details
+            </a>
+            <button class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                Create eBay Listing
+            </button>
+            <button class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
+                Export Details
+            </button>
+        </div>
     </div>
 </div>
 

@@ -253,7 +253,8 @@
            zIndex: zIndex,
            transformStyle: 'preserve-3d',
            '--book-depth': `${20 * scale}px`,
-           '--spine-width': `${40 * scale}px`
+           '--spine-width': `${40 * scale}px`,
+           '--cover-thickness': `${3 * scale}px`
          };
        },
        get currentBook() { return this.books[this.currentIndex]; }
@@ -287,7 +288,7 @@
 
             <!-- Front Cover -->
             <div class="absolute inset-0 overflow-hidden rounded-r-sm"
-                 style="transform: translateZ(var(--book-depth)); backface-visibility: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                 style="transform: translateZ(calc(var(--book-depth) + var(--cover-thickness))); backface-visibility: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
               <!-- Cover Image -->
               <img :src="'/api/covers/' + book.isbn + '?size=M'"
                    :alt="book.metadata?.title || 'Book Cover'"
@@ -302,9 +303,37 @@
               </div>
             </div>
 
+            <!-- Front Cover Thickness (beveled edges) -->
+            <!-- Right edge -->
+            <div class="absolute top-0 right-0 h-full"
+                 style="width: var(--cover-thickness); transform: rotateY(90deg) translateX(calc(var(--book-depth) + var(--cover-thickness))); transform-origin: right center; background: linear-gradient(to right, rgba(0,0,0,0.3), rgba(0,0,0,0.1)); backface-visibility: hidden;"></div>
+            <!-- Top edge -->
+            <div class="absolute top-0 left-0 w-full"
+                 style="height: var(--cover-thickness); transform: rotateX(90deg) translateY(calc(var(--book-depth) + var(--cover-thickness))); transform-origin: top center; background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.1)); backface-visibility: hidden;"></div>
+            <!-- Bottom edge -->
+            <div class="absolute bottom-0 left-0 w-full"
+                 style="height: var(--cover-thickness); transform: rotateX(-90deg) translateY(calc((var(--book-depth) + var(--cover-thickness)) * -1)); transform-origin: bottom center; background: linear-gradient(to top, rgba(0,0,0,0.3), rgba(0,0,0,0.1)); backface-visibility: hidden;"></div>
+            <!-- Left edge (connecting to spine) -->
+            <div class="absolute top-0 left-0 h-full"
+                 style="width: var(--cover-thickness); transform: rotateY(-90deg) translateX(calc(var(--book-depth) + var(--cover-thickness))); transform-origin: left center; background: linear-gradient(to left, rgba(0,0,0,0.3), rgba(0,0,0,0.1)); backface-visibility: hidden;"></div>
+
             <!-- Back Cover -->
             <div class="absolute inset-0 rounded-l-sm"
-                 :style="`transform: translateZ(calc(-1 * var(--book-depth))) rotateY(180deg); background: ${getBackColor(book)}; backface-visibility: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2);`"></div>
+                 :style="`transform: translateZ(calc(-1 * (var(--book-depth) + var(--cover-thickness)))) rotateY(180deg); background: ${getBackColor(book)}; backface-visibility: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.2);`"></div>
+
+            <!-- Back Cover Thickness (beveled edges) -->
+            <!-- Left edge -->
+            <div class="absolute top-0 left-0 h-full"
+                 :style="`width: var(--cover-thickness); transform: rotateY(-90deg) translateX(calc(-1 * (var(--book-depth) + var(--cover-thickness)))); transform-origin: left center; background: linear-gradient(to left, rgba(0,0,0,0.3), rgba(0,0,0,0.1)); backface-visibility: hidden;`"></div>
+            <!-- Top edge -->
+            <div class="absolute top-0 left-0 w-full"
+                 :style="`height: var(--cover-thickness); transform: rotateX(90deg) translateY(calc(-1 * (var(--book-depth) + var(--cover-thickness)))); transform-origin: top center; background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.1)); backface-visibility: hidden;`"></div>
+            <!-- Bottom edge -->
+            <div class="absolute bottom-0 left-0 w-full"
+                 :style="`height: var(--cover-thickness); transform: rotateX(-90deg) translateY(calc(var(--book-depth) + var(--cover-thickness))); transform-origin: bottom center; background: linear-gradient(to top, rgba(0,0,0,0.3), rgba(0,0,0,0.1)); backface-visibility: hidden;`"></div>
+            <!-- Right edge (connecting to pages) -->
+            <div class="absolute top-0 right-0 h-full"
+                 :style="`width: var(--cover-thickness); transform: rotateY(90deg) translateX(calc(-1 * (var(--book-depth) + var(--cover-thickness)))); transform-origin: right center; background: linear-gradient(to right, rgba(0,0,0,0.3), rgba(0,0,0,0.1)); backface-visibility: hidden;`"></div>
 
             <!-- Spine (left side) -->
             <div class="absolute top-0 left-0 h-full"
@@ -315,6 +344,20 @@
                      x-text="book.metadata?.title || 'Unknown'"></div>
               </div>
             </div>
+
+            <!-- Spine Thickness (top and bottom edges) -->
+            <!-- Top edge -->
+            <div class="absolute top-0 left-0"
+                 :style="`width: var(--spine-width); height: var(--cover-thickness); transform: rotateY(-90deg) translateX(calc(-1 * var(--book-depth))) rotateX(90deg) translateY(calc(-1 * var(--cover-thickness))); transform-origin: left top; background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.2)); backface-visibility: hidden;`"></div>
+            <!-- Bottom edge -->
+            <div class="absolute bottom-0 left-0"
+                 :style="`width: var(--spine-width); height: var(--cover-thickness); transform: rotateY(-90deg) translateX(calc(-1 * var(--book-depth))) rotateX(-90deg) translateY(var(--cover-thickness)); transform-origin: left bottom; background: linear-gradient(to top, rgba(0,0,0,0.5), rgba(0,0,0,0.2)); backface-visibility: hidden;`"></div>
+            <!-- Outer edge (front) connecting spine to front cover -->
+            <div class="absolute top-0 left-0 h-full"
+                 :style="`width: var(--cover-thickness); transform: rotateY(-90deg) translateX(calc(-1 * var(--book-depth))) rotateY(-90deg) translateX(calc(-1 * var(--spine-width))); transform-origin: left center; background: rgba(0,0,0,0.2); backface-visibility: hidden;`"></div>
+            <!-- Inner edge (back) connecting spine to back cover -->
+            <div class="absolute top-0 left-0 h-full"
+                 :style="`width: var(--cover-thickness); transform: rotateY(-90deg) translateX(calc(-1 * var(--book-depth))) rotateY(90deg) translateX(0px); transform-origin: left center; background: rgba(0,0,0,0.3); backface-visibility: hidden;`"></div>
 
             <!-- Pages (right side) - with realistic page stack effect -->
             <div class="absolute top-0 right-0 h-full"

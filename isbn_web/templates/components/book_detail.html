@@ -1,25 +1,33 @@
 {% if book %}
-<div class="flex flex-col h-full">
-    <!-- Cover Image - Maximize space -->
-    {% if book.metadata and book.metadata.cover_url %}
-    <div class="flex justify-center mb-2 flex-shrink-0">
+<div class="flex h-full gap-3">
+    <!-- Left: Cover Image -->
+    <div class="flex-shrink-0 w-32">
+        {% if book.metadata and book.metadata.cover_url %}
         <img src="{{ book.metadata.cover_url }}"
              alt="{{ book.metadata.title }}"
-             class="max-h-40 rounded shadow-sm"
+             class="w-full h-auto rounded shadow-md"
              onerror="this.style.display='none'">
+        {% else %}
+        <div class="w-full aspect-[2/3] bg-gradient-to-br from-blue-100 to-purple-100 rounded shadow-md flex items-center justify-center">
+            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 
-    <!-- Title and Author -->
-    <div class="mb-2 flex-shrink-0">
-        <h3 class="text-xs font-semibold text-gray-900 leading-tight line-clamp-2">{{ book.metadata.title if book.metadata else 'Unknown Title' }}</h3>
-        <p class="text-xs text-gray-600 mt-0.5 truncate">{{ book.metadata.authors|join(', ') if book.metadata and book.metadata.authors else 'Unknown Author' }}</p>
-    </div>
+    <!-- Right: Book Details -->
+    <div class="flex-1 flex flex-col overflow-y-auto min-w-0">
+        <!-- Title and Author -->
+        <div class="mb-2 flex-shrink-0">
+            <h3 class="text-sm font-semibold text-gray-900 leading-tight line-clamp-2">{{ book.metadata.title if book.metadata else 'Unknown Title' }}</h3>
+            <p class="text-xs text-gray-600 mt-0.5 truncate">{{ book.metadata.authors|join(', ') if book.metadata and book.metadata.authors else 'Unknown Author' }}</p>
+        </div>
 
-    <!-- Two Column Layout - Essential Info Only -->
-    <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs mb-2 flex-shrink-0">
-        <!-- Column 1: Identification -->
-        <div class="space-y-1.5">
+        <!-- Two Column Layout - Essential Info Only -->
+        <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs mb-1.5 flex-shrink-0">
+            <!-- Column 1: Identification -->
+            <div class="space-y-1">
             <div>
                 <span class="text-gray-500 block">ISBN</span>
                 <span class="font-medium text-gray-900">{{ book.isbn }}</span>
@@ -45,8 +53,8 @@
             {% endif %}
         </div>
 
-        <!-- Column 2: Pricing & Probability -->
-        <div class="space-y-1.5">
+            <!-- Column 2: Pricing & Probability -->
+            <div class="space-y-1">
             {% if book.estimated_price %}
             <div>
                 <span class="text-gray-500 block">Est. Price</span>
@@ -89,27 +97,27 @@
             </div>
             {% endif %}
         </div>
-    </div>
-
-    <!-- BookScouter Details - Collapsible -->
-    {% if book.bookscouter and book.bookscouter.total_vendors > 0 %}
-    <details class="text-xs flex-shrink-0 mb-2">
-        <summary class="text-gray-500 cursor-pointer hover:text-gray-700 font-medium">Top Buyback Offers</summary>
-        <div class="space-y-1 mt-1.5">
-            {% for offer in book.bookscouter.offers[:3] %}
-            <div class="flex justify-between items-center py-0.5">
-                <span class="text-gray-700 text-xs">{{ offer.vendor_name }}</span>
-                <span class="font-medium text-blue-600">${{ "%.2f"|format(offer.price) }}</span>
-            </div>
-            {% endfor %}
         </div>
-    </details>
-    {% endif %}
 
-    <!-- Market Stats - Collapsible/Hidden by default -->
-    <details class="text-xs flex-shrink-0 mb-2">
-        <summary class="text-gray-500 cursor-pointer hover:text-gray-700 font-medium">Market Stats</summary>
-        <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-1.5">
+        <!-- BookScouter Details - Collapsible -->
+        {% if book.bookscouter and book.bookscouter.total_vendors > 0 %}
+        <details class="text-xs flex-shrink-0 mb-1.5">
+            <summary class="text-gray-500 cursor-pointer hover:text-gray-700 font-medium text-[11px]">Top Buyback Offers</summary>
+            <div class="space-y-0.5 mt-1">
+                {% for offer in book.bookscouter.offers[:3] %}
+                <div class="flex justify-between items-center py-0.5">
+                    <span class="text-gray-700 text-[11px]">{{ offer.vendor_name }}</span>
+                    <span class="font-medium text-blue-600 text-[11px]">${{ "%.2f"|format(offer.price) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </details>
+        {% endif %}
+
+        <!-- Market Stats - Collapsible/Hidden by default -->
+        <details class="text-xs flex-shrink-0 mb-1.5">
+            <summary class="text-gray-500 cursor-pointer hover:text-gray-700 font-medium text-[11px]">Market Stats</summary>
+            <div class="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
             {% if book.market and book.market.active_count is not none %}
             <div>
                 <span class="text-gray-500 block">Active Listings</span>
@@ -143,25 +151,25 @@
             </div>
             {% endif %}
         </div>
-    </details>
+        </details>
 
-    <!-- Actions - Compact -->
-    <div class="mt-auto pt-2 border-t border-gray-200 flex-shrink-0 space-y-1">
-        <div class="grid grid-cols-2 gap-1">
-            <button class="px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
-                Edit
-            </button>
-            <button class="px-2 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200">
-                Delete
-            </button>
+        <!-- Actions - Compact -->
+        <div class="mt-auto pt-1.5 border-t border-gray-200 flex-shrink-0 space-y-1">
+            <div class="grid grid-cols-2 gap-1">
+                <button class="px-2 py-1 text-[11px] font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
+                    Edit
+                </button>
+                <button class="px-2 py-1 text-[11px] font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200">
+                    Delete
+                </button>
+            </div>
+            <a href="https://www.ebay.com/sch/i.html?_nkw={{ book.isbn }}"
+               target="_blank"
+               class="block w-full px-2 py-1 text-[11px] font-medium text-center text-gray-700 bg-gray-100 rounded hover:bg-gray-200">
+                Search eBay
+            </a>
         </div>
-        <a href="https://www.ebay.com/sch/i.html?_nkw={{ book.isbn }}"
-           target="_blank"
-           class="block w-full px-2 py-1 text-xs font-medium text-center text-gray-700 bg-gray-100 rounded hover:bg-gray-200">
-            Search eBay
-        </a>
     </div>
-
 </div>
 
 {% elif error %}

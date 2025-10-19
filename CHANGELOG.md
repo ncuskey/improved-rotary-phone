@@ -2,7 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2025-01-09
+## [Unreleased] - 2025-01-18
+
+### Added
+- **iOS Purchase Price & Profit Calculator**:
+  - "Set Price" button in scanner navigation bar
+  - Scrollable price picker with $0.25 increments ($0.00 - $50.00)
+  - Large price display at top of picker sheet
+  - Auto-scrolls to current selection when picker opens
+  - Clear button for quick reset to $0.00
+  - Purchase price persists across all scans until manually changed
+  - Real-time profit calculation displayed in buy recommendation panel
+  - Shows: Cost, Est. Sale, Buyback, and Net Profit
+  - Color-coded profit display (green for positive, red for negative)
+  - Perfect workflow for book sales with consistent pricing
+- **Enhanced Buy Recommendation Panel**:
+  - Profit metrics only show when purchase price is set
+  - Four-metric breakdown: Cost, Estimated Sale, Buyback, Profit
+  - Net profit calculated from estimated sale price minus cost
+  - Visual hierarchy with color-coded indicators
+- **New Swift Files**:
+  - `LotHelperApp/LotHelper/PricePickerSheet.swift` - Purchase price picker component
+
+### Technical Improvements
+- Purchase price stored in persistent state variable across scans
+- BookAttributes struct updated with purchasePrice field
+- Price automatically applied to each scan's attributes
+- Price reset maintains persistence after accept/reject actions
+- Haptic feedback on price selection and sheet dismissal
+
+## [Previous] - 2025-01-09
 
 ### Added
 - **iOS Scanner Triage Workflow**: Complete book profitability evaluation during scanning

@@ -7,6 +7,7 @@ struct BookAttributes {
     var signed: Bool = false
     var firstEdition: Bool = false
     var printing: String = ""
+    var purchasePrice: Double = 0.0
 
     /// Build edition notes string from attributes
     var editionNotes: String? {
@@ -67,6 +68,17 @@ struct BookAttributesSheet: View {
 
                 Section("Special Attributes") {
                     Toggle("Signed / Autographed", isOn: $attributes.signed)
+                }
+
+                Section("Purchase Details") {
+                    HStack {
+                        Text("Purchase Price")
+                        Spacer()
+                        TextField("$0.00", value: $attributes.purchasePrice, format: .currency(code: "USD"))
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 100)
+                    }
                 }
 
                 if let notes = attributes.editionNotes {

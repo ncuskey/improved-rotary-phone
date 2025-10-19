@@ -11,12 +11,15 @@ struct ScannerReviewView: View {
     @State private var isLoadingEvaluation = false
     @State private var errorMessage: String?
     @State private var showAttributesSheet = false
+    @State private var showPricePickerSheet = false
     @State private var bookAttributes = BookAttributes()
+    @State private var persistentPurchasePrice: Double = 0.0
 
     // eBay pricing integration
+    // Token broker accessible via Cloudflare tunnel for remote access
     @StateObject private var pricing: ScannerPricingVM = {
         let config = TokenBrokerConfig(
-            baseURL: URL(string: "http://192.168.4.50:8787")!,
+            baseURL: URL(string: "https://tokens.lothelper.clevergirl.app")!,
             prefix: ""
         )
         let broker = EbayTokenBroker(config: config)
@@ -110,8 +113,29 @@ struct ScannerReviewView: View {
             }
             .background(DS.Color.background.ignoresSafeArea())
             .navigationTitle("Scan")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showPricePickerSheet = true }) {
+                        HStack(spacing: 4) {
+                            Text("Set Price")
+                                .font(.subheadline)
+                            if persistentPurchasePrice > 0 {
+                                Text("(\(formatUSD(persistentPurchasePrice)))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
             .sheet(isPresented: $showAttributesSheet) {
                 BookAttributesSheet(attributes: $bookAttributes)
+            }
+            .sheet(isPresented: $showPricePickerSheet) {
+                PricePickerSheet(selectedPrice: $persistentPurchasePrice)
+            }
+            .onChange(of: persistentPurchasePrice) { oldValue, newValue in
+                bookAttributes.purchasePrice = newValue
             }
         }
     }
@@ -228,6 +252,11 @@ struct ScannerReviewView: View {
     @ViewBuilder
     private func evaluationPanel(_ eval: BookEvaluationRecord) -> some View {
         VStack(alignment: .leading, spacing: 12) {
+            // Buy/Don't Buy Recommendation
+            buyRecommendation(for: eval)
+
+            Divider()
+
             // Header with probability score
             HStack {
                 Text("Triage Assessment")
@@ -338,6 +367,149 @@ struct ScannerReviewView: View {
     }
 
     // MARK: - Helpers
+
+    @ViewBuilder
+    private func buyRecommendation(for eval: BookEvaluationRecord) -> some View {
+        let decision = makeBuyDecision(eval)
+        let profit = calculateProfit(eval)
+
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                // Icon
+                Image(systemName: decision.shouldBuy ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(decision.shouldBuy ? .green : .red)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(decision.shouldBuy ? "BUY" : "DON'T BUY")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(decision.shouldBuy ? .green : .red)
+
+                    Text(decision.reason)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+            }
+
+            // Profit display if purchase price is set
+            if bookAttributes.purchasePrice > 0 {
+                Divider()
+
+                HStack(spacing: 16) {
+                    profitMetric("Cost", bookAttributes.purchasePrice, color: .secondary)
+
+                    if let estimated = eval.estimatedPrice {
+                        profitMetric("Est. Sale", estimated, color: .blue)
+                    }
+
+                    if let buyback = eval.bookscouter?.bestPrice, buyback > 0 {
+                        profitMetric("Buyback", buyback, color: .green)
+                    }
+
+                    Spacer()
+
+                    // Net profit
+                    if let netProfit = profit.estimatedProfit {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("Profit")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(formatUSD(netProfit))
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundStyle(netProfit > 0 ? .green : .red)
+                        }
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding()
+        .background(
+            (decision.shouldBuy ? Color.green : Color.red)
+                .opacity(0.1),
+            in: RoundedRectangle(cornerRadius: 12)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(decision.shouldBuy ? Color.green : Color.red, lineWidth: 2)
+        )
+    }
+
+    @ViewBuilder
+    private func profitMetric(_ label: String, _ value: Double, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(formatUSD(value))
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(color)
+        }
+    }
+
+    private func calculateProfit(_ eval: BookEvaluationRecord) -> (estimatedProfit: Double?, buybackProfit: Double?) {
+        guard bookAttributes.purchasePrice > 0 else {
+            return (nil, nil)
+        }
+
+        let estimatedProfit = (eval.estimatedPrice ?? 0) - bookAttributes.purchasePrice
+        let buybackProfit = (eval.bookscouter?.bestPrice ?? 0) - bookAttributes.purchasePrice
+
+        return (
+            estimatedProfit: estimatedProfit,
+            buybackProfit: buybackProfit > 0 ? buybackProfit : nil
+        )
+    }
+
+    private func makeBuyDecision(_ eval: BookEvaluationRecord) -> (shouldBuy: Bool, reason: String) {
+        let score = eval.probabilityScore ?? 0
+        let label = eval.probabilityLabel?.lowercased() ?? ""
+        let estimatedPrice = eval.estimatedPrice ?? 0
+        let buybackPrice = eval.bookscouter?.bestPrice ?? 0
+        let amazonRank = eval.bookscouter?.amazonSalesRank
+
+        // Strong Buy - High confidence and good pricing
+        if label.contains("strong") || (label.contains("high") && score >= 80) {
+            if buybackPrice > 0 {
+                return (true, "High confidence + $\(String(format: "%.2f", buybackPrice)) buyback floor")
+            }
+            return (true, "High probability of profitable sale")
+        }
+
+        // Conditional Buy - Worth considering
+        if label.contains("worth") || (label.contains("high") && score >= 60) {
+            if let rank = amazonRank, rank < 50000 {
+                return (true, "Good demand (Amazon rank #\(formatRank(rank)))")
+            }
+            if buybackPrice > 0 {
+                return (true, "Buyback option available as safety net")
+            }
+            if estimatedPrice >= 10 {
+                return (true, "Decent estimated value (\(formatUSD(estimatedPrice)))")
+            }
+            return (true, "Worth buying with caution")
+        }
+
+        // Don't Buy - Risky or low confidence
+        if label.contains("risky") || label.contains("pass") {
+            if score < 40 {
+                return (false, "Low probability score (\(Int(score)))")
+            }
+            if buybackPrice == 0 && estimatedPrice < 5 {
+                return (false, "Low value, no buyback safety net")
+            }
+            return (false, "Risk outweighs potential reward")
+        }
+
+        // Default: Don't buy if we don't have clear signal
+        return (false, "Insufficient confidence to recommend")
+    }
 
     private func probabilityColor(for label: String) -> Color {
         switch label.lowercased() {
@@ -451,6 +623,10 @@ struct ScannerReviewView: View {
         guard isScanning else { return }
         isScanning = false
 
+        // Play scan detected sound
+        SoundFeedback.scanDetected()
+        provideHaptic(.success)
+
         // Normalize to ISBN-13 for eBay GTIN parameter
         let normalizedCode = normalizeToISBN13(code)
         scannedCode = normalizedCode
@@ -458,14 +634,15 @@ struct ScannerReviewView: View {
         book = nil
         evaluation = nil
 
+        // Set purchase price from persistent value
+        bookAttributes.purchasePrice = persistentPurchasePrice
+
         // Fetch preview and eBay comps immediately
         fetchPreview(for: normalizedCode)
         pricing.load(for: normalizedCode)
 
         // Submit book with attributes to backend and fetch full evaluation
         submitAndEvaluate(normalizedCode)
-
-        provideHaptic(.success)
     }
 
     private func submitAndEvaluate(_ isbn: String) {
@@ -532,26 +709,37 @@ struct ScannerReviewView: View {
 
     private func acceptAndContinue() {
         // Book is already in database, just move to next scan
-        bookAttributes = BookAttributes()
-        rescan()
+        SoundFeedback.success()
         provideHaptic(.success)
+
+        // Reset attributes but keep the persistent purchase price
+        bookAttributes = BookAttributes()
+        bookAttributes.purchasePrice = persistentPurchasePrice
+
+        rescan()
     }
 
     private func reject() {
         guard let isbn = scannedCode else { return }
+
+        SoundFeedback.reject()
 
         // Delete the book from the database
         Task {
             do {
                 try await BookAPI.deleteBook(isbn)
                 await MainActor.run {
+                    // Reset attributes but keep the persistent purchase price
                     bookAttributes = BookAttributes()
+                    bookAttributes.purchasePrice = persistentPurchasePrice
+
                     rescan()
                     provideHaptic(.success)
                 }
             } catch {
                 await MainActor.run {
                     errorMessage = "Failed to reject book: \(error.localizedDescription)"
+                    SoundFeedback.error()
                     provideHaptic(.error)
                 }
             }
@@ -607,8 +795,9 @@ struct ScannerReviewView: View {
                 }
             } catch {
                 await MainActor.run {
-                    errorMessage = "Couldn’t find details for \(isbn)."
+                    errorMessage = "Couldn't find details for \(isbn)."
                     isLoading = false
+                    SoundFeedback.error()
                     provideHaptic(.error)
                 }
             }

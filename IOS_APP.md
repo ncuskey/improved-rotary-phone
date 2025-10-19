@@ -10,6 +10,8 @@ Native iOS application for ISBN scanning and book cataloging with real-time eBay
 - **Tap-to-focus** for improved scanning accuracy
 - Haptic feedback on successful scan
 - Freeze-frame review with book preview
+- **Purchase price picker** with $0.25 increments for profit calculation
+- **Persistent pricing** - set once, applies to all scans until changed
 
 ### 📊 Real-Time eBay Pricing
 - **Dual pricing modes**: Active listings + Sold comps
@@ -47,6 +49,11 @@ Native iOS application for ISBN scanning and book cataloging with real-time eBay
   - Best offer from 14+ vendors
   - Top 3 offers per book
   - Vendor names and pricing
+- **Profitability Analysis**
+  - Real-time profit calculation based on purchase price
+  - Compares cost vs estimated sale price and buyback offers
+  - Buy/Don't Buy recommendation with reasoning
+  - Visual profit display with color-coded indicators
 
 ### 💾 Local Data Caching
 - **SwiftData persistence** for books and lots
@@ -137,6 +144,21 @@ Scanner UI with integrated pricing panel:
 - Stats row (count/min/median/max)
 - 3 cheapest samples with item/ship breakdown
 - Error handling with fallback messages
+
+**Price Picker**:
+- "Set Price" button in navigation toolbar
+- Scrollable list with $0.25 increments ($0.00 - $50.00)
+- Large price display at top of picker sheet
+- Auto-scrolls to current price
+- Clear button for quick reset
+- Price persists across all scans
+
+**Buy Recommendation Panel**:
+- Large BUY/DON'T BUY indicator with reasoning
+- Profit calculation when purchase price is set
+- Shows: Cost, Est. Sale, Buyback, and Net Profit
+- Color-coded profit display (green for positive, red for negative)
+- Considers probability score, pricing, Amazon rank, and buyback offers
 
 ## Setup
 
@@ -249,10 +271,14 @@ ipconfig getifaddr en1  # Ethernet
 
 ### Swift Files
 - `LotHelperApp/LotHelper/EbayAPI.swift` - eBay integration
-- `LotHelperApp/LotHelper/ScannerReviewView.swift` - Scanner UI with pricing
+- `LotHelperApp/LotHelper/ScannerReviewView.swift` - Scanner UI with pricing and profit calculation
+- `LotHelperApp/LotHelper/PricePickerSheet.swift` - Purchase price picker with $0.25 increments
 - `LotHelperApp/LotHelper/BookAPI.swift` - Backend REST client, BookScouter models
 - `LotHelperApp/LotHelper/BooksTabView.swift` - Books list and detail view with BookScouter UI
 - `LotHelperApp/LotHelper/BarcodeScannerView.swift` - Camera scanner
+- `LotHelperApp/LotHelper/SoundFeedback.swift` - Sound and haptic feedback utilities
+- `LotHelperApp/LotHelper/SoundPreviewView.swift` - Sound testing interface
+- `LotHelperApp/LotHelper/BookAttributesSheet.swift` - Book attributes editor
 - `LotHelperApp/LotHelper/CachedBook.swift` - SwiftData cache models
 - `LotHelperApp/LotHelper/CacheManager.swift` - Cache management
 - `LotHelperApp/LotHelper/LotRecommendationsView.swift` - Lots view with caching

@@ -46,9 +46,15 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
   - Top 3 justification reasons explaining the score
   - Rarity and series badges for collectible books
 - **💰 Live eBay Pricing**: Real-time active and sold comps with price statistics
+- **💵 Purchase Price & Profit Calculator**:
+  - Set price once with $0.25 increment picker ($0.00 - $50.00)
+  - Price persists across all scans for batch purchasing
+  - Real-time profit calculation: Cost vs Est. Sale vs Buyback
+  - Color-coded profit display (green/red) for instant decisions
+  - Buy/Don't Buy recommendation with reasoning
 - **✅ Accept/Reject Workflow**: Make informed keep/reject decisions before adding books to catalog
 - **🔒 Secure Token Management**: eBay OAuth tokens handled server-side via token broker
-- **📱 Modern SwiftUI**: Beautiful, accessible interface with haptic feedback
+- **📱 Modern SwiftUI**: Beautiful, accessible interface with haptic feedback and sound effects
 - **🔄 Seamless Integration**: Syncs with backend catalog via REST API
 
 **eBay Token Broker**: A lightweight Node.js service (`token-broker/`) provides OAuth tokens to the iOS app, keeping your eBay Production credentials secure on the server. Auto-starts with `isbn` or `isbn-web` commands.

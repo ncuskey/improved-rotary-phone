@@ -38,21 +38,35 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
 **Status**: OCR functionality is working well, but barcode scanning needs fixes. See `CAMERA_SCANNER_README.md` for detailed documentation and `CAMERA_SCANNER_TODO.md` for known issues and next steps.
 
 ### iOS App (LotHelper)
-- **✅ Native Barcode Scanner**: Fast, accurate ISBN/barcode scanning with OCR text recognition and tap-to-focus
-- **📊 Real-Time Triage Evaluation**: Complete profitability analysis during scanning:
-  - Probability score with color-coded badges (Strong/Worth/Risky/Pass)
-  - Estimated resale price vs BookScouter buyback floor
-  - Amazon sales rank with demand tier indicators
-  - Top 3 justification reasons explaining the score
-  - Rarity and series badges for collectible books
-- **💰 Live eBay Pricing**: Real-time active and sold comps with price statistics
-- **💵 Purchase Price & Profit Calculator**:
+- **✅ Dual Input Modes**:
+  - Camera mode with native barcode scanning, OCR text recognition, and tap-to-focus
+  - Text entry mode for Bluetooth barcode scanners with auto-focus workflow
+  - Toggle between modes via toolbar, preference persists
+- **📊 Full-Screen Analysis View**: Complete transparency into decision-making:
+  - Camera disappears after scan to maximize analysis space
+  - Confidence score breakdown with all justification reasons
+  - Data source attribution (eBay live, BookScouter, backend estimates)
+  - Decision factors section explaining why BUY or DON'T BUY
+  - Market intelligence with rarity, categories, author, publisher
+- **💰 eBay Fee-Based Profit Analysis**:
+  - Accurate net profit after eBay fees (13.25% + $0.30) and shipping ($5)
+  - Two-path comparison: eBay Route vs Buyback Route
+  - Complete breakdown: Sale → Fees → Ship → Cost → Net
+  - Uses live eBay median pricing when available
+  - Shows "(Live)" or "(Est.)" indicator for price transparency
+- **💵 Smart Profit Calculator**:
   - Set price once with $0.25 increment picker ($0.00 - $50.00)
+  - Works with $0 (free books from donations, estate sales)
   - Price persists across all scans for batch purchasing
-  - Real-time profit calculation: Cost vs Est. Sale vs Buyback
-  - Color-coded profit display (green/red) for instant decisions
-  - Buy/Don't Buy recommendation with reasoning
-- **✅ Accept/Reject Workflow**: Make informed keep/reject decisions before adding books to catalog
+  - Buyback-first priority: Any positive buyback = instant BUY
+  - Shows vendor name: "Guaranteed $X.XX profit via VendorName"
+- **🎯 Intelligent Buy Logic**:
+  - RULE 1: Buyback profit > $0 → BUY (zero risk, guaranteed)
+  - RULE 2: eBay net profit ≥ $10 → BUY (strong)
+  - RULE 3: Net $5-10 → Conditional (needs high confidence)
+  - Ignores confidence scores when buyback profit exists
+- **✅ Accept/Reject Workflow**: Make informed keep/reject decisions with full analysis
+- **🚀 Professional Launch**: Branded splash screen with loading status updates
 - **🔒 Secure Token Management**: eBay OAuth tokens handled server-side via token broker
 - **📱 Modern SwiftUI**: Beautiful, accessible interface with haptic feedback and sound effects
 - **🔄 Seamless Integration**: Syncs with backend catalog via REST API

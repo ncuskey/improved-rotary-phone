@@ -1,7 +1,13 @@
 import SwiftUI
 
+enum ScannerInputMode: String, CaseIterable {
+    case camera = "Camera"
+    case text = "Text Entry"
+}
+
 struct ScannerReviewView: View {
     @AppStorage("scanner.hapticsEnabled") private var hapticsEnabled = true
+    @AppStorage("scanner.inputMode") private var inputMode: ScannerInputMode = .camera
 
     @State private var isScanning = true
     @State private var scannedCode: String?
@@ -14,6 +20,8 @@ struct ScannerReviewView: View {
     @State private var showPricePickerSheet = false
     @State private var bookAttributes = BookAttributes()
     @State private var persistentPurchasePrice: Double = 0.0
+    @State private var textInput: String = ""
+    @FocusState private var isTextFieldFocused: Bool
 
     // eBay pricing integration
     // Token broker accessible via Cloudflare tunnel for remote access
@@ -30,18 +38,28 @@ struct ScannerReviewView: View {
     var body: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
-                // Top third – live camera feed
-                BarcodeScannerView(isActive: $isScanning) { code in
-                    handleScan(code)
+                // Show input area only when scanning or loading
+                if isScanning || isLoading || isLoadingEvaluation {
+                    if inputMode == .camera {
+                        // Camera mode - top third
+                        BarcodeScannerView(isActive: $isScanning) { code in
+                            handleScan(code)
+                        }
+                        .frame(height: geo.size.height / 3)
+                        .background(Color.black)
+                        .overlay(
+                            ReticleView()
+                                .padding(.horizontal, 28)
+                        )
+                    } else {
+                        // Text entry mode - compact input area
+                        textInputArea
+                            .frame(height: 120)
+                            .background(DS.Color.cardBg)
+                    }
                 }
-                .frame(height: geo.size.height / 3)
-                .background(Color.black)
-                .overlay(
-                    ReticleView()
-                        .padding(.horizontal, 28)
-                )
 
-                // Bottom two-thirds – preview + evaluation + actions
+                // Analysis area - uses full screen when evaluation is ready
                 ScrollView {
                     VStack(spacing: DS.Spacing.md) {
                         if isLoading {
@@ -106,7 +124,7 @@ struct ScannerReviewView: View {
                         }
                     }
                 }
-                .frame(height: geo.size.height * 2 / 3)
+                .frame(height: (isScanning || isLoading || isLoadingEvaluation) ? geo.size.height * 2 / 3 : geo.size.height)
                 .padding(.horizontal)
                 .padding(.bottom, DS.Spacing.xl)
                 .background(DS.Color.background.opacity(0.95))
@@ -114,6 +132,19 @@ struct ScannerReviewView: View {
             .background(DS.Color.background.ignoresSafeArea())
             .navigationTitle("Scan")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Menu {
+                        Picker("Input Mode", selection: $inputMode) {
+                            ForEach(ScannerInputMode.allCases, id: \.self) { mode in
+                                Label(mode.rawValue, systemImage: mode == .camera ? "camera.fill" : "keyboard.fill")
+                                    .tag(mode)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: inputMode == .camera ? "camera.fill" : "keyboard.fill")
+                    }
+                }
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showPricePickerSheet = true }) {
                         HStack(spacing: 4) {
@@ -126,6 +157,14 @@ struct ScannerReviewView: View {
                             }
                         }
                     }
+                }
+            }
+            .onChange(of: inputMode) { oldValue, newValue in
+                if newValue == .text {
+                    isScanning = true // Reset to input state
+                    isTextFieldFocused = true
+                } else {
+                    isTextFieldFocused = false
                 }
             }
             .sheet(isPresented: $showAttributesSheet) {
@@ -141,6 +180,56 @@ struct ScannerReviewView: View {
     }
 
     // MARK: - UI builders
+
+    @ViewBuilder
+    private var textInputArea: some View {
+        VStack(spacing: 16) {
+            VStack(spacing: 8) {
+                HStack {
+                    Image(systemName: "keyboard")
+                        .foregroundStyle(.blue)
+                    Text("Enter ISBN")
+                        .font(.headline)
+                    Spacer()
+                }
+
+                HStack(spacing: 12) {
+                    TextField("Type or scan ISBN...", text: $textInput)
+                        .textFieldStyle(.roundedBorder)
+                        .keyboardType(.numberPad)
+                        .focused($isTextFieldFocused)
+                        .onSubmit {
+                            submitTextInput()
+                        }
+
+                    Button(action: submitTextInput) {
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(textInput.isEmpty ? .gray : .blue)
+                    }
+                    .disabled(textInput.isEmpty)
+                }
+
+                Text("Bluetooth scanner will auto-submit")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+        }
+    }
+
+    private func submitTextInput() {
+        let trimmed = textInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        handleScan(trimmed)
+        textInput = ""
+
+        // Re-focus after a short delay to allow for next scan
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            isTextFieldFocused = true
+        }
+    }
 
     @ViewBuilder
     private var pricingPanel: some View {
@@ -251,111 +340,80 @@ struct ScannerReviewView: View {
 
     @ViewBuilder
     private func evaluationPanel(_ eval: BookEvaluationRecord) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Move buy recommendation to very top, before everything else
+            VStack(spacing: 0) {
+                // Buy/Don't Buy Recommendation - now at the top
+                buyRecommendation(for: eval)
+            }
+
+            // Confidence Score Breakdown
+            scoreBreakdownSection(eval)
+
+            // Data Sources & Pricing
+            dataSourcesSection(eval)
+
+            // Decision Factors
+            decisionFactorsSection(eval)
+
+            // Market Intelligence
+            marketIntelligenceSection(eval)
+        }
+        .padding(.top, 8)
+    }
+
+    @ViewBuilder
+    private func scoreBreakdownSection(_ eval: BookEvaluationRecord) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Buy/Don't Buy Recommendation
-            buyRecommendation(for: eval)
-
-            Divider()
-
-            // Header with probability score
             HStack {
-                Text("Triage Assessment")
+                Image(systemName: "chart.bar.fill")
+                    .foregroundStyle(.blue)
+                Text("Confidence Score")
                     .font(.headline)
-
                 Spacer()
-
                 if let score = eval.probabilityScore, let label = eval.probabilityLabel {
                     HStack(spacing: 6) {
-                        Circle()
-                            .fill(probabilityColor(for: label))
-                            .frame(width: 8, height: 8)
-                        Text(label)
-                            .font(.subheadline)
+                        Text("\(Int(score))")
+                            .font(.title2)
                             .bold()
                             .foregroundStyle(probabilityColor(for: label))
-                        Text("\(Int(score))")
+                        Text("/ 100")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(probabilityColor(for: label).opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
-                }
-            }
-
-            Divider()
-
-            // Pricing comparison
-            HStack(spacing: 16) {
-                if let estimated = eval.estimatedPrice {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Estimated Value")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(formatUSD(estimated))
-                            .font(.title3)
-                            .bold()
-                    }
-                }
-
-                if let bookscouter = eval.bookscouter, bookscouter.bestPrice > 0 {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Buyback Floor")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(formatUSD(bookscouter.bestPrice))
-                            .font(.title3)
-                            .bold()
-                            .foregroundStyle(.green)
                     }
                 }
             }
 
-            // Amazon rank and rarity badges
-            HStack(spacing: 10) {
-                if let rank = eval.bookscouter?.amazonSalesRank {
-                    Label("\(formatRank(rank))", systemImage: "chart.line.uptrend.xyaxis")
+            if let label = eval.probabilityLabel {
+                HStack {
+                    Circle()
+                        .fill(probabilityColor(for: label))
+                        .frame(width: 10, height: 10)
+                    Text(label.uppercased() + " CONFIDENCE")
                         .font(.caption)
-                        .foregroundStyle(rankColor(for: rank))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(rankColor(for: rank).opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
-                }
-
-                if let rarity = eval.rarity, rarity > 0.5 {
-                    Label("Rare", systemImage: "star.fill")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
-                }
-
-                if let series = eval.metadata?.categories?.first, !series.isEmpty {
-                    Label(series, systemImage: "books.vertical")
-                        .font(.caption)
-                        .foregroundStyle(.blue)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
-                        .lineLimit(1)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(probabilityColor(for: label))
                 }
             }
 
-            // Justification (top 3 reasons)
-            if let justification = eval.justification, !justification.isEmpty {
-                Divider()
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Key Factors")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    ForEach(Array(justification.prefix(3)), id: \.self) { reason in
-                        HStack(alignment: .top, spacing: 6) {
-                            Text("•")
+            // Show how the score is calculated
+            VStack(alignment: .leading, spacing: 8) {
+                Text("How we calculated this:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                if let justification = eval.justification, !justification.isEmpty {
+                    ForEach(Array(justification.enumerated()), id: \.offset) { index, reason in
+                        HStack(alignment: .top, spacing: 8) {
+                            Text("\(index + 1).")
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
+                                .frame(width: 20, alignment: .leading)
                             Text(reason)
                                 .font(.caption)
                                 .foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer()
                         }
                     }
                 }
@@ -363,7 +421,271 @@ struct ScannerReviewView: View {
         }
         .padding()
         .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-        .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
+        .shadow(color: DS.Shadow.card, radius: 4, x: 0, y: 2)
+    }
+
+    @ViewBuilder
+    private func dataSourcesSection(_ eval: BookEvaluationRecord) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "server.rack")
+                    .foregroundStyle(.green)
+                Text("Data Sources")
+                    .font(.headline)
+            }
+
+            // Estimated Price Source
+            if let estimated = eval.estimatedPrice {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Image(systemName: "dollarsign.circle.fill")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("Estimated Value:")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Spacer()
+                        Text(formatUSD(estimated))
+                            .font(.title3)
+                            .bold()
+                    }
+                    Text("Calculated from eBay sold comps, condition adjustments, and edition premiums")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 8)
+            }
+
+            Divider()
+
+            // BookScouter Data
+            if let bookscouter = eval.bookscouter {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Image(systemName: "arrow.2.circlepath.circle.fill")
+                            .foregroundStyle(.green)
+                            .font(.caption)
+                        Text("BookScouter:")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                        Spacer()
+                        if bookscouter.bestPrice > 0 {
+                            Text(formatUSD(bookscouter.bestPrice))
+                                .font(.title3)
+                                .bold()
+                                .foregroundStyle(.green)
+                        }
+                    }
+                    if bookscouter.bestPrice > 0 {
+                        Text("Best buyback offer from \(bookscouter.totalVendors) vendors · Safety net for risk mitigation")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("No buyback offers available from \(bookscouter.totalVendors) vendors")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let rank = bookscouter.amazonSalesRank {
+                        HStack {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.caption2)
+                            Text("Amazon Rank: \(formatRank(rank))")
+                                .font(.caption)
+                            Text("·")
+                                .foregroundStyle(.secondary)
+                            Text(rankDescription(for: rank))
+                                .font(.caption)
+                                .foregroundStyle(rankColor(for: rank))
+                        }
+                        .padding(.top, 4)
+                    }
+                }
+                .padding(.vertical, 8)
+            }
+
+            Divider()
+
+            // eBay Real-Time Data
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: "cart.fill")
+                        .foregroundStyle(.orange)
+                        .font(.caption)
+                    Text("eBay Live Comps:")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                }
+                Text("See detailed pricing panel below for active listings and sold history")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 8)
+        }
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 4, x: 0, y: 2)
+    }
+
+    @ViewBuilder
+    private func decisionFactorsSection(_ eval: BookEvaluationRecord) -> some View {
+        let decision = makeBuyDecision(eval)
+
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "brain.fill")
+                    .foregroundStyle(.purple)
+                Text("Why \(decision.shouldBuy ? "BUY" : "DON'T BUY")?")
+                    .font(.headline)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(decision.reason)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+
+                Divider()
+
+                Text("Factors considered:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                // Show key decision inputs
+                VStack(alignment: .leading, spacing: 6) {
+                    if let score = eval.probabilityScore {
+                        decisionFactorRow("Confidence Score", "\(Int(score))/100", score >= 60 ? .green : .orange)
+                    }
+
+                    if let estimated = eval.estimatedPrice {
+                        decisionFactorRow("Est. Sale Price", formatUSD(estimated), estimated >= 10 ? .blue : .secondary)
+                    }
+
+                    if let buyback = eval.bookscouter?.bestPrice {
+                        decisionFactorRow("Buyback Floor", formatUSD(buyback), buyback > 0 ? .green : .secondary)
+                    }
+
+                    if let rank = eval.bookscouter?.amazonSalesRank {
+                        decisionFactorRow("Amazon Demand", formatRank(rank), rankColor(for: rank))
+                    }
+
+                    if bookAttributes.purchasePrice > 0 {
+                        let profit = calculateProfit(eval)
+                        if let netProfit = profit.estimatedProfit {
+                            decisionFactorRow("Expected Profit", formatUSD(netProfit), netProfit > 0 ? .green : .red)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 4, x: 0, y: 2)
+    }
+
+    @ViewBuilder
+    private func decisionFactorRow(_ label: String, _ value: String, _ color: Color) -> some View {
+        HStack {
+            Circle()
+                .fill(color)
+                .frame(width: 6, height: 6)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(color)
+        }
+    }
+
+    @ViewBuilder
+    private func marketIntelligenceSection(_ eval: BookEvaluationRecord) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "chart.xyaxis.line")
+                    .foregroundStyle(.orange)
+                Text("Market Intelligence")
+                    .font(.headline)
+            }
+
+            // Rarity indicator
+            if let rarity = eval.rarity {
+                HStack {
+                    Image(systemName: rarity > 0.5 ? "star.fill" : "star")
+                        .foregroundStyle(rarity > 0.5 ? .orange : .secondary)
+                    Text("Rarity Score:")
+                        .font(.subheadline)
+                    Spacer()
+                    Text(String(format: "%.0f%%", rarity * 100))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(rarity > 0.5 ? .orange : .secondary)
+                }
+                Text(rarity > 0.7 ? "Very rare - limited market activity" : rarity > 0.5 ? "Somewhat rare - niche market" : "Common availability")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 4)
+            }
+
+            // Series/Category info
+            if let categories = eval.metadata?.categories, !categories.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Image(systemName: "books.vertical.fill")
+                            .foregroundStyle(.blue)
+                        Text("Categories:")
+                            .font(.subheadline)
+                    }
+                    ForEach(categories.prefix(3), id: \.self) { category in
+                        Text("• \(category)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            // Author info
+            if let authors = eval.metadata?.authors, !authors.isEmpty {
+                HStack {
+                    Image(systemName: "person.fill")
+                        .foregroundStyle(.purple)
+                    Text("By \(authors.joined(separator: ", "))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Publisher info
+            if let publisher = eval.metadata?.publisher, let year = eval.metadata?.publishedYear {
+                HStack {
+                    Image(systemName: "building.2.fill")
+                        .foregroundStyle(.gray)
+                    Text("\(publisher) (\(year))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 4, x: 0, y: 2)
+    }
+
+    private func rankDescription(for rank: Int) -> String {
+        if rank < 50_000 {
+            return "Bestseller"
+        } else if rank < 100_000 {
+            return "High demand"
+        } else if rank < 300_000 {
+            return "Solid demand"
+        } else if rank < 500_000 {
+            return "Moderate"
+        } else if rank < 1_000_000 {
+            return "Average"
+        } else {
+            return "Slow moving"
+        }
     }
 
     // MARK: - Helpers
@@ -395,33 +717,96 @@ struct ScannerReviewView: View {
                 Spacer()
             }
 
-            // Profit display if purchase price is set
-            if bookAttributes.purchasePrice > 0 {
+            // Profit display (always show if we have profit data)
+            if profit.estimatedProfit != nil || profit.buybackProfit != nil {
                 Divider()
 
-                HStack(spacing: 16) {
-                    profitMetric("Cost", bookAttributes.purchasePrice, color: .secondary)
+                VStack(spacing: 8) {
+                    // eBay Path
+                    if let salePrice = profit.salePrice, let netProfit = profit.estimatedProfit {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Image(systemName: "cart.fill")
+                                    .font(.caption2)
+                                    .foregroundStyle(.orange)
+                                Text("eBay Route:")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
 
-                    if let estimated = eval.estimatedPrice {
-                        profitMetric("Est. Sale", estimated, color: .blue)
+                                // Show source of price
+                                if let liveMedian = pricing.currentSummary?.median, liveMedian > 0, abs(salePrice - liveMedian) < 0.01 {
+                                    Text("(Live)")
+                                        .font(.caption2)
+                                        .foregroundStyle(.green)
+                                } else {
+                                    Text("(Est.)")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+
+                            HStack(spacing: 12) {
+                                profitMetric("Sale", salePrice, color: .blue)
+
+                                if let breakdown = profit.ebayBreakdown {
+                                    profitMetric("Fees", breakdown.fees, color: .red, negative: true)
+                                    profitMetric("Ship", breakdown.shipping, color: .orange, negative: true)
+                                }
+
+                                let costLabel = bookAttributes.purchasePrice > 0 ? "Cost" : "Cost (Free)"
+                                profitMetric(costLabel, bookAttributes.purchasePrice, color: .secondary, negative: true)
+
+                                Spacer()
+
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text("Net")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(formatUSD(netProfit))
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(netProfit > 0 ? .green : .red)
+                                }
+                            }
+                        }
                     }
 
-                    if let buyback = eval.bookscouter?.bestPrice, buyback > 0 {
-                        profitMetric("Buyback", buyback, color: .green)
-                    }
+                    // Buyback Path
+                    if let buyback = eval.bookscouter?.bestPrice, buyback > 0, let buybackNet = profit.buybackProfit {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Image(systemName: "arrow.2.circlepath")
+                                    .font(.caption2)
+                                    .foregroundStyle(.green)
+                                Text("Buyback Route:")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
 
-                    Spacer()
+                                // Show vendor name if available
+                                if let vendor = eval.bookscouter?.bestVendor {
+                                    Text("(\(vendor))")
+                                        .font(.caption2)
+                                        .foregroundStyle(.green)
+                                }
+                            }
 
-                    // Net profit
-                    if let netProfit = profit.estimatedProfit {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("Profit")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(formatUSD(netProfit))
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundStyle(netProfit > 0 ? .green : .red)
+                            HStack(spacing: 12) {
+                                profitMetric("Offer", buyback, color: .green)
+                                let costLabel = bookAttributes.purchasePrice > 0 ? "Cost" : "Cost (Free)"
+                                profitMetric(costLabel, bookAttributes.purchasePrice, color: .secondary, negative: true)
+
+                                Spacer()
+
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text("Net")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(formatUSD(buybackNet))
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(buybackNet > 0 ? .green : .red)
+                                }
+                            }
                         }
                     }
                 }
@@ -441,74 +826,144 @@ struct ScannerReviewView: View {
     }
 
     @ViewBuilder
-    private func profitMetric(_ label: String, _ value: Double, color: Color) -> some View {
+    private func profitMetric(_ label: String, _ value: Double, color: Color, negative: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text(formatUSD(value))
+            Text((negative ? "-" : "") + formatUSD(value))
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundStyle(color)
         }
     }
 
-    private func calculateProfit(_ eval: BookEvaluationRecord) -> (estimatedProfit: Double?, buybackProfit: Double?) {
-        guard bookAttributes.purchasePrice > 0 else {
-            return (nil, nil)
+    /// Calculate eBay fees for a given sale price
+    /// eBay charges: 13.25% final value fee for books + $0.30 transaction fee
+    /// Plus estimated shipping cost of $5.00 for Media Mail
+    private func calculateEbayFees(salePrice: Double) -> (fees: Double, shipping: Double, netProceeds: Double) {
+        let finalValueFeeRate = 0.1325 // 13.25% for books category
+        let transactionFee = 0.30
+        let estimatedShipping = 5.00 // Media Mail average
+
+        let finalValueFee = salePrice * finalValueFeeRate
+        let totalFees = finalValueFee + transactionFee
+        let netProceeds = salePrice - totalFees - estimatedShipping
+
+        return (fees: totalFees, shipping: estimatedShipping, netProceeds: netProceeds)
+    }
+
+    private func calculateProfit(_ eval: BookEvaluationRecord) -> (estimatedProfit: Double?, buybackProfit: Double?, ebayBreakdown: (fees: Double, shipping: Double)?, salePrice: Double?) {
+        // Allow $0 purchase price (free books)
+        let purchasePrice = bookAttributes.purchasePrice
+
+        // Prefer live eBay median over backend estimate
+        var salePrice: Double?
+        if let liveMedian = pricing.currentSummary?.median, liveMedian > 0 {
+            salePrice = liveMedian
+        } else if let backendEstimate = eval.estimatedPrice {
+            salePrice = backendEstimate
         }
 
-        let estimatedProfit = (eval.estimatedPrice ?? 0) - bookAttributes.purchasePrice
-        let buybackProfit = (eval.bookscouter?.bestPrice ?? 0) - bookAttributes.purchasePrice
+        // eBay net profit (after fees and shipping)
+        var estimatedProfit: Double?
+        var ebayBreakdown: (fees: Double, shipping: Double)?
+        if let price = salePrice {
+            let breakdown = calculateEbayFees(salePrice: price)
+            estimatedProfit = breakdown.netProceeds - purchasePrice
+            ebayBreakdown = (fees: breakdown.fees, shipping: breakdown.shipping)
+        }
+
+        // Buyback profit (no fees, vendor pays shipping)
+        let buybackProfit = (eval.bookscouter?.bestPrice ?? 0) - purchasePrice
 
         return (
             estimatedProfit: estimatedProfit,
-            buybackProfit: buybackProfit > 0 ? buybackProfit : nil
+            buybackProfit: buybackProfit > 0 ? buybackProfit : nil,
+            ebayBreakdown: ebayBreakdown,
+            salePrice: salePrice
         )
     }
 
     private func makeBuyDecision(_ eval: BookEvaluationRecord) -> (shouldBuy: Bool, reason: String) {
         let score = eval.probabilityScore ?? 0
         let label = eval.probabilityLabel?.lowercased() ?? ""
-        let estimatedPrice = eval.estimatedPrice ?? 0
-        let buybackPrice = eval.bookscouter?.bestPrice ?? 0
         let amazonRank = eval.bookscouter?.amazonSalesRank
 
-        // Strong Buy - High confidence and good pricing
-        if label.contains("strong") || (label.contains("high") && score >= 80) {
-            if buybackPrice > 0 {
-                return (true, "High confidence + $\(String(format: "%.2f", buybackPrice)) buyback floor")
-            }
-            return (true, "High probability of profitable sale")
+        // Always calculate buyback profit if we have a buyback offer
+        // If no purchase price is set, assume $0 (free book)
+        var buybackNetProfit: Double?
+        if let buybackOffer = eval.bookscouter?.bestPrice, buybackOffer > 0 {
+            let purchasePrice = bookAttributes.purchasePrice // Use 0 if not set
+            buybackNetProfit = buybackOffer - purchasePrice
         }
 
-        // Conditional Buy - Worth considering
-        if label.contains("worth") || (label.contains("high") && score >= 60) {
-            if let rank = amazonRank, rank < 50000 {
-                return (true, "Good demand (Amazon rank #\(formatRank(rank)))")
-            }
-            if buybackPrice > 0 {
-                return (true, "Buyback option available as safety net")
-            }
-            if estimatedPrice >= 10 {
-                return (true, "Decent estimated value (\(formatUSD(estimatedPrice)))")
-            }
-            return (true, "Worth buying with caution")
+        // RULE 1: Buyback offer > purchase price = instant buy (guaranteed profit)
+        // Check this FIRST before anything else
+        if let buybackNet = buybackNetProfit, buybackNet > 0 {
+            let vendorName = eval.bookscouter?.bestVendor ?? "vendor"
+            return (true, "Guaranteed \(formatUSD(buybackNet)) profit via \(vendorName)")
         }
 
-        // Don't Buy - Risky or low confidence
-        if label.contains("risky") || label.contains("pass") {
-            if score < 40 {
-                return (false, "Low probability score (\(Int(score)))")
+        // Calculate eBay net profit
+        var ebayNetProfit: Double?
+        if bookAttributes.purchasePrice > 0 {
+            let profit = calculateProfit(eval)
+            ebayNetProfit = profit.estimatedProfit
+        } else {
+            // If no purchase price set, calculate net proceeds only
+            // Prefer live eBay median over backend estimate
+            var salePrice: Double?
+            if let liveMedian = pricing.currentSummary?.median, liveMedian > 0 {
+                salePrice = liveMedian
+            } else if let backendEstimate = eval.estimatedPrice {
+                salePrice = backendEstimate
             }
-            if buybackPrice == 0 && estimatedPrice < 5 {
-                return (false, "Low value, no buyback safety net")
+
+            if let price = salePrice {
+                let breakdown = calculateEbayFees(salePrice: price)
+                ebayNetProfit = breakdown.netProceeds
             }
-            return (false, "Risk outweighs potential reward")
         }
 
-        // Default: Don't buy if we don't have clear signal
-        return (false, "Insufficient confidence to recommend")
+        // RULE 2: Net profit $10+ on eBay = strong buy
+        if let netProfit = ebayNetProfit, netProfit >= 10 {
+            if label.contains("high") || score >= 60 {
+                return (true, "Strong: \(formatUSD(netProfit)) net profit after fees")
+            }
+            return (true, "Net profit \(formatUSD(netProfit)) after eBay fees")
+        }
+
+        // RULE 3: Net profit $5-10 = conditional buy
+        if let netProfit = ebayNetProfit, netProfit >= 5 {
+            if label.contains("high") || score >= 70 {
+                return (true, "Good confidence + \(formatUSD(netProfit)) net profit")
+            }
+            if let rank = amazonRank, rank < 100000 {
+                return (true, "Fast-moving + \(formatUSD(netProfit)) net profit")
+            }
+            return (false, "Only \(formatUSD(netProfit)) profit - needs higher confidence")
+        }
+
+        // RULE 4: Positive but small profit ($1-5)
+        if let netProfit = ebayNetProfit, netProfit > 0 {
+            if label.contains("high") && score >= 80 {
+                return (true, "Very high confidence offsets low margin")
+            }
+            return (false, "Net profit only \(formatUSD(netProfit)) - too thin")
+        }
+
+        // RULE 5: No profit or loss
+        if let netProfit = ebayNetProfit, netProfit <= 0 {
+            return (false, "Would lose \(formatUSD(abs(netProfit))) after eBay fees")
+        }
+
+        // RULE 6: No pricing data - use confidence only
+        if label.contains("high") && score >= 80 {
+            return (true, "Very high confidence but verify pricing")
+        }
+
+        return (false, "Insufficient profit margin or confidence")
     }
 
     private func probabilityColor(for label: String) -> Color {
@@ -717,6 +1172,13 @@ struct ScannerReviewView: View {
         bookAttributes.purchasePrice = persistentPurchasePrice
 
         rescan()
+
+        // Re-focus text field if in text mode
+        if inputMode == .text {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isTextFieldFocused = true
+            }
+        }
     }
 
     private func reject() {
@@ -735,6 +1197,13 @@ struct ScannerReviewView: View {
 
                     rescan()
                     provideHaptic(.success)
+
+                    // Re-focus text field if in text mode
+                    if inputMode == .text {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isTextFieldFocused = true
+                        }
+                    }
                 }
             } catch {
                 await MainActor.run {

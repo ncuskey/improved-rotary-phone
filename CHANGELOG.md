@@ -5,31 +5,82 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased] - 2025-01-18
 
 ### Added
-- **iOS Purchase Price & Profit Calculator**:
-  - "Set Price" button in scanner navigation bar
-  - Scrollable price picker with $0.25 increments ($0.00 - $50.00)
-  - Large price display at top of picker sheet
-  - Auto-scrolls to current selection when picker opens
-  - Clear button for quick reset to $0.00
-  - Purchase price persists across all scans until manually changed
-  - Real-time profit calculation displayed in buy recommendation panel
-  - Shows: Cost, Est. Sale, Buyback, and Net Profit
-  - Color-coded profit display (green for positive, red for negative)
-  - Perfect workflow for book sales with consistent pricing
+- **Full-Screen Analysis View**:
+  - Camera disappears after scan to maximize analysis space
+  - Complete transparency into decision-making process
+  - Four detailed sections: Confidence Score, Data Sources, Decision Factors, Market Intelligence
+  - Shows ALL justification reasons with numbered explanations
+  - Data source attribution (eBay, BookScouter, backend estimates)
+  - Explains where each number comes from and why recommendations are made
+- **Text Entry Mode for Bluetooth Scanners**:
+  - Toggle between Camera and Text Entry modes via toolbar icon
+  - Compact text input area with auto-focus and auto-clear
+  - Perfect for Bluetooth barcode scanners
+  - Auto-refocuses after Accept/Reject for continuous scanning
+  - Mode preference persists across app sessions
+  - Manual entry option with submit button
+- **Splash Screen with Loading Status**:
+  - Professional branded launch screen with app icon
+  - Real-time loading status updates
+  - Smooth fade-in animation to main app
+  - Shows: "Initializing...", "Setting up database...", "Loading cached data...", "Ready!"
+- **eBay Fee-Based Profit Analysis**:
+  - Accurate net profit calculation including eBay fees (13.25% + $0.30)
+  - Estimated shipping costs ($5.00 Media Mail)
+  - Two-path profit display: eBay Route vs Buyback Route
+  - Shows complete breakdown: Sale → Fees → Ship → Cost → Net
+  - Buy recommendation now requires $10+ NET profit (not just sale price)
+- **Live eBay Pricing Integration**:
+  - Uses real-time eBay median from pricing panel (not just backend estimate)
+  - Shows "(Live)" or "(Est.)" indicator for price source transparency
+  - More accurate profit calculations based on current market
+- **Free Book Support ($0 Purchase Price)**:
+  - Works without setting a purchase price (assumes $0 for free books)
+  - Shows "Cost (Free)" in profit breakdown
+  - Perfect for estate sales, donations, library discards
+  - Any positive buyback offer = instant BUY recommendation
+- **Buyback-First Priority Logic**:
+  - Buyback profit > $0 = instant BUY (highest priority)
+  - Works regardless of eBay data, confidence score, or Amazon rank
+  - Shows vendor name in recommendation: "Guaranteed $X.XX profit via VendorName"
+  - Vendor name displayed in buyback route breakdown
 - **Enhanced Buy Recommendation Panel**:
-  - Profit metrics only show when purchase price is set
-  - Four-metric breakdown: Cost, Estimated Sale, Buyback, Profit
-  - Net profit calculated from estimated sale price minus cost
-  - Visual hierarchy with color-coded indicators
+  - Moved to top of analysis screen for immediate visibility
+  - Profit metrics always shown when available
+  - Two-route comparison: eBay vs Buyback side-by-side
+  - Color-coded indicators (green/red) for profit/loss
 - **New Swift Files**:
   - `LotHelperApp/LotHelper/PricePickerSheet.swift` - Purchase price picker component
+  - `LotHelperApp/LotHelper/SplashScreenView.swift` - Branded splash screen
+  - `LotHelperApp/LotHelper/SoundFeedback.swift` - Sound utilities (from previous session)
+  - `LotHelperApp/LotHelper/SoundPreviewView.swift` - Sound testing interface (from previous session)
+
+### Changed
+- **Buy/Don't Buy Logic Completely Revised**:
+  - RULE 1: Buyback profit > $0 → BUY (guaranteed, zero risk)
+  - RULE 2: eBay net profit ≥ $10 → BUY (strong)
+  - RULE 3: eBay net profit $5-10 → Conditional (needs high confidence or fast Amazon rank)
+  - RULE 4: eBay net profit $1-5 → Usually DON'T BUY (too thin)
+  - RULE 5: eBay net profit ≤ $0 → DON'T BUY (loss)
+- **Scanner Input Modes**:
+  - ScannerInputMode enum: .camera or .text
+  - Saved to AppStorage for persistence
+  - Keyboard icon toggles between modes
+- **Profit Calculation**:
+  - Now includes eBay fees, transaction fees, and shipping
+  - Returns salePrice used for transparency
+  - Supports $0 purchase price
+  - Always calculates buyback profit when offer exists
 
 ### Technical Improvements
-- Purchase price stored in persistent state variable across scans
-- BookAttributes struct updated with purchasePrice field
-- Price automatically applied to each scan's attributes
-- Price reset maintains persistence after accept/reject actions
-- Haptic feedback on price selection and sheet dismissal
+- Live eBay median integrated into profit calculations
+- Buyback profit calculated independently and checked first
+- Purchase price defaults to $0 for free books
+- Text field auto-focus management with FocusState
+- Splash screen with async startup workflow
+- Full-screen layout switching based on scan state
+- Enhanced data source transparency in analysis view
+- Vendor name integration from BookScouter API
 
 ## [Previous] - 2025-01-09
 

@@ -60,41 +60,11 @@ struct ScannerReviewView: View {
                 }
 
                 // Analysis area - uses full screen when evaluation is ready
-                ScrollView {
-                    VStack(spacing: DS.Spacing.md) {
-                        if isLoading {
-                            ProgressView("Looking up \(scannedCode ?? "")…")
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, DS.Spacing.sm)
-                        } else if let book {
-                            BookCardView(book: book.cardModel)
-                        } else if let code = scannedCode {
-                            fallbackCard(for: code)
-                        } else {
-                            idleCard
-                        }
-
-                        // eBay pricing panel
-                        if scannedCode != nil {
-                            pricingPanel
-                        }
-
-                        // Evaluation panel (probability, pricing, justification)
-                        if isLoadingEvaluation {
-                            evaluationLoadingPanel
-                        } else if let evaluation {
-                            evaluationPanel(evaluation)
-                        }
-
-                        if let errorMessage {
-                            Text(errorMessage)
-                                .font(.footnote)
-                                .foregroundStyle(.red)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-
-                        // Show Accept/Reject after evaluation loads
-                        if evaluation != nil {
+                VStack(spacing: 0) {
+                    // Top section: Accept/Reject buttons + Buy Recommendation (no scroll needed)
+                    if let evaluation {
+                        VStack(spacing: DS.Spacing.md) {
+                            // Accept/Reject buttons at very top
                             HStack(spacing: DS.Spacing.md) {
                                 Button(action: reject) {
                                     Label("Reject", systemImage: "xmark")
@@ -111,16 +81,59 @@ struct ScannerReviewView: View {
                                 .buttonStyle(.borderedProminent)
                                 .frame(minHeight: 44)
                             }
-                            .padding(.top, DS.Spacing.sm)
-                        } else if scannedCode != nil && !isLoadingEvaluation {
-                            // Show just Rescan if we have a scan but no evaluation yet
-                            Button(action: rescan) {
-                                Label("Rescan", systemImage: "arrow.clockwise")
+
+                            // Buy recommendation immediately below buttons
+                            buyRecommendation(for: evaluation)
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, DS.Spacing.md)
+                        .background(DS.Color.background)
+                    }
+
+                    // Bottom section: Scrollable detailed analysis
+                    ScrollView {
+                        VStack(spacing: DS.Spacing.md) {
+                            if isLoading {
+                                ProgressView("Looking up \(scannedCode ?? "")…")
                                     .frame(maxWidth: .infinity)
+                                    .padding(.vertical, DS.Spacing.sm)
+                            } else if let book {
+                                BookCardView(book: book.cardModel)
+                            } else if let code = scannedCode {
+                                fallbackCard(for: code)
+                            } else {
+                                idleCard
                             }
-                            .buttonStyle(.bordered)
-                            .frame(minHeight: 44)
-                            .padding(.top, DS.Spacing.sm)
+
+                            // eBay pricing panel
+                            if scannedCode != nil {
+                                pricingPanel
+                            }
+
+                            // Evaluation panel (detailed analysis sections)
+                            if isLoadingEvaluation {
+                                evaluationLoadingPanel
+                            } else if let evaluation {
+                                detailedAnalysisPanel(evaluation)
+                            }
+
+                            if let errorMessage {
+                                Text(errorMessage)
+                                    .font(.footnote)
+                                    .foregroundStyle(.red)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            // Show Rescan if we have a scan but no evaluation yet
+                            if scannedCode != nil && !isLoadingEvaluation && evaluation == nil {
+                                Button(action: rescan) {
+                                    Label("Rescan", systemImage: "arrow.clockwise")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .frame(minHeight: 44)
+                                .padding(.top, DS.Spacing.sm)
+                            }
                         }
                     }
                 }
@@ -339,14 +352,8 @@ struct ScannerReviewView: View {
     }
 
     @ViewBuilder
-    private func evaluationPanel(_ eval: BookEvaluationRecord) -> some View {
+    private func detailedAnalysisPanel(_ eval: BookEvaluationRecord) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Move buy recommendation to very top, before everything else
-            VStack(spacing: 0) {
-                // Buy/Don't Buy Recommendation - now at the top
-                buyRecommendation(for: eval)
-            }
-
             // Confidence Score Breakdown
             scoreBreakdownSection(eval)
 
@@ -748,9 +755,8 @@ struct ScannerReviewView: View {
                             HStack(spacing: 12) {
                                 profitMetric("Sale", salePrice, color: .blue)
 
-                                if let breakdown = profit.ebayBreakdown {
-                                    profitMetric("Fees", breakdown.fees, color: .red, negative: true)
-                                    profitMetric("Ship", breakdown.shipping, color: .orange, negative: true)
+                                if let fees = profit.ebayBreakdown {
+                                    profitMetric("Fees", fees, color: .red, negative: true)
                                 }
 
                                 let costLabel = bookAttributes.purchasePrice > 0 ? "Cost" : "Cost (Free)"
@@ -840,20 +846,19 @@ struct ScannerReviewView: View {
 
     /// Calculate eBay fees for a given sale price
     /// eBay charges: 13.25% final value fee for books + $0.30 transaction fee
-    /// Plus estimated shipping cost of $5.00 for Media Mail
-    private func calculateEbayFees(salePrice: Double) -> (fees: Double, shipping: Double, netProceeds: Double) {
+    /// Shipping is paid by buyer (not deducted from proceeds)
+    private func calculateEbayFees(salePrice: Double) -> (fees: Double, netProceeds: Double) {
         let finalValueFeeRate = 0.1325 // 13.25% for books category
         let transactionFee = 0.30
-        let estimatedShipping = 5.00 // Media Mail average
 
         let finalValueFee = salePrice * finalValueFeeRate
         let totalFees = finalValueFee + transactionFee
-        let netProceeds = salePrice - totalFees - estimatedShipping
+        let netProceeds = salePrice - totalFees
 
-        return (fees: totalFees, shipping: estimatedShipping, netProceeds: netProceeds)
+        return (fees: totalFees, netProceeds: netProceeds)
     }
 
-    private func calculateProfit(_ eval: BookEvaluationRecord) -> (estimatedProfit: Double?, buybackProfit: Double?, ebayBreakdown: (fees: Double, shipping: Double)?, salePrice: Double?) {
+    private func calculateProfit(_ eval: BookEvaluationRecord) -> (estimatedProfit: Double?, buybackProfit: Double?, ebayBreakdown: Double?, salePrice: Double?) {
         // Allow $0 purchase price (free books)
         let purchasePrice = bookAttributes.purchasePrice
 
@@ -865,13 +870,13 @@ struct ScannerReviewView: View {
             salePrice = backendEstimate
         }
 
-        // eBay net profit (after fees and shipping)
+        // eBay net profit (after fees only, buyer pays shipping)
         var estimatedProfit: Double?
-        var ebayBreakdown: (fees: Double, shipping: Double)?
+        var ebayBreakdown: Double?
         if let price = salePrice {
             let breakdown = calculateEbayFees(salePrice: price)
             estimatedProfit = breakdown.netProceeds - purchasePrice
-            ebayBreakdown = (fees: breakdown.fees, shipping: breakdown.shipping)
+            ebayBreakdown = breakdown.fees
         }
 
         // Buyback profit (no fees, vendor pays shipping)
@@ -1075,7 +1080,25 @@ struct ScannerReviewView: View {
     // MARK: - Actions
 
     private func handleScan(_ code: String) {
-        guard isScanning else { return }
+        // If we have an existing evaluation (from a previous scan), handle it
+        // For DON'T BUY: auto-reject and delete from database
+        // For BUY: auto-accept and add to catalog
+        if let existingEval = evaluation, let isbn = scannedCode {
+            Task {
+                let decision = makeBuyDecision(existingEval)
+                if decision.shouldBuy {
+                    // Auto-accept BUY books
+                    print("✅ Auto-accepting previous BUY: \(isbn)")
+                    // Book is already in database from scan, no action needed
+                } else {
+                    // Auto-reject DON'T BUY books
+                    print("❌ Auto-rejecting previous DON'T BUY: \(isbn)")
+                    try? await BookAPI.deleteBook(isbn)
+                }
+            }
+        }
+
+        // Always allow new scans (remove the isScanning guard)
         isScanning = false
 
         // Play scan detected sound
@@ -1223,6 +1246,26 @@ struct ScannerReviewView: View {
                 await MainActor.run {
                     evaluation = eval
                     isLoadingEvaluation = false
+
+                    // Play sound based on buy recommendation
+                    let decision = makeBuyDecision(eval)
+                    if decision.shouldBuy {
+                        SoundFeedback.buyRecommendation() // Cha-ching!
+                        provideHaptic(.success)
+                    } else {
+                        SoundFeedback.dontBuyRecommendation() // Rejection
+                        provideHaptic(.warning)
+                    }
+
+                    // Re-enable scanning immediately - always ready for next scan
+                    isScanning = true
+
+                    // Re-focus text field if in text mode
+                    if inputMode == .text {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isTextFieldFocused = true
+                        }
+                    }
                 }
             } catch let error as BookAPIError {
                 // Handle 404 - book might not be processed yet, retry
@@ -1241,6 +1284,13 @@ struct ScannerReviewView: View {
                         isLoadingEvaluation = false
                         errorMessage = "Evaluation failed: \(error.localizedDescription)"
                         print("❌ Evaluation fetch error: \(error)")
+
+                        // Re-focus text field if in text mode
+                        if inputMode == .text {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isTextFieldFocused = true
+                            }
+                        }
                     }
                 }
             } catch {
@@ -1248,6 +1298,13 @@ struct ScannerReviewView: View {
                     isLoadingEvaluation = false
                     errorMessage = "Evaluation failed: \(error.localizedDescription)"
                     print("❌ Evaluation fetch error: \(error)")
+
+                    // Re-focus text field if in text mode
+                    if inputMode == .text {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            isTextFieldFocused = true
+                        }
+                    }
                 }
             }
         }

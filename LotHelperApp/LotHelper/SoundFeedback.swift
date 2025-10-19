@@ -1,16 +1,19 @@
 import AudioToolbox
+import AVFoundation
 import UIKit
 
 /// Provides audio and haptic feedback for app actions
 enum SoundFeedback {
+    private static var audioPlayer: AVAudioPlayer?
+
     /// Play sound when barcode is detected
     static func scanDetected() {
-        AudioServicesPlaySystemSound(1054) // Tock - subtle
+        AudioServicesPlaySystemSound(1057) // Tink - subtle confirmation
     }
 
     /// Play sound when book is successfully added
     static func success() {
-        AudioServicesPlaySystemSound(1057) // Payment Success
+        AudioServicesPlaySystemSound(1054) // Success sound
     }
 
     /// Play sound when an error occurs
@@ -21,6 +24,29 @@ enum SoundFeedback {
     /// Play sound when book is rejected/deleted
     static func reject() {
         AudioServicesPlaySystemSound(1072) // Low Power
+    }
+
+    /// Play sound when recommendation is BUY
+    static func buyRecommendation() {
+        // Use custom cash register sound
+        guard let soundURL = Bundle.main.url(forResource: "Cha-Ching", withExtension: "mp3") else {
+            print("⚠️ Could not find Cha-Ching.mp3, falling back to system sound")
+            AudioServicesPlaySystemSound(1054)
+            return
+        }
+
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
+            audioPlayer?.play()
+        } catch {
+            print("⚠️ Could not play custom sound: \(error), falling back to system sound")
+            AudioServicesPlaySystemSound(1054)
+        }
+    }
+
+    /// Play sound when recommendation is DON'T BUY
+    static func dontBuyRecommendation() {
+        AudioServicesPlaySystemSound(1053) // Access Denied (rejection)
     }
 
     /// Provide haptic feedback

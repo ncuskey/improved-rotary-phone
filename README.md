@@ -41,17 +41,21 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
 - **✅ Dual Input Modes**:
   - Camera mode with native barcode scanning, OCR text recognition, and tap-to-focus
   - Text entry mode for Bluetooth barcode scanners with auto-focus workflow
+  - Auto-refocuses after every scan (success or error) for hands-free operation
   - Toggle between modes via toolbar, preference persists
 - **📊 Full-Screen Analysis View**: Complete transparency into decision-making:
   - Camera disappears after scan to maximize analysis space
+  - Accept/Reject buttons at very top (no scrolling needed)
+  - Buy/Don't Buy advice immediately visible
   - Confidence score breakdown with all justification reasons
   - Data source attribution (eBay live, BookScouter, backend estimates)
   - Decision factors section explaining why BUY or DON'T BUY
   - Market intelligence with rarity, categories, author, publisher
 - **💰 eBay Fee-Based Profit Analysis**:
-  - Accurate net profit after eBay fees (13.25% + $0.30) and shipping ($5)
+  - Accurate net profit after eBay fees (13.25% + $0.30)
+  - Shipping not deducted (buyer pays shipping in our store)
   - Two-path comparison: eBay Route vs Buyback Route
-  - Complete breakdown: Sale → Fees → Ship → Cost → Net
+  - Complete breakdown: Sale → Fees → Cost → Net
   - Uses live eBay median pricing when available
   - Shows "(Live)" or "(Est.)" indicator for price transparency
 - **💵 Smart Profit Calculator**:
@@ -65,10 +69,15 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
   - RULE 2: eBay net profit ≥ $10 → BUY (strong)
   - RULE 3: Net $5-10 → Conditional (needs high confidence)
   - Ignores confidence scores when buyback profit exists
+- **⚡ Always-Ready Scanning**: Continuous rapid scanning without button taps
+  - Auto-accepts previous BUY when new scan arrives
+  - Auto-rejects previous DON'T BUY when new scan arrives
+  - Perfect for high-volume scanning sessions
 - **✅ Accept/Reject Workflow**: Make informed keep/reject decisions with full analysis
 - **🚀 Professional Launch**: Branded splash screen with loading status updates
 - **🔒 Secure Token Management**: eBay OAuth tokens handled server-side via token broker
 - **📱 Modern SwiftUI**: Beautiful, accessible interface with haptic feedback and sound effects
+- **🔊 Custom Audio Feedback**: Custom cash register sound for BUY recommendations
 - **🔄 Seamless Integration**: Syncs with backend catalog via REST API
 
 **eBay Token Broker**: A lightweight Node.js service (`token-broker/`) provides OAuth tokens to the iOS app, keeping your eBay Production credentials secure on the server. Auto-starts with `isbn` or `isbn-web` commands.

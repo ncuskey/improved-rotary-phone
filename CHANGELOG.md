@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2025-01-18
+## [Unreleased] - 2025-10-18
 
 ### Added
 - **Full-Screen Analysis View**:
@@ -17,8 +17,10 @@ All notable changes to this project will be documented in this file.
   - Compact text input area with auto-focus and auto-clear
   - Perfect for Bluetooth barcode scanners
   - Auto-refocuses after Accept/Reject for continuous scanning
+  - Auto-refocuses after evaluation completes (success or error)
   - Mode preference persists across app sessions
   - Manual entry option with submit button
+  - Enables completely hands-free Bluetooth scanner workflow
 - **Splash Screen with Loading Status**:
   - Professional branded launch screen with app icon
   - Real-time loading status updates
@@ -26,9 +28,9 @@ All notable changes to this project will be documented in this file.
   - Shows: "Initializing...", "Setting up database...", "Loading cached data...", "Ready!"
 - **eBay Fee-Based Profit Analysis**:
   - Accurate net profit calculation including eBay fees (13.25% + $0.30)
-  - Estimated shipping costs ($5.00 Media Mail)
+  - Shipping not deducted (buyer pays shipping in our store)
   - Two-path profit display: eBay Route vs Buyback Route
-  - Shows complete breakdown: Sale → Fees → Ship → Cost → Net
+  - Shows complete breakdown: Sale → Fees → Cost → Net
   - Buy recommendation now requires $10+ NET profit (not just sale price)
 - **Live eBay Pricing Integration**:
   - Uses real-time eBay median from pricing panel (not just backend estimate)
@@ -46,9 +48,22 @@ All notable changes to this project will be documented in this file.
   - Vendor name displayed in buyback route breakdown
 - **Enhanced Buy Recommendation Panel**:
   - Moved to top of analysis screen for immediate visibility
+  - Accept/Reject buttons at very top (no scrolling needed)
+  - Buy/Don't Buy advice immediately below buttons
   - Profit metrics always shown when available
   - Two-route comparison: eBay vs Buyback side-by-side
   - Color-coded indicators (green/red) for profit/loss
+- **Custom Cash Register Sound**:
+  - Custom MP3 audio file for BUY recommendations
+  - Uses AVAudioPlayer for high-quality playback
+  - Falls back to system sound if file unavailable
+  - Cha-Ching.mp3 bundled with app
+- **Always-Ready Scanning Workflow**:
+  - Scanner automatically ready for next scan after evaluation
+  - Auto-accepts BUY books when new scan arrives
+  - Auto-rejects DON'T BUY books when new scan arrives
+  - Enables continuous rapid scanning without button taps
+  - Perfect for high-volume scanning sessions
 - **New Swift Files**:
   - `LotHelperApp/LotHelper/PricePickerSheet.swift` - Purchase price picker component
   - `LotHelperApp/LotHelper/SplashScreenView.swift` - Branded splash screen
@@ -67,20 +82,34 @@ All notable changes to this project will be documented in this file.
   - Saved to AppStorage for persistence
   - Keyboard icon toggles between modes
 - **Profit Calculation**:
-  - Now includes eBay fees, transaction fees, and shipping
+  - Now includes eBay fees and transaction fees (13.25% + $0.30)
+  - Shipping NOT deducted (buyer pays)
   - Returns salePrice used for transparency
   - Supports $0 purchase price
   - Always calculates buyback profit when offer exists
+- **Sound Feedback System**:
+  - Scan detected: System tink sound (1057)
+  - BUY recommendation: Custom cash register MP3
+  - DON'T BUY recommendation: System rejection sound (1053)
+  - Success/Error: System sounds with haptic feedback
+- **Scanner Workflow**:
+  - Auto-accepts previous BUY when new scan arrives
+  - Auto-rejects previous DON'T BUY when new scan arrives
+  - Text field auto-refocuses after every evaluation
+  - Always ready for next scan without manual interaction
 
 ### Technical Improvements
 - Live eBay median integrated into profit calculations
 - Buyback profit calculated independently and checked first
 - Purchase price defaults to $0 for free books
 - Text field auto-focus management with FocusState
+- Auto-focus restoration after evaluation (success and error paths)
 - Splash screen with async startup workflow
 - Full-screen layout switching based on scan state
 - Enhanced data source transparency in analysis view
 - Vendor name integration from BookScouter API
+- AVAudioPlayer for custom sound playback with fallback
+- Auto-accept/auto-reject on new scan for continuous workflow
 
 ## [Previous] - 2025-01-09
 

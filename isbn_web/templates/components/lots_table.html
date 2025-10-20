@@ -34,6 +34,38 @@
          console.log('Loading lot:', lotId);
          this.loadingLotId = lotId;
 
+         // Determine if this is the first load (carousel not yet initialized)
+         const isFirstLoad = !window.threeState || !window.threeState.isInitialized;
+
+         // Setup one-time event listener for carousel load completion
+         const handleCarouselSwap = function() {
+           console.log('Carousel HTML swapped, dispatching event...');
+           // Give Alpine a moment to process the new HTML
+           setTimeout(() => {
+             if (isFirstLoad) {
+               // First load - trigger init
+               console.log('First load - dispatching carousel-init');
+               window.dispatchEvent(new CustomEvent('carousel-init'));
+             } else {
+               // Subsequent load - trigger reload
+               console.log('Subsequent load - dispatching carousel-reload');
+               window.dispatchEvent(new CustomEvent('carousel-reload'));
+             }
+           }, 100);
+           // Remove this listener after one use
+           document.getElementById('lot-carousel-container').removeEventListener('htmx:afterSwap', handleCarouselSwap);
+         };
+
+         // Add event listener before making the request
+         document.getElementById('lot-carousel-container').addEventListener('htmx:afterSwap', handleCarouselSwap);
+
+         // Load carousel into top section
+         htmx.ajax('GET', `/api/lots/${lotId}/carousel`, {
+           target: '#lot-carousel-container',
+           swap: 'innerHTML'
+         });
+
+         // Load details into side panel
          htmx.ajax('GET', `/api/lots/${lotId}`, {
            target: '#lot-detail',
            swap: 'innerHTML'

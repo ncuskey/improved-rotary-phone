@@ -6,9 +6,8 @@
 <div id="carousel-container"
      class="absolute inset-0 bg-gradient-to-b from-gray-50 to-gray-100"
      x-data="threeCarousel()"
-     x-init="$nextTick(() => setTimeout(() => init(), 5))"
-     @destroy.window="destroy()"
-     @htmx:before-swap.window="destroy()">
+     @carousel-init.window="init()"
+     @carousel-reload.window="window.reloadCarousel()">
 
   <!-- Three.js Canvas -->
   <canvas id="carousel-canvas" class="w-full h-full"></canvas>

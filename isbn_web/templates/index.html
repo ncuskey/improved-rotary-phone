@@ -2,334 +2,20 @@
 
 {% block content %}
 <div class="space-y-3">
-    <div x-data="bookEntry()" x-init="init()" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div class="flex flex-col xl:flex-row gap-4">
-            <div class="flex-1 space-y-4">
-                <form @submit.prevent="submitScan" class="flex flex-col lg:flex-row gap-3">
-                    <div class="flex-1">
-                        <label for="entry-isbn" class="block text-xs font-medium text-gray-700 mb-1">ISBN</label>
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <input id="entry-isbn"
-                                   x-ref="isbnInput"
-                                   x-model="isbnInput"
-                                   type="text"
-                                   inputmode="numeric"
-                                   autocomplete="off"
-                                   placeholder="Scan or enter ISBN"
-                                   class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                   required>
-                            <button type="submit"
-                                    :disabled="isSubmitting || !isbnInput.trim()"
-                                    class="px-4 py-2 text-sm bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
-                                <span x-show="!isSubmitting">Scan ISBN</span>
-                                <span x-show="isSubmitting" class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Processing...
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-
-                <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                    <template x-if="lastScanned">
-                        <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-md">
-                            Last scanned: <span x-text="lastScanned"></span>
-                        </span>
-                    </template>
-                    <template x-if="isEvaluating">
-                        <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-md">Analyzing...</span>
-                    </template>
-                    <template x-if="attributeSummary()">
-                        <span class="px-2 py-1 bg-purple-50 text-purple-700 rounded-md" x-text="attributeSummary()"></span>
-                    </template>
-                    <template x-if="metadata">
-                        <span class="px-2 py-1 bg-green-50 text-green-700 rounded-md">
-                            Condition: <span x-text="attributes.condition"></span>
-                        </span>
-                    </template>
-                </div>
-
-                <template x-if="errorMessage">
-                    <div class="px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md" x-text="errorMessage"></div>
-                </template>
-                <template x-if="successMessage">
-                    <div class="px-3 py-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md" x-text="successMessage"></div>
-                </template>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="border border-gray-200 rounded-lg bg-gray-50 p-3 h-full">
-                        <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide mb-2">Book Preview</h3>
-                        <template x-if="metadata">
-                            <div class="flex gap-3">
-                                <div class="w-24 h-32 rounded-md bg-white border border-gray-200 flex items-center justify-center overflow-hidden">
-                                    <template x-if="metadata.thumbnail">
-                                        <img :src="metadata.thumbnail" alt="Cover" class="w-full h-full object-cover">
-                                    </template>
-                                    <template x-if="!metadata.thumbnail">
-                                        <span class="text-xs text-gray-400">No Cover</span>
-                                    </template>
-                                </div>
-                                <div class="space-y-2 flex-1">
-                                    <div>
-                                        <p class="text-sm font-semibold text-gray-900" x-text="metadata.title"></p>
-                                        <p class="text-xs text-gray-600" x-show="metadata.subtitle" x-text="metadata.subtitle"></p>
-                                    </div>
-                                    <p class="text-xs text-gray-500" x-text="metadata.authors?.join(', ') || metadata.author || 'Unknown author'"></p>
-                                    <div class="flex flex-wrap gap-2 text-[11px] text-gray-600">
-                                        <span x-show="metadata.published_year">Published <span x-text="metadata.published_year"></span></span>
-                                        <span x-show="metadata.categories?.length" x-text="metadata.categories.join(', ')"></span>
-                                        <span>ISBN <span x-text="metadata.isbn || pendingIsbn"></span></span>
-                                    </div>
-                                    <p class="text-xs text-gray-600 overflow-hidden max-h-24" x-show="metadata.description" x-text="metadata.description"></p>
-                                </div>
-                            </div>
-                        </template>
-                        <template x-if="!metadata">
-                            <div class="h-32 flex items-center justify-center text-sm text-gray-500">
-                                Scan an ISBN to preview book details.
-                            </div>
-                        </template>
-                    </div>
-
-                    <div class="border border-gray-200 rounded-lg bg-gray-50 p-3 h-full">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">Triage Assessment</h3>
-                            <template x-if="evaluation">
-                                <span :class="probabilityBadgeClasses(evaluation.probability_label)" class="px-2 py-0.5 text-xs font-semibold rounded-md">
-                                    <span x-text="evaluation.probability_label || '—'"></span>
-                                    <span x-show="evaluation.probability_score" class="ml-1 text-[11px] font-normal text-gray-600" x-text="formatProbability(evaluation.probability_score)"></span>
-                                </span>
-                            </template>
-                        </div>
-                        <template x-if="isEvaluating">
-                            <div class="flex items-center gap-2 text-sm text-gray-600">
-                                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Analyzing market data...
-                            </div>
-                        </template>
-                        <template x-if="evaluation">
-                            <div class="space-y-3">
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <p class="text-xs text-gray-500">Estimated Value</p>
-                                        <p class="text-base font-semibold text-gray-900" x-text="formatUSD(evaluation.estimated_price)"></p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-500">Buyback Floor</p>
-                                        <p class="text-base font-semibold text-green-600" x-text="bestBuybackLabel(evaluation)"></p>
-                                    </div>
-                                </div>
-                                <div class="flex flex-wrap gap-2 text-[11px] text-gray-600">
-                                    <span x-show="evaluation.bookscouter?.amazon_sales_rank">Amazon Rank <span x-text="formatRank(evaluation.bookscouter.amazon_sales_rank)"></span></span>
-                                    <span x-show="evaluation.rarity">Rarity <span x-text="formatPercent(evaluation.rarity)"></span></span>
-                                    <span x-show="evaluation.edition">Edition <span x-text="evaluation.edition"></span></span>
-                                </div>
-                                <div x-show="evaluation.justification?.length">
-                                    <p class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Key Factors</p>
-                                    <ul class="space-y-1">
-                                        <template x-for="reason in evaluation.justification.slice(0, 3)" :key="reason">
-                                            <li class="text-xs text-gray-600 flex gap-2">
-                                                <span>&bull;</span>
-                                                <span x-text="reason"></span>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </div>
-                            </div>
-                        </template>
-                        <template x-if="!isEvaluating && !evaluation">
-                            <div class="h-32 flex items-center justify-center text-sm text-gray-500">
-                                Evaluation details will appear after scanning.
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div class="border border-gray-200 rounded-lg bg-white p-3 h-full">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">eBay Market Signals</h3>
-                            <span x-show="evaluation?.market?.sell_through_rate" class="text-[11px] text-gray-500">
-                                Sell-through <span x-text="formatPercent(evaluation?.market?.sell_through_rate)"></span>
-                            </span>
-                        </div>
-                        <template x-if="evaluation?.market">
-                            <div class="space-y-3 text-sm text-gray-700">
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div class="border border-gray-100 rounded-md p-2">
-                                        <p class="text-[11px] uppercase tracking-wide text-gray-500">Active Listings</p>
-                                        <p class="text-base font-semibold text-gray-900" x-text="evaluation.market.active_count"></p>
-                                        <p class="text-[11px] text-gray-500" x-text="marketAvgLabel(evaluation.market.active_avg_price)"></p>
-                                    </div>
-                                    <div class="border border-gray-100 rounded-md p-2">
-                                        <p class="text-[11px] uppercase tracking-wide text-gray-500">Sold Listings</p>
-                                        <p class="text-base font-semibold text-gray-900" x-text="evaluation.market.sold_count"></p>
-                                        <p class="text-[11px] text-gray-500" x-text="marketAvgLabel(evaluation.market.sold_avg_price)"></p>
-                                    </div>
-                                </div>
-                                <div class="border border-gray-100 rounded-md p-2">
-                                    <p class="text-[11px] uppercase tracking-wide text-gray-500">
-                                        Sold Comps <span x-show="evaluation.market.sold_comps_is_estimate">(est)</span>
-                                    </p>
-                                    <div class="grid grid-cols-3 gap-2 text-[11px] text-gray-600">
-                                        <span><span class="block text-gray-400">Count</span> <span x-text="evaluation.market.sold_comps_count ?? '—'"></span></span>
-                                        <span><span class="block text-gray-400">Median</span> <span x-text="formatUSD(evaluation.market.sold_comps_median)"></span></span>
-                                        <span><span class="block text-gray-400">Max</span> <span x-text="formatUSD(evaluation.market.sold_comps_max)"></span></span>
-                                    </div>
-                                    <p class="text-[11px] text-gray-500 mt-1" x-show="evaluation.market.sold_comps_last_sold_date">
-                                        Last sold <span x-text="formatDate(evaluation.market.sold_comps_last_sold_date)"></span>
-                                    </p>
-                                </div>
-                            </div>
-                        </template>
-                        <template x-if="!evaluation?.market">
-                            <div class="h-24 flex items-center justify-center text-sm text-gray-500">
-                                Market data loads automatically after a scan.
-                            </div>
-                        </template>
-                    </div>
-
-                    <div class="border border-gray-200 rounded-lg bg-white p-3 h-full">
-                        <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide mb-2">BookScouter Offers</h3>
-                        <template x-if="evaluation?.bookscouter?.total_vendors">
-                            <div class="space-y-2 text-sm text-gray-700">
-                                <div class="flex items-center justify-between">
-                                    <span>Top Offer</span>
-                                    <span class="font-semibold text-green-600" x-text="formatUSD(evaluation.bookscouter.best_price)"></span>
-                                </div>
-                                <div class="flex items-center justify-between text-[11px] text-gray-500">
-                                    <span>Vendors</span>
-                                    <span x-text="evaluation.bookscouter.total_vendors"></span>
-                                </div>
-                                <div x-show="evaluation.bookscouter.amazon_sales_rank" class="text-[11px] text-gray-500">
-                                    Amazon Rank <span x-text="formatRank(evaluation.bookscouter.amazon_sales_rank)"></span>
-                                </div>
-                                <div class="border border-gray-100 rounded-md p-2 space-y-2">
-                                    <template x-for="offer in evaluation.bookscouter.offers.slice(0, 3)" :key="offer.vendor_id">
-                                        <div class="flex items-center justify-between text-xs text-gray-600">
-                                            <span x-text="offer.vendor_name"></span>
-                                            <span class="font-semibold text-gray-800" x-text="formatUSD(offer.price)"></span>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
-                        <template x-if="!evaluation?.bookscouter?.total_vendors">
-                            <div class="h-24 flex items-center justify-center text-sm text-gray-500">
-                                No vendor offers yet for this ISBN.
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap justify-end gap-2 pt-2">
-                    <button type="button"
-                            @click="resetForm(false)"
-                            class="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100">
-                        Clear
-                    </button>
-                    <button type="button"
-                            @click="rejectBook"
-                            :disabled="!pendingIsbn || isDeleting"
-                            class="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed">
-                        <span x-show="!isDeleting">Reject</span>
-                        <span x-show="isDeleting" class="flex items-center gap-2">
-                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Removing...
-                        </span>
-                    </button>
-                    <button type="button"
-                            x-show="evaluation"
-                            @click="acceptBook"
-                            class="px-3 py-1.5 text-sm border border-blue-200 text-blue-600 rounded-md hover:bg-blue-50">
-                        Accept & Continue
-                    </button>
-                </div>
-            </div>
-
-            <div class="w-full xl:w-72 bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-3">
-                <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">Book Attributes</h3>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Condition</label>
-                    <select x-model="attributes.condition" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                        <template x-for="option in conditions" :key="option">
-                            <option x-text="option"></option>
-                        </template>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Cover Type</label>
-                    <select x-model="attributes.coverType" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                        <template x-for="option in coverTypes" :key="option">
-                            <option x-text="option"></option>
-                        </template>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Printing</label>
-                    <select x-model="attributes.printing" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Not specified</option>
-                        <template x-for="option in printings" :key="option">
-                            <option x-text="option"></option>
-                        </template>
-                    </select>
-                </div>
-                <div class="space-y-2">
-                    <label class="flex items-center gap-2 text-xs font-medium text-gray-700">
-                        <input type="checkbox" x-model="attributes.firstEdition" class="rounded border-gray-300">
-                        First Edition
-                    </label>
-                    <label class="flex items-center gap-2 text-xs font-medium text-gray-700">
-                        <input type="checkbox" x-model="attributes.signed" class="rounded border-gray-300">
-                        Signed / Autographed
-                    </label>
-                </div>
-                <div x-show="attributeSummary()" class="px-3 py-2 text-xs text-gray-600 bg-white border border-gray-200 rounded-md" x-text="attributeSummary()"></div>
-                <div class="pt-2 border-t border-gray-200 space-y-2">
-                    <button type="button"
-                            @click="resetAttributes"
-                            class="text-xs text-blue-600 hover:text-blue-800">
-                        Reset Attributes
-                    </button>
-                    <button type="button"
-                            @click="openImportModal"
-                            class="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">
-                        Import CSV
-                    </button>
-                    <button type="button"
-                            @click="refreshMetadata"
-                            :disabled="isRefreshingMetadata"
-                            class="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed">
-                        <span x-show="!isRefreshingMetadata">Refresh Metadata</span>
-                        <span x-show="isRefreshingMetadata" class="flex items-center gap-2 justify-center">
-                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Refreshing...
-                        </span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div x-data="{ activeTab: 'books' }" class="flex flex-col h-full">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200" style="height: calc(100vh - 120px);">
+        <div x-data="{ activeTab: 'scan' }" class="flex flex-col h-full">
             <nav class="flex rounded-t-lg overflow-hidden border-b border-gray-200 bg-gray-50">
+                <button @click="activeTab = 'scan'"
+                        :class="activeTab === 'scan' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                        class="w-1/3 py-2 px-1 text-center border-b-2 font-medium text-sm transition-colors">
+                    <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                    </svg>
+                    Scan
+                </button>
                 <button @click="activeTab = 'books'"
                         :class="activeTab === 'books' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                        class="w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm transition-colors">
+                        class="w-1/3 py-2 px-1 text-center border-b-2 font-medium text-sm transition-colors">
                     <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
@@ -337,7 +23,7 @@
                 </button>
                 <button @click="activeTab = 'lots'"
                         :class="activeTab === 'lots' ? 'border-blue-500 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                        class="w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm transition-colors">
+                        class="w-1/3 py-2 px-1 text-center border-b-2 font-medium text-sm transition-colors">
                     <svg class="inline-block w-5 h-5 mr-2 -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
@@ -345,11 +31,333 @@
                 </button>
             </nav>
 
-            <div class="flex-1" style="height: calc(100vh - 280px); min-height: 450px;">
-                <div x-show="activeTab === 'books'" class="h-full">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 p-2 sm:p-3 h-full">
-                        <div class="lg:col-span-2 flex flex-col">
-                            <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full">
+            <div class="flex-1">
+                <div x-show="activeTab === 'scan'" class="h-full p-3 overflow-y-auto">
+                    <div x-data="bookEntry()" x-init="init()">
+                        <div class="flex flex-col xl:flex-row gap-3">
+                            <div class="flex-1 space-y-2">
+                                <form @submit.prevent="submitScan" class="flex flex-col lg:flex-row gap-3">
+                                    <div class="flex-1">
+                                        <label for="entry-isbn" class="block text-xs font-medium text-gray-700 mb-1">ISBN</label>
+                                        <div class="flex flex-col sm:flex-row gap-2">
+                                            <input id="entry-isbn"
+                                                   x-ref="isbnInput"
+                                                   x-model="isbnInput"
+                                                   type="text"
+                                                   inputmode="numeric"
+                                                   autocomplete="off"
+                                                   placeholder="Scan or enter ISBN"
+                                                   class="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                                                   required>
+                                            <button type="submit"
+                                                    :disabled="isSubmitting || !isbnInput.trim()"
+                                                    class="px-4 py-2 text-sm bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                                                <span x-show="!isSubmitting">Scan ISBN</span>
+                                                <span x-show="isSubmitting" class="flex items-center gap-2">
+                                                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Processing...
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+
+                                <div class="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                                    <template x-if="lastScanned">
+                                        <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-md">
+                                            Last scanned: <span x-text="lastScanned"></span>
+                                        </span>
+                                    </template>
+                                    <template x-if="isEvaluating">
+                                        <span class="px-2 py-1 bg-blue-50 text-blue-700 rounded-md">Analyzing...</span>
+                                    </template>
+                                    <template x-if="attributeSummary()">
+                                        <span class="px-2 py-1 bg-purple-50 text-purple-700 rounded-md" x-text="attributeSummary()"></span>
+                                    </template>
+                                    <template x-if="metadata">
+                                        <span class="px-2 py-1 bg-green-50 text-green-700 rounded-md">
+                                            Condition: <span x-text="attributes.condition"></span>
+                                        </span>
+                                    </template>
+                                </div>
+
+                                <template x-if="errorMessage">
+                                    <div class="px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md" x-text="errorMessage"></div>
+                                </template>
+                                <template x-if="successMessage">
+                                    <div class="px-3 py-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md" x-text="successMessage"></div>
+                                </template>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    <div class="border border-gray-200 rounded-lg bg-gray-50 p-2 h-full">
+                                        <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide mb-1.5">Book Preview</h3>
+                                        <template x-if="metadata">
+                                            <div class="flex gap-3">
+                                                <div class="w-24 h-32 rounded-md bg-white border border-gray-200 flex items-center justify-center overflow-hidden">
+                                                    <template x-if="metadata.thumbnail">
+                                                        <img :src="metadata.thumbnail" alt="Cover" class="w-full h-full object-cover">
+                                                    </template>
+                                                    <template x-if="!metadata.thumbnail">
+                                                        <span class="text-xs text-gray-400">No Cover</span>
+                                                    </template>
+                                                </div>
+                                                <div class="space-y-1 flex-1">
+                                                    <div>
+                                                        <p class="text-xs font-semibold text-gray-900 line-clamp-2" x-text="metadata.title"></p>
+                                                        <p class="text-[11px] text-gray-600 line-clamp-1" x-show="metadata.subtitle" x-text="metadata.subtitle"></p>
+                                                    </div>
+                                                    <p class="text-[11px] text-gray-500 line-clamp-1" x-text="metadata.authors?.join(', ') || metadata.author || 'Unknown author'"></p>
+                                                    <div class="flex flex-wrap gap-1 text-[10px] text-gray-600">
+                                                        <span x-show="metadata.published_year">Published <span x-text="metadata.published_year"></span></span>
+                                                        <span x-show="metadata.categories?.length" class="line-clamp-1" x-text="metadata.categories.join(', ')"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!metadata">
+                                            <div class="h-32 flex items-center justify-center text-sm text-gray-500">
+                                                Scan an ISBN to preview book details.
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <div class="border border-gray-200 rounded-lg bg-gray-50 p-2 h-full">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">Triage Assessment</h3>
+                                            <template x-if="evaluation">
+                                                <span :class="probabilityBadgeClasses(evaluation.probability_label)" class="px-2 py-0.5 text-xs font-semibold rounded-md">
+                                                    <span x-text="evaluation.probability_label || '—'"></span>
+                                                    <span x-show="evaluation.probability_score" class="ml-1 text-[11px] font-normal text-gray-600" x-text="formatProbability(evaluation.probability_score)"></span>
+                                                </span>
+                                            </template>
+                                        </div>
+                                        <template x-if="isEvaluating">
+                                            <div class="flex items-center gap-2 text-sm text-gray-600">
+                                                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Analyzing market data...
+                                            </div>
+                                        </template>
+                                        <template x-if="evaluation">
+                                            <div class="space-y-1.5">
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <p class="text-xs text-gray-500">Estimated Value</p>
+                                                        <p class="text-base font-semibold text-gray-900" x-text="formatUSD(evaluation.estimated_price)"></p>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-xs text-gray-500">Buyback Floor</p>
+                                                        <p class="text-base font-semibold text-green-600" x-text="bestBuybackLabel(evaluation)"></p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex flex-wrap gap-2 text-[11px] text-gray-600">
+                                                    <span x-show="evaluation.bookscouter?.amazon_sales_rank">Amazon Rank <span x-text="formatRank(evaluation.bookscouter.amazon_sales_rank)"></span></span>
+                                                    <span x-show="evaluation.rarity">Rarity <span x-text="formatPercent(evaluation.rarity)"></span></span>
+                                                    <span x-show="evaluation.edition">Edition <span x-text="evaluation.edition"></span></span>
+                                                </div>
+                                                <div x-show="evaluation.justification?.length">
+                                                    <p class="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Key Factors</p>
+                                                    <ul class="space-y-1">
+                                                        <template x-for="reason in evaluation.justification.slice(0, 3)" :key="reason">
+                                                            <li class="text-xs text-gray-600 flex gap-2">
+                                                                <span>&bull;</span>
+                                                                <span x-text="reason"></span>
+                                                            </li>
+                                                        </template>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!isEvaluating && !evaluation">
+                                            <div class="h-32 flex items-center justify-center text-sm text-gray-500">
+                                                Evaluation details will appear after scanning.
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                                    <div class="border border-gray-200 rounded-lg bg-white p-2 h-full">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">eBay Market Signals</h3>
+                                            <span x-show="evaluation?.market?.sell_through_rate" class="text-[11px] text-gray-500">
+                                                Sell-through <span x-text="formatPercent(evaluation?.market?.sell_through_rate)"></span>
+                                            </span>
+                                        </div>
+                                        <template x-if="evaluation?.market">
+                                            <div class="space-y-2 text-sm text-gray-700">
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div class="border border-gray-100 rounded-md p-2">
+                                                        <p class="text-[11px] uppercase tracking-wide text-gray-500">Active Listings</p>
+                                                        <p class="text-base font-semibold text-gray-900" x-text="evaluation.market.active_count"></p>
+                                                        <p class="text-[11px] text-gray-500" x-text="marketAvgLabel(evaluation.market.active_avg_price)"></p>
+                                                    </div>
+                                                    <div class="border border-gray-100 rounded-md p-2">
+                                                        <p class="text-[11px] uppercase tracking-wide text-gray-500">Sold Listings</p>
+                                                        <p class="text-base font-semibold text-gray-900" x-text="evaluation.market.sold_count"></p>
+                                                        <p class="text-[11px] text-gray-500" x-text="marketAvgLabel(evaluation.market.sold_avg_price)"></p>
+                                                    </div>
+                                                </div>
+                                                <div class="border border-gray-100 rounded-md p-2">
+                                                    <p class="text-[11px] uppercase tracking-wide text-gray-500">
+                                                        Sold Comps <span x-show="evaluation.market.sold_comps_is_estimate">(est)</span>
+                                                    </p>
+                                                    <div class="grid grid-cols-3 gap-2 text-[11px] text-gray-600">
+                                                        <span><span class="block text-gray-400">Count</span> <span x-text="evaluation.market.sold_comps_count ?? '—'"></span></span>
+                                                        <span><span class="block text-gray-400">Median</span> <span x-text="formatUSD(evaluation.market.sold_comps_median)"></span></span>
+                                                        <span><span class="block text-gray-400">Max</span> <span x-text="formatUSD(evaluation.market.sold_comps_max)"></span></span>
+                                                    </div>
+                                                    <p class="text-[11px] text-gray-500 mt-1" x-show="evaluation.market.sold_comps_last_sold_date">
+                                                        Last sold <span x-text="formatDate(evaluation.market.sold_comps_last_sold_date)"></span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!evaluation?.market">
+                                            <div class="h-24 flex items-center justify-center text-sm text-gray-500">
+                                                Market data loads automatically after a scan.
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <div class="border border-gray-200 rounded-lg bg-white p-2 h-full">
+                                        <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide mb-1.5">BookScouter Offers</h3>
+                                        <template x-if="evaluation?.bookscouter?.total_vendors">
+                                            <div class="space-y-2 text-sm text-gray-700">
+                                                <div class="flex items-center justify-between">
+                                                    <span>Top Offer</span>
+                                                    <span class="font-semibold text-green-600" x-text="formatUSD(evaluation.bookscouter.best_price)"></span>
+                                                </div>
+                                                <div class="flex items-center justify-between text-[11px] text-gray-500">
+                                                    <span>Vendors</span>
+                                                    <span x-text="evaluation.bookscouter.total_vendors"></span>
+                                                </div>
+                                                <div x-show="evaluation.bookscouter.amazon_sales_rank" class="text-[11px] text-gray-500">
+                                                    Amazon Rank <span x-text="formatRank(evaluation.bookscouter.amazon_sales_rank)"></span>
+                                                </div>
+                                                <div class="border border-gray-100 rounded-md p-2 space-y-2">
+                                                    <template x-for="offer in evaluation.bookscouter.offers.slice(0, 3)" :key="offer.vendor_id">
+                                                        <div class="flex items-center justify-between text-xs text-gray-600">
+                                                            <span x-text="offer.vendor_name"></span>
+                                                            <span class="font-semibold text-gray-800" x-text="formatUSD(offer.price)"></span>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!evaluation?.bookscouter?.total_vendors">
+                                            <div class="h-24 flex items-center justify-center text-sm text-gray-500">
+                                                No vendor offers yet for this ISBN.
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap justify-end gap-2 pt-2">
+                                    <button type="button"
+                                            @click="resetForm(false)"
+                                            class="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100">
+                                        Clear
+                                    </button>
+                                    <button type="button"
+                                            @click="rejectBook"
+                                            :disabled="!pendingIsbn || isDeleting"
+                                            class="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed">
+                                        <span x-show="!isDeleting">Reject</span>
+                                        <span x-show="isDeleting" class="flex items-center gap-2">
+                                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Removing...
+                                        </span>
+                                    </button>
+                                    <button type="button"
+                                            x-show="evaluation"
+                                            @click="acceptBook"
+                                            class="px-3 py-1.5 text-sm border border-blue-200 text-blue-600 rounded-md hover:bg-blue-50">
+                                        Accept & Continue
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="w-full xl:w-72 bg-gray-50 border border-gray-200 rounded-lg p-2 space-y-2">
+                                <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">Book Attributes</h3>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Condition</label>
+                                    <select x-model="attributes.condition" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        <template x-for="option in conditions" :key="option">
+                                            <option x-text="option"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Cover Type</label>
+                                    <select x-model="attributes.coverType" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        <template x-for="option in coverTypes" :key="option">
+                                            <option x-text="option"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Printing</label>
+                                    <select x-model="attributes.printing" class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">Not specified</option>
+                                        <template x-for="option in printings" :key="option">
+                                            <option x-text="option"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="space-y-1.5">
+                                    <label class="flex items-center gap-2 text-xs font-medium text-gray-700">
+                                        <input type="checkbox" x-model="attributes.firstEdition" class="rounded border-gray-300">
+                                        First Edition
+                                    </label>
+                                    <label class="flex items-center gap-2 text-xs font-medium text-gray-700">
+                                        <input type="checkbox" x-model="attributes.signed" class="rounded border-gray-300">
+                                        Signed / Autographed
+                                    </label>
+                                </div>
+                                <div x-show="attributeSummary()" class="px-2 py-1.5 text-xs text-gray-600 bg-white border border-gray-200 rounded-md" x-text="attributeSummary()"></div>
+                                <div class="pt-1.5 border-t border-gray-200 space-y-1.5">
+                                    <button type="button"
+                                            @click="resetAttributes"
+                                            class="text-xs text-blue-600 hover:text-blue-800">
+                                        Reset Attributes
+                                    </button>
+                                    <button type="button"
+                                            @click="openImportModal"
+                                            class="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">
+                                        Import CSV
+                                    </button>
+                                    <button type="button"
+                                            @click="refreshMetadata"
+                                            :disabled="isRefreshingMetadata"
+                                            class="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed">
+                                        <span x-show="!isRefreshingMetadata">Refresh Metadata</span>
+                                        <span x-show="isRefreshingMetadata" class="flex items-center gap-2 justify-center">
+                                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Refreshing...
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="activeTab === 'books'" class="h-full p-2 sm:p-3">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 h-full">
+                        <div class="lg:col-span-2 flex flex-col min-h-0">
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full min-h-0">
                                 <div class="px-3 py-2 border-b border-gray-200 flex items-center justify-between gap-2">
                                     <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">Scanned Books</h3>
                                     <form hx-get="/api/books"
@@ -394,8 +402,8 @@
                             </div>
                         </div>
 
-                        <div class="lg:col-span-1 flex flex-col">
-                            <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full">
+                        <div class="lg:col-span-1 flex flex-col min-h-0">
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full min-h-0">
                                 <div class="px-3 py-2 border-b border-gray-200 flex-shrink-0">
                                     <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">Book Details</h3>
                                 </div>
@@ -407,10 +415,25 @@
                     </div>
                 </div>
 
-                <div x-show="activeTab === 'lots'" class="h-full" x-cloak>
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 p-2 sm:p-3 h-full">
-                        <div class="lg:col-span-2 flex flex-col">
-                            <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full">
+                <div x-show="activeTab === 'lots'" class="h-full p-2 sm:p-3 flex flex-col gap-3" x-cloak>
+                    <!-- Carousel Section - Full Width at Top -->
+                    <div class="h-1/3 min-h-[250px] bg-gray-50 rounded-lg border border-gray-200 relative overflow-hidden">
+                        <div id="lot-carousel-container" class="absolute inset-0">
+                            <div class="h-full flex items-center justify-center text-gray-500">
+                                <div class="text-center">
+                                    <svg class="inline w-12 h-12 mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                    <p class="text-sm">Select a lot to view books in 3D carousel</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Section - Lots Table and Details -->
+                    <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-0">
+                        <div class="lg:col-span-2 flex flex-col min-h-0">
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full min-h-0">
                                 <div class="px-3 py-2 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
                                     <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">Suggested Lots</h3>
                                     <div class="flex items-center gap-3">
@@ -446,8 +469,8 @@
                             </div>
                         </div>
 
-                        <div class="lg:col-span-1 flex flex-col">
-                            <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full">
+                        <div class="lg:col-span-1 flex flex-col min-h-0">
+                            <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full min-h-0">
                                 <div class="px-3 py-2 border-b border-gray-200 flex-shrink-0">
                                     <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">Lot Details</h3>
                                 </div>

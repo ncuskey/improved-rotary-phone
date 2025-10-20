@@ -170,6 +170,57 @@ async def get_lot_detail(
     )
 
 
+@router.get("/{lot_id:int}/carousel", response_class=HTMLResponse)
+async def get_lot_carousel(
+    request: Request,
+    lot_id: int,
+    service: BookService = Depends(get_book_service),
+):
+    """
+    Get the carousel HTML for a specific lot.
+
+    Returns only the carousel partial (no lot details).
+    """
+    lots = service.list_lots()
+
+    # Find the lot by ID
+    lot = None
+    for l in lots:
+        if l.id == lot_id:
+            lot = l
+            break
+
+    if not lot:
+        return templates.TemplateResponse(
+            "components/lot_carousel.html",
+            {"request": request, "books": [], "error": "Lot not found"},
+        )
+
+    # Get books in this lot
+    books = service.get_books_for_lot(lot)
+
+    # Convert books to serializable format for carousel
+    books_data = []
+    for book in books:
+        book_data = {
+            "isbn": book.isbn,
+            "condition": book.condition,
+            "estimated_price": book.estimated_price,
+            "metadata": {
+                "title": book.metadata.title if book.metadata else "Unknown Title",
+                "authors": list(book.metadata.authors) if book.metadata and book.metadata.authors else [],
+                "published_year": book.metadata.published_year if book.metadata else None,
+                "series_name": book.metadata.series_name if book.metadata else None,
+            } if book.metadata else None
+        }
+        books_data.append(book_data)
+
+    return templates.TemplateResponse(
+        "components/lot_carousel.html",
+        {"request": request, "books": books_data},
+    )
+
+
 @router.get("/{lot_id:int}/details", response_class=HTMLResponse)
 async def get_lot_details_page(
     request: Request,

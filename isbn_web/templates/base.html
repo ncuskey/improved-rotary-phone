@@ -202,29 +202,7 @@
         }
     </script>
 
-    <!-- Global HTMX event handlers for carousel cleanup -->
-    <script>
-        // Clean up Three.js carousel before HTMX swaps new content
-        document.body.addEventListener('htmx:beforeSwap', function(evt) {
-            // Check if the target contains a carousel
-            const target = evt.detail.target;
-            if (target) {
-                const carousel = target.querySelector('#carousel-container');
-                if (carousel && carousel.__x) {
-                    // Alpine component exists, call destroy
-                    try {
-                        const alpineData = Alpine.$data(carousel);
-                        if (alpineData && typeof alpineData.destroy === 'function') {
-                            console.log('Cleaning up carousel before HTMX swap');
-                            alpineData.destroy();
-                        }
-                    } catch (e) {
-                        console.warn('Error cleaning up carousel:', e);
-                    }
-                }
-            }
-        });
-    </script>
+    <!-- Note: Carousel lifecycle now managed via explicit events (carousel-init, carousel-reload) -->
 
     {% block scripts %}{% endblock %}
 </body>

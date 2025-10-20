@@ -170,6 +170,7 @@ async def scan_book(
 async def list_books(
     request: Request,
     search: Optional[str] = None,
+    selected_isbn: Optional[str] = None,
     service: BookService = Depends(get_book_service),
 ):
     """
@@ -177,6 +178,9 @@ async def list_books(
 
     Returns the book table HTML partial.
     """
+    # Handle empty string as None
+    normalized_selected = normalise_isbn(selected_isbn) if selected_isbn and selected_isbn.strip() else None
+
     if search:
         # Search by ISBN, title, or author
         books = service.search_books(search)
@@ -185,13 +189,19 @@ async def list_books(
 
     return templates.TemplateResponse(
         "components/book_table.html",
-        {"request": request, "books": books},
+        {
+            "request": request,
+            "books": books,
+            "selected_isbn": normalized_selected,
+        },
     )
 
 
 @router.get("/{isbn}/evaluate")
 async def get_book_evaluation_json(
     isbn: str,
+    condition: Optional[str] = None,
+    edition: Optional[str] = None,
     service: BookService = Depends(get_book_service),
 ) -> JSONResponse:
     """
@@ -206,6 +216,8 @@ async def get_book_evaluation_json(
     - Rarity score
     - Series information
     - Market data (eBay comps)
+
+    If condition or edition are provided, re-calculates evaluation with those attributes.
     """
     normalized_isbn = normalise_isbn(isbn)
 
@@ -223,7 +235,52 @@ async def get_book_evaluation_json(
             content={"error": "Book not found", "isbn": normalized_isbn}
         )
 
-    return JSONResponse(content=_book_evaluation_to_dict(book))
+    # Debug: print parameters received
+    print(f"DEBUG: Received params - condition={condition!r}, edition={edition!r}")
+    print(f"DEBUG: Book from DB - condition={book.condition!r}, edition={book.edition!r}")
+
+    # If condition or edition are provided, rebuild evaluation with new attributes
+    if condition is not None or edition is not None:
+        from isbn_lot_optimizer.probability import build_book_evaluation
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # Use provided values or fallback to existing
+        eval_condition = condition if condition is not None else book.condition
+        eval_edition = edition if edition is not None else book.edition
+
+        logger.info(f"Re-evaluating {normalized_isbn}: condition={eval_condition}, edition={eval_edition}")
+
+        # Get Amazon rank from existing evaluation
+        amazon_rank = None
+        if book.bookscouter and hasattr(book.bookscouter, 'amazon_sales_rank'):
+            amazon_rank = book.bookscouter.amazon_sales_rank
+
+        # Preserve bookscouter and booksrun data before rebuilding
+        bookscouter_data = book.bookscouter
+        booksrun_data = book.booksrun
+
+        # Rebuild evaluation with new attributes
+        book = build_book_evaluation(
+            isbn=book.isbn,
+            original_isbn=book.original_isbn,
+            metadata=book.metadata,
+            market=book.market,
+            condition=eval_condition,
+            edition=eval_edition,
+            amazon_rank=amazon_rank,
+        )
+
+        print(f"DEBUG: After rebuild - book.condition={book.condition!r}, book.edition={book.edition!r}")
+        logger.info(f"After rebuild: book.condition={book.condition}, book.edition={book.edition}")
+
+        # Restore bookscouter and booksrun data
+        book.bookscouter = bookscouter_data
+        book.booksrun = booksrun_data
+
+    result_dict = _book_evaluation_to_dict(book)
+    print(f"DEBUG: Result dict - condition={result_dict.get('condition')!r}, edition={result_dict.get('edition')!r}")
+    return JSONResponse(content=result_dict)
 
 
 @router.get("/{isbn}", response_class=HTMLResponse)

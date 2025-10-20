@@ -570,9 +570,12 @@ function threeCarousel() {
     },
 
     animate() {
-      // Safety check - don't animate if not initialized or if scene is null
-      if (!threeState.isInitialized || !threeState.scene) {
-        console.log('Stopping animation - not initialized or scene is null');
+      // Safety check - don't animate if not initialized or if critical objects are missing
+      if (!threeState.isInitialized || !threeState.scene || !threeState.renderer || !threeState.camera) {
+        // Don't log every frame - only log once when stopping
+        if (threeState.animationFrame) {
+          console.log('Stopping animation - missing required objects');
+        }
         return;
       }
 
@@ -641,16 +644,8 @@ function threeCarousel() {
         });
       }
 
-      // Render
-      if (threeState.renderer && threeState.scene && threeState.camera) {
-        threeState.renderer.render(threeState.scene, threeState.camera);
-      } else {
-        console.warn('Cannot render - missing:', {
-          renderer: !!threeState.renderer,
-          scene: !!threeState.scene,
-          camera: !!threeState.camera
-        });
-      }
+      // Render (we already checked these exist at the start of animate)
+      threeState.renderer.render(threeState.scene, threeState.camera);
     },
 
     destroy() {

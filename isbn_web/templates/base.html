@@ -18,6 +18,9 @@
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
+    <!-- Three.js (load before Alpine to avoid proxy conflicts) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
 
@@ -89,6 +92,7 @@
     </div>
 
     <!-- Custom JavaScript -->
+    <script src="/static/js/carousel.js"></script>
     <script src="/static/js/app.js"></script>
 
     <!-- Alpine.js Carousel Component -->
@@ -196,6 +200,30 @@
                 }
             }
         }
+    </script>
+
+    <!-- Global HTMX event handlers for carousel cleanup -->
+    <script>
+        // Clean up Three.js carousel before HTMX swaps new content
+        document.body.addEventListener('htmx:beforeSwap', function(evt) {
+            // Check if the target contains a carousel
+            const target = evt.detail.target;
+            if (target) {
+                const carousel = target.querySelector('#carousel-container');
+                if (carousel && carousel.__x) {
+                    // Alpine component exists, call destroy
+                    try {
+                        const alpineData = Alpine.$data(carousel);
+                        if (alpineData && typeof alpineData.destroy === 'function') {
+                            console.log('Cleaning up carousel before HTMX swap');
+                            alpineData.destroy();
+                        }
+                    } catch (e) {
+                        console.warn('Error cleaning up carousel:', e);
+                    }
+                }
+            }
+        });
     </script>
 
     {% block scripts %}{% endblock %}

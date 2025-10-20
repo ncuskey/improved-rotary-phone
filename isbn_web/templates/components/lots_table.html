@@ -8,11 +8,17 @@
        sortColumn: null,
        sortDirection: 'asc',
        loadingLotId: null,
+       filterVersion: 0,
        init() {
          const dataScript = document.getElementById('lots-data');
          if (dataScript) {
            this.lots = JSON.parse(dataScript.textContent);
          }
+
+         // Watch the Alpine store for changes and trigger re-render
+         this.$watch('$store.lotFilters', () => {
+           this.filterVersion++;
+         }, { deep: true });
        },
        sort(column) {
          if (this.sortColumn === column) {
@@ -74,10 +80,48 @@
          // Reset after a short delay
          setTimeout(() => { this.loadingLotId = null; }, 100);
        },
-       get sortedLots() {
-         if (!this.sortColumn) return this.lots;
+       get filteredLots() {
+         // Reference filterVersion to ensure reactivity
+         const _ = this.filterVersion;
 
-         const sorted = [...this.lots].sort((a, b) => {
+         // Get filter state from Alpine store
+         const filterState = Alpine.store('lotFilters') || {
+           author: true,
+           series_complete: true,
+           series_partial: true,
+           series_incomplete: true,
+           series: true,
+           genre: false,
+           value: true
+         };
+
+         const filtered = this.lots.filter(lot => {
+           const strategy = lot.strategy || '';
+
+           // Direct strategy matching
+           if (filterState[strategy] !== undefined) {
+             return filterState[strategy] === true;
+           }
+
+           // Fallback for unknown strategies: hide
+           return false;
+         });
+
+         // Debug logging
+         if (this.lots.length > 0 && this.filterVersion < 5) {
+           console.log('Filter state:', filterState);
+           console.log(`Filtered ${this.lots.length} lots down to ${filtered.length}`);
+           const strategies = [...new Set(filtered.map(l => l.strategy))];
+           console.log('Strategies in filtered lots:', strategies);
+         }
+
+         return filtered;
+       },
+       get sortedLots() {
+         const filtered = this.filteredLots;
+         if (!this.sortColumn) return filtered;
+
+         const sorted = [...filtered].sort((a, b) => {
            let aVal, bVal;
 
            switch(this.sortColumn) {
@@ -121,7 +165,7 @@
          return sorted;
        }
      }">
-    <table class="w-full divide-y divide-gray-200" x-show="lots.length > 0">
+    <table class="w-full divide-y divide-gray-200" x-show="sortedLots.length > 0">
         <thead class="bg-gray-50 sticky top-0 z-10">
             <tr>
                 <th scope="col" @click="sort('name')" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none">
@@ -235,7 +279,7 @@
         </tbody>
     </table>
 
-    <div x-show="lots.length === 0" class="flex items-center justify-center p-8">
+    <div x-show="sortedLots.length === 0" class="flex items-center justify-center p-8">
         <div class="text-center">
             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

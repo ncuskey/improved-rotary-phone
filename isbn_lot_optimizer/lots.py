@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Sequence, Tuple
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from .author_aliases import canonical_author as alias_canonical_author, display_label
 from .models import BookEvaluation, LotSuggestion
@@ -75,8 +76,29 @@ def _first_genre(book: BookEvaluation) -> str | None:
     return None
 
 
-def generate_lot_suggestions(books: Sequence[BookEvaluation]) -> List[LotSuggestion]:
+def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[Path] = None) -> List[LotSuggestion]:
+    """
+    Generate lot suggestions using multiple strategies.
+
+    Args:
+        books: List of book evaluations
+        db_path: Optional path to books.db for enhanced series matching
+
+    Returns:
+        List of lot suggestions
+    """
     suggestions: List[LotSuggestion] = []
+    using_enhanced_series = False
+
+    # Try enhanced series lots using bookseries.org data (if db_path provided)
+    if db_path:
+        try:
+            from .series_lots import build_series_lots_enhanced
+            enhanced_series_lots = build_series_lots_enhanced(books, db_path)
+            suggestions.extend(enhanced_series_lots)
+            using_enhanced_series = True
+        except Exception:
+            pass  # Fall back to regular series grouping
 
     # Group by canonical author
     author_groups: defaultdict[str, List[BookEvaluation]] = defaultdict(list)
@@ -112,53 +134,55 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation]) -> List[LotSuggest
             suggestions.append(suggestion)
 
     # Group by series identifier/name (author-agnostic)
-    series_groups: defaultdict[str, List[BookEvaluation]] = defaultdict(list)
-    series_meta: dict[str, dict] = {}
-    for book in books:
-        series_name, series_index, series_id = _series_fields(book)
-        key = series_id or (series_name.lower().strip() if isinstance(series_name, str) else None)
-        if not key:
-            continue
-        series_groups[key].append(book)
-        data = series_meta.setdefault(key, {"name": series_name, "indices": []})
-        if series_name and not data.get("name"):
-            data["name"] = series_name
-        if isinstance(series_index, int):
-            data.setdefault("indices", []).append(series_index)
+    # Skip if we're using enhanced series lots from bookseries.org
+    if not using_enhanced_series:
+        series_groups: defaultdict[str, List[BookEvaluation]] = defaultdict(list)
+        series_meta: dict[str, dict] = {}
+        for book in books:
+            series_name, series_index, series_id = _series_fields(book)
+            key = series_id or (series_name.lower().strip() if isinstance(series_name, str) else None)
+            if not key:
+                continue
+            series_groups[key].append(book)
+            data = series_meta.setdefault(key, {"name": series_name, "indices": []})
+            if series_name and not data.get("name"):
+                data["name"] = series_name
+            if isinstance(series_index, int):
+                data.setdefault("indices", []).append(series_index)
 
-    for key, series_books in series_groups.items():
-        if len(series_books) < 2:
-            continue
-        info = series_meta.get(key, {})
-        series_name = info.get("name")
-        if not series_name:
-            first_name, _, _ = _series_fields(series_books[0])
-            series_name = first_name or "Series"
-        indices = info.get("indices", [])
-        missing = _series_missing(indices)
-        if missing:
-            missing_str = f"Missing volumes: {', '.join('#'+str(i) for i in missing)}"
-        else:
-            missing_str = "No missing early volumes inferred"
-        canonical_name, _credited_names, display = _author_labels(series_books)
-        justification = [
-            f"Titles from the {series_name} series",
-            missing_str,
-            f"Bundled pricing lifts total to ${_sum_price(series_books):.2f}",
-            _probability_summary(series_books),
-        ]
-        suggestion = _compose_lot(
-            name=f"{series_name} Series",
-            strategy="series",
-            books=series_books,
-            justification=justification,
-        )
-        if suggestion:
-            suggestion.series_name = series_name
-            suggestion.canonical_author = canonical_name
-            suggestion.display_author_label = display
-            suggestion.canonical_series = key
-            suggestions.append(suggestion)
+        for key, series_books in series_groups.items():
+            if len(series_books) < 2:
+                continue
+            info = series_meta.get(key, {})
+            series_name = info.get("name")
+            if not series_name:
+                first_name, _, _ = _series_fields(series_books[0])
+                series_name = first_name or "Series"
+            indices = info.get("indices", [])
+            missing = _series_missing(indices)
+            if missing:
+                missing_str = f"Missing volumes: {', '.join('#'+str(i) for i in missing)}"
+            else:
+                missing_str = "No missing early volumes inferred"
+            canonical_name, _credited_names, display = _author_labels(series_books)
+            justification = [
+                f"Titles from the {series_name} series",
+                missing_str,
+                f"Bundled pricing lifts total to ${_sum_price(series_books):.2f}",
+                _probability_summary(series_books),
+            ]
+            suggestion = _compose_lot(
+                name=f"{series_name} Series",
+                strategy="series",
+                books=series_books,
+                justification=justification,
+            )
+            if suggestion:
+                suggestion.series_name = series_name
+                suggestion.canonical_author = canonical_name
+                suggestion.display_author_label = display
+                suggestion.canonical_series = key
+                suggestions.append(suggestion)
 
     # Fallback: bundle low-value singles by top category
     low_value = [book for book in books if book.suppress_single]

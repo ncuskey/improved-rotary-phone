@@ -264,29 +264,66 @@ Available flags (selection):
 - Lots: `--refresh-lot-signals`, `--limit`
 - Author tools: `--author-search`, `--author-threshold`, `--author-limit`, `--list-author-clusters`
 
-## Series Enrichment (Hardcover)
+## Series Enrichment & Lot Generation
 
-The app integrates Hardcover’s GraphQL search to detect and persist series information.
+The app provides comprehensive series tracking through two complementary systems:
 
-- Environment:
+### Hardcover API Integration
+
+Integrates Hardcover's GraphQL search to detect and persist series information for individual books:
+
+- **Environment**:
   - Set HARDCOVER_API_TOKEN to your Hardcover API token (include the "Bearer " prefix).
     - Example in .env:
       HARDCOVER_API_TOKEN=Bearer YOUR_TOKEN
-- Persistence:
+- **Persistence**:
   - books table gains: series_name, series_slug, series_id_hardcover, series_position (REAL, preserves decimals like 0.5), series_confidence, series_last_checked.
   - series_peers table stores peer titles for a detected series (ordered by position when available, else title).
   - hc_cache caches API payloads (7 day TTL) to reduce repeat calls.
-- Rate limiting and retries:
+- **Rate limiting and retries**:
   - 1 request/second with burst of 5. Automatic backoff/retry on HTTP 429.
-- GUI:
-  - After a successful scan/import, a background thread enriches series for the new records and updates the DB; the detail pane can show a chip like “Series · #position” when available.
-- CLI:
+- **GUI**:
+  - After a successful scan/import, a background thread enriches series for the new records and updates the DB; the detail pane can show a chip like "Series · #position" when available.
+- **CLI**:
   - Inline refresh from the main entrypoint:
     python -m isbn_lot_optimizer --refresh-series --limit 500
   - Standalone backfill script:
     python -m isbn_lot_optimizer.scripts.backfill_series --db ~/.isbn_lot_optimizer/catalog.db --limit 500 --only-missing --stale-days 30
 
-Tip: If a book has no series in Hardcover, series_confidence remains 0 and series_last_checked is set so it won’t be reprocessed immediately.
+Tip: If a book has no series in Hardcover, series_confidence remains 0 and series_last_checked is set so it won't be reprocessed immediately.
+
+### BookSeries.org Integration
+
+Enhanced series lots using comprehensive data from bookseries.org:
+
+- **Data Source**:
+  - Scraped 1,300+ authors, 12,770+ series, 104,465+ books from bookseries.org
+  - Stored in `catalog.db` with tables: `authors`, `series`, `series_books`, `book_series_matches`
+- **Intelligent Matching**:
+  - Fuzzy text matching with normalized titles and author names
+  - Confidence scoring (0.0-1.0) with auto-save for high-confidence matches (≥0.9)
+  - Removes subtitles, articles, and punctuation for better matching
+- **Series Lot Generation**:
+  - Automatically creates lots grouped by series with completion tracking
+  - Three strategy types:
+    - `series_complete`: 100% complete series (e.g., "Pearl Saga Series (Complete)")
+    - `series_partial`: 50-99% complete series (e.g., "Alex Cross Series (67% Complete)")
+    - `series_incomplete`: <50% complete series (e.g., "Alex Cross Series (12/32 Books)")
+  - Shows which books you have vs. missing in lot justification
+- **Web Interface**:
+  - Filter checkboxes for Complete Series, Partial Series, Incomplete Series
+  - Beautiful lot detail pages showing series completion with have/missing book lists
+  - Purple-highlighted series information with position numbers
+- **Scripts**:
+  - `scripts/scrape_bookseries_org.py`: Scrape fresh data from bookseries.org
+  - `scripts/import_series_data.py`: Import scraped JSON into database
+  - `scripts/match_books_to_series.py`: Match existing books to series (43.6% match rate typical)
+
+**Key Features**:
+- Prevents duplicate lots: Enhanced series lots replace legacy series grouping
+- Completion-aware naming: Lot names reflect completion status automatically
+- Series position tracking: Shows book positions (e.g., "Have: #1, #2, #5" / "Missing: #3, #4")
+- ISBN-based deduplication: Filters out incomplete legacy series lots when enhanced versions exist
 
 ## BooksRun Bulk Quotes (lothelper)
 Fetch SELL quotes from BooksRun in bulk (requires `BOOKSRUN_KEY`):

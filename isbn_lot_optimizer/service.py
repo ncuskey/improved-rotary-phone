@@ -1529,7 +1529,8 @@ class BookService:
         if hasattr(self, "lot_strategies") and getattr(self, "lot_strategies"):
             suggestions = build_lots_with_strategies(books, set(self.lot_strategies))
         else:
-            suggestions = generate_lot_suggestions(books)
+            # Pass db_path for enhanced series lots
+            suggestions = generate_lot_suggestions(books, db_path=Path(self.db.db_path))
 
         author_groups: Dict[str, List[BookEvaluation]] = defaultdict(list)
        
@@ -1685,11 +1686,13 @@ class BookService:
             )
             candidate.display_author_label = display_author_label
             candidate.canonical_author = canonical_author_value or candidate.canonical_author
-            if candidate.series_name:
-                label_tail = f" — {display_author_label}" if display_author_label else ""
-                candidate.name = f"{candidate.series_name}{label_tail}"
-            elif display_author_label:
-                candidate.name = f"{display_author_label} Collection"
+            # Don't overwrite names for enhanced series lots (they already have completion info)
+            if suggestion.strategy not in ['series_complete', 'series_partial', 'series_incomplete']:
+                if candidate.series_name:
+                    label_tail = f" — {display_author_label}" if display_author_label else ""
+                    candidate.name = f"{candidate.series_name}{label_tail}"
+                elif display_author_label:
+                    candidate.name = f"{display_author_label} Collection"
             candidates.append(candidate)
 
         candidates.extend(self._build_incomplete_series_candidates(candidates))
@@ -2178,11 +2181,20 @@ class BookService:
 
     def _build_incomplete_series_candidates(self, existing: List[LotCandidate]) -> List[LotCandidate]:
         extras: List[LotCandidate] = []
+        # Track both legacy "series" and enhanced series lots to avoid duplicates
+        # Use canonical_series when available, otherwise track by ISBNs
         existing_series = {
             cand.canonical_series
             for cand in existing
-            if cand.strategy == "series" and cand.canonical_series
+            if cand.canonical_series and cand.strategy in ["series", "series_complete", "series_partial", "series_incomplete"]
         }
+
+        # Also track ISBN sets from enhanced series lots to detect overlap
+        existing_isbn_sets = [
+            set(cand.book_isbns)
+            for cand in existing
+            if cand.strategy in ["series_complete", "series_partial", "series_incomplete"]
+        ]
 
         try:
             coverage_entries = self.build_series_lots_with_coverage()
@@ -2309,7 +2321,16 @@ class BookService:
             if candidate.series_name:
                 label_tail = f" — {display_author_label}" if display_author_label else ""
                 candidate.name = f"Incomplete {candidate.series_name}{label_tail}"
-            extras.append(candidate)
+
+            # Check if ISBNs are already covered by an enhanced series lot
+            candidate_isbns = set(book_isbns)
+            is_duplicate = any(
+                candidate_isbns.issubset(existing_set)
+                for existing_set in existing_isbn_sets
+            )
+
+            if not is_duplicate:
+                extras.append(candidate)
 
         return extras
 

@@ -431,23 +431,55 @@
                     </div>
 
                     <!-- Bottom Section - Lots Table and Details -->
-                    <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-0">
+                    <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3 min-h-0"
+                         x-data="{
+                           init() {
+                             // Initialize Alpine store for lot filters
+                             if (!Alpine.store('lotFilters')) {
+                               Alpine.store('lotFilters', {
+                                 author: true,
+                                 series_complete: true,
+                                 series_partial: true,
+                                 series_incomplete: true,
+                                 series: true,  // Legacy series
+                                 genre: false,
+                                 value: true
+                               });
+                               console.log('✓ Initialized lotFilters store:', Alpine.store('lotFilters'));
+                             } else {
+                               console.log('⚠ lotFilters store already exists:', Alpine.store('lotFilters'));
+                             }
+                           }
+                         }"
+                         x-init="init()">
                         <div class="lg:col-span-2 flex flex-col min-h-0">
                             <div class="bg-gray-50 rounded-lg border border-gray-200 flex flex-col h-full min-h-0">
                                 <div class="px-3 py-2 border-b border-gray-200 flex-shrink-0 flex items-center justify-between">
                                     <h3 class="text-xs font-semibold text-gray-900 uppercase tracking-wide">Suggested Lots</h3>
-                                    <div class="flex items-center gap-3">
-                                        <label class="flex items-center text-xs">
-                                            <input type="checkbox" checked class="mr-1 rounded">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <label class="flex items-center text-[11px] cursor-pointer hover:text-blue-600 transition-colors">
+                                            <input type="checkbox" x-model="$store.lotFilters.author" class="mr-1 rounded cursor-pointer">
                                             <span>Author</span>
                                         </label>
-                                        <label class="flex items-center text-xs">
-                                            <input type="checkbox" checked class="mr-1 rounded">
-                                            <span>Series</span>
+                                        <label class="flex items-center text-[11px] cursor-pointer hover:text-green-600 transition-colors">
+                                            <input type="checkbox" x-model="$store.lotFilters.series_complete" class="mr-1 rounded cursor-pointer">
+                                            <span>Complete Series</span>
                                         </label>
-                                        <label class="flex items-center text-xs">
-                                            <input type="checkbox" class="mr-1 rounded">
+                                        <label class="flex items-center text-[11px] cursor-pointer hover:text-yellow-600 transition-colors">
+                                            <input type="checkbox" x-model="$store.lotFilters.series_partial" class="mr-1 rounded cursor-pointer">
+                                            <span>Partial Series</span>
+                                        </label>
+                                        <label class="flex items-center text-[11px] cursor-pointer hover:text-orange-600 transition-colors">
+                                            <input type="checkbox" x-model="$store.lotFilters.series_incomplete" class="mr-1 rounded cursor-pointer">
+                                            <span>Incomplete Series</span>
+                                        </label>
+                                        <label class="flex items-center text-[11px] cursor-pointer hover:text-purple-600 transition-colors">
+                                            <input type="checkbox" x-model="$store.lotFilters.genre" class="mr-1 rounded cursor-pointer">
                                             <span>Genre</span>
+                                        </label>
+                                        <label class="flex items-center text-[11px] cursor-pointer hover:text-gray-600 transition-colors">
+                                            <input type="checkbox" x-model="$store.lotFilters.value" class="mr-1 rounded cursor-pointer">
+                                            <span>Value</span>
                                         </label>
                                     </div>
                                 </div>

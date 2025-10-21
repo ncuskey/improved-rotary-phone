@@ -1,0 +1,179 @@
+{
+  "source": "https://www.bookseries.org",
+  "total_authors": 3,
+  "authors": [
+    {
+      "name": "Author",
+      "url": "https://www.bookseries.org/authors/",
+      "bio": "",
+      "series": []
+    },
+    {
+      "name": "A. American",
+      "url": "https://www.bookseries.org/authors/a-american/",
+      "bio": "Description /Buy link takes you to Amazon.  As an Amazon Associate I earn money from qualifying purchases. A. American is a best-selling American author that writes the Survivalist series. His publishing name, Angery American, is a pseudonym. His real name is Chris Weatherman. The author’s books delve heavily into his experiences as a prepper. Get notified whenA. Americanreleases a new book atBookNotification.com.",
+      "series": [
+        {
+          "title": "The Survivalist Series",
+          "book_count": 12,
+          "books": [
+            {
+              "title": "Going Home"
+            },
+            {
+              "title": "Surviving Home"
+            },
+            {
+              "title": "Escaping Home"
+            },
+            {
+              "title": "Forsaking Home"
+            },
+            {
+              "title": "Resurrecting Home"
+            },
+            {
+              "title": "Enforcing Home"
+            },
+            {
+              "title": "Avenging Home"
+            },
+            {
+              "title": "Home Invasion"
+            },
+            {
+              "title": "Conflicted Home"
+            },
+            {
+              "title": "Home Coming"
+            },
+            {
+              "title": "Engineering Home"
+            },
+            {
+              "title": "Exploring Home"
+            }
+          ]
+        },
+        {
+          "title": "Charlie's Requiem Serieswith Walt Browning",
+          "book_count": 5,
+          "books": [
+            {
+              "title": "Charlie's Requiem"
+            },
+            {
+              "title": "Democide"
+            },
+            {
+              "title": "Resistance"
+            },
+            {
+              "title": "Retribution"
+            },
+            {
+              "title": "Contagion"
+            }
+          ]
+        },
+        {
+          "title": "A. American Standalone Novels",
+          "book_count": 3,
+          "books": [
+            {
+              "title": "Hope( With: G. Michael Hopf)"
+            },
+            {
+              "title": "Cry Havoc"
+            },
+            {
+              "title": "Ramblin' Man (Short Story)"
+            }
+          ]
+        },
+        {
+          "title": "A. American Non-Fiction Books",
+          "book_count": 1,
+          "books": [
+            {
+              "title": "Decline and Decay: Strategies for Surviving the Coming Unpleasantness( With: Alan Kay)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "A.G. Riddle",
+      "url": "https://www.bookseries.org/authors/a-g-riddle/",
+      "bio": "Description /Buy link takes you to Amazon.  As an Amazon Associate I earn money from qualifying purchases. A.G. Riddle is a bestselling indie author that writes science fiction novels. He left a lucrative job to write fiction. He knew his gamble had paid off when he learned that his first trilogy had sold over a million copies. Get notified whenA.G. Riddlereleases a new book atBookNotification.com.",
+      "series": [
+        {
+          "title": "The Origin Mystery Series",
+          "book_count": 3,
+          "books": [
+            {
+              "title": "The Atlantis Gene"
+            },
+            {
+              "title": "The Atlantis Plague"
+            },
+            {
+              "title": "The Atlantis World"
+            }
+          ]
+        },
+        {
+          "title": "The Extinction Files Series",
+          "book_count": 2,
+          "books": [
+            {
+              "title": "Pandemic"
+            },
+            {
+              "title": "Genome"
+            }
+          ]
+        },
+        {
+          "title": "The Long Winter Series",
+          "book_count": 3,
+          "books": [
+            {
+              "title": "Winter World"
+            },
+            {
+              "title": "The Solar War"
+            },
+            {
+              "title": "The Lost Colony"
+            }
+          ]
+        },
+        {
+          "title": "A.G. Riddle Standalone Novels",
+          "book_count": 6,
+          "books": [
+            {
+              "title": "Departure"
+            },
+            {
+              "title": "The Extinction Trials"
+            },
+            {
+              "title": "Lost in Time"
+            },
+            {
+              "title": "Quantum Radio"
+            },
+            {
+              "title": "Antarctica Station"
+            },
+            {
+              "title": "Labyrinth"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,5218 @@
+{
+  "source": "https://www.bookseries.org",
+  "total_authors": 1303,
+  "authors": [
+    {
+      "name": "Author",
+      "url": "https://www.bookseries.org/authors/"
+    },
+    {
+      "name": "A. American",
+      "url": "https://www.bookseries.org/authors/a-american/"
+    },
+    {
+      "name": "A.G. Riddle",
+      "url": "https://www.bookseries.org/authors/a-g-riddle/"
+    },
+    {
+      "name": "A.J. Finn",
+      "url": "https://www.bookseries.org/authors/a-j-finn/"
+    },
+    {
+      "name": "A.J. Rivers",
+      "url": "https://www.bookseries.org/authors/a-j-rivers/"
+    },
+    {
+      "name": "A.J. Steiger",
+      "url": "https://www.bookseries.org/authors/a-j-steiger/"
+    },
+    {
+      "name": "A.J. Stewart",
+      "url": "https://www.bookseries.org/authors/a-j-stewart/"
+    },
+    {
+      "name": "A.L. Jackson",
+      "url": "https://www.bookseries.org/authors/a-l-jackson/"
+    },
+    {
+      "name": "Aaron Elkins",
+      "url": "https://www.bookseries.org/authors/aaron-elkins/"
+    },
+    {
+      "name": "Abbi Glines",
+      "url": "https://www.bookseries.org/authors/abigail-glines/"
+    },
+    {
+      "name": "Abby Green",
+      "url": "https://www.bookseries.org/authors/abby-green/"
+    },
+    {
+      "name": "Abby Jimenez",
+      "url": "https://www.bookseries.org/authors/abby-jimenez/"
+    },
+    {
+      "name": "Abir Mukherjee",
+      "url": "https://www.bookseries.org/authors/abir-mukherjee/"
+    },
+    {
+      "name": "Ace Atkins",
+      "url": "https://www.bookseries.org/authors/ace-atkins/"
+    },
+    {
+      "name": "Adam Frost",
+      "url": "https://www.bookseries.org/authors/adam-frost/"
+    },
+    {
+      "name": "Adam Gopnik",
+      "url": "https://www.bookseries.org/authors/adam-gopnik/"
+    },
+    {
+      "name": "Adrian Magson",
+      "url": "https://www.bookseries.org/authors/adrian-magson/"
+    },
+    {
+      "name": "Adrian McKinty",
+      "url": "https://www.bookseries.org/authors/adrian-mckinty/"
+    },
+    {
+      "name": "Adriana Locke",
+      "url": "https://www.bookseries.org/authors/adriana-locke/"
+    },
+    {
+      "name": "Adriana Trigiani",
+      "url": "https://www.bookseries.org/authors/adriana-trigiani/"
+    },
+    {
+      "name": "Agatha Christie",
+      "url": "https://www.bookseries.org/authors/agatha-christie/"
+    },
+    {
+      "name": "Alafair Burke",
+      "url": "https://www.bookseries.org/authors/alafair-burke/"
+    },
+    {
+      "name": "Alan Bradley",
+      "url": "https://www.bookseries.org/authors/alan-bradley/"
+    },
+    {
+      "name": "Alan Dean Foster",
+      "url": "https://www.bookseries.org/authors/alan-dean-foster/"
+    },
+    {
+      "name": "Alan Furst",
+      "url": "https://www.bookseries.org/authors/alan-furst/"
+    },
+    {
+      "name": "Alan Gratz",
+      "url": "https://www.bookseries.org/authors/alan-gratz/"
+    },
+    {
+      "name": "Alan Russell",
+      "url": "https://www.bookseries.org/authors/alan-russell/"
+    },
+    {
+      "name": "Alanea Alder",
+      "url": "https://www.bookseries.org/authors/alanea-alder/"
+    },
+    {
+      "name": "Alex Berenson",
+      "url": "https://www.bookseries.org/authors/alex-berenson/"
+    },
+    {
+      "name": "Alex Dahl",
+      "url": "https://www.bookseries.org/authors/alex-dahl/"
+    },
+    {
+      "name": "Alex Erickson",
+      "url": "https://www.bookseries.org/authors/alex-erickson/"
+    },
+    {
+      "name": "Alex Gerlis",
+      "url": "https://www.bookseries.org/authors/alex-gerlis/"
+    },
+    {
+      "name": "Alex Gray",
+      "url": "https://www.bookseries.org/authors/alex-gray/"
+    },
+    {
+      "name": "Alex Grecian",
+      "url": "https://www.bookseries.org/authors/alex-grecian/"
+    },
+    {
+      "name": "Alex Kava",
+      "url": "https://www.bookseries.org/authors/alex-kava/"
+    },
+    {
+      "name": "Alex Lukeman",
+      "url": "https://www.bookseries.org/authors/alex-lukeman/"
+    },
+    {
+      "name": "Alex Michaelides",
+      "url": "https://www.bookseries.org/authors/alex-michaelides/"
+    },
+    {
+      "name": "Alexander McCall Smith",
+      "url": "https://www.bookseries.org/authors/alexander-mccall-smith/"
+    },
+    {
+      "name": "Alexandra Stoddard",
+      "url": "https://www.bookseries.org/authors/alexandra-stoddard/"
+    },
+    {
+      "name": "Alexandre Dumas",
+      "url": "https://www.bookseries.org/authors/alexandre-dumas/"
+    },
+    {
+      "name": "Alice Hoffman",
+      "url": "https://www.bookseries.org/authors/alice-hoffman/"
+    },
+    {
+      "name": "Alison Goodman",
+      "url": "https://www.bookseries.org/authors/alison-goodman/"
+    },
+    {
+      "name": "Alison Weir",
+      "url": "https://www.bookseries.org/authors/alison-weir/"
+    },
+    {
+      "name": "Alistair MacLean",
+      "url": "https://www.bookseries.org/authors/alistair-maclean/"
+    },
+    {
+      "name": "Allan Leverone",
+      "url": "https://www.bookseries.org/authors/allan-leverone/"
+    },
+    {
+      "name": "Allen Eskens",
+      "url": "https://www.bookseries.org/authors/allen-eskens/"
+    },
+    {
+      "name": "Allen Zadoff",
+      "url": "https://www.bookseries.org/authors/allen-zadoff/"
+    },
+    {
+      "name": "Allison Brennan",
+      "url": "https://www.bookseries.org/authors/allison-brennan/"
+    },
+    {
+      "name": "Ally Carter",
+      "url": "https://www.bookseries.org/authors/ally-carter/"
+    },
+    {
+      "name": "Ally Condie",
+      "url": "https://www.bookseries.org/authors/ally-condie/"
+    },
+    {
+      "name": "Alys Clare",
+      "url": "https://www.bookseries.org/authors/alys-clare/"
+    },
+    {
+      "name": "Alyse Carlson",
+      "url": "https://www.bookseries.org/authors/alyse-carlson/"
+    },
+    {
+      "name": "Alyssa Maxwell",
+      "url": "https://www.bookseries.org/authors/alyssa-maxwell/"
+    },
+    {
+      "name": "Amanda Flower",
+      "url": "https://www.bookseries.org/authors/amanda-flower/"
+    },
+    {
+      "name": "Amanda M. Lee",
+      "url": "https://www.bookseries.org/authors/amanda-m-lee/"
+    },
+    {
+      "name": "Amanda Quick",
+      "url": "https://www.bookseries.org/authors/amanda-quick/"
+    },
+    {
+      "name": "Amber Anthony",
+      "url": "https://www.bookseries.org/authors/amber-anthony/"
+    },
+    {
+      "name": "Ambrose Parry",
+      "url": "https://www.bookseries.org/authors/ambrose-parry/"
+    },
+    {
+      "name": "Amie Kaufman",
+      "url": "https://www.bookseries.org/authors/amie-kaufman/"
+    },
+    {
+      "name": "Amy Clipston",
+      "url": "https://www.bookseries.org/authors/amy-clipston/"
+    },
+    {
+      "name": "Amy Plum",
+      "url": "https://www.bookseries.org/authors/amy-plum/"
+    },
+    {
+      "name": "Amy Sandas",
+      "url": "https://www.bookseries.org/authors/amy-sandas/"
+    },
+    {
+      "name": "Amy Stewart",
+      "url": "https://www.bookseries.org/authors/amy-stewart/"
+    },
+    {
+      "name": "Amy Tan",
+      "url": "https://www.bookseries.org/authors/amy-tan/"
+    },
+    {
+      "name": "Andre Norton",
+      "url": "https://www.bookseries.org/authors/andre-norton/"
+    },
+    {
+      "name": "Andrea Camilleri",
+      "url": "https://www.bookseries.org/authors/andrea-camilleri/"
+    },
+    {
+      "name": "Andrea Kane",
+      "url": "https://www.bookseries.org/authors/andrea-kane/"
+    },
+    {
+      "name": "Andrea Penrose",
+      "url": "https://www.bookseries.org/authors/andrea-penrose/"
+    },
+    {
+      "name": "Andrew Britton",
+      "url": "https://www.bookseries.org/authors/andrew-britton/"
+    },
+    {
+      "name": "Andrew Clements",
+      "url": "https://www.bookseries.org/authors/andrew-clements/"
+    },
+    {
+      "name": "Andrew Grant",
+      "url": "https://www.bookseries.org/authors/andrew-grant/"
+    },
+    {
+      "name": "Andrew Gross",
+      "url": "https://www.bookseries.org/authors/andrew-gross/"
+    },
+    {
+      "name": "Andrew Klavan",
+      "url": "https://www.bookseries.org/authors/andrew-klavan/"
+    },
+    {
+      "name": "Andrew M. Greeley",
+      "url": "https://www.bookseries.org/authors/andrew-m-greeley/"
+    },
+    {
+      "name": "Andrew Mayne",
+      "url": "https://www.bookseries.org/authors/andrew-mayne/"
+    },
+    {
+      "name": "Andrew Shvarts",
+      "url": "https://www.bookseries.org/authors/andrew-shvarts/"
+    },
+    {
+      "name": "Andrew Taylor",
+      "url": "https://www.bookseries.org/authors/andrew-taylor/"
+    },
+    {
+      "name": "Andrew Vachss",
+      "url": "https://www.bookseries.org/authors/andrew-vachss/"
+    },
+    {
+      "name": "Andrzej Sapkowski",
+      "url": "https://www.bookseries.org/authors/andrzej-sapkowski/"
+    },
+    {
+      "name": "Andy McDermott",
+      "url": "https://www.bookseries.org/authors/andy-mcdermott/"
+    },
+    {
+      "name": "Andy McNab",
+      "url": "https://www.bookseries.org/authors/andy-mcnab/"
+    },
+    {
+      "name": "Andy Weir",
+      "url": "https://www.bookseries.org/authors/andy-weir/"
+    },
+    {
+      "name": "Angela Marsons",
+      "url": "https://www.bookseries.org/authors/angela-marsons/"
+    },
+    {
+      "name": "Anita Shreve",
+      "url": "https://www.bookseries.org/authors/anita-shreve/"
+    },
+    {
+      "name": "Ann Aguirre",
+      "url": "https://www.bookseries.org/authors/ann-aguirre/"
+    },
+    {
+      "name": "Ann B Ross",
+      "url": "https://www.bookseries.org/authors/ann-b-ross/"
+    },
+    {
+      "name": "Ann Charles",
+      "url": "https://www.bookseries.org/authors/ann-charles/"
+    },
+    {
+      "name": "Ann Cleeves",
+      "url": "https://www.bookseries.org/authors/ann-cleeves/"
+    },
+    {
+      "name": "Ann Granger",
+      "url": "https://www.bookseries.org/authors/ann-granger/"
+    },
+    {
+      "name": "Ann Hazelwood",
+      "url": "https://www.bookseries.org/authors/ann-hazelwood/"
+    },
+    {
+      "name": "Ann Rule",
+      "url": "https://www.bookseries.org/authors/ann-rule/"
+    },
+    {
+      "name": "Anna Jacobs",
+      "url": "https://www.bookseries.org/authors/anna-jacobs/"
+    },
+    {
+      "name": "Anna Lee Huber",
+      "url": "https://www.bookseries.org/authors/anna-lee-huber/"
+    },
+    {
+      "name": "Anna Smith Spark",
+      "url": "https://www.bookseries.org/authors/anna-smith-spark/"
+    },
+    {
+      "name": "Anna Todd",
+      "url": "https://www.bookseries.org/authors/anna-todd/"
+    },
+    {
+      "name": "Anne Bishop",
+      "url": "https://www.bookseries.org/authors/anne-bishop/"
+    },
+    {
+      "name": "Anne Frasier",
+      "url": "https://www.bookseries.org/authors/anne-frasier/"
+    },
+    {
+      "name": "Anne Hillerman",
+      "url": "https://www.bookseries.org/authors/anne-hillerman/"
+    },
+    {
+      "name": "Anne Holt",
+      "url": "https://www.bookseries.org/authors/anne-holt/"
+    },
+    {
+      "name": "Anne McCaffrey",
+      "url": "https://www.bookseries.org/authors/anne-mccaffrey/"
+    },
+    {
+      "name": "Anne Perry",
+      "url": "https://www.bookseries.org/authors/anne-perry/"
+    },
+    {
+      "name": "Anne Rice",
+      "url": "https://www.bookseries.org/authors/anne-rice/"
+    },
+    {
+      "name": "Anne Tyler",
+      "url": "https://www.bookseries.org/authors/anne-tyler/"
+    },
+    {
+      "name": "Annie Groves",
+      "url": "https://www.bookseries.org/authors/annie-groves/"
+    },
+    {
+      "name": "Anthony A.J. Tata",
+      "url": "https://www.bookseries.org/authors/anthony-a-j-tata/"
+    },
+    {
+      "name": "Anthony Horowitz",
+      "url": "https://www.bookseries.org/authors/anthony-horowitz/"
+    },
+    {
+      "name": "Anthony Riches",
+      "url": "https://www.bookseries.org/authors/anthony-riches/"
+    },
+    {
+      "name": "Anthony Trollope",
+      "url": "https://www.bookseries.org/authors/anthony-trollope/"
+    },
+    {
+      "name": "Archer Mayor",
+      "url": "https://www.bookseries.org/authors/archer-mayor/"
+    },
+    {
+      "name": "Arnaldur Indridason",
+      "url": "https://www.bookseries.org/authors/arnaldur-indridason/"
+    },
+    {
+      "name": "Art Taylor",
+      "url": "https://www.bookseries.org/authors/art-taylor/"
+    },
+    {
+      "name": "Arthur C. Clarke",
+      "url": "https://www.bookseries.org/authors/arthur-c-clarke/"
+    },
+    {
+      "name": "Arthur Conan Doyle",
+      "url": "https://www.bookseries.org/authors/arthur-conan-doyle/"
+    },
+    {
+      "name": "Åsa Larsson",
+      "url": "https://www.bookseries.org/authors/asa-larsson/"
+    },
+    {
+      "name": "Ashley Antoinette",
+      "url": "https://www.bookseries.org/authors/ashley-antoinette/"
+    },
+    {
+      "name": "Ashley Weaver",
+      "url": "https://www.bookseries.org/authors/ashley-weaver/"
+    },
+    {
+      "name": "Attica Locke",
+      "url": "https://www.bookseries.org/authors/attica-locke/"
+    },
+    {
+      "name": "Ava Miles",
+      "url": "https://www.bookseries.org/authors/ava-miles/"
+    },
+    {
+      "name": "B A Paris",
+      "url": "https://www.bookseries.org/authors/b-a-paris/"
+    },
+    {
+      "name": "B.J. Daniels",
+      "url": "https://www.bookseries.org/authors/b-j-daniels/"
+    },
+    {
+      "name": "Bailey Cates",
+      "url": "https://www.bookseries.org/authors/bailey-cates/"
+    },
+    {
+      "name": "Barbara Allan",
+      "url": "https://www.bookseries.org/authors/barbara-allan/"
+    },
+    {
+      "name": "Barbara Cameron",
+      "url": "https://www.bookseries.org/authors/barbara-cameron/"
+    },
+    {
+      "name": "Barbara Cleverly",
+      "url": "https://www.bookseries.org/authors/barbara-cleverly/"
+    },
+    {
+      "name": "Barbara D’Amato",
+      "url": "https://www.bookseries.org/authors/barbara-damato/"
+    },
+    {
+      "name": "Barbara Delinsky",
+      "url": "https://www.bookseries.org/authors/barbara-delinsky/"
+    },
+    {
+      "name": "Barbara Erskine",
+      "url": "https://www.bookseries.org/authors/barbara-erskine/"
+    },
+    {
+      "name": "Barbara Freethy",
+      "url": "https://www.bookseries.org/authors/barbara-freethy/"
+    },
+    {
+      "name": "Barbara Graham",
+      "url": "https://www.bookseries.org/authors/barbara-graham/"
+    },
+    {
+      "name": "Barbara Hambly",
+      "url": "https://www.bookseries.org/authors/barbara-hambly/"
+    },
+    {
+      "name": "Barbara Kingsolver",
+      "url": "https://www.bookseries.org/authors/barbara-kingsolver/"
+    },
+    {
+      "name": "Barbara Nadel",
+      "url": "https://www.bookseries.org/authors/barbara-nadel/"
+    },
+    {
+      "name": "Barbara Park",
+      "url": "https://www.bookseries.org/authors/barbara-park/"
+    },
+    {
+      "name": "Barbara Ross",
+      "url": "https://www.bookseries.org/authors/barbara-ross/"
+    },
+    {
+      "name": "Barbara Taylor Bradford",
+      "url": "https://www.bookseries.org/authors/barbara-taylor-bradford/"
+    },
+    {
+      "name": "Barry Eisler",
+      "url": "https://www.bookseries.org/authors/barry-eisler/"
+    },
+    {
+      "name": "Barry Maitland",
+      "url": "https://www.bookseries.org/authors/barry-maitland/"
+    },
+    {
+      "name": "Beatriz Williams",
+      "url": "https://www.bookseries.org/authors/beatriz-williams/"
+    },
+    {
+      "name": "Becky  Chambers",
+      "url": "https://www.bookseries.org/authors/becky-chambers/"
+    },
+    {
+      "name": "Becky Albertalli",
+      "url": "https://www.bookseries.org/authors/becky-albertalli/"
+    },
+    {
+      "name": "Belinda Bauer",
+      "url": "https://www.bookseries.org/authors/belinda-bauer/"
+    },
+    {
+      "name": "Bella Andre",
+      "url": "https://www.bookseries.org/authors/bella-andre/"
+    },
+    {
+      "name": "Bella Forrest",
+      "url": "https://www.bookseries.org/authors/bella-forrest/"
+    },
+    {
+      "name": "Belva Plain",
+      "url": "https://www.bookseries.org/authors/belva-plain/"
+    },
+    {
+      "name": "Ben Aaronovitch",
+      "url": "https://www.bookseries.org/authors/ben-aaronovitch/"
+    },
+    {
+      "name": "Ben Bova",
+      "url": "https://www.bookseries.org/authors/ben-bova/"
+    },
+    {
+      "name": "Ben Coes",
+      "url": "https://www.bookseries.org/authors/ben-coes/"
+    },
+    {
+      "name": "Ben Elton",
+      "url": "https://www.bookseries.org/authors/ben-elton/"
+    },
+    {
+      "name": "Ben Mezrich",
+      "url": "https://www.bookseries.org/authors/ben-mezrich/"
+    },
+    {
+      "name": "Bentley Little",
+      "url": "https://www.bookseries.org/authors/bentley-little/"
+    },
+    {
+      "name": "Bernard Cornwell",
+      "url": "https://www.bookseries.org/authors/bernard-cornwell/"
+    },
+    {
+      "name": "Bernard Lee DeLeo",
+      "url": "https://www.bookseries.org/authors/bernard-lee-deleo/"
+    },
+    {
+      "name": "Beth Amos",
+      "url": "https://www.bookseries.org/authors/beth-amos/"
+    },
+    {
+      "name": "Beth Wiseman",
+      "url": "https://www.bookseries.org/authors/beth-wiseman/"
+    },
+    {
+      "name": "Betsy Brannon Green",
+      "url": "https://www.bookseries.org/authors/betsy-brannon-green/"
+    },
+    {
+      "name": "Betty Hechtman",
+      "url": "https://www.bookseries.org/authors/betty-hechtman/"
+    },
+    {
+      "name": "Betty Rowlands",
+      "url": "https://www.bookseries.org/authors/betty-rowlands/"
+    },
+    {
+      "name": "Beverly Barton",
+      "url": "https://www.bookseries.org/authors/beverly-barton/"
+    },
+    {
+      "name": "Beverly Cleary",
+      "url": "https://www.bookseries.org/authors/beverly-cleary/"
+    },
+    {
+      "name": "Beverly Connor",
+      "url": "https://www.bookseries.org/authors/beverly-connor/"
+    },
+    {
+      "name": "Beverly Jenkins",
+      "url": "https://www.bookseries.org/authors/beverly-jenkins/"
+    },
+    {
+      "name": "Beverly Lewis",
+      "url": "https://www.bookseries.org/authors/beverly-lewis/"
+    },
+    {
+      "name": "Bianca D’Arc",
+      "url": "https://www.bookseries.org/authors/bianca-darc/"
+    },
+    {
+      "name": "Bill Bryson",
+      "url": "https://www.bookseries.org/authors/bill-bryson/"
+    },
+    {
+      "name": "Bill Loehfelm",
+      "url": "https://www.bookseries.org/authors/bill-loehfelm/"
+    },
+    {
+      "name": "Bill Watterson",
+      "url": "https://www.bookseries.org/authors/bill-watterson/"
+    },
+    {
+      "name": "Blake Banner",
+      "url": "https://www.bookseries.org/authors/blake-banner/"
+    },
+    {
+      "name": "Blake Crouch",
+      "url": "https://www.bookseries.org/authors/blake-crouch/"
+    },
+    {
+      "name": "Blake Pierce",
+      "url": "https://www.bookseries.org/authors/blake-pierce/"
+    },
+    {
+      "name": "Bobbi Holmes",
+      "url": "https://www.bookseries.org/authors/bobbi-holmes/"
+    },
+    {
+      "name": "Bodie & Brock Thoene",
+      "url": "https://www.bookseries.org/authors/bodie-brock-thoene/"
+    },
+    {
+      "name": "Boston Teran",
+      "url": "https://www.bookseries.org/authors/boston-teran/"
+    },
+    {
+      "name": "Boyd Morrison",
+      "url": "https://www.bookseries.org/authors/boyd-morrison/"
+    },
+    {
+      "name": "Brad Meltzer",
+      "url": "https://www.bookseries.org/authors/brad-meltzer/"
+    },
+    {
+      "name": "Brad Taylor",
+      "url": "https://www.bookseries.org/authors/brad-taylor/"
+    },
+    {
+      "name": "Brad Thor",
+      "url": "https://www.bookseries.org/authors/brad-thor/"
+    },
+    {
+      "name": "Bradley Wright",
+      "url": "https://www.bookseries.org/authors/bradley-wright/"
+    },
+    {
+      "name": "Brandon Sanderson",
+      "url": "https://www.bookseries.org/authors/brandon-sanderson/"
+    },
+    {
+      "name": "Brenda Chapman",
+      "url": "https://www.bookseries.org/authors/brenda-chapman/"
+    },
+    {
+      "name": "Brenda Jackson",
+      "url": "https://www.bookseries.org/authors/brenda-jackson/"
+    },
+    {
+      "name": "Brenda Novak",
+      "url": "https://www.bookseries.org/authors/brenda-novak/"
+    },
+    {
+      "name": "Brent Weeks",
+      "url": "https://www.bookseries.org/authors/brent-weeks/"
+    },
+    {
+      "name": "Brett Battles",
+      "url": "https://www.bookseries.org/authors/brett-battles/"
+    },
+    {
+      "name": "Brett Halliday",
+      "url": "https://www.bookseries.org/authors/brett-halliday/"
+    },
+    {
+      "name": "Brian Christopher Shea",
+      "url": "https://www.bookseries.org/authors/brian-christopher-shea/"
+    },
+    {
+      "name": "Brian Freeman",
+      "url": "https://www.bookseries.org/authors/brian-freeman/"
+    },
+    {
+      "name": "Brian Froud",
+      "url": "https://www.bookseries.org/authors/brian-froud/"
+    },
+    {
+      "name": "Brian Haig",
+      "url": "https://www.bookseries.org/authors/brian-haig/"
+    },
+    {
+      "name": "Brian Herbert",
+      "url": "https://www.bookseries.org/authors/brian-herbert/"
+    },
+    {
+      "name": "Brian Kilmeade",
+      "url": "https://www.bookseries.org/authors/brian-kilmeade/"
+    },
+    {
+      "name": "Brian McGilloway",
+      "url": "https://www.bookseries.org/authors/brian-mcgilloway/"
+    },
+    {
+      "name": "Brittany White",
+      "url": "https://www.bookseries.org/authors/brittany-white/"
+    },
+    {
+      "name": "Bruce Sterling",
+      "url": "https://www.bookseries.org/authors/bruce-sterling/"
+    },
+    {
+      "name": "Bryce Courtenay",
+      "url": "https://www.bookseries.org/authors/bryce-courtenay/"
+    },
+    {
+      "name": "C S Lewis",
+      "url": "https://www.bookseries.org/authors/c-s-lewis/"
+    },
+    {
+      "name": "C. G. Cooper",
+      "url": "https://www.bookseries.org/authors/c-g-cooper/"
+    },
+    {
+      "name": "C.D. Reiss",
+      "url": "https://www.bookseries.org/authors/c-d-reiss/"
+    },
+    {
+      "name": "C.J. Archer",
+      "url": "https://www.bookseries.org/authors/c-j-archer/"
+    },
+    {
+      "name": "C.J. BOX",
+      "url": "https://www.bookseries.org/authors/c-j-box/"
+    },
+    {
+      "name": "C.J. Cherryh",
+      "url": "https://www.bookseries.org/authors/c-j-cherryh/"
+    },
+    {
+      "name": "C.J. Sansom",
+      "url": "https://www.bookseries.org/authors/c-j-sansom/"
+    },
+    {
+      "name": "C.M. Sutter",
+      "url": "https://www.bookseries.org/authors/c-m-sutter/"
+    },
+    {
+      "name": "C.S. Forester",
+      "url": "https://www.bookseries.org/authors/c-s-forester/"
+    },
+    {
+      "name": "C.S. Harris",
+      "url": "https://www.bookseries.org/authors/c-s-harris/"
+    },
+    {
+      "name": "Calle J. Brookes",
+      "url": "https://www.bookseries.org/authors/calle-j-brookes/"
+    },
+    {
+      "name": "Camilla Läckberg",
+      "url": "https://www.bookseries.org/authors/camilla-lackberg/"
+    },
+    {
+      "name": "Candace Robb",
+      "url": "https://www.bookseries.org/authors/candace-robb/"
+    },
+    {
+      "name": "Candice Fox",
+      "url": "https://www.bookseries.org/authors/candice-fox/"
+    },
+    {
+      "name": "Cara Black",
+      "url": "https://www.bookseries.org/authors/cara-black/"
+    },
+    {
+      "name": "Cara Hunter",
+      "url": "https://www.bookseries.org/authors/cara-hunter/"
+    },
+    {
+      "name": "Carl Hiaasen",
+      "url": "https://www.bookseries.org/authors/carl-hiaasen/"
+    },
+    {
+      "name": "Carl Sagan",
+      "url": "https://www.bookseries.org/authors/carl-sagan/"
+    },
+    {
+      "name": "Carl Weber",
+      "url": "https://www.bookseries.org/authors/carl-weber/"
+    },
+    {
+      "name": "Carla Neggers",
+      "url": "https://www.bookseries.org/authors/carla-neggers/"
+    },
+    {
+      "name": "Carlene O’Connor",
+      "url": "https://www.bookseries.org/authors/carlene-oconnor/"
+    },
+    {
+      "name": "Carly Phillips",
+      "url": "https://www.bookseries.org/authors/carly-phillips/"
+    },
+    {
+      "name": "Carmen Amato",
+      "url": "https://www.bookseries.org/authors/carmen-amato/"
+    },
+    {
+      "name": "Caro Fraser",
+      "url": "https://www.bookseries.org/authors/caro-fraser/"
+    },
+    {
+      "name": "Caro Ramsay",
+      "url": "https://www.bookseries.org/authors/caro-ramsay/"
+    },
+    {
+      "name": "Carol Higgins Clark",
+      "url": "https://www.bookseries.org/authors/carol-higgins-clark/"
+    },
+    {
+      "name": "Carol K. Carr",
+      "url": "https://www.bookseries.org/authors/carol-k-carr/"
+    },
+    {
+      "name": "Carol O’Connell",
+      "url": "https://www.bookseries.org/authors/carol-oconnell/"
+    },
+    {
+      "name": "Carol Wyer",
+      "url": "https://www.bookseries.org/authors/carol-wyer/"
+    },
+    {
+      "name": "Carola Dunn",
+      "url": "https://www.bookseries.org/authors/carola-dunn/"
+    },
+    {
+      "name": "Carole Matthews",
+      "url": "https://www.bookseries.org/authors/carole-matthews/"
+    },
+    {
+      "name": "Caroline Graham",
+      "url": "https://www.bookseries.org/authors/caroline-graham/"
+    },
+    {
+      "name": "Caroline Mitchell",
+      "url": "https://www.bookseries.org/authors/caroline-mitchell/"
+    },
+    {
+      "name": "Carolyn Brown",
+      "url": "https://www.bookseries.org/authors/carolyn-brown/"
+    },
+    {
+      "name": "Carolyn Haines",
+      "url": "https://www.bookseries.org/authors/carolyn-haines/"
+    },
+    {
+      "name": "Carolyn Hart",
+      "url": "https://www.bookseries.org/authors/carolyn-hart/"
+    },
+    {
+      "name": "Carrie Vaughn",
+      "url": "https://www.bookseries.org/authors/carrie-vaughn/"
+    },
+    {
+      "name": "Casey Hill",
+      "url": "https://www.bookseries.org/authors/casey-hill/"
+    },
+    {
+      "name": "Casey Watson",
+      "url": "https://www.bookseries.org/authors/casey-watson/"
+    },
+    {
+      "name": "Cass Green",
+      "url": "https://www.bookseries.org/authors/cass-green/"
+    },
+    {
+      "name": "Cassandra Clare",
+      "url": "https://www.bookseries.org/authors/cassandra-clare/"
+    },
+    {
+      "name": "Cate Conte",
+      "url": "https://www.bookseries.org/authors/cate-conte/"
+    },
+    {
+      "name": "Catherine Anderson",
+      "url": "https://www.bookseries.org/authors/catherine-anderson/"
+    },
+    {
+      "name": "Catherine Bybee",
+      "url": "https://www.bookseries.org/authors/catherine-bybee/"
+    },
+    {
+      "name": "Catherine Cookson",
+      "url": "https://www.bookseries.org/authors/catherine-cookson/"
+    },
+    {
+      "name": "Catherine Coulter",
+      "url": "https://www.bookseries.org/authors/catherine-coulter/"
+    },
+    {
+      "name": "Catherine Lloyd",
+      "url": "https://www.bookseries.org/authors/catherine-lloyd/"
+    },
+    {
+      "name": "Catherine Ryan Hyde",
+      "url": "https://www.bookseries.org/authors/catherine-ryan-hyde/"
+    },
+    {
+      "name": "Cathy Glass",
+      "url": "https://www.bookseries.org/authors/cathy-glass/"
+    },
+    {
+      "name": "Cathy Kelly",
+      "url": "https://www.bookseries.org/authors/cathy-kelly/"
+    },
+    {
+      "name": "Cecelia Ahern",
+      "url": "https://www.bookseries.org/authors/cecelia-ahern/"
+    },
+    {
+      "name": "Chanel Cleeton",
+      "url": "https://www.bookseries.org/authors/chanel-cleeton/"
+    },
+    {
+      "name": "Charlaine Harris",
+      "url": "https://www.bookseries.org/authors/charlaine-harris/"
+    },
+    {
+      "name": "Charles Cumming",
+      "url": "https://www.bookseries.org/authors/charles-cumming/"
+    },
+    {
+      "name": "Charles Finch",
+      "url": "https://www.bookseries.org/authors/charles-finch/"
+    },
+    {
+      "name": "Charles Martin",
+      "url": "https://www.bookseries.org/authors/charles-martin/"
+    },
+    {
+      "name": "Charles McCarry",
+      "url": "https://www.bookseries.org/authors/charles-mccarry/"
+    },
+    {
+      "name": "Charles Stross",
+      "url": "https://www.bookseries.org/authors/charles-stross/"
+    },
+    {
+      "name": "Charles Todd",
+      "url": "https://www.bookseries.org/authors/charles-todd/"
+    },
+    {
+      "name": "Charlotte MacLeod",
+      "url": "https://www.bookseries.org/authors/charlotte-macleod/"
+    },
+    {
+      "name": "Chelle Bliss",
+      "url": "https://www.bookseries.org/authors/chelle-bliss/"
+    },
+    {
+      "name": "Chelsea Cain",
+      "url": "https://www.bookseries.org/authors/chelsea-cain/"
+    },
+    {
+      "name": "Cherise Sinclair",
+      "url": "https://www.bookseries.org/authors/cherise-sinclair/"
+    },
+    {
+      "name": "Cheryl Bradshaw",
+      "url": "https://www.bookseries.org/authors/cheryl-bradshaw/"
+    },
+    {
+      "name": "Chevy Stevens",
+      "url": "https://www.bookseries.org/authors/chevy-stevens/"
+    },
+    {
+      "name": "Chloe Neill",
+      "url": "https://www.bookseries.org/authors/chloe-neill/"
+    },
+    {
+      "name": "Chris Bohjalian",
+      "url": "https://www.bookseries.org/authors/chris-bohjalian/"
+    },
+    {
+      "name": "Chris Carter",
+      "url": "https://www.bookseries.org/authors/chris-carter/"
+    },
+    {
+      "name": "Chris Ryan",
+      "url": "https://www.bookseries.org/authors/chris-ryan/"
+    },
+    {
+      "name": "Chris Stewart",
+      "url": "https://www.bookseries.org/authors/chris-stewart/"
+    },
+    {
+      "name": "Chris Whitaker",
+      "url": "https://www.bookseries.org/authors/chris-whitaker/"
+    },
+    {
+      "name": "Christi Caldwell",
+      "url": "https://www.bookseries.org/authors/christi-caldwell/"
+    },
+    {
+      "name": "Christina Dodd",
+      "url": "https://www.bookseries.org/authors/christina-dodd/"
+    },
+    {
+      "name": "Christina Henry",
+      "url": "https://www.bookseries.org/authors/christina-henry/"
+    },
+    {
+      "name": "Christina Lauren",
+      "url": "https://www.bookseries.org/authors/christina-lauren/"
+    },
+    {
+      "name": "Christine Feehan",
+      "url": "https://www.bookseries.org/authors/christine-feehan/"
+    },
+    {
+      "name": "Christopher Brookmyre",
+      "url": "https://www.bookseries.org/authors/christopher-brookmyre/"
+    },
+    {
+      "name": "Christopher Fowler",
+      "url": "https://www.bookseries.org/authors/christopher-fowler/"
+    },
+    {
+      "name": "Christopher Greyson",
+      "url": "https://www.bookseries.org/authors/christopher-greyson/"
+    },
+    {
+      "name": "Christopher Moore",
+      "url": "https://www.bookseries.org/authors/christopher-moore/"
+    },
+    {
+      "name": "Christopher Reich",
+      "url": "https://www.bookseries.org/authors/christopher-reich/"
+    },
+    {
+      "name": "Christy Barritt",
+      "url": "https://www.bookseries.org/authors/christy-barritt/"
+    },
+    {
+      "name": "Chuck Palahniuk",
+      "url": "https://www.bookseries.org/authors/chuck-palahniuk/"
+    },
+    {
+      "name": "Chuck Wendig",
+      "url": "https://www.bookseries.org/authors/chuck-wendig/"
+    },
+    {
+      "name": "Cindy Gerard",
+      "url": "https://www.bookseries.org/authors/cindy-gerard/"
+    },
+    {
+      "name": "Cindy Woodsmall",
+      "url": "https://www.bookseries.org/authors/cindy-woodsmall/"
+    },
+    {
+      "name": "Claire McGowan",
+      "url": "https://www.bookseries.org/authors/claire-mcgowan/"
+    },
+    {
+      "name": "Clare Connelly",
+      "url": "https://www.bookseries.org/authors/clare-connelly/"
+    },
+    {
+      "name": "Clare Mackintosh",
+      "url": "https://www.bookseries.org/authors/clare-mackintosh/"
+    },
+    {
+      "name": "Clark Ashton Smith",
+      "url": "https://www.bookseries.org/authors/clark-ashton-smith/"
+    },
+    {
+      "name": "Clayton Lindemuth",
+      "url": "https://www.bookseries.org/authors/clayton-lindemuth/"
+    },
+    {
+      "name": "Cleo Coyle",
+      "url": "https://www.bookseries.org/authors/cleo-coyle/"
+    },
+    {
+      "name": "Clive Barker",
+      "url": "https://www.bookseries.org/authors/clive-barker/"
+    },
+    {
+      "name": "Clive Cussler",
+      "url": "https://www.bookseries.org/authors/clive-cussler/"
+    },
+    {
+      "name": "Colin Cotterill",
+      "url": "https://www.bookseries.org/authors/colin-cotterill/"
+    },
+    {
+      "name": "Colin Dexter",
+      "url": "https://www.bookseries.org/authors/colin-dexter/"
+    },
+    {
+      "name": "Colleen Coble",
+      "url": "https://www.bookseries.org/authors/colleen-coble/"
+    },
+    {
+      "name": "Colleen Collins",
+      "url": "https://www.bookseries.org/authors/colleen-collins/"
+    },
+    {
+      "name": "Colleen Hoover",
+      "url": "https://www.bookseries.org/authors/colleen-hoover/"
+    },
+    {
+      "name": "Conn Iggulden",
+      "url": "https://www.bookseries.org/authors/conn-iggulden/"
+    },
+    {
+      "name": "Connie Willis",
+      "url": "https://www.bookseries.org/authors/connie-willis/"
+    },
+    {
+      "name": "Cora Reilly",
+      "url": "https://www.bookseries.org/authors/cora-reilly/"
+    },
+    {
+      "name": "Corinne Michaels",
+      "url": "https://www.bookseries.org/authors/corinne-michaels/"
+    },
+    {
+      "name": "Craig Alanson",
+      "url": "https://www.bookseries.org/authors/craig-alanson/"
+    },
+    {
+      "name": "Craig Johnson",
+      "url": "https://www.bookseries.org/authors/craig-johnson/"
+    },
+    {
+      "name": "Craig Russell",
+      "url": "https://www.bookseries.org/authors/craig-russell/"
+    },
+    {
+      "name": "Cressida Cowell",
+      "url": "https://www.bookseries.org/authors/cressida-cowell/"
+    },
+    {
+      "name": "Crissy Smith",
+      "url": "https://www.bookseries.org/authors/crissy-smith/"
+    },
+    {
+      "name": "Cynthia Riggs",
+      "url": "https://www.bookseries.org/authors/cynthia-riggs/"
+    },
+    {
+      "name": "D.E. Stevenson",
+      "url": "https://www.bookseries.org/authors/d-e-stevenson/"
+    },
+    {
+      "name": "D.J. Molles",
+      "url": "https://www.bookseries.org/authors/d-j-molles/"
+    },
+    {
+      "name": "D.K. Holmberg",
+      "url": "https://www.bookseries.org/authors/d-k-holmberg/"
+    },
+    {
+      "name": "D.K. Hood",
+      "url": "https://www.bookseries.org/authors/d-k-hood/"
+    },
+    {
+      "name": "D.S. Butler",
+      "url": "https://www.bookseries.org/authors/d-s-butler/"
+    },
+    {
+      "name": "Daisy Goodwin",
+      "url": "https://www.bookseries.org/authors/daisy-goodwin/"
+    },
+    {
+      "name": "Dakota Cassidy",
+      "url": "https://www.bookseries.org/authors/dakota-cassidy/"
+    },
+    {
+      "name": "Dale Brown",
+      "url": "https://www.bookseries.org/authors/dale-brown/"
+    },
+    {
+      "name": "Dale Mayer",
+      "url": "https://www.bookseries.org/authors/dale-mayer/"
+    },
+    {
+      "name": "Damien Boyd",
+      "url": "https://www.bookseries.org/authors/damien-boyd/"
+    },
+    {
+      "name": "Dan Brown",
+      "url": "https://www.bookseries.org/authors/dan-brown/"
+    },
+    {
+      "name": "Dan Simmons",
+      "url": "https://www.bookseries.org/authors/dan-simmons/"
+    },
+    {
+      "name": "Dan Willis",
+      "url": "https://www.bookseries.org/authors/dan-willis/"
+    },
+    {
+      "name": "Dana Stabenow",
+      "url": "https://www.bookseries.org/authors/dana-stabenow/"
+    },
+    {
+      "name": "Dani Pettrey",
+      "url": "https://www.bookseries.org/authors/dani-pettrey/"
+    },
+    {
+      "name": "Daniel Cole",
+      "url": "https://www.bookseries.org/authors/daniel-cole/"
+    },
+    {
+      "name": "Daniel Easterman",
+      "url": "https://www.bookseries.org/authors/daniel-easterman/"
+    },
+    {
+      "name": "Daniel Handler",
+      "url": "https://www.bookseries.org/authors/daniel-handler/"
+    },
+    {
+      "name": "Daniel Silva",
+      "url": "https://www.bookseries.org/authors/daniel-silva/"
+    },
+    {
+      "name": "Daniel Suarez",
+      "url": "https://www.bookseries.org/authors/daniel-suarez/"
+    },
+    {
+      "name": "Danielle Garrett",
+      "url": "https://www.bookseries.org/authors/danielle-garrett/"
+    },
+    {
+      "name": "Danielle Steel",
+      "url": "https://www.bookseries.org/authors/danielle-steel/"
+    },
+    {
+      "name": "Darcy Coates",
+      "url": "https://www.bookseries.org/authors/darcy-coates/"
+    },
+    {
+      "name": "Darynda Jones",
+      "url": "https://www.bookseries.org/authors/darynda-jones/"
+    },
+    {
+      "name": "Dav Pilkey",
+      "url": "https://www.bookseries.org/authors/dav-pilkey/"
+    },
+    {
+      "name": "Dave Barry",
+      "url": "https://www.bookseries.org/authors/dave-barry/"
+    },
+    {
+      "name": "Dave Eggers",
+      "url": "https://www.bookseries.org/authors/dave-eggers/"
+    },
+    {
+      "name": "David Archer",
+      "url": "https://www.bookseries.org/authors/david-archer/"
+    },
+    {
+      "name": "David Baldacci",
+      "url": "https://www.bookseries.org/authors/david-baldacci/"
+    },
+    {
+      "name": "David Downing",
+      "url": "https://www.bookseries.org/authors/david-downing/"
+    },
+    {
+      "name": "David Eddings",
+      "url": "https://www.bookseries.org/authors/david-eddings/"
+    },
+    {
+      "name": "David Ellis",
+      "url": "https://www.bookseries.org/authors/david-ellis/"
+    },
+    {
+      "name": "David Gemmell",
+      "url": "https://www.bookseries.org/authors/david-gemmell/"
+    },
+    {
+      "name": "David Gerrold",
+      "url": "https://www.bookseries.org/authors/david-gerrold/"
+    },
+    {
+      "name": "David Gilman",
+      "url": "https://www.bookseries.org/authors/david-gilman/"
+    },
+    {
+      "name": "David Hagberg",
+      "url": "https://www.bookseries.org/authors/david-hagberg/"
+    },
+    {
+      "name": "David Housewright",
+      "url": "https://www.bookseries.org/authors/david-housewright/"
+    },
+    {
+      "name": "David Lagercrantz",
+      "url": "https://www.bookseries.org/authors/david-lagercrantz/"
+    },
+    {
+      "name": "David Lynn Golemon",
+      "url": "https://www.bookseries.org/authors/david-lynn-golemon/"
+    },
+    {
+      "name": "David McKee",
+      "url": "https://www.bookseries.org/authors/david-mckee/"
+    },
+    {
+      "name": "David Morrell",
+      "url": "https://www.bookseries.org/authors/david-morrell/"
+    },
+    {
+      "name": "David Nicholls",
+      "url": "https://www.bookseries.org/authors/david-nicholls/"
+    },
+    {
+      "name": "David Poyer",
+      "url": "https://www.bookseries.org/authors/david-poyer/"
+    },
+    {
+      "name": "David Rosenfelt",
+      "url": "https://www.bookseries.org/authors/david-rosenfelt/"
+    },
+    {
+      "name": "David Stone",
+      "url": "https://www.bookseries.org/authors/david-stone/"
+    },
+    {
+      "name": "David Walliams",
+      "url": "https://www.bookseries.org/authors/david-walliams/"
+    },
+    {
+      "name": "David Weber",
+      "url": "https://www.bookseries.org/authors/david-weber/"
+    },
+    {
+      "name": "David Willis McCullough",
+      "url": "https://www.bookseries.org/authors/david-willis-mccullough/"
+    },
+    {
+      "name": "Dean Koontz",
+      "url": "https://www.bookseries.org/authors/dean-koontz/"
+    },
+    {
+      "name": "Deanna Raybourn",
+      "url": "https://www.bookseries.org/authors/deanna-raybourn/"
+    },
+    {
+      "name": "Debbie Macomber",
+      "url": "https://www.bookseries.org/authors/debbie-macomber/"
+    },
+    {
+      "name": "Debbie Mason",
+      "url": "https://www.bookseries.org/authors/debbie-mason/"
+    },
+    {
+      "name": "Debora Geary",
+      "url": "https://www.bookseries.org/authors/debora-geary/"
+    },
+    {
+      "name": "Deborah Challinor",
+      "url": "https://www.bookseries.org/authors/deborah-challinor/"
+    },
+    {
+      "name": "Deborah Crombie",
+      "url": "https://www.bookseries.org/authors/deborah-crombie/"
+    },
+    {
+      "name": "Deborah Harkness",
+      "url": "https://www.bookseries.org/authors/deborah-harkness/"
+    },
+    {
+      "name": "Dee Henderson",
+      "url": "https://www.bookseries.org/authors/dee-henderson/"
+    },
+    {
+      "name": "Denise Grover Swank",
+      "url": "https://www.bookseries.org/authors/denise-grover-swank/"
+    },
+    {
+      "name": "Denise Hunter",
+      "url": "https://www.bookseries.org/authors/denise-hunter/"
+    },
+    {
+      "name": "Denise Mina",
+      "url": "https://www.bookseries.org/authors/denise-mina/"
+    },
+    {
+      "name": "Denise Swanson",
+      "url": "https://www.bookseries.org/authors/denise-swanson/"
+    },
+    {
+      "name": "Dennis Lehane",
+      "url": "https://www.bookseries.org/authors/dennis-lehane/"
+    },
+    {
+      "name": "Denzil Meyrick",
+      "url": "https://www.bookseries.org/authors/denzil-meyrick/"
+    },
+    {
+      "name": "Deon Meyer",
+      "url": "https://www.bookseries.org/authors/deon-meyer/"
+    },
+    {
+      "name": "Dervla McTiernan",
+      "url": "https://www.bookseries.org/authors/dervla-mctiernan/"
+    },
+    {
+      "name": "Di Morrissey",
+      "url": "https://www.bookseries.org/authors/di-morrissey/"
+    },
+    {
+      "name": "Diana Gabaldon",
+      "url": "https://www.bookseries.org/authors/diana-gabaldon/"
+    },
+    {
+      "name": "Diana Palmer",
+      "url": "https://www.bookseries.org/authors/diana-palmer/"
+    },
+    {
+      "name": "Diana Wynne Jones",
+      "url": "https://www.bookseries.org/authors/diana-wynne-jones/"
+    },
+    {
+      "name": "Diane Capri",
+      "url": "https://www.bookseries.org/authors/diane-capri/"
+    },
+    {
+      "name": "Diane Chamberlain",
+      "url": "https://www.bookseries.org/authors/diane-chamberlain/"
+    },
+    {
+      "name": "Diane Kelly",
+      "url": "https://www.bookseries.org/authors/diane-kelly/"
+    },
+    {
+      "name": "Diane Mott Davidson",
+      "url": "https://www.bookseries.org/authors/diane-mott-davidson/"
+    },
+    {
+      "name": "DiAnn Mills",
+      "url": "https://www.bookseries.org/authors/diann-mills/"
+    },
+    {
+      "name": "Dianne Duvall",
+      "url": "https://www.bookseries.org/authors/dianne-duvall/"
+    },
+    {
+      "name": "Dianne Freeman",
+      "url": "https://www.bookseries.org/authors/dianne-freeman/"
+    },
+    {
+      "name": "Dick Couch",
+      "url": "https://www.bookseries.org/authors/dick-couch/"
+    },
+    {
+      "name": "Dick Francis",
+      "url": "https://www.bookseries.org/authors/dick-francis/"
+    },
+    {
+      "name": "Don Winslow",
+      "url": "https://www.bookseries.org/authors/don-winslow/"
+    },
+    {
+      "name": "Donald E Westlake",
+      "url": "https://www.bookseries.org/authors/donald-e-westlake/"
+    },
+    {
+      "name": "Donna Andrews",
+      "url": "https://www.bookseries.org/authors/donna-andrews/"
+    },
+    {
+      "name": "Donna Grant",
+      "url": "https://www.bookseries.org/authors/donna-grant/"
+    },
+    {
+      "name": "Donna Kauffman",
+      "url": "https://www.bookseries.org/authors/donna-kauffman/"
+    },
+    {
+      "name": "Donna Leon",
+      "url": "https://www.bookseries.org/authors/donna-leon/"
+    },
+    {
+      "name": "Doris Kearns Good",
+      "url": "https://www.bookseries.org/authors/doris-kearns-good/"
+    },
+    {
+      "name": "Dorothea Benton Frank",
+      "url": "https://www.bookseries.org/authors/dorothea-benton-frank/"
+    },
+    {
+      "name": "Dorothy Cannell",
+      "url": "https://www.bookseries.org/authors/dorothy-cannell/"
+    },
+    {
+      "name": "Dorothy Dunnett",
+      "url": "https://www.bookseries.org/authors/dorothy-dunnett/"
+    },
+    {
+      "name": "Dorothy Garlock",
+      "url": "https://www.bookseries.org/authors/dorothy-garlock/"
+    },
+    {
+      "name": "Dorothy L Sayers",
+      "url": "https://www.bookseries.org/authors/dorothy-l-sayers/"
+    },
+    {
+      "name": "Douglas Adams",
+      "url": "https://www.bookseries.org/authors/douglas-adams/"
+    },
+    {
+      "name": "Douglas Preston",
+      "url": "https://www.bookseries.org/authors/douglas-preston/"
+    },
+    {
+      "name": "Douglas Preston & Lincoln Child",
+      "url": "https://www.bookseries.org/authors/douglas-preston-lincoln-child/"
+    },
+    {
+      "name": "Drew Hayes",
+      "url": "https://www.bookseries.org/authors/drew-hayes/"
+    },
+    {
+      "name": "Duncan Falconer",
+      "url": "https://www.bookseries.org/authors/duncan-falconer/"
+    },
+    {
+      "name": "E L James",
+      "url": "https://www.bookseries.org/authors/e-l-james/"
+    },
+    {
+      "name": "E.J. Copperman",
+      "url": "https://www.bookseries.org/authors/e-j-copperman/"
+    },
+    {
+      "name": "Earlene Fowler",
+      "url": "https://www.bookseries.org/authors/earlene-fowler/"
+    },
+    {
+      "name": "Ed Greenwood",
+      "url": "https://www.bookseries.org/authors/ed-greenwood/"
+    },
+    {
+      "name": "Ed McBain",
+      "url": "https://www.bookseries.org/authors/ed-mcbain/"
+    },
+    {
+      "name": "Edgar Rice Burroughs",
+      "url": "https://www.bookseries.org/authors/edgar-rice-burroughs/"
+    },
+    {
+      "name": "Edward Marston",
+      "url": "https://www.bookseries.org/authors/edward-marston/"
+    },
+    {
+      "name": "Edward Rutherford",
+      "url": "https://www.bookseries.org/authors/edward-rutherford/"
+    },
+    {
+      "name": "Eileen Goudge",
+      "url": "https://www.bookseries.org/authors/eileen-goudge/"
+    },
+    {
+      "name": "Elena Ferrante",
+      "url": "https://www.bookseries.org/authors/elena-ferrante/"
+    },
+    {
+      "name": "Elin Hilderbrand",
+      "url": "https://www.bookseries.org/authors/elin-hilderbrand/"
+    },
+    {
+      "name": "Elizabeth Berg",
+      "url": "https://www.bookseries.org/authors/elizabeth-berg/"
+    },
+    {
+      "name": "Elizabeth Bromke",
+      "url": "https://www.bookseries.org/authors/elizabeth-bromke/"
+    },
+    {
+      "name": "Elizabeth Buchan",
+      "url": "https://www.bookseries.org/authors/elizabeth-buchan/"
+    },
+    {
+      "name": "Elizabeth Chadwick",
+      "url": "https://www.bookseries.org/authors/elizabeth-chadwick/"
+    },
+    {
+      "name": "Elizabeth George",
+      "url": "https://www.bookseries.org/authors/elizabeth-george/"
+    },
+    {
+      "name": "Elizabeth Hoyt",
+      "url": "https://www.bookseries.org/authors/elizabeth-hoyt/"
+    },
+    {
+      "name": "Elizabeth J Duncan",
+      "url": "https://www.bookseries.org/authors/elizabeth-j-duncan/"
+    },
+    {
+      "name": "Elizabeth Lowell",
+      "url": "https://www.bookseries.org/authors/elizabeth-lowell/"
+    },
+    {
+      "name": "Elizabeth Moon",
+      "url": "https://www.bookseries.org/authors/elizabeth-moon/"
+    },
+    {
+      "name": "Elizabeth Peters",
+      "url": "https://www.bookseries.org/authors/elizabeth-peters/"
+    },
+    {
+      "name": "Elizabeth Strout",
+      "url": "https://www.bookseries.org/authors/elizabeth-strout/"
+    },
+    {
+      "name": "Elle Kennedy",
+      "url": "https://www.bookseries.org/authors/elle-kennedy/"
+    },
+    {
+      "name": "Ellen Crosby",
+      "url": "https://www.bookseries.org/authors/ellen-crosby/"
+    },
+    {
+      "name": "Ellen Hopkins",
+      "url": "https://www.bookseries.org/authors/ellen-hopkins/"
+    },
+    {
+      "name": "Ellery Adams",
+      "url": "https://www.bookseries.org/authors/ellery-adams/"
+    },
+    {
+      "name": "Ellery Queen",
+      "url": "https://www.bookseries.org/authors/ellery-queen/"
+    },
+    {
+      "name": "Ellie Alexander",
+      "url": "https://www.bookseries.org/authors/ellie-alexander/"
+    },
+    {
+      "name": "Ellis Peters",
+      "url": "https://www.bookseries.org/authors/ellis-peters/"
+    },
+    {
+      "name": "Elly Griffiths",
+      "url": "https://www.bookseries.org/authors/elly-griffiths/"
+    },
+    {
+      "name": "Elmer Kelton",
+      "url": "https://www.bookseries.org/authors/elmer-kelton/"
+    },
+    {
+      "name": "Elmore Leonard",
+      "url": "https://www.bookseries.org/authors/elmore-leonard/"
+    },
+    {
+      "name": "Eloisa James",
+      "url": "https://www.bookseries.org/authors/eloisa-james/"
+    },
+    {
+      "name": "Elswyth Thane",
+      "url": "https://www.bookseries.org/authors/elswyth-thane/"
+    },
+    {
+      "name": "Emily Brightwell",
+      "url": "https://www.bookseries.org/authors/emily-brightwell/"
+    },
+    {
+      "name": "Emily Giffin",
+      "url": "https://www.bookseries.org/authors/emily-giffin/"
+    },
+    {
+      "name": "Emily March",
+      "url": "https://www.bookseries.org/authors/emily-march/"
+    },
+    {
+      "name": "Emily St John Mandel",
+      "url": "https://www.bookseries.org/authors/emily-st-john-mandel/"
+    },
+    {
+      "name": "Enid Blyton",
+      "url": "https://www.bookseries.org/authors/enid-blyton/"
+    },
+    {
+      "name": "Eoin Colfer",
+      "url": "https://www.bookseries.org/authors/eoin-colfer/"
+    },
+    {
+      "name": "Eric Flint",
+      "url": "https://www.bookseries.org/authors/eric-flint/"
+    },
+    {
+      "name": "Eric Jerome Dickey",
+      "url": "https://www.bookseries.org/authors/eric-jerome-dickey/"
+    },
+    {
+      "name": "Eric Stone",
+      "url": "https://www.bookseries.org/authors/eric-stone/"
+    },
+    {
+      "name": "Eric Van Lustbader",
+      "url": "https://www.bookseries.org/authors/eric-van-lustbader/"
+    },
+    {
+      "name": "Erica Spindler",
+      "url": "https://www.bookseries.org/authors/erica-spindler/"
+    },
+    {
+      "name": "Erik Larsen",
+      "url": "https://www.bookseries.org/authors/erik-larsen/"
+    },
+    {
+      "name": "Erik Larson",
+      "url": "https://www.bookseries.org/authors/erik-larson/"
+    },
+    {
+      "name": "Erika Johansen",
+      "url": "https://www.bookseries.org/authors/erika-johansen/"
+    },
+    {
+      "name": "Erin Hunter",
+      "url": "https://www.bookseries.org/authors/erin-hunter/"
+    },
+    {
+      "name": "Erin Watt",
+      "url": "https://www.bookseries.org/authors/erin-watt/"
+    },
+    {
+      "name": "Erle Stanley Gardner",
+      "url": "https://www.bookseries.org/authors/erle-stanley-gardner/"
+    },
+    {
+      "name": "Ernest Cline",
+      "url": "https://www.bookseries.org/authors/ernest-cline/"
+    },
+    {
+      "name": "Ernest Hemingway",
+      "url": "https://www.bookseries.org/authors/ernest-hemingway/"
+    },
+    {
+      "name": "Estelle Ryan",
+      "url": "https://www.bookseries.org/authors/estelle-ryan/"
+    },
+    {
+      "name": "Eugenia Price",
+      "url": "https://www.bookseries.org/authors/eugenia-price/"
+    },
+    {
+      "name": "Eva Gates",
+      "url": "https://www.bookseries.org/authors/eva-gates/"
+    },
+    {
+      "name": "Eva Ibbottson",
+      "url": "https://www.bookseries.org/authors/eva-ibbottson/"
+    },
+    {
+      "name": "Evan Currie",
+      "url": "https://www.bookseries.org/authors/evan-currie/"
+    },
+    {
+      "name": "Eve Bunting",
+      "url": "https://www.bookseries.org/authors/eve-bunting/"
+    },
+    {
+      "name": "F. Paul Wilson",
+      "url": "https://www.bookseries.org/authors/f-paul-wilson/"
+    },
+    {
+      "name": "F. Scott Fitzgerald",
+      "url": "https://www.bookseries.org/authors/f-scott-fitzgerald/"
+    },
+    {
+      "name": "Faith Hunter",
+      "url": "https://www.bookseries.org/authors/faith-hunter/"
+    },
+    {
+      "name": "Faith Martin",
+      "url": "https://www.bookseries.org/authors/faith-martin/"
+    },
+    {
+      "name": "Fannie Flagg",
+      "url": "https://www.bookseries.org/authors/fannie-flagg/"
+    },
+    {
+      "name": "Fay Weldon",
+      "url": "https://www.bookseries.org/authors/fay-weldon/"
+    },
+    {
+      "name": "Faye Kellerman",
+      "url": "https://www.bookseries.org/authors/faye-kellerman/"
+    },
+    {
+      "name": "Felix Francis",
+      "url": "https://www.bookseries.org/authors/felix-francis/"
+    },
+    {
+      "name": "Fern Michaels",
+      "url": "https://www.bookseries.org/authors/fern-michaels/"
+    },
+    {
+      "name": "Fiona Barton",
+      "url": "https://www.bookseries.org/authors/fiona-barton/"
+    },
+    {
+      "name": "Fiona Davis",
+      "url": "https://www.bookseries.org/authors/fiona-davis/"
+    },
+    {
+      "name": "Fiona Grace",
+      "url": "https://www.bookseries.org/authors/fiona-grace/"
+    },
+    {
+      "name": "Fiona McIntosh",
+      "url": "https://www.bookseries.org/authors/fiona-mcintosh/"
+    },
+    {
+      "name": "Fiona Valpy",
+      "url": "https://www.bookseries.org/authors/fiona-valpy/"
+    },
+    {
+      "name": "Frances Brody",
+      "url": "https://www.bookseries.org/authors/frances-brody/"
+    },
+    {
+      "name": "Francine Rivers",
+      "url": "https://www.bookseries.org/authors/francine-rivers/"
+    },
+    {
+      "name": "Frank E. Peretti",
+      "url": "https://www.bookseries.org/authors/frank-e-peretti/"
+    },
+    {
+      "name": "Frank Herbert",
+      "url": "https://www.bookseries.org/authors/frank-herbert/"
+    },
+    {
+      "name": "Frank Tuttle",
+      "url": "https://www.bookseries.org/authors/frank-tuttle/"
+    },
+    {
+      "name": "Fred Vargas",
+      "url": "https://www.bookseries.org/authors/fred-vargas/"
+    },
+    {
+      "name": "Frederick Forsyth",
+      "url": "https://www.bookseries.org/authors/frederick-forsyth/"
+    },
+    {
+      "name": "Fredrik Backman",
+      "url": "https://www.bookseries.org/authors/fredrik-backman/"
+    },
+    {
+      "name": "Fyodor Dostoyevsky",
+      "url": "https://www.bookseries.org/authors/fyodor-dostoyevsky/"
+    },
+    {
+      "name": "G.A. McKevett",
+      "url": "https://www.bookseries.org/authors/g-a-mckevett/"
+    },
+    {
+      "name": "Gail Bowen",
+      "url": "https://www.bookseries.org/authors/gail-bowen/"
+    },
+    {
+      "name": "Gail Carriger",
+      "url": "https://www.bookseries.org/authors/gail-carriger/"
+    },
+    {
+      "name": "Garry Disher",
+      "url": "https://www.bookseries.org/authors/garry-disher/"
+    },
+    {
+      "name": "Gary A. Braunbeck",
+      "url": "https://www.bookseries.org/authors/gary-a-braunbeck/"
+    },
+    {
+      "name": "Gary Paulsen",
+      "url": "https://www.bookseries.org/authors/gary-paulsen/"
+    },
+    {
+      "name": "Gayle Lynds",
+      "url": "https://www.bookseries.org/authors/gayle-lynds/"
+    },
+    {
+      "name": "Gena Showalter",
+      "url": "https://www.bookseries.org/authors/gena-showalter/"
+    },
+    {
+      "name": "George Pelecanos",
+      "url": "https://www.bookseries.org/authors/george-pelecanos/"
+    },
+    {
+      "name": "George R R Martin",
+      "url": "https://www.bookseries.org/authors/george-r-r-martin/"
+    },
+    {
+      "name": "George Saunders",
+      "url": "https://www.bookseries.org/authors/george-saunders/"
+    },
+    {
+      "name": "George V. Higgins",
+      "url": "https://www.bookseries.org/authors/george-v-higgins/"
+    },
+    {
+      "name": "Georges Simenon",
+      "url": "https://www.bookseries.org/authors/georges-simenon/"
+    },
+    {
+      "name": "Georgette Heyer",
+      "url": "https://www.bookseries.org/authors/georgette-heyer/"
+    },
+    {
+      "name": "Gerald Seymour",
+      "url": "https://www.bookseries.org/authors/gerald-seymour/"
+    },
+    {
+      "name": "Gervase Phinn",
+      "url": "https://www.bookseries.org/authors/gervase-phinn/"
+    },
+    {
+      "name": "Gil McNeil",
+      "url": "https://www.bookseries.org/authors/gil-mcneil/"
+    },
+    {
+      "name": "Gilbert Morris",
+      "url": "https://www.bookseries.org/authors/gilbert-morris/"
+    },
+    {
+      "name": "Giles Blunt",
+      "url": "https://www.bookseries.org/authors/giles-blunt/"
+    },
+    {
+      "name": "Giles Kristian",
+      "url": "https://www.bookseries.org/authors/giles-kristian/"
+    },
+    {
+      "name": "Gillian Flynn",
+      "url": "https://www.bookseries.org/authors/gillian-flynn/"
+    },
+    {
+      "name": "Gillian McAllister",
+      "url": "https://www.bookseries.org/authors/gillian-mcallister/"
+    },
+    {
+      "name": "Gilly Macmillan",
+      "url": "https://www.bookseries.org/authors/gilly-macmillan/"
+    },
+    {
+      "name": "Gordon R. Dickson",
+      "url": "https://www.bookseries.org/authors/gordon-r-dickson/"
+    },
+    {
+      "name": "Grace Burrowes",
+      "url": "https://www.bookseries.org/authors/grace-burrowes/"
+    },
+    {
+      "name": "Graham Hurley",
+      "url": "https://www.bookseries.org/authors/graham-hurley/"
+    },
+    {
+      "name": "Graham Masterton",
+      "url": "https://www.bookseries.org/authors/graham-masterton/"
+    },
+    {
+      "name": "Greg Iles",
+      "url": "https://www.bookseries.org/authors/greg-iles/"
+    },
+    {
+      "name": "Gregg Hurwitz",
+      "url": "https://www.bookseries.org/authors/gregg-hurwitz/"
+    },
+    {
+      "name": "Gyles Brandreth",
+      "url": "https://www.bookseries.org/authors/gyles-brandreth/"
+    },
+    {
+      "name": "H. Rider Haggard",
+      "url": "https://www.bookseries.org/authors/h-rider-haggard/"
+    },
+    {
+      "name": "H.G. Wells",
+      "url": "https://www.bookseries.org/authors/h-g-wells/"
+    },
+    {
+      "name": "Hakan Nesser",
+      "url": "https://www.bookseries.org/authors/hakan-nesser/"
+    },
+    {
+      "name": "Hamilton Crane",
+      "url": "https://www.bookseries.org/authors/hamilton-crane/"
+    },
+    {
+      "name": "Hannah Dennison",
+      "url": "https://www.bookseries.org/authors/hannah-dennison/"
+    },
+    {
+      "name": "Hannah Howell",
+      "url": "https://www.bookseries.org/authors/hannah-howell/"
+    },
+    {
+      "name": "Hanya Yanagihara",
+      "url": "https://www.bookseries.org/authors/hanya-yanagihara/"
+    },
+    {
+      "name": "Harlan Coben",
+      "url": "https://www.bookseries.org/authors/harlan-coben/"
+    },
+    {
+      "name": "Harold Robbins",
+      "url": "https://www.bookseries.org/authors/harold-robbins/"
+    },
+    {
+      "name": "Harry Bingham",
+      "url": "https://www.bookseries.org/authors/harry-bingham/"
+    },
+    {
+      "name": "Harry Turtledove",
+      "url": "https://www.bookseries.org/authors/harry-turtledove/"
+    },
+    {
+      "name": "Heather Graham",
+      "url": "https://www.bookseries.org/authors/heather-graham/"
+    },
+    {
+      "name": "Helen Bailey",
+      "url": "https://www.bookseries.org/authors/helen-bailey/"
+    },
+    {
+      "name": "Helen Dunmore",
+      "url": "https://www.bookseries.org/authors/helen-dunmore/"
+    },
+    {
+      "name": "Helen H. Durrant",
+      "url": "https://www.bookseries.org/authors/helen-h-durrant/"
+    },
+    {
+      "name": "Helen Hardt",
+      "url": "https://www.bookseries.org/authors/helen-hardt/"
+    },
+    {
+      "name": "Helena Hunting",
+      "url": "https://www.bookseries.org/authors/helena-hunting/"
+    },
+    {
+      "name": "Helene Tursten",
+      "url": "https://www.bookseries.org/authors/helene-tursten/"
+    },
+    {
+      "name": "Henning Mankell",
+      "url": "https://www.bookseries.org/authors/henning-mankell/"
+    },
+    {
+      "name": "Herman Koch",
+      "url": "https://www.bookseries.org/authors/herman-koch/"
+    },
+    {
+      "name": "Hilary Mantel",
+      "url": "https://www.bookseries.org/authors/hilary-mantel/"
+    },
+    {
+      "name": "Holly Black",
+      "url": "https://www.bookseries.org/authors/holly-black/"
+    },
+    {
+      "name": "Holly Jackson",
+      "url": "https://www.bookseries.org/authors/holly-jackson/"
+    },
+    {
+      "name": "Holly Martin",
+      "url": "https://www.bookseries.org/authors/holly-martin/"
+    },
+    {
+      "name": "Iain M Banks",
+      "url": "https://www.bookseries.org/authors/iain-m-banks/"
+    },
+    {
+      "name": "Ian Caldwell",
+      "url": "https://www.bookseries.org/authors/ian-caldwell/"
+    },
+    {
+      "name": "Ian Fleming",
+      "url": "https://www.bookseries.org/authors/ian-fleming/"
+    },
+    {
+      "name": "Ian Hamilton",
+      "url": "https://www.bookseries.org/authors/ian-hamilton/"
+    },
+    {
+      "name": "Ian Rankin",
+      "url": "https://www.bookseries.org/authors/ian-rankin/"
+    },
+    {
+      "name": "Ilona Andrews",
+      "url": "https://www.bookseries.org/authors/ilona-andrews/"
+    },
+    {
+      "name": "Iona Whishaw",
+      "url": "https://www.bookseries.org/authors/iona-whishaw/"
+    },
+    {
+      "name": "Irene Hannon",
+      "url": "https://www.bookseries.org/authors/irene-hannon/"
+    },
+    {
+      "name": "Iris Johansen",
+      "url": "https://www.bookseries.org/authors/iris-johansen/"
+    },
+    {
+      "name": "Irvine Welsh",
+      "url": "https://www.bookseries.org/authors/irvine-welsh/"
+    },
+    {
+      "name": "Isaac Asimov",
+      "url": "https://www.bookseries.org/authors/isaac-asimov/"
+    },
+    {
+      "name": "Ivan Doig",
+      "url": "https://www.bookseries.org/authors/ivan-doig/"
+    },
+    {
+      "name": "Ivy Smoak",
+      "url": "https://www.bookseries.org/authors/ivy-smoak/"
+    },
+    {
+      "name": "J D Robb",
+      "url": "https://www.bookseries.org/authors/j-d-robb/"
+    },
+    {
+      "name": "J R R Tolkien",
+      "url": "https://www.bookseries.org/authors/j-r-r-tolkien/"
+    },
+    {
+      "name": "J R Ward",
+      "url": "https://www.bookseries.org/authors/j-r-ward/"
+    },
+    {
+      "name": "J.A. Jance",
+      "url": "https://www.bookseries.org/authors/j-a-jance/"
+    },
+    {
+      "name": "J.A. Johnstone",
+      "url": "https://www.bookseries.org/authors/j-a-johnstone/"
+    },
+    {
+      "name": "J.B. Turner",
+      "url": "https://www.bookseries.org/authors/j-b-turner/"
+    },
+    {
+      "name": "J.D. Barker",
+      "url": "https://www.bookseries.org/authors/j-d-barker/"
+    },
+    {
+      "name": "J.D. Kirk",
+      "url": "https://www.bookseries.org/authors/j-d-kirk/"
+    },
+    {
+      "name": "J.J. Marric",
+      "url": "https://www.bookseries.org/authors/j-j-marric/"
+    },
+    {
+      "name": "J.K. Rowling",
+      "url": "https://www.bookseries.org/authors/j-k-rowling/"
+    },
+    {
+      "name": "J.M. Dalgliesh",
+      "url": "https://www.bookseries.org/authors/j-m-dalgliesh/"
+    },
+    {
+      "name": "J.R. Ellis",
+      "url": "https://www.bookseries.org/authors/j-r-ellis/"
+    },
+    {
+      "name": "J.S. Scott",
+      "url": "https://www.bookseries.org/authors/j-s-scott/"
+    },
+    {
+      "name": "J.T. Ellison",
+      "url": "https://www.bookseries.org/authors/j-t-ellison/"
+    },
+    {
+      "name": "Jaci Burton",
+      "url": "https://www.bookseries.org/authors/jaci-burton/"
+    },
+    {
+      "name": "Jack Campbell",
+      "url": "https://www.bookseries.org/authors/jack-campbell/"
+    },
+    {
+      "name": "Jack Carr",
+      "url": "https://www.bookseries.org/authors/jack-carr/"
+    },
+    {
+      "name": "Jack Coughlin",
+      "url": "https://www.bookseries.org/authors/jack-coughlin/"
+    },
+    {
+      "name": "Jack Du Brul",
+      "url": "https://www.bookseries.org/authors/jack-du-brul/"
+    },
+    {
+      "name": "Jack Hardin",
+      "url": "https://www.bookseries.org/authors/jack-hardin/"
+    },
+    {
+      "name": "Jack Higgins",
+      "url": "https://www.bookseries.org/authors/jack-higgins/"
+    },
+    {
+      "name": "Jack Whyte",
+      "url": "https://www.bookseries.org/authors/jack-whyte/"
+    },
+    {
+      "name": "Jackie Collins",
+      "url": "https://www.bookseries.org/authors/jackie-collins/"
+    },
+    {
+      "name": "Jacklyn Brady",
+      "url": "https://www.bookseries.org/authors/jacklyn-brady/"
+    },
+    {
+      "name": "Jacqueline Winspear",
+      "url": "https://www.bookseries.org/authors/jacqueline-winspear/"
+    },
+    {
+      "name": "James Becker",
+      "url": "https://www.bookseries.org/authors/james-becker/"
+    },
+    {
+      "name": "James Carlos Blake",
+      "url": "https://www.bookseries.org/authors/james-carlos-blake/"
+    },
+    {
+      "name": "James Clavell",
+      "url": "https://www.bookseries.org/authors/james-clavell/"
+    },
+    {
+      "name": "James D Doss",
+      "url": "https://www.bookseries.org/authors/james-d-doss/"
+    },
+    {
+      "name": "James Dashner",
+      "url": "https://www.bookseries.org/authors/james-dashner/"
+    },
+    {
+      "name": "James Grippando",
+      "url": "https://www.bookseries.org/authors/james-grippando/"
+    },
+    {
+      "name": "James Hall",
+      "url": "https://www.bookseries.org/authors/james-hall/"
+    },
+    {
+      "name": "James Lee Burke",
+      "url": "https://www.bookseries.org/authors/james-lee-burke/"
+    },
+    {
+      "name": "James Oswald",
+      "url": "https://www.bookseries.org/authors/james-oswald/"
+    },
+    {
+      "name": "James P. Hogan",
+      "url": "https://www.bookseries.org/authors/james-p-hogan/"
+    },
+    {
+      "name": "James Patterson",
+      "url": "https://www.bookseries.org/authors/james-patterson/"
+    },
+    {
+      "name": "James R Benn",
+      "url": "https://www.bookseries.org/authors/james-r-benn/"
+    },
+    {
+      "name": "James Rollins",
+      "url": "https://www.bookseries.org/authors/james-rollins/"
+    },
+    {
+      "name": "James S A Corey",
+      "url": "https://www.bookseries.org/authors/james-s-a-corey/"
+    },
+    {
+      "name": "James Swallow",
+      "url": "https://www.bookseries.org/authors/james-swallow/"
+    },
+    {
+      "name": "James W Huston",
+      "url": "https://www.bookseries.org/authors/james-w-huston/"
+    },
+    {
+      "name": "Jan Karon",
+      "url": "https://www.bookseries.org/authors/jan-karon/"
+    },
+    {
+      "name": "Jana Deleon",
+      "url": "https://www.bookseries.org/authors/jana-deleon/"
+    },
+    {
+      "name": "Jane Austen",
+      "url": "https://www.bookseries.org/authors/jane-austen/"
+    },
+    {
+      "name": "Jane Green",
+      "url": "https://www.bookseries.org/authors/jane-green/"
+    },
+    {
+      "name": "Jane Harper",
+      "url": "https://www.bookseries.org/authors/jane-harper/"
+    },
+    {
+      "name": "Jane Kirkpatrick",
+      "url": "https://www.bookseries.org/authors/jane-kirkpatrick/"
+    },
+    {
+      "name": "Janet Chapman",
+      "url": "https://www.bookseries.org/authors/janet-chapman/"
+    },
+    {
+      "name": "Janet Dailey",
+      "url": "https://www.bookseries.org/authors/janet-dailey/"
+    },
+    {
+      "name": "Janet Evanovich",
+      "url": "https://www.bookseries.org/authors/janet-evanovich/"
+    },
+    {
+      "name": "Janette Oke",
+      "url": "https://www.bookseries.org/authors/janette-oke/"
+    },
+    {
+      "name": "JaQuavis Coleman",
+      "url": "https://www.bookseries.org/authors/jaquavis-coleman/"
+    },
+    {
+      "name": "Jason Goodwin",
+      "url": "https://www.bookseries.org/authors/jason-goodwin/"
+    },
+    {
+      "name": "Jasper Fforde",
+      "url": "https://www.bookseries.org/authors/jasper-fforde/"
+    },
+    {
+      "name": "Jay Kristoff",
+      "url": "https://www.bookseries.org/authors/jay-kristoff/"
+    },
+    {
+      "name": "Jaycee Clark",
+      "url": "https://www.bookseries.org/authors/jaycee-clark/"
+    },
+    {
+      "name": "Jaymin Eve",
+      "url": "https://www.bookseries.org/authors/jaymin-eve/"
+    },
+    {
+      "name": "Jayne Ann Krentz",
+      "url": "https://www.bookseries.org/authors/jayne-ann-krentz/"
+    },
+    {
+      "name": "Jayne Castle",
+      "url": "https://www.bookseries.org/authors/jayne-castle/"
+    },
+    {
+      "name": "Jean Flowers",
+      "url": "https://www.bookseries.org/authors/jean-flowers/"
+    },
+    {
+      "name": "Jean Grainger",
+      "url": "https://www.bookseries.org/authors/jean-grainger/"
+    },
+    {
+      "name": "Jean M Auel",
+      "url": "https://www.bookseries.org/authors/jean-m-auel/"
+    },
+    {
+      "name": "Jeaniene Frost",
+      "url": "https://www.bookseries.org/authors/jeaniene-frost/"
+    },
+    {
+      "name": "Jeanne M Dams",
+      "url": "https://www.bookseries.org/authors/jeanne-m-dams/"
+    },
+    {
+      "name": "Jeff Abbott",
+      "url": "https://www.bookseries.org/authors/jeff-abbott/"
+    },
+    {
+      "name": "Jeff Carson",
+      "url": "https://www.bookseries.org/authors/jeff-carson/"
+    },
+    {
+      "name": "Jeff Kinney",
+      "url": "https://www.bookseries.org/authors/jeff-kinney/"
+    },
+    {
+      "name": "Jeff Lindsay",
+      "url": "https://www.bookseries.org/authors/jeff-lindsay/"
+    },
+    {
+      "name": "Jeff Shaara",
+      "url": "https://www.bookseries.org/authors/jeff-shaara/"
+    },
+    {
+      "name": "Jeff VanderMeer",
+      "url": "https://www.bookseries.org/authors/jeff-vandermeer/"
+    },
+    {
+      "name": "Jeff Wheeler",
+      "url": "https://www.bookseries.org/authors/jeff-wheeler/"
+    },
+    {
+      "name": "Jefferson Bass",
+      "url": "https://www.bookseries.org/authors/jefferson-bass/"
+    },
+    {
+      "name": "Jeffery Deaver",
+      "url": "https://www.bookseries.org/authors/jeffery-deaver/"
+    },
+    {
+      "name": "Jeffrey Archer",
+      "url": "https://www.bookseries.org/authors/jeffrey-archer/"
+    },
+    {
+      "name": "Jeffrey Siger",
+      "url": "https://www.bookseries.org/authors/jeffrey-siger/"
+    },
+    {
+      "name": "Jen Turano",
+      "url": "https://www.bookseries.org/authors/jen-turano/"
+    },
+    {
+      "name": "Jenn McKinlay",
+      "url": "https://www.bookseries.org/authors/jenn-mckinlay/"
+    },
+    {
+      "name": "Jennifer Chiaverini",
+      "url": "https://www.bookseries.org/authors/jennifer-chiaverini/"
+    },
+    {
+      "name": "Jennifer Estep",
+      "url": "https://www.bookseries.org/authors/jennifer-estep/"
+    },
+    {
+      "name": "Jennifer Robson",
+      "url": "https://www.bookseries.org/authors/jennifer-robson/"
+    },
+    {
+      "name": "Jennifer Ryan",
+      "url": "https://www.bookseries.org/authors/jennifer-ryan/"
+    },
+    {
+      "name": "Jennifer Stevenson",
+      "url": "https://www.bookseries.org/authors/jennifer-stevenson/"
+    },
+    {
+      "name": "Jennifer Weiner",
+      "url": "https://www.bookseries.org/authors/jennifer-weiner/"
+    },
+    {
+      "name": "Jenny Colgan",
+      "url": "https://www.bookseries.org/authors/jenny-colgan/"
+    },
+    {
+      "name": "Jeremy Robinson",
+      "url": "https://www.bookseries.org/authors/jeremy-robinson/"
+    },
+    {
+      "name": "Jess Haines",
+      "url": "https://www.bookseries.org/authors/jess-haines/"
+    },
+    {
+      "name": "Jess Lourey",
+      "url": "https://www.bookseries.org/authors/jess-lourey/"
+    },
+    {
+      "name": "Jessica Clare",
+      "url": "https://www.bookseries.org/authors/jessica-clare/"
+    },
+    {
+      "name": "Jessica Townsend",
+      "url": "https://www.bookseries.org/authors/jessica-townsend/"
+    },
+    {
+      "name": "Jill Churchill",
+      "url": "https://www.bookseries.org/authors/jill-churchill/"
+    },
+    {
+      "name": "Jilly Cooper",
+      "url": "https://www.bookseries.org/authors/jilly-cooper/"
+    },
+    {
+      "name": "Jim Butcher",
+      "url": "https://www.bookseries.org/authors/jim-butcher/"
+    },
+    {
+      "name": "Jo Beverley",
+      "url": "https://www.bookseries.org/authors/jo-beverley/"
+    },
+    {
+      "name": "Jo Nesbo",
+      "url": "https://www.bookseries.org/authors/jo-nesbo/"
+    },
+    {
+      "name": "Jo Spain",
+      "url": "https://www.bookseries.org/authors/jo-spain/"
+    },
+    {
+      "name": "Joanna Penn",
+      "url": "https://www.bookseries.org/authors/joanna-penn/"
+    },
+    {
+      "name": "Joanne Fluke",
+      "url": "https://www.bookseries.org/authors/joanne-fluke/"
+    },
+    {
+      "name": "Jocelynn Drake",
+      "url": "https://www.bookseries.org/authors/jocelynn-drake/"
+    },
+    {
+      "name": "Jodi Ellen Malpas",
+      "url": "https://www.bookseries.org/authors/jodi-ellen-malpas/"
+    },
+    {
+      "name": "Jodi Picoult",
+      "url": "https://www.bookseries.org/authors/jodi-picoult/"
+    },
+    {
+      "name": "Jodi Taylor",
+      "url": "https://www.bookseries.org/authors/jodi-taylor/"
+    },
+    {
+      "name": "Jodi Thomas",
+      "url": "https://www.bookseries.org/authors/jodi-thomas/"
+    },
+    {
+      "name": "Joe Abercrombie",
+      "url": "https://www.bookseries.org/authors/joe-abercrombie/"
+    },
+    {
+      "name": "Joe Hill",
+      "url": "https://www.bookseries.org/authors/joe-hill/"
+    },
+    {
+      "name": "Joe Kubert",
+      "url": "https://www.bookseries.org/authors/joe-kubert/"
+    },
+    {
+      "name": "Joe Lansdale",
+      "url": "https://www.bookseries.org/authors/joe-lansdale/"
+    },
+    {
+      "name": "Joel C Rosenberg",
+      "url": "https://www.bookseries.org/authors/joel-c-rosenberg/"
+    },
+    {
+      "name": "Joel Rosenberg",
+      "url": "https://www.bookseries.org/authors/joel-rosenberg/"
+    },
+    {
+      "name": "Johanna Lindsey",
+      "url": "https://www.bookseries.org/authors/johanna-lindsey/"
+    },
+    {
+      "name": "John Berger",
+      "url": "https://www.bookseries.org/authors/john-berger/"
+    },
+    {
+      "name": "John Burdett",
+      "url": "https://www.bookseries.org/authors/john-burdett/"
+    },
+    {
+      "name": "John Connolly",
+      "url": "https://www.bookseries.org/authors/john-connolly/"
+    },
+    {
+      "name": "John Conroe",
+      "url": "https://www.bookseries.org/authors/john-conroe/"
+    },
+    {
+      "name": "John D MacDonald",
+      "url": "https://www.bookseries.org/authors/john-d-macdonald/"
+    },
+    {
+      "name": "John Dunning",
+      "url": "https://www.bookseries.org/authors/john-dunning/"
+    },
+    {
+      "name": "John Flanagan",
+      "url": "https://www.bookseries.org/authors/john-flanagan/"
+    },
+    {
+      "name": "John Gardner",
+      "url": "https://www.bookseries.org/authors/john-gardner/"
+    },
+    {
+      "name": "John Gilstrap",
+      "url": "https://www.bookseries.org/authors/john-gilstrap/"
+    },
+    {
+      "name": "John Green",
+      "url": "https://www.bookseries.org/authors/john-green/"
+    },
+    {
+      "name": "John Grisham",
+      "url": "https://www.bookseries.org/authors/john-grisham/"
+    },
+    {
+      "name": "John Hart",
+      "url": "https://www.bookseries.org/authors/john-hart/"
+    },
+    {
+      "name": "John Jakes",
+      "url": "https://www.bookseries.org/authors/john-jakes/"
+    },
+    {
+      "name": "John Katzenbach",
+      "url": "https://www.bookseries.org/authors/john-katzenbach/"
+    },
+    {
+      "name": "John Lawton",
+      "url": "https://www.bookseries.org/authors/john-lawton/"
+    },
+    {
+      "name": "John le Carre",
+      "url": "https://www.bookseries.org/authors/john-le-carre/"
+    },
+    {
+      "name": "John Lescroart",
+      "url": "https://www.bookseries.org/authors/john-lescroart/"
+    },
+    {
+      "name": "John Maddox Roberts",
+      "url": "https://www.bookseries.org/authors/john-maddox-roberts/"
+    },
+    {
+      "name": "John Marrs",
+      "url": "https://www.bookseries.org/authors/john-marrs/"
+    },
+    {
+      "name": "John Milton",
+      "url": "https://www.bookseries.org/authors/john-milton-2/"
+    },
+    {
+      "name": "John Ringo",
+      "url": "https://www.bookseries.org/authors/john-ringo/"
+    },
+    {
+      "name": "John Sandford",
+      "url": "https://www.bookseries.org/authors/john-sandford/"
+    },
+    {
+      "name": "John Scalzi",
+      "url": "https://www.bookseries.org/authors/john-scalzi/"
+    },
+    {
+      "name": "John Verdon",
+      "url": "https://www.bookseries.org/authors/john-verdon/"
+    },
+    {
+      "name": "Jojo Moyes",
+      "url": "https://www.bookseries.org/authors/jojo-moyes/"
+    },
+    {
+      "name": "Jonathan Kellerman",
+      "url": "https://www.bookseries.org/authors/jonathan-kellerman/"
+    },
+    {
+      "name": "Jonathan Maberry",
+      "url": "https://www.bookseries.org/authors/jonathan-maberry/"
+    },
+    {
+      "name": "Jonathan Moeller",
+      "url": "https://www.bookseries.org/authors/jonathan-moeller/"
+    },
+    {
+      "name": "Jonathon King",
+      "url": "https://www.bookseries.org/authors/jonathon-king/"
+    },
+    {
+      "name": "Joseph Finder",
+      "url": "https://www.bookseries.org/authors/joseph-finder/"
+    },
+    {
+      "name": "Joseph Heller",
+      "url": "https://www.bookseries.org/authors/joseph-heller/"
+    },
+    {
+      "name": "Joseph Heywood",
+      "url": "https://www.bookseries.org/authors/joseph-heywood/"
+    },
+    {
+      "name": "Josephine Cox",
+      "url": "https://www.bookseries.org/authors/josephine-cox/"
+    },
+    {
+      "name": "Josephine Tey",
+      "url": "https://www.bookseries.org/authors/josephine-tey/"
+    },
+    {
+      "name": "Joshua Dalzelle",
+      "url": "https://www.bookseries.org/authors/joshua-dalzelle/"
+    },
+    {
+      "name": "Joy Ellis",
+      "url": "https://www.bookseries.org/authors/joy-ellis/"
+    },
+    {
+      "name": "Jørn Lier Horst",
+      "url": "https://www.bookseries.org/authors/jorn-lier-horst/"
+    },
+    {
+      "name": "JP Delaney",
+      "url": "https://www.bookseries.org/authors/jp-delaney/"
+    },
+    {
+      "name": "Jude Deveraux",
+      "url": "https://www.bookseries.org/authors/jude-deveraux/"
+    },
+    {
+      "name": "Judith McNaught",
+      "url": "https://www.bookseries.org/authors/judith-mcnaught/"
+    },
+    {
+      "name": "Judy Blume",
+      "url": "https://www.bookseries.org/authors/judy-blume/"
+    },
+    {
+      "name": "Julia Buckley",
+      "url": "https://www.bookseries.org/authors/julia-buckley/"
+    },
+    {
+      "name": "Julia Chapman",
+      "url": "https://www.bookseries.org/authors/julia-chapman/"
+    },
+    {
+      "name": "Julia Keller",
+      "url": "https://www.bookseries.org/authors/julia-keller/"
+    },
+    {
+      "name": "Julia Quinn",
+      "url": "https://www.bookseries.org/authors/julia-quinn/"
+    },
+    {
+      "name": "Julia Spencer-Fleming",
+      "url": "https://www.bookseries.org/authors/julia-spencer-fleming/"
+    },
+    {
+      "name": "Julian Stockwin",
+      "url": "https://www.bookseries.org/authors/julian-stockwin/"
+    },
+    {
+      "name": "Julie Garwood",
+      "url": "https://www.bookseries.org/authors/julie-garwood/"
+    },
+    {
+      "name": "Julie Hyzy",
+      "url": "https://www.bookseries.org/authors/julie-hyzy/"
+    },
+    {
+      "name": "Julie James",
+      "url": "https://www.bookseries.org/authors/julie-james/"
+    },
+    {
+      "name": "Julie Kagawa",
+      "url": "https://www.bookseries.org/authors/julie-kagawa/"
+    },
+    {
+      "name": "Julie Kenner",
+      "url": "https://www.bookseries.org/authors/julie-kenner/"
+    },
+    {
+      "name": "Julie Klassen",
+      "url": "https://www.bookseries.org/authors/julie-klassen/"
+    },
+    {
+      "name": "Julie McElwain",
+      "url": "https://www.bookseries.org/authors/julie-mcelwain/"
+    },
+    {
+      "name": "Juliet Blackwell",
+      "url": "https://www.bookseries.org/authors/juliet-blackwell/"
+    },
+    {
+      "name": "Jussi Adler-Olsen",
+      "url": "https://www.bookseries.org/authors/jussi-adler-olsen/"
+    },
+    {
+      "name": "K.A. Tucker",
+      "url": "https://www.bookseries.org/authors/k-a-tucker/"
+    },
+    {
+      "name": "K.F. Breene",
+      "url": "https://www.bookseries.org/authors/k-f-breene/"
+    },
+    {
+      "name": "K.L. Slater",
+      "url": "https://www.bookseries.org/authors/k-l-slater/"
+    },
+    {
+      "name": "Kage Baker",
+      "url": "https://www.bookseries.org/authors/kage-baker/"
+    },
+    {
+      "name": "Karen Harper",
+      "url": "https://www.bookseries.org/authors/karen-harper/"
+    },
+    {
+      "name": "Karen Kingsbury",
+      "url": "https://www.bookseries.org/authors/karen-kingsbury/"
+    },
+    {
+      "name": "Karen M. McManus",
+      "url": "https://www.bookseries.org/authors/karen-m-mcmanus/"
+    },
+    {
+      "name": "Karen MacInerney",
+      "url": "https://www.bookseries.org/authors/karen-macinerney/"
+    },
+    {
+      "name": "Karen Marie Moning",
+      "url": "https://www.bookseries.org/authors/karen-marie-moning/"
+    },
+    {
+      "name": "Karen Robards",
+      "url": "https://www.bookseries.org/authors/karen-robards/"
+    },
+    {
+      "name": "Karen Rose",
+      "url": "https://www.bookseries.org/authors/karen-rose/"
+    },
+    {
+      "name": "Karen Swan",
+      "url": "https://www.bookseries.org/authors/karen-swan/"
+    },
+    {
+      "name": "Karen White",
+      "url": "https://www.bookseries.org/authors/karen-white/"
+    },
+    {
+      "name": "Karen Witemeyer",
+      "url": "https://www.bookseries.org/authors/karen-witemeyer/"
+    },
+    {
+      "name": "Karin Fossum",
+      "url": "https://www.bookseries.org/authors/karin-fossum/"
+    },
+    {
+      "name": "Karin Slaughter",
+      "url": "https://www.bookseries.org/authors/karin-slaughter/"
+    },
+    {
+      "name": "Kate Atkinson",
+      "url": "https://www.bookseries.org/authors/kate-atkinson/"
+    },
+    {
+      "name": "Kate Carlisle",
+      "url": "https://www.bookseries.org/authors/kate-carlisle/"
+    },
+    {
+      "name": "Kate Chopin",
+      "url": "https://www.bookseries.org/authors/kate-chopin/"
+    },
+    {
+      "name": "Kate Kingsbury",
+      "url": "https://www.bookseries.org/authors/kate-kingsbury/"
+    },
+    {
+      "name": "Kate Morton",
+      "url": "https://www.bookseries.org/authors/kate-morton/"
+    },
+    {
+      "name": "Kate Mosse",
+      "url": "https://www.bookseries.org/authors/kate-mosse/"
+    },
+    {
+      "name": "Kate Quinn",
+      "url": "https://www.bookseries.org/authors/kate-quinn/"
+    },
+    {
+      "name": "Kate Rhodes",
+      "url": "https://www.bookseries.org/authors/kate-rhodes/"
+    },
+    {
+      "name": "Katherine Arden",
+      "url": "https://www.bookseries.org/authors/katherine-arden/"
+    },
+    {
+      "name": "Katherine Hall Page",
+      "url": "https://www.bookseries.org/authors/katherine-hall-page/"
+    },
+    {
+      "name": "Kathleen Bridge",
+      "url": "https://www.bookseries.org/authors/kathleen-bridge/"
+    },
+    {
+      "name": "Kathleen Delaney",
+      "url": "https://www.bookseries.org/authors/kathleen-delaney/"
+    },
+    {
+      "name": "Kathleen O’Neal Gear",
+      "url": "https://www.bookseries.org/authors/kathleen-oneal-gear/"
+    },
+    {
+      "name": "Kathy Herman",
+      "url": "https://www.bookseries.org/authors/kathy-herman/"
+    },
+    {
+      "name": "Kathy Reichs",
+      "url": "https://www.bookseries.org/authors/kathy-reichs/"
+    },
+    {
+      "name": "Katie Fforde",
+      "url": "https://www.bookseries.org/authors/katie-fforde/"
+    },
+    {
+      "name": "Katie MacAlister",
+      "url": "https://www.bookseries.org/authors/katie-macalister/"
+    },
+    {
+      "name": "Katie Ruggle",
+      "url": "https://www.bookseries.org/authors/katie-ruggle/"
+    },
+    {
+      "name": "Katrine Engberg",
+      "url": "https://www.bookseries.org/authors/katrine-engberg/"
+    },
+    {
+      "name": "Kay Hooper",
+      "url": "https://www.bookseries.org/authors/kay-hooper/"
+    },
+    {
+      "name": "Keigo Higashino",
+      "url": "https://www.bookseries.org/authors/keigo-higashino/"
+    },
+    {
+      "name": "Keith Robinson",
+      "url": "https://www.bookseries.org/authors/keith-robinson/"
+    },
+    {
+      "name": "Kelley Armstrong",
+      "url": "https://www.bookseries.org/authors/kelley-armstrong/"
+    },
+    {
+      "name": "Kelly Rimmer",
+      "url": "https://www.bookseries.org/authors/kelly-rimmer/"
+    },
+    {
+      "name": "Kelsey Roberts",
+      "url": "https://www.bookseries.org/authors/kelsey-roberts/"
+    },
+    {
+      "name": "Ken Bruen",
+      "url": "https://www.bookseries.org/authors/ken-bruen/"
+    },
+    {
+      "name": "Ken Follett",
+      "url": "https://www.bookseries.org/authors/ken-follett/"
+    },
+    {
+      "name": "Ken Stark",
+      "url": "https://www.bookseries.org/authors/ken-stark/"
+    },
+    {
+      "name": "Kendra Elliot",
+      "url": "https://www.bookseries.org/authors/kendra-elliot/"
+    },
+    {
+      "name": "Kerrigan Byrne",
+      "url": "https://www.bookseries.org/authors/kerrigan-byrne/"
+    },
+    {
+      "name": "Kerry Barnes",
+      "url": "https://www.bookseries.org/authors/kerry-barnes/"
+    },
+    {
+      "name": "Kerry Greenwood",
+      "url": "https://www.bookseries.org/authors/kerry-greenwood/"
+    },
+    {
+      "name": "Kevin Hearne",
+      "url": "https://www.bookseries.org/authors/kevin-hearne/"
+    },
+    {
+      "name": "Kiera Cass",
+      "url": "https://www.bookseries.org/authors/kiera-cass/"
+    },
+    {
+      "name": "Kiersten Fay",
+      "url": "https://www.bookseries.org/authors/kiersten-fay/"
+    },
+    {
+      "name": "Kim Harrison",
+      "url": "https://www.bookseries.org/authors/kim-harrison/"
+    },
+    {
+      "name": "Kim Stanley Robinson",
+      "url": "https://www.bookseries.org/authors/kim-stanley-robinson/"
+    },
+    {
+      "name": "Kristen Ashley",
+      "url": "https://www.bookseries.org/authors/kristen-ashley/"
+    },
+    {
+      "name": "Kristin Hannah",
+      "url": "https://www.bookseries.org/authors/kristin-hannah/"
+    },
+    {
+      "name": "Kristin Harmel",
+      "url": "https://www.bookseries.org/authors/kristin-harmel/"
+    },
+    {
+      "name": "Kristina Ohlsson",
+      "url": "https://www.bookseries.org/authors/kristina-ohlsson/"
+    },
+    {
+      "name": "Kristine Kathryn Rusch",
+      "url": "https://www.bookseries.org/authors/kristine-kathryn-rusch/"
+    },
+    {
+      "name": "Kristy Woodson Harvey",
+      "url": "https://www.bookseries.org/authors/kristy-woodson-harvey/"
+    },
+    {
+      "name": "Kurt Vonnegut Jr.",
+      "url": "https://www.bookseries.org/authors/kurt-vonnegut-jr/"
+    },
+    {
+      "name": "Kyle Mills",
+      "url": "https://www.bookseries.org/authors/kyle-mills/"
+    },
+    {
+      "name": "Kylie Logan",
+      "url": "https://www.bookseries.org/authors/kylie-logan/"
+    },
+    {
+      "name": "L J Sellers",
+      "url": "https://www.bookseries.org/authors/l-j-sellers/"
+    },
+    {
+      "name": "L.A. Banks",
+      "url": "https://www.bookseries.org/authors/l-a-banks/"
+    },
+    {
+      "name": "L.A. Witt",
+      "url": "https://www.bookseries.org/authors/l-a-witt/"
+    },
+    {
+      "name": "L.T. Ryan",
+      "url": "https://www.bookseries.org/authors/l-t-ryan/"
+    },
+    {
+      "name": "Larry McMurtry",
+      "url": "https://www.bookseries.org/authors/larry-mcmurtry/"
+    },
+    {
+      "name": "Larry Niven",
+      "url": "https://www.bookseries.org/authors/larry-niven/"
+    },
+    {
+      "name": "Lars Emmerich",
+      "url": "https://www.bookseries.org/authors/lars-emmerich/"
+    },
+    {
+      "name": "Lars Kepler",
+      "url": "https://www.bookseries.org/authors/lars-kepler/"
+    },
+    {
+      "name": "Laura Childs",
+      "url": "https://www.bookseries.org/authors/laura-childs/"
+    },
+    {
+      "name": "Laura Ingalls Wilder",
+      "url": "https://www.bookseries.org/authors/laura-ingalls-wilder/"
+    },
+    {
+      "name": "Laura Lippman",
+      "url": "https://www.bookseries.org/authors/laura-lippman/"
+    },
+    {
+      "name": "Lauraine Snelling",
+      "url": "https://www.bookseries.org/authors/lauraine-snelling/"
+    },
+    {
+      "name": "Laurell K Hamilton",
+      "url": "https://www.bookseries.org/authors/laurell-k-hamilton/"
+    },
+    {
+      "name": "Lauren Royal",
+      "url": "https://www.bookseries.org/authors/lauren-royal/"
+    },
+    {
+      "name": "Laurence Shames",
+      "url": "https://www.bookseries.org/authors/laurence-shames/"
+    },
+    {
+      "name": "Laurie R King",
+      "url": "https://www.bookseries.org/authors/laurie-r-king/"
+    },
+    {
+      "name": "Lawrence Block",
+      "url": "https://www.bookseries.org/authors/lawrence-block/"
+    },
+    {
+      "name": "Leann Sweeney",
+      "url": "https://www.bookseries.org/authors/leann-sweeney/"
+    },
+    {
+      "name": "Lee Child",
+      "url": "https://www.bookseries.org/authors/lee-child/"
+    },
+    {
+      "name": "Lee Hollis",
+      "url": "https://www.bookseries.org/authors/lee-hollis/"
+    },
+    {
+      "name": "Leigh Bardugo",
+      "url": "https://www.bookseries.org/authors/leigh-bardugo/"
+    },
+    {
+      "name": "Leighton Gage",
+      "url": "https://www.bookseries.org/authors/leighton-gage/"
+    },
+    {
+      "name": "Lemony Snicket",
+      "url": "https://www.bookseries.org/authors/lemony-snicket/"
+    },
+    {
+      "name": "Leonard Goldberg",
+      "url": "https://www.bookseries.org/authors/leonard-goldberg/"
+    },
+    {
+      "name": "Les Roberts",
+      "url": "https://www.bookseries.org/authors/les-roberts/"
+    },
+    {
+      "name": "Leslie Meier",
+      "url": "https://www.bookseries.org/authors/leslie-meier/"
+    },
+    {
+      "name": "Liane Moriarty",
+      "url": "https://www.bookseries.org/authors/liane-moriarty/"
+    },
+    {
+      "name": "Libba Bray",
+      "url": "https://www.bookseries.org/authors/libba-bray/"
+    },
+    {
+      "name": "Libby Fischer Hellmann",
+      "url": "https://www.bookseries.org/authors/libby-fischer-hellmann/"
+    },
+    {
+      "name": "Lilian Jackson Braun",
+      "url": "https://www.bookseries.org/authors/lilian-jackson-braun/"
+    },
+    {
+      "name": "Lincoln Child",
+      "url": "https://www.bookseries.org/authors/lincoln-child/"
+    },
+    {
+      "name": "Linda Castillo",
+      "url": "https://www.bookseries.org/authors/linda-castillo/"
+    },
+    {
+      "name": "Linda Fairstein",
+      "url": "https://www.bookseries.org/authors/linda-fairstein/"
+    },
+    {
+      "name": "Linda Howard",
+      "url": "https://www.bookseries.org/authors/linda-howard/"
+    },
+    {
+      "name": "Linda O Johnston",
+      "url": "https://www.bookseries.org/authors/linda-o-johnston/"
+    },
+    {
+      "name": "Lindsay Buroker",
+      "url": "https://www.bookseries.org/authors/lindsay-buroker/"
+    },
+    {
+      "name": "Lindsey Davis",
+      "url": "https://www.bookseries.org/authors/lindsey-davis/"
+    },
+    {
+      "name": "Linwood Barclay",
+      "url": "https://www.bookseries.org/authors/linwood-barclay/"
+    },
+    {
+      "name": "Lisa Gardner",
+      "url": "https://www.bookseries.org/authors/lisa-gardner/"
+    },
+    {
+      "name": "Lisa Jackson",
+      "url": "https://www.bookseries.org/authors/lisa-jackson/"
+    },
+    {
+      "name": "Lisa Jewell",
+      "url": "https://www.bookseries.org/authors/lisa-jewell/"
+    },
+    {
+      "name": "Lisa Kleypas",
+      "url": "https://www.bookseries.org/authors/lisa-kleypas/"
+    },
+    {
+      "name": "Lisa Lutz",
+      "url": "https://www.bookseries.org/authors/lisa-lutz/"
+    },
+    {
+      "name": "Lisa Scottoline",
+      "url": "https://www.bookseries.org/authors/lisa-scottoline/"
+    },
+    {
+      "name": "Lisa Unger",
+      "url": "https://www.bookseries.org/authors/lisa-unger/"
+    },
+    {
+      "name": "Lisa Wingate",
+      "url": "https://www.bookseries.org/authors/lisa-wingate/"
+    },
+    {
+      "name": "Liza Marklund",
+      "url": "https://www.bookseries.org/authors/liza-marklund/"
+    },
+    {
+      "name": "Lois McMaster Bujold",
+      "url": "https://www.bookseries.org/authors/lois-mcmaster-bujold/"
+    },
+    {
+      "name": "Lori Foster",
+      "url": "https://www.bookseries.org/authors/lori-foster/"
+    },
+    {
+      "name": "Lorna Barrett",
+      "url": "https://www.bookseries.org/authors/lorna-barrett/"
+    },
+    {
+      "name": "Lorraine Heath",
+      "url": "https://www.bookseries.org/authors/lorraine-heath/"
+    },
+    {
+      "name": "Louis L’Amour",
+      "url": "https://www.bookseries.org/authors/louis-lamour/"
+    },
+    {
+      "name": "Louise Penny",
+      "url": "https://www.bookseries.org/authors/louise-penny/"
+    },
+    {
+      "name": "Louise Rennison",
+      "url": "https://www.bookseries.org/authors/louise-rennison/"
+    },
+    {
+      "name": "Luca Veste",
+      "url": "https://www.bookseries.org/authors/luca-veste/"
+    },
+    {
+      "name": "Lucinda Riley",
+      "url": "https://www.bookseries.org/authors/lucinda-riley/"
+    },
+    {
+      "name": "Lucy Arlington",
+      "url": "https://www.bookseries.org/authors/lucy-arlington/"
+    },
+    {
+      "name": "Lucy Foley",
+      "url": "https://www.bookseries.org/authors/lucy-foley/"
+    },
+    {
+      "name": "Lucy Score",
+      "url": "https://www.bookseries.org/authors/lucy-score/"
+    },
+    {
+      "name": "Lynda La Plante",
+      "url": "https://www.bookseries.org/authors/lynda-la-plante/"
+    },
+    {
+      "name": "Lynsay Sands",
+      "url": "https://www.bookseries.org/authors/lynsay-sands/"
+    },
+    {
+      "name": "M C Beaton",
+      "url": "https://www.bookseries.org/authors/m-c-beaton/"
+    },
+    {
+      "name": "M J Arlidge",
+      "url": "https://www.bookseries.org/authors/m-j-arlidge/"
+    },
+    {
+      "name": "M J Rose",
+      "url": "https://www.bookseries.org/authors/m-j-rose/"
+    },
+    {
+      "name": "M R Hall",
+      "url": "https://www.bookseries.org/authors/m-r-hall/"
+    },
+    {
+      "name": "M. William Phelps",
+      "url": "https://www.bookseries.org/authors/m-william-phelps/"
+    },
+    {
+      "name": "M.A. Comley",
+      "url": "https://www.bookseries.org/authors/m-a-comley/"
+    },
+    {
+      "name": "M.L. Longworth",
+      "url": "https://www.bookseries.org/authors/m-l-longworth/"
+    },
+    {
+      "name": "Madeleine Roux",
+      "url": "https://www.bookseries.org/authors/madeleine-roux/"
+    },
+    {
+      "name": "Maeve Binchy",
+      "url": "https://www.bookseries.org/authors/maeve-binchy/"
+    },
+    {
+      "name": "Maggie Hartley",
+      "url": "https://www.bookseries.org/authors/maggie-hartley/"
+    },
+    {
+      "name": "Maggie Sefton",
+      "url": "https://www.bookseries.org/authors/maggie-sefton/"
+    },
+    {
+      "name": "Maisey Yates",
+      "url": "https://www.bookseries.org/authors/maisey-yates/"
+    },
+    {
+      "name": "Malcolm Dylan Petteway",
+      "url": "https://www.bookseries.org/authors/malcolm-dylan-petteway/"
+    },
+    {
+      "name": "Marc Cameron",
+      "url": "https://www.bookseries.org/authors/marc-cameron/"
+    },
+    {
+      "name": "Marcia Muller",
+      "url": "https://www.bookseries.org/authors/marcia-muller/"
+    },
+    {
+      "name": "Marcia Willett",
+      "url": "https://www.bookseries.org/authors/marcia-willett/"
+    },
+    {
+      "name": "Marcus Sakey",
+      "url": "https://www.bookseries.org/authors/marcus-sakey/"
+    },
+    {
+      "name": "Margaret Atwood",
+      "url": "https://www.bookseries.org/authors/margaret-atwood/"
+    },
+    {
+      "name": "Margaret Coel",
+      "url": "https://www.bookseries.org/authors/margaret-coel/"
+    },
+    {
+      "name": "Margaret Maron",
+      "url": "https://www.bookseries.org/authors/margaret-maron/"
+    },
+    {
+      "name": "Margaret Peterson Haddix",
+      "url": "https://www.bookseries.org/authors/margaret-peterson-haddix/"
+    },
+    {
+      "name": "Mariah Stewart",
+      "url": "https://www.bookseries.org/authors/mariah-stewart/"
+    },
+    {
+      "name": "Marian Keyes",
+      "url": "https://www.bookseries.org/authors/marian-keyes/"
+    },
+    {
+      "name": "Mariana Zapata",
+      "url": "https://www.bookseries.org/authors/mariana-zapata/"
+    },
+    {
+      "name": "Marie Force",
+      "url": "https://www.bookseries.org/authors/marie-force/"
+    },
+    {
+      "name": "Marie Lu",
+      "url": "https://www.bookseries.org/authors/marie-lu/"
+    },
+    {
+      "name": "Mario Acevedo",
+      "url": "https://www.bookseries.org/authors/mario-acevedo/"
+    },
+    {
+      "name": "Marion Chesney",
+      "url": "https://www.bookseries.org/authors/marion-chesney/"
+    },
+    {
+      "name": "Marion Zimmer Bradley",
+      "url": "https://www.bookseries.org/authors/marion-zimmer-bradley/"
+    },
+    {
+      "name": "Marissa Meyer",
+      "url": "https://www.bookseries.org/authors/marissa-meyer/"
+    },
+    {
+      "name": "Mark Alpert",
+      "url": "https://www.bookseries.org/authors/mark-alpert/"
+    },
+    {
+      "name": "Mark Billingham",
+      "url": "https://www.bookseries.org/authors/mark-billingham/"
+    },
+    {
+      "name": "Mark Bowden",
+      "url": "https://www.bookseries.org/authors/mark-bowden/"
+    },
+    {
+      "name": "Mark Dawson",
+      "url": "https://www.bookseries.org/authors/mark-dawson/"
+    },
+    {
+      "name": "Mark Douglas-Home",
+      "url": "https://www.bookseries.org/authors/mark-douglas-home/"
+    },
+    {
+      "name": "Mark Greaney",
+      "url": "https://www.bookseries.org/authors/mark-greaney/"
+    },
+    {
+      "name": "Mark Schweizer",
+      "url": "https://www.bookseries.org/authors/mark-schweizer/"
+    },
+    {
+      "name": "Martha Grimes",
+      "url": "https://www.bookseries.org/authors/martha-grimes/"
+    },
+    {
+      "name": "Martin Limón",
+      "url": "https://www.bookseries.org/authors/martin-limon/"
+    },
+    {
+      "name": "Martin Walker",
+      "url": "https://www.bookseries.org/authors/martin-walker/"
+    },
+    {
+      "name": "Martina Cole",
+      "url": "https://www.bookseries.org/authors/martina-cole/"
+    },
+    {
+      "name": "Mary Balogh",
+      "url": "https://www.bookseries.org/authors/mary-balogh/"
+    },
+    {
+      "name": "Mary Burton",
+      "url": "https://www.bookseries.org/authors/mary-burton/"
+    },
+    {
+      "name": "Mary Daheim",
+      "url": "https://www.bookseries.org/authors/mary-daheim/"
+    },
+    {
+      "name": "Mary Ellen Taylor",
+      "url": "https://www.bookseries.org/authors/mary-ellen-taylor/"
+    },
+    {
+      "name": "Mary Higgins Clark",
+      "url": "https://www.bookseries.org/authors/mary-higgins-clark/"
+    },
+    {
+      "name": "Mary Jane Clark",
+      "url": "https://www.bookseries.org/authors/mary-jane-clark/"
+    },
+    {
+      "name": "Mary Jane Maffini",
+      "url": "https://www.bookseries.org/authors/mary-jane-maffini/"
+    },
+    {
+      "name": "Mary Jo Putney",
+      "url": "https://www.bookseries.org/authors/mary-jo-putney/"
+    },
+    {
+      "name": "Mary Kay Andrews",
+      "url": "https://www.bookseries.org/authors/mary-kay-andrews/"
+    },
+    {
+      "name": "Mary Kubica",
+      "url": "https://www.bookseries.org/authors/mary-kubica/"
+    },
+    {
+      "name": "Mary Monroe",
+      "url": "https://www.bookseries.org/authors/mary-monroe/"
+    },
+    {
+      "name": "Mary Stewart",
+      "url": "https://www.bookseries.org/authors/mary-stewart/"
+    },
+    {
+      "name": "Mary Stone",
+      "url": "https://www.bookseries.org/authors/mary-stone/"
+    },
+    {
+      "name": "Mason Cross",
+      "url": "https://www.bookseries.org/authors/mason-cross/"
+    },
+    {
+      "name": "Matt Coyle",
+      "url": "https://www.bookseries.org/authors/matt-coyle/"
+    },
+    {
+      "name": "Matthew Betley",
+      "url": "https://www.bookseries.org/authors/matthew-betley/"
+    },
+    {
+      "name": "Matthew Dunn",
+      "url": "https://www.bookseries.org/authors/matthew-dunn/"
+    },
+    {
+      "name": "Matthew Fitzsimmons",
+      "url": "https://www.bookseries.org/authors/matthew-fitzsimmons/"
+    },
+    {
+      "name": "Matthew Quirk",
+      "url": "https://www.bookseries.org/authors/matthew-quirk/"
+    },
+    {
+      "name": "Matthew Reilly",
+      "url": "https://www.bookseries.org/authors/matthew-reilly/"
+    },
+    {
+      "name": "Max Monroe",
+      "url": "https://www.bookseries.org/authors/max-monroe/"
+    },
+    {
+      "name": "Maya Banks",
+      "url": "https://www.bookseries.org/authors/maya-banks/"
+    },
+    {
+      "name": "Meg Cabot",
+      "url": "https://www.bookseries.org/authors/meg-cabot/"
+    },
+    {
+      "name": "Meg Gardiner",
+      "url": "https://www.bookseries.org/authors/meg-gardiner/"
+    },
+    {
+      "name": "Megan Abbott",
+      "url": "https://www.bookseries.org/authors/megan-abbott/"
+    },
+    {
+      "name": "Megan Frampton",
+      "url": "https://www.bookseries.org/authors/megan-frampton/"
+    },
+    {
+      "name": "Megan Miranda",
+      "url": "https://www.bookseries.org/authors/megan-miranda/"
+    },
+    {
+      "name": "Meghan March",
+      "url": "https://www.bookseries.org/authors/meghan-march/"
+    },
+    {
+      "name": "Melissa Marr",
+      "url": "https://www.bookseries.org/authors/melissa-marr/"
+    },
+    {
+      "name": "Mercedes Lackey",
+      "url": "https://www.bookseries.org/authors/mercedes-lackey/"
+    },
+    {
+      "name": "Michael Anderle",
+      "url": "https://www.bookseries.org/authors/michael-anderle/"
+    },
+    {
+      "name": "Michael Bond",
+      "url": "https://www.bookseries.org/authors/michael-bond/"
+    },
+    {
+      "name": "Michael Brandman",
+      "url": "https://www.bookseries.org/authors/michael-brandman/"
+    },
+    {
+      "name": "Michael Connelly",
+      "url": "https://www.bookseries.org/authors/michael-connelly/"
+    },
+    {
+      "name": "Michael Crichton",
+      "url": "https://www.bookseries.org/authors/michael-crichton/"
+    },
+    {
+      "name": "Michael Dibdin",
+      "url": "https://www.bookseries.org/authors/michael-dibdin/"
+    },
+    {
+      "name": "Michael Grant",
+      "url": "https://www.bookseries.org/authors/michael-grant/"
+    },
+    {
+      "name": "Michael J. Sullivan",
+      "url": "https://www.bookseries.org/authors/michael-j-sullivan/"
+    },
+    {
+      "name": "Michael Koryta",
+      "url": "https://www.bookseries.org/authors/michael-koryta/"
+    },
+    {
+      "name": "Michael McGarrity",
+      "url": "https://www.bookseries.org/authors/michael-mcgarrity/"
+    },
+    {
+      "name": "Michael Robotham",
+      "url": "https://www.bookseries.org/authors/michael-robotham/"
+    },
+    {
+      "name": "Michael Walsh",
+      "url": "https://www.bookseries.org/authors/michael-walsh/"
+    },
+    {
+      "name": "Michaela Thompson",
+      "url": "https://www.bookseries.org/authors/michaela-thompson/"
+    },
+    {
+      "name": "Michelle Sagara West",
+      "url": "https://www.bookseries.org/authors/michelle-sagara-west/"
+    },
+    {
+      "name": "Mick Herron",
+      "url": "https://www.bookseries.org/authors/mick-herron/"
+    },
+    {
+      "name": "Mike Ashley",
+      "url": "https://www.bookseries.org/authors/mike-ashley/"
+    },
+    {
+      "name": "Mike Lawson",
+      "url": "https://www.bookseries.org/authors/mike-lawson/"
+    },
+    {
+      "name": "Min Jin Lee",
+      "url": "https://www.bookseries.org/authors/min-jin-lee/"
+    },
+    {
+      "name": "Monica Ferris",
+      "url": "https://www.bookseries.org/authors/monica-ferris/"
+    },
+    {
+      "name": "Morris Gleitzman",
+      "url": "https://www.bookseries.org/authors/morris-gleitzman/"
+    },
+    {
+      "name": "Murray McDonald",
+      "url": "https://www.bookseries.org/authors/murray-mcdonald/"
+    },
+    {
+      "name": "Nalini Singh",
+      "url": "https://www.bookseries.org/authors/nalini-singh/"
+    },
+    {
+      "name": "Nancy Atherton",
+      "url": "https://www.bookseries.org/authors/nancy-atherton/"
+    },
+    {
+      "name": "Nancy CoCo",
+      "url": "https://www.bookseries.org/authors/nancy-coco/"
+    },
+    {
+      "name": "Nancy Taylor Rosenberg",
+      "url": "https://www.bookseries.org/authors/nancy-taylor-rosenberg/"
+    },
+    {
+      "name": "Natasha Preston",
+      "url": "https://www.bookseries.org/authors/natasha-preston/"
+    },
+    {
+      "name": "Nathan Lowell",
+      "url": "https://www.bookseries.org/authors/nathan-lowell/"
+    },
+    {
+      "name": "Neal Stephenson",
+      "url": "https://www.bookseries.org/authors/neal-stephenson/"
+    },
+    {
+      "name": "Neil Gaiman",
+      "url": "https://www.bookseries.org/authors/neil-gaiman/"
+    },
+    {
+      "name": "Nele Neuhaus",
+      "url": "https://www.bookseries.org/authors/nele-neuhaus/"
+    },
+    {
+      "name": "Nelson DeMille",
+      "url": "https://www.bookseries.org/authors/nelson-demille/"
+    },
+    {
+      "name": "Nevada Barr",
+      "url": "https://www.bookseries.org/authors/nevada-barr/"
+    },
+    {
+      "name": "Ngaio Marsh",
+      "url": "https://www.bookseries.org/authors/ngaio-marsh/"
+    },
+    {
+      "name": "Nicci French",
+      "url": "https://www.bookseries.org/authors/nicci-french/"
+    },
+    {
+      "name": "Nicholas Sansbury Smith",
+      "url": "https://www.bookseries.org/authors/nicholas-sansbury-smith/"
+    },
+    {
+      "name": "Nicholas Sparks",
+      "url": "https://www.bookseries.org/authors/nicholas-sparks/"
+    },
+    {
+      "name": "Nicholson Baker",
+      "url": "https://www.bookseries.org/authors/nicholson-baker/"
+    },
+    {
+      "name": "Nick Oldham",
+      "url": "https://www.bookseries.org/authors/nick-oldham/"
+    },
+    {
+      "name": "Nick Petrie",
+      "url": "https://www.bookseries.org/authors/nick-petrie/"
+    },
+    {
+      "name": "Nick Pirog",
+      "url": "https://www.bookseries.org/authors/nick-pirog/"
+    },
+    {
+      "name": "Nicola Upson",
+      "url": "https://www.bookseries.org/authors/nicola-upson/"
+    },
+    {
+      "name": "Nicola Yoon",
+      "url": "https://www.bookseries.org/authors/nicola-yoon/"
+    },
+    {
+      "name": "Nicole Snow",
+      "url": "https://www.bookseries.org/authors/nicole-snow/"
+    },
+    {
+      "name": "Nora Roberts",
+      "url": "https://www.bookseries.org/authors/nora-roberts/"
+    },
+    {
+      "name": "Octavia Randolph",
+      "url": "https://www.bookseries.org/authors/octavia-randolph/"
+    },
+    {
+      "name": "Olen Steinhauer",
+      "url": "https://www.bookseries.org/authors/olen-steinhauer/"
+    },
+    {
+      "name": "Orson Scott Card",
+      "url": "https://www.bookseries.org/authors/orson-scott-card/"
+    },
+    {
+      "name": "Owen Laukkanen",
+      "url": "https://www.bookseries.org/authors/owen-laukkanen/"
+    },
+    {
+      "name": "P D James",
+      "url": "https://www.bookseries.org/authors/p-d-james/"
+    },
+    {
+      "name": "P J Tracy",
+      "url": "https://www.bookseries.org/authors/p-j-tracy/"
+    },
+    {
+      "name": "P.C. Cast",
+      "url": "https://www.bookseries.org/authors/p-c-cast/"
+    },
+    {
+      "name": "P.G. Wodehouse",
+      "url": "https://www.bookseries.org/authors/p-g-wodehouse/"
+    },
+    {
+      "name": "P.J. Parrish",
+      "url": "https://www.bookseries.org/authors/p-j-parrish/"
+    },
+    {
+      "name": "P.T. Deutermann",
+      "url": "https://www.bookseries.org/authors/p-t-deutermann/"
+    },
+    {
+      "name": "Paige Shelton",
+      "url": "https://www.bookseries.org/authors/paige-shelton/"
+    },
+    {
+      "name": "Pam Jenoff",
+      "url": "https://www.bookseries.org/authors/pam-jenoff/"
+    },
+    {
+      "name": "Pamela Callow",
+      "url": "https://www.bookseries.org/authors/pamela-callow/"
+    },
+    {
+      "name": "Pat Conroy",
+      "url": "https://www.bookseries.org/authors/pat-conroy/"
+    },
+    {
+      "name": "Patricia Briggs",
+      "url": "https://www.bookseries.org/authors/patricia-briggs/"
+    },
+    {
+      "name": "Patricia Cornwell",
+      "url": "https://www.bookseries.org/authors/patricia-cornwell/"
+    },
+    {
+      "name": "Patricia Finney",
+      "url": "https://www.bookseries.org/authors/patricia-finney/"
+    },
+    {
+      "name": "Patrick deWitt",
+      "url": "https://www.bookseries.org/authors/patrick-dewitt/"
+    },
+    {
+      "name": "Patrick O’Brian",
+      "url": "https://www.bookseries.org/authors/patrick-obrian/"
+    },
+    {
+      "name": "Patrick Robinson",
+      "url": "https://www.bookseries.org/authors/patrick-robinson/"
+    },
+    {
+      "name": "Patrick Rothfuss",
+      "url": "https://www.bookseries.org/authors/patrick-rothfuss/"
+    },
+    {
+      "name": "Patrick Taylor",
+      "url": "https://www.bookseries.org/authors/patrick-taylor/"
+    },
+    {
+      "name": "Paul Cleave",
+      "url": "https://www.bookseries.org/authors/paul-cleave/"
+    },
+    {
+      "name": "Paul Doiron",
+      "url": "https://www.bookseries.org/authors/paul-doiron/"
+    },
+    {
+      "name": "Paul Finch",
+      "url": "https://www.bookseries.org/authors/paul-finch/"
+    },
+    {
+      "name": "Paul Tremblay",
+      "url": "https://www.bookseries.org/authors/paul-tremblay/"
+    },
+    {
+      "name": "Paula Hawkins",
+      "url": "https://www.bookseries.org/authors/paula-hawkins/"
+    },
+    {
+      "name": "Penny Vincenzi",
+      "url": "https://www.bookseries.org/authors/penny-vincenzi/"
+    },
+    {
+      "name": "Peter F. Hamilton",
+      "url": "https://www.bookseries.org/authors/peter-f-hamilton/"
+    },
+    {
+      "name": "Peter Grainger",
+      "url": "https://www.bookseries.org/authors/peter-grainger/"
+    },
+    {
+      "name": "Peter Heller",
+      "url": "https://www.bookseries.org/authors/peter-heller/"
+    },
+    {
+      "name": "Peter James",
+      "url": "https://www.bookseries.org/authors/peter-james/"
+    },
+    {
+      "name": "Peter May",
+      "url": "https://www.bookseries.org/authors/peter-may/"
+    },
+    {
+      "name": "Peter Robinson",
+      "url": "https://www.bookseries.org/authors/peter-robinson/"
+    },
+    {
+      "name": "Peter Swanson",
+      "url": "https://www.bookseries.org/authors/peter-swanson/"
+    },
+    {
+      "name": "Phil Rickman",
+      "url": "https://www.bookseries.org/authors/phil-rickman/"
+    },
+    {
+      "name": "Philip Kerr",
+      "url": "https://www.bookseries.org/authors/philip-kerr/"
+    },
+    {
+      "name": "Philip Margolin",
+      "url": "https://www.bookseries.org/authors/philip-margolin/"
+    },
+    {
+      "name": "Philippa Gregory",
+      "url": "https://www.bookseries.org/authors/philippa-gregory/"
+    },
+    {
+      "name": "Pierce Brown",
+      "url": "https://www.bookseries.org/authors/pierce-brown/"
+    },
+    {
+      "name": "Pittacus Lore",
+      "url": "https://www.bookseries.org/authors/pittacus-lore/"
+    },
+    {
+      "name": "Priscilla Masters",
+      "url": "https://www.bookseries.org/authors/priscilla-masters/"
+    },
+    {
+      "name": "Qiu Xiaolong",
+      "url": "https://www.bookseries.org/authors/qiu-xiaolong/"
+    },
+    {
+      "name": "R.L. Stine",
+      "url": "https://www.bookseries.org/authors/r-l-stine/"
+    },
+    {
+      "name": "Rachel Gibson",
+      "url": "https://www.bookseries.org/authors/rachel-gibson/"
+    },
+    {
+      "name": "Rachel Hawkins",
+      "url": "https://www.bookseries.org/authors/rachel-hawkins/"
+    },
+    {
+      "name": "RaeAnne Thayne",
+      "url": "https://www.bookseries.org/authors/raeanne-thayne/"
+    },
+    {
+      "name": "Ragnar Jónasson",
+      "url": "https://www.bookseries.org/authors/ragnar-jonasson/"
+    },
+    {
+      "name": "Ralph Compton",
+      "url": "https://www.bookseries.org/authors/ralph-compton/"
+    },
+    {
+      "name": "Ralph Cotton",
+      "url": "https://www.bookseries.org/authors/ralph-cotton/"
+    },
+    {
+      "name": "Ralph McInerny",
+      "url": "https://www.bookseries.org/authors/ralph-mcinerny/"
+    },
+    {
+      "name": "Randy Wayne White",
+      "url": "https://www.bookseries.org/authors/randy-wayne-white/"
+    },
+    {
+      "name": "Ray Bradbury",
+      "url": "https://www.bookseries.org/authors/ray-bradbury/"
+    },
+    {
+      "name": "Raymond Benson",
+      "url": "https://www.bookseries.org/authors/raymond-benson/"
+    },
+    {
+      "name": "Raymond Chandler",
+      "url": "https://www.bookseries.org/authors/raymond-chandler/"
+    },
+    {
+      "name": "Raymond Khoury",
+      "url": "https://www.bookseries.org/authors/raymond-khoury/"
+    },
+    {
+      "name": "Rebecca Stead",
+      "url": "https://www.bookseries.org/authors/rebecca-stead/"
+    },
+    {
+      "name": "Rebecca Tope",
+      "url": "https://www.bookseries.org/authors/rebecca-tope/"
+    },
+    {
+      "name": "Rebecca Zanetti",
+      "url": "https://www.bookseries.org/authors/rebecca-zanetti/"
+    },
+    {
+      "name": "Reed Farrel Coleman",
+      "url": "https://www.bookseries.org/authors/reed-farrel-coleman/"
+    },
+    {
+      "name": "Rex Stout",
+      "url": "https://www.bookseries.org/authors/rex-stout/"
+    },
+    {
+      "name": "Rhys Bowen",
+      "url": "https://www.bookseries.org/authors/rhys-bowen/"
+    },
+    {
+      "name": "Richard Baker",
+      "url": "https://www.bookseries.org/authors/richard-baker/"
+    },
+    {
+      "name": "Richard Bard",
+      "url": "https://www.bookseries.org/authors/richard-bard/"
+    },
+    {
+      "name": "Richard Castle",
+      "url": "https://www.bookseries.org/authors/richard-castle/"
+    },
+    {
+      "name": "Richard K. Morgan",
+      "url": "https://www.bookseries.org/authors/richard-k-morgan/"
+    },
+    {
+      "name": "Richard Laymon",
+      "url": "https://www.bookseries.org/authors/richard-laymon/"
+    },
+    {
+      "name": "Richard Marcinko",
+      "url": "https://www.bookseries.org/authors/richard-marcinko/"
+    },
+    {
+      "name": "Richard North Patterson",
+      "url": "https://www.bookseries.org/authors/richard-north-patterson/"
+    },
+    {
+      "name": "Richard Paul Evans",
+      "url": "https://www.bookseries.org/authors/richard-paul-evans/"
+    },
+    {
+      "name": "Richelle Mead",
+      "url": "https://www.bookseries.org/authors/richelle-mead/"
+    },
+    {
+      "name": "Rick Mofina",
+      "url": "https://www.bookseries.org/authors/rick-mofina/"
+    },
+    {
+      "name": "Rick Riordan",
+      "url": "https://www.bookseries.org/authors/rick-riordan/"
+    },
+    {
+      "name": "Rick Yancey",
+      "url": "https://www.bookseries.org/authors/rick-yancey/"
+    },
+    {
+      "name": "Riley Sager",
+      "url": "https://www.bookseries.org/authors/riley-sager/"
+    },
+    {
+      "name": "Rita Mae Brown",
+      "url": "https://www.bookseries.org/authors/rita-mae-brown/"
+    },
+    {
+      "name": "Robert A. Heinlein",
+      "url": "https://www.bookseries.org/authors/robert-a-heinlein/"
+    },
+    {
+      "name": "Robert B. Parker",
+      "url": "https://www.bookseries.org/authors/robert-b-parker/"
+    },
+    {
+      "name": "Robert Barnard",
+      "url": "https://www.bookseries.org/authors/robert-barnard/"
+    },
+    {
+      "name": "Robert Bryndza",
+      "url": "https://www.bookseries.org/authors/robert-bryndza/"
+    },
+    {
+      "name": "Robert Crais",
+      "url": "https://www.bookseries.org/authors/robert-crais/"
+    },
+    {
+      "name": "Robert Dugoni",
+      "url": "https://www.bookseries.org/authors/robert-dugoni/"
+    },
+    {
+      "name": "Robert Fate",
+      "url": "https://www.bookseries.org/authors/robert-fate/"
+    },
+    {
+      "name": "Robert Galbraith",
+      "url": "https://www.bookseries.org/authors/robert-galbraith/"
+    },
+    {
+      "name": "Robert Goddard",
+      "url": "https://www.bookseries.org/authors/robert-goddard/"
+    },
+    {
+      "name": "Robert Harris",
+      "url": "https://www.bookseries.org/authors/robert-harris/"
+    },
+    {
+      "name": "Robert Jordan",
+      "url": "https://www.bookseries.org/authors/robert-jordan/"
+    },
+    {
+      "name": "Robert K. Tanenbaum",
+      "url": "https://www.bookseries.org/authors/robert-k-tanenbaum/"
+    },
+    {
+      "name": "Robert Ludlum",
+      "url": "https://www.bookseries.org/authors/robert-ludlum/"
+    },
+    {
+      "name": "Robert R McCammon",
+      "url": "https://www.bookseries.org/authors/robert-r-mccammon/"
+    },
+    {
+      "name": "Robert Rankin",
+      "url": "https://www.bookseries.org/authors/robert-rankin/"
+    },
+    {
+      "name": "Robert Rotenberg",
+      "url": "https://www.bookseries.org/authors/robert-rotenberg/"
+    },
+    {
+      "name": "Robert Trivers",
+      "url": "https://www.bookseries.org/authors/robert-trivers/"
+    },
+    {
+      "name": "Robert Whitlow",
+      "url": "https://www.bookseries.org/authors/robert-whitlow/"
+    },
+    {
+      "name": "Roberta Kray",
+      "url": "https://www.bookseries.org/authors/roberta-kray/"
+    },
+    {
+      "name": "Robin Cook",
+      "url": "https://www.bookseries.org/authors/robin-cook/"
+    },
+    {
+      "name": "Robin Hobb",
+      "url": "https://www.bookseries.org/authors/robin-hobb/"
+    },
+    {
+      "name": "Robin Lee Hatcher",
+      "url": "https://www.bookseries.org/authors/robin-lee-hatcher/"
+    },
+    {
+      "name": "Robin McKinley",
+      "url": "https://www.bookseries.org/authors/robin-mckinley/"
+    },
+    {
+      "name": "Robin Stevens",
+      "url": "https://www.bookseries.org/authors/robin-stevens/"
+    },
+    {
+      "name": "Robyn Carr",
+      "url": "https://www.bookseries.org/authors/robyn-carr/"
+    },
+    {
+      "name": "Roger Silverwood",
+      "url": "https://www.bookseries.org/authors/roger-silverwood/"
+    },
+    {
+      "name": "Roger Stelljes",
+      "url": "https://www.bookseries.org/authors/roger-stelljes/"
+    },
+    {
+      "name": "Roger Zelazny",
+      "url": "https://www.bookseries.org/authors/roger-zelazny/"
+    },
+    {
+      "name": "Ronald H. Balson",
+      "url": "https://www.bookseries.org/authors/ronald-h-balson/"
+    },
+    {
+      "name": "Ronald Malfi",
+      "url": "https://www.bookseries.org/authors/ronald-malfi/"
+    },
+    {
+      "name": "Rory Clements",
+      "url": "https://www.bookseries.org/authors/rory-clements/"
+    },
+    {
+      "name": "Rory Power",
+      "url": "https://www.bookseries.org/authors/rory-power/"
+    },
+    {
+      "name": "Rosamunde Pilcher",
+      "url": "https://www.bookseries.org/authors/rosamunde-pilcher/"
+    },
+    {
+      "name": "Rosemary Kirstein",
+      "url": "https://www.bookseries.org/authors/rosemary-kirstein/"
+    },
+    {
+      "name": "Rosie Goodwin",
+      "url": "https://www.bookseries.org/authors/rosie-goodwin/"
+    },
+    {
+      "name": "Roy Lewis",
+      "url": "https://www.bookseries.org/authors/roy-lewis/"
+    },
+    {
+      "name": "Ruby Dixon",
+      "url": "https://www.bookseries.org/authors/ruby-dixon/"
+    },
+    {
+      "name": "Russell Blake",
+      "url": "https://www.bookseries.org/authors/russell-blake/"
+    },
+    {
+      "name": "Ruth Rendell",
+      "url": "https://www.bookseries.org/authors/ruth-rendell/"
+    },
+    {
+      "name": "Ruth Ware",
+      "url": "https://www.bookseries.org/authors/ruth-ware/"
+    },
+    {
+      "name": "Ryk Brown",
+      "url": "https://www.bookseries.org/authors/ryk-brown/"
+    },
+    {
+      "name": "S J Rozan",
+      "url": "https://www.bookseries.org/authors/s-j-rozan/"
+    },
+    {
+      "name": "S. L. Scott",
+      "url": "https://www.bookseries.org/authors/s-l-scott/"
+    },
+    {
+      "name": "S.J. Parris",
+      "url": "https://www.bookseries.org/authors/s-j-parris/"
+    },
+    {
+      "name": "S.J. Watson",
+      "url": "https://www.bookseries.org/authors/s-j-watson/"
+    },
+    {
+      "name": "S.M. Stirling",
+      "url": "https://www.bookseries.org/authors/s-m-stirling/"
+    },
+    {
+      "name": "Sabrina Jeffries",
+      "url": "https://www.bookseries.org/authors/sabrina-jeffries/"
+    },
+    {
+      "name": "Sally Goldenbaum",
+      "url": "https://www.bookseries.org/authors/sally-goldenbaum/"
+    },
+    {
+      "name": "Sally Hepworth",
+      "url": "https://www.bookseries.org/authors/sally-hepworth/"
+    },
+    {
+      "name": "Sally Rooney",
+      "url": "https://www.bookseries.org/authors/sally-rooney/"
+    },
+    {
+      "name": "Sally Spencer",
+      "url": "https://www.bookseries.org/authors/sally-spencer/"
+    },
+    {
+      "name": "Samantha Chase",
+      "url": "https://www.bookseries.org/authors/samantha-chase/"
+    },
+    {
+      "name": "Samantha Shannon",
+      "url": "https://www.bookseries.org/authors/samantha-shannon/"
+    },
+    {
+      "name": "Samantha Young",
+      "url": "https://www.bookseries.org/authors/samantha-young/"
+    },
+    {
+      "name": "Sandra Brown",
+      "url": "https://www.bookseries.org/authors/sandra-brown/"
+    },
+    {
+      "name": "Sara Blaedel",
+      "url": "https://www.bookseries.org/authors/sara-blaedel/"
+    },
+    {
+      "name": "Sara Donati",
+      "url": "https://www.bookseries.org/authors/sara-donati/"
+    },
+    {
+      "name": "Sara Driscoll",
+      "url": "https://www.bookseries.org/authors/sara-driscoll/"
+    },
+    {
+      "name": "Sara Paretsky",
+      "url": "https://www.bookseries.org/authors/sara-paretsky/"
+    },
+    {
+      "name": "Sara Rosett",
+      "url": "https://www.bookseries.org/authors/sara-rosett/"
+    },
+    {
+      "name": "Sara Shepard",
+      "url": "https://www.bookseries.org/authors/sara-shepard/"
+    },
+    {
+      "name": "Sarah Dessen",
+      "url": "https://www.bookseries.org/authors/sarah-dessen/"
+    },
+    {
+      "name": "Sarah Graves",
+      "url": "https://www.bookseries.org/authors/sarah-graves/"
+    },
+    {
+      "name": "Sarah J Maas",
+      "url": "https://www.bookseries.org/authors/sarah-j-maas/"
+    },
+    {
+      "name": "Sarah MacLean",
+      "url": "https://www.bookseries.org/authors/sarah-maclean/"
+    },
+    {
+      "name": "Sarah Morgan",
+      "url": "https://www.bookseries.org/authors/sarah-morgan/"
+    },
+    {
+      "name": "Sarah Pinborough",
+      "url": "https://www.bookseries.org/authors/sarah-pinborough/"
+    },
+    {
+      "name": "Sarah R Shaber",
+      "url": "https://www.bookseries.org/authors/sarah-r-shaber/"
+    },
+    {
+      "name": "Scott Blade",
+      "url": "https://www.bookseries.org/authors/scott-blade/"
+    },
+    {
+      "name": "Scott Lynch",
+      "url": "https://www.bookseries.org/authors/scott-lynch/"
+    },
+    {
+      "name": "Scott Mariani",
+      "url": "https://www.bookseries.org/authors/scott-mariani/"
+    },
+    {
+      "name": "Scott Pratt",
+      "url": "https://www.bookseries.org/authors/scott-pratt/"
+    },
+    {
+      "name": "Scott Turow",
+      "url": "https://www.bookseries.org/authors/scott-turow/"
+    },
+    {
+      "name": "Scott Westerfeld",
+      "url": "https://www.bookseries.org/authors/scott-westerfeld/"
+    },
+    {
+      "name": "Scott William Carter",
+      "url": "https://www.bookseries.org/authors/scott-william-carter/"
+    },
+    {
+      "name": "Seanan McGuire",
+      "url": "https://www.bookseries.org/authors/seanan-mcguire/"
+    },
+    {
+      "name": "Serena Valentino",
+      "url": "https://www.bookseries.org/authors/serena-valentino/"
+    },
+    {
+      "name": "Sergei Lukyanenko",
+      "url": "https://www.bookseries.org/authors/sergei-lukyanenko/"
+    },
+    {
+      "name": "Shanna Swendson",
+      "url": "https://www.bookseries.org/authors/shanna-swendson/"
+    },
+    {
+      "name": "Shannon Mayer",
+      "url": "https://www.bookseries.org/authors/shannon-mayer/"
+    },
+    {
+      "name": "Shannon Messenger",
+      "url": "https://www.bookseries.org/authors/shannon-messenger/"
+    },
+    {
+      "name": "Shari Lapena",
+      "url": "https://www.bookseries.org/authors/shari-lapena/"
+    },
+    {
+      "name": "Sharon Bolton",
+      "url": "https://www.bookseries.org/authors/sharon-bolton/"
+    },
+    {
+      "name": "Sharon Creech",
+      "url": "https://www.bookseries.org/authors/sharon-creech/"
+    },
+    {
+      "name": "Sharon Kay Penman",
+      "url": "https://www.bookseries.org/authors/sharon-kay-penman/"
+    },
+    {
+      "name": "Sharon Lee",
+      "url": "https://www.bookseries.org/authors/sharon-lee/"
+    },
+    {
+      "name": "Sharon Sala",
+      "url": "https://www.bookseries.org/authors/sharon-sala/"
+    },
+    {
+      "name": "Sharyn McCrumb",
+      "url": "https://www.bookseries.org/authors/sharyn-mccrumb/"
+    },
+    {
+      "name": "Shayla Black",
+      "url": "https://www.bookseries.org/authors/shayla-black/"
+    },
+    {
+      "name": "Sheila Connolly",
+      "url": "https://www.bookseries.org/authors/sheila-connolly/"
+    },
+    {
+      "name": "Sheila Roberts",
+      "url": "https://www.bookseries.org/authors/sheila-roberts/"
+    },
+    {
+      "name": "Sheldon Siegel",
+      "url": "https://www.bookseries.org/authors/sheldon-siegel/"
+    },
+    {
+      "name": "Shelley Shepard Gray",
+      "url": "https://www.bookseries.org/authors/shelley-shepard-gray/"
+    },
+    {
+      "name": "Shelly Laurenston",
+      "url": "https://www.bookseries.org/authors/shelly-laurenston/"
+    },
+    {
+      "name": "Sherrilyn Kenyon",
+      "url": "https://www.bookseries.org/authors/sherrilyn-kenyon/"
+    },
+    {
+      "name": "Sherry Thomas",
+      "url": "https://www.bookseries.org/authors/sherry-thomas/"
+    },
+    {
+      "name": "Sherryl Woods",
+      "url": "https://www.bookseries.org/authors/sherryl-woods/"
+    },
+    {
+      "name": "Shirley Rousseau Murphy",
+      "url": "https://www.bookseries.org/authors/shirley-rousseau-murphy/"
+    },
+    {
+      "name": "Sidney Sheldon",
+      "url": "https://www.bookseries.org/authors/sidney-sheldon/"
+    },
+    {
+      "name": "Simon Brett",
+      "url": "https://www.bookseries.org/authors/simon-brett/"
+    },
+    {
+      "name": "Simon Kernick",
+      "url": "https://www.bookseries.org/authors/simon-kernick/"
+    },
+    {
+      "name": "Simon R. Green",
+      "url": "https://www.bookseries.org/authors/simon-r-green/"
+    },
+    {
+      "name": "Simon Scarrow",
+      "url": "https://www.bookseries.org/authors/simon-scarrow/"
+    },
+    {
+      "name": "Sofie Ryan",
+      "url": "https://www.bookseries.org/authors/sofie-ryan/"
+    },
+    {
+      "name": "Sophie Hannah",
+      "url": "https://www.bookseries.org/authors/sophie-hannah/"
+    },
+    {
+      "name": "Sophie Jordan",
+      "url": "https://www.bookseries.org/authors/sophie-jordan/"
+    },
+    {
+      "name": "Sophie Kinsella",
+      "url": "https://www.bookseries.org/authors/sophie-kinsella/"
+    },
+    {
+      "name": "Sophie Lark",
+      "url": "https://www.bookseries.org/authors/sophie-lark/"
+    },
+    {
+      "name": "Søren Sveistrup",
+      "url": "https://www.bookseries.org/authors/soren-sveistrup/"
+    },
+    {
+      "name": "Spencer Quinn",
+      "url": "https://www.bookseries.org/authors/spencer-quinn/"
+    },
+    {
+      "name": "Stefan Ahnhem",
+      "url": "https://www.bookseries.org/authors/stefan-ahnhem/"
+    },
+    {
+      "name": "Stella Rimington",
+      "url": "https://www.bookseries.org/authors/stella-rimington/"
+    },
+    {
+      "name": "Stephanie Bond",
+      "url": "https://www.bookseries.org/authors/stephanie-bond/"
+    },
+    {
+      "name": "Stephanie Evanovich",
+      "url": "https://www.bookseries.org/authors/stephanie-evanovich/"
+    },
+    {
+      "name": "Stephanie Laurens",
+      "url": "https://www.bookseries.org/authors/stephanie-laurens/"
+    },
+    {
+      "name": "Stephanie Wrobel",
+      "url": "https://www.bookseries.org/authors/stephanie-wrobel/"
+    },
+    {
+      "name": "Stephen Booth",
+      "url": "https://www.bookseries.org/authors/stephen-booth/"
+    },
+    {
+      "name": "Stephen Coonts",
+      "url": "https://www.bookseries.org/authors/stephen-coonts/"
+    },
+    {
+      "name": "Stephen Harding",
+      "url": "https://www.bookseries.org/authors/stephen-harding/"
+    },
+    {
+      "name": "Stephen Hunter",
+      "url": "https://www.bookseries.org/authors/stephen-hunter/"
+    },
+    {
+      "name": "Stephen J Cannell",
+      "url": "https://www.bookseries.org/authors/stephen-j-cannell/"
+    },
+    {
+      "name": "Stephen King",
+      "url": "https://www.bookseries.org/authors/stephen-king/"
+    },
+    {
+      "name": "Stephen Leather",
+      "url": "https://www.bookseries.org/authors/stephen-leather/"
+    },
+    {
+      "name": "Stephen W. Frey",
+      "url": "https://www.bookseries.org/authors/stephen-w-frey/"
+    },
+    {
+      "name": "Stephen White",
+      "url": "https://www.bookseries.org/authors/stephen-white/"
+    },
+    {
+      "name": "Stephenie Meyer",
+      "url": "https://www.bookseries.org/authors/stephenie-meyer/"
+    },
+    {
+      "name": "Steve Alten",
+      "url": "https://www.bookseries.org/authors/steve-alten/"
+    },
+    {
+      "name": "Steve Berry",
+      "url": "https://www.bookseries.org/authors/steve-berry/"
+    },
+    {
+      "name": "Steve Burrows",
+      "url": "https://www.bookseries.org/authors/steve-burrows/"
+    },
+    {
+      "name": "Steve Cavanagh",
+      "url": "https://www.bookseries.org/authors/steve-cavanagh/"
+    },
+    {
+      "name": "Steve Hamilton",
+      "url": "https://www.bookseries.org/authors/steve-hamilton/"
+    },
+    {
+      "name": "Steve Higgs",
+      "url": "https://www.bookseries.org/authors/steve-higgs/"
+    },
+    {
+      "name": "Steve Martini",
+      "url": "https://www.bookseries.org/authors/steve-martini/"
+    },
+    {
+      "name": "Steve McHugh",
+      "url": "https://www.bookseries.org/authors/steve-mchugh/"
+    },
+    {
+      "name": "Steve P Vincent",
+      "url": "https://www.bookseries.org/authors/steve-p-vincent/"
+    },
+    {
+      "name": "Steve Perry",
+      "url": "https://www.bookseries.org/authors/steve-perry/"
+    },
+    {
+      "name": "Steven F. Havill",
+      "url": "https://www.bookseries.org/authors/steven-f-havill/"
+    },
+    {
+      "name": "Steven James",
+      "url": "https://www.bookseries.org/authors/steven-james/"
+    },
+    {
+      "name": "Steven Kellogg",
+      "url": "https://www.bookseries.org/authors/steven-kellogg/"
+    },
+    {
+      "name": "Steven Konkoly",
+      "url": "https://www.bookseries.org/authors/steven-konkoly/"
+    },
+    {
+      "name": "Steven Saylor",
+      "url": "https://www.bookseries.org/authors/steven-saylor/"
+    },
+    {
+      "name": "Stieg Larsson",
+      "url": "https://www.bookseries.org/authors/stieg-larsson/"
+    },
+    {
+      "name": "Stuart M Kaminsky",
+      "url": "https://www.bookseries.org/authors/stuart-m-kaminsky/"
+    },
+    {
+      "name": "Stuart MacBride",
+      "url": "https://www.bookseries.org/authors/stuart-macbride/"
+    },
+    {
+      "name": "Stuart Woods",
+      "url": "https://www.bookseries.org/authors/stuart-woods/"
+    },
+    {
+      "name": "Sue Grafton",
+      "url": "https://www.bookseries.org/authors/sue-grafton/"
+    },
+    {
+      "name": "Sue Henry",
+      "url": "https://www.bookseries.org/authors/sue-henry/"
+    },
+    {
+      "name": "Susan Branch",
+      "url": "https://www.bookseries.org/authors/susan-branch/"
+    },
+    {
+      "name": "Susan Cooper",
+      "url": "https://www.bookseries.org/authors/susan-cooper/"
+    },
+    {
+      "name": "Susan Elia MacNeal",
+      "url": "https://www.bookseries.org/authors/susan-elia-macneal/"
+    },
+    {
+      "name": "Susan Elizabeth Phillips",
+      "url": "https://www.bookseries.org/authors/susan-elizabeth-phillips/"
+    },
+    {
+      "name": "Susan Hill",
+      "url": "https://www.bookseries.org/authors/susan-hill/"
+    },
+    {
+      "name": "Susan Howatch",
+      "url": "https://www.bookseries.org/authors/susan-howatch/"
+    },
+    {
+      "name": "Susan Isaacs",
+      "url": "https://www.bookseries.org/authors/susan-isaacs/"
+    },
+    {
+      "name": "Susan Kiernan-Lewis",
+      "url": "https://www.bookseries.org/authors/susan-kiernan-lewis/"
+    },
+    {
+      "name": "Susan Lewis",
+      "url": "https://www.bookseries.org/authors/susan-lewis/"
+    },
+    {
+      "name": "Susan M. Boyer",
+      "url": "https://www.bookseries.org/authors/susan-m-boyer/"
+    },
+    {
+      "name": "Susan Mallery",
+      "url": "https://www.bookseries.org/authors/susan-mallery/"
+    },
+    {
+      "name": "Susan May Warren",
+      "url": "https://www.bookseries.org/authors/susan-may-warren/"
+    },
+    {
+      "name": "Susan Meissner",
+      "url": "https://www.bookseries.org/authors/susan-meissner/"
+    },
+    {
+      "name": "Susan Stoker",
+      "url": "https://www.bookseries.org/authors/susan-stoker/"
+    },
+    {
+      "name": "Susan Wiggs",
+      "url": "https://www.bookseries.org/authors/susan-wiggs/"
+    },
+    {
+      "name": "Susan Wittig Albert",
+      "url": "https://www.bookseries.org/authors/susan-wittig-albert/"
+    },
+    {
+      "name": "Susanna Gregory",
+      "url": "https://www.bookseries.org/authors/susanna-gregory/"
+    },
+    {
+      "name": "Susanna Kearsley",
+      "url": "https://www.bookseries.org/authors/susanna-kearsley/"
+    },
+    {
+      "name": "Suzanne Brockmann",
+      "url": "https://www.bookseries.org/authors/suzanne-brockmann/"
+    },
+    {
+      "name": "Suzanne Collins",
+      "url": "https://www.bookseries.org/authors/suzanne-collins/"
+    },
+    {
+      "name": "Suzanne Enoch",
+      "url": "https://www.bookseries.org/authors/suzanne-enoch/"
+    },
+    {
+      "name": "Suzanne Woods Fisher",
+      "url": "https://www.bookseries.org/authors/suzanne-woods-fisher/"
+    },
+    {
+      "name": "Suzanne Wright",
+      "url": "https://www.bookseries.org/authors/suzanne-wright/"
+    },
+    {
+      "name": "Sven Hassel",
+      "url": "https://www.bookseries.org/authors/sven-hassel/"
+    },
+    {
+      "name": "Sylvia Day",
+      "url": "https://www.bookseries.org/authors/sylvia-day/"
+    },
+    {
+      "name": "Sylvia Pierce",
+      "url": "https://www.bookseries.org/authors/sylvia-pierce/"
+    },
+    {
+      "name": "T E Kinsey",
+      "url": "https://www.bookseries.org/authors/t-e-kinsey/"
+    },
+    {
+      "name": "T. Davis Bunn",
+      "url": "https://www.bookseries.org/authors/t-davis-bunn/"
+    },
+    {
+      "name": "T. Frank Muir",
+      "url": "https://www.bookseries.org/authors/t-frank-muir/"
+    },
+    {
+      "name": "T. Jefferson Parker",
+      "url": "https://www.bookseries.org/authors/t-jefferson-parker/"
+    },
+    {
+      "name": "T.M. Logan",
+      "url": "https://www.bookseries.org/authors/t-m-logan/"
+    },
+    {
+      "name": "Ta-Nehisi Coates",
+      "url": "https://www.bookseries.org/authors/ta-nehisi-coates/"
+    },
+    {
+      "name": "Tabitha King",
+      "url": "https://www.bookseries.org/authors/tabitha-king/"
+    },
+    {
+      "name": "Tad Williams",
+      "url": "https://www.bookseries.org/authors/tad-williams/"
+    },
+    {
+      "name": "Tahereh Mafi",
+      "url": "https://www.bookseries.org/authors/tahereh-mafi/"
+    },
+    {
+      "name": "Tamera Alexander",
+      "url": "https://www.bookseries.org/authors/tamera-alexander/"
+    },
+    {
+      "name": "Tami Hoag",
+      "url": "https://www.bookseries.org/authors/tami-hoag/"
+    },
+    {
+      "name": "Tamora Pierce",
+      "url": "https://www.bookseries.org/authors/tamora-pierce/"
+    },
+    {
+      "name": "Tana French",
+      "url": "https://www.bookseries.org/authors/tana-french/"
+    },
+    {
+      "name": "Tanya Huff",
+      "url": "https://www.bookseries.org/authors/tanya-huff/"
+    },
+    {
+      "name": "Tara Westover",
+      "url": "https://www.bookseries.org/authors/tara-westover/"
+    },
+    {
+      "name": "Tarryn Fisher",
+      "url": "https://www.bookseries.org/authors/tarryn-fisher/"
+    },
+    {
+      "name": "Tasha Alexander",
+      "url": "https://www.bookseries.org/authors/tasha-alexander/"
+    },
+    {
+      "name": "Taylor Caldwell",
+      "url": "https://www.bookseries.org/authors/taylor-caldwell/"
+    },
+    {
+      "name": "Taylor Jenkins Reid",
+      "url": "https://www.bookseries.org/authors/taylor-jenkins-reid/"
+    },
+    {
+      "name": "Ted Bell",
+      "url": "https://www.bookseries.org/authors/ted-bell/"
+    },
+    {
+      "name": "Ted Chiang",
+      "url": "https://www.bookseries.org/authors/ted-chiang/"
+    },
+    {
+      "name": "Ted Dekker",
+      "url": "https://www.bookseries.org/authors/ted-dekker/"
+    },
+    {
+      "name": "Teresa Driscoll",
+      "url": "https://www.bookseries.org/authors/teresa-driscoll/"
+    },
+    {
+      "name": "Terri Blackstock",
+      "url": "https://www.bookseries.org/authors/terri-blackstock/"
+    },
+    {
+      "name": "Terry Brooks",
+      "url": "https://www.bookseries.org/authors/terry-brooks/"
+    },
+    {
+      "name": "Terry Goodkind",
+      "url": "https://www.bookseries.org/authors/terry-goodkind/"
+    },
+    {
+      "name": "Terry Oliver Mejdrich",
+      "url": "https://www.bookseries.org/authors/terry-oliver-mejdrich/"
+    },
+    {
+      "name": "Terry Pratchett",
+      "url": "https://www.bookseries.org/authors/terry-pratchett/"
+    },
+    {
+      "name": "Tess Gerritsen",
+      "url": "https://www.bookseries.org/authors/tess-gerritsen/"
+    },
+    {
+      "name": "Tessa Dare",
+      "url": "https://www.bookseries.org/authors/tessa-dare/"
+    },
+    {
+      "name": "Theodore Dreiser",
+      "url": "https://www.bookseries.org/authors/theodore-dreiser/"
+    },
+    {
+      "name": "Thomas Perry",
+      "url": "https://www.bookseries.org/authors/thomas-perry/"
+    },
+    {
+      "name": "Thomas Wylde",
+      "url": "https://www.bookseries.org/authors/thomas-wylde/"
+    },
+    {
+      "name": "Thrity Umrigar",
+      "url": "https://www.bookseries.org/authors/thrity-umrigar/"
+    },
+    {
+      "name": "Tim Dorsey",
+      "url": "https://www.bookseries.org/authors/tim-dorsey/"
+    },
+    {
+      "name": "Tim Green",
+      "url": "https://www.bookseries.org/authors/tim-green/"
+    },
+    {
+      "name": "Tim Kizer",
+      "url": "https://www.bookseries.org/authors/tim-kizer/"
+    },
+    {
+      "name": "Tim LaHaye",
+      "url": "https://www.bookseries.org/authors/tim-lahaye/"
+    },
+    {
+      "name": "Tim McGregor",
+      "url": "https://www.bookseries.org/authors/tim-mcgregor/"
+    },
+    {
+      "name": "Tim Tigner",
+      "url": "https://www.bookseries.org/authors/tim-tigner/"
+    },
+    {
+      "name": "Tim Weaver",
+      "url": "https://www.bookseries.org/authors/tim-weaver/"
+    },
+    {
+      "name": "Timothy Zahn",
+      "url": "https://www.bookseries.org/authors/timothy-zahn/"
+    },
+    {
+      "name": "Todd Borg",
+      "url": "https://www.bookseries.org/authors/todd-borg/"
+    },
+    {
+      "name": "Tom Abrahams",
+      "url": "https://www.bookseries.org/authors/tom-abrahams/"
+    },
+    {
+      "name": "Tom Cain",
+      "url": "https://www.bookseries.org/authors/tom-cain/"
+    },
+    {
+      "name": "Tom Clancy",
+      "url": "https://www.bookseries.org/authors/tom-clancy/"
+    },
+    {
+      "name": "Tom Wood",
+      "url": "https://www.bookseries.org/authors/tom-wood/"
+    },
+    {
+      "name": "Toni Morrison",
+      "url": "https://www.bookseries.org/authors/toni-morrison/"
+    },
+    {
+      "name": "Tony Bertauski",
+      "url": "https://www.bookseries.org/authors/tony-bertauski/"
+    },
+    {
+      "name": "Tony Hillerman",
+      "url": "https://www.bookseries.org/authors/tony-hillerman/"
+    },
+    {
+      "name": "Tony Parsons",
+      "url": "https://www.bookseries.org/authors/tony-parsons/"
+    },
+    {
+      "name": "Tonya Kappes",
+      "url": "https://www.bookseries.org/authors/tonya-kappes/"
+    },
+    {
+      "name": "Torquil MacLeod",
+      "url": "https://www.bookseries.org/authors/torquil-macleod/"
+    },
+    {
+      "name": "Traci Hunter Abramson",
+      "url": "https://www.bookseries.org/authors/traci-hunter-abramson/"
+    },
+    {
+      "name": "Tracie Peterson",
+      "url": "https://www.bookseries.org/authors/tracie-peterson/"
+    },
+    {
+      "name": "Trevor Scott",
+      "url": "https://www.bookseries.org/authors/trevor-scott/"
+    },
+    {
+      "name": "Tricia Fields",
+      "url": "https://www.bookseries.org/authors/tricia-fields/"
+    },
+    {
+      "name": "Tui T Sutherland",
+      "url": "https://www.bookseries.org/authors/tui-t-sutherland/"
+    },
+    {
+      "name": "Ursula K. Le Guin",
+      "url": "https://www.bookseries.org/authors/ursula-k-le-guin/"
+    },
+    {
+      "name": "V C Andrews",
+      "url": "https://www.bookseries.org/authors/v-c-andrews/"
+    },
+    {
+      "name": "Val McDermid",
+      "url": "https://www.bookseries.org/authors/val-mcdermid/"
+    },
+    {
+      "name": "Veronica Roth",
+      "url": "https://www.bookseries.org/authors/veronica-roth/"
+    },
+    {
+      "name": "Vi Keeland",
+      "url": "https://www.bookseries.org/authors/vi-keeland/"
+    },
+    {
+      "name": "Vicki Delany",
+      "url": "https://www.bookseries.org/authors/vicki-delany/"
+    },
+    {
+      "name": "Victor Methos",
+      "url": "https://www.bookseries.org/authors/victor-methos/"
+    },
+    {
+      "name": "Victoria Aveyard",
+      "url": "https://www.bookseries.org/authors/victoria-aveyard/"
+    },
+    {
+      "name": "Victoria Gilbert",
+      "url": "https://www.bookseries.org/authors/victoria-gilbert/"
+    },
+    {
+      "name": "Victoria Hamilton",
+      "url": "https://www.bookseries.org/authors/victoria-hamilton/"
+    },
+    {
+      "name": "Victoria Houston",
+      "url": "https://www.bookseries.org/authors/victoria-houston/"
+    },
+    {
+      "name": "Victoria Laurie",
+      "url": "https://www.bookseries.org/authors/victoria-laurie/"
+    },
+    {
+      "name": "Victoria Schwab",
+      "url": "https://www.bookseries.org/authors/victoria-schwab/"
+    },
+    {
+      "name": "Victoria Thompson",
+      "url": "https://www.bookseries.org/authors/victoria-thompson/"
+    },
+    {
+      "name": "Vince Flynn",
+      "url": "https://www.bookseries.org/authors/vince-flynn/"
+    },
+    {
+      "name": "Viola Shipman",
+      "url": "https://www.bookseries.org/authors/viola-shipman/"
+    },
+    {
+      "name": "Viveca Sten",
+      "url": "https://www.bookseries.org/authors/viveca-sten/"
+    },
+    {
+      "name": "Vivien Chien",
+      "url": "https://www.bookseries.org/authors/vivien-chien/"
+    },
+    {
+      "name": "Vox Day",
+      "url": "https://www.bookseries.org/authors/vox-day/"
+    },
+    {
+      "name": "W Michael Gear",
+      "url": "https://www.bookseries.org/authors/w-michael-gear/"
+    },
+    {
+      "name": "W. Bruce Cameron",
+      "url": "https://www.bookseries.org/authors/w-bruce-cameron/"
+    },
+    {
+      "name": "W.E.B. Griffin",
+      "url": "https://www.bookseries.org/authors/w-e-b-griffin/"
+    },
+    {
+      "name": "W.J. Burley",
+      "url": "https://www.bookseries.org/authors/w-j-burley/"
+    },
+    {
+      "name": "Wanda E Brunstetter",
+      "url": "https://www.bookseries.org/authors/wanda-e-brunstetter/"
+    },
+    {
+      "name": "Ward Larsen",
+      "url": "https://www.bookseries.org/authors/ward-larsen/"
+    },
+    {
+      "name": "Wayne Stinnett",
+      "url": "https://www.bookseries.org/authors/wayne-stinnett/"
+    },
+    {
+      "name": "Wen Spencer",
+      "url": "https://www.bookseries.org/authors/wen-spencer/"
+    },
+    {
+      "name": "Wendy Corsi Staub",
+      "url": "https://www.bookseries.org/authors/wendy-corsi-staub/"
+    },
+    {
+      "name": "Wilbur Smith",
+      "url": "https://www.bookseries.org/authors/wilbur-smith/"
+    },
+    {
+      "name": "Will Jordan",
+      "url": "https://www.bookseries.org/authors/will-jordan/"
+    },
+    {
+      "name": "Will Thomas",
+      "url": "https://www.bookseries.org/authors/will-thomas/"
+    },
+    {
+      "name": "Will Wight",
+      "url": "https://www.bookseries.org/authors/will-wight/"
+    },
+    {
+      "name": "William Bernhardt",
+      "url": "https://www.bookseries.org/authors/william-bernhardt/"
+    },
+    {
+      "name": "William Dietrich",
+      "url": "https://www.bookseries.org/authors/william-dietrich/"
+    },
+    {
+      "name": "William G. Tapply",
+      "url": "https://www.bookseries.org/authors/william-g-tapply/"
+    },
+    {
+      "name": "William Greenleaf",
+      "url": "https://www.bookseries.org/authors/william-greenleaf/"
+    },
+    {
+      "name": "William Kent Krueger",
+      "url": "https://www.bookseries.org/authors/william-kent-krueger/"
+    },
+    {
+      "name": "William Lashner",
+      "url": "https://www.bookseries.org/authors/william-lashner/"
+    },
+    {
+      "name": "William Sanders",
+      "url": "https://www.bookseries.org/authors/william-sanders/"
+    },
+    {
+      "name": "William Shaw",
+      "url": "https://www.bookseries.org/authors/william-shaw/"
+    },
+    {
+      "name": "William W Johnstone",
+      "url": "https://www.bookseries.org/authors/william-w-johnstone/"
+    },
+    {
+      "name": "Willow Rose",
+      "url": "https://www.bookseries.org/authors/willow-rose/"
+    },
+    {
+      "name": "Yasmine Galenorn",
+      "url": "https://www.bookseries.org/authors/yasmine-galenorn/"
+    },
+    {
+      "name": "Yrsa Sigurdardottir",
+      "url": "https://www.bookseries.org/authors/yrsa-sigurdardottir/"
+    },
+    {
+      "name": "Zane Grey",
+      "url": "https://www.bookseries.org/authors/zane-grey/"
+    },
+    {
+      "name": "Zoë Sharp",
+      "url": "https://www.bookseries.org/authors/zoe-sharp/"
+    }
+  ]
+}

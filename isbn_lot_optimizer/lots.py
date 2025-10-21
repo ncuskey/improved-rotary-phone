@@ -4,7 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
-from .author_aliases import canonical_author as alias_canonical_author, display_label
+from shared.author_aliases import canonical_author as alias_canonical_author, display_label
 from shared.models import BookEvaluation, LotSuggestion
 
 
@@ -93,7 +93,7 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[
     # Try enhanced series lots using bookseries.org data (if db_path provided)
     if db_path:
         try:
-            from .series_lots import build_series_lots_enhanced
+            from shared.series_lots import build_series_lots_enhanced
             enhanced_series_lots = build_series_lots_enhanced(books, db_path)
             suggestions.extend(enhanced_series_lots)
             using_enhanced_series = True

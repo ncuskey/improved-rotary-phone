@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from shared.models import BookEvaluation, LotSuggestion
-from .series_database import SeriesDatabaseManager
+from shared.series_database import SeriesDatabaseManager
 
 
 def build_series_lots_enhanced(

@@ -9,7 +9,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from .series_database import SeriesDatabaseManager
+from shared.series_database import SeriesDatabaseManager
 
 
 class SeriesMatcher:

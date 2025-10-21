@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Tuple
 
-from .author_aliases import canonical_author
+from shared.author_aliases import canonical_author
 
 warnings.warn(
     "series_index module is deprecated. Use services.series_resolver (Hardcover integration) instead.",

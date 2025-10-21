@@ -11,14 +11,14 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 import requests
 
-from .author_aliases import canonical_author, display_label as alias_display_label
-from .booksrun import (
+from shared.author_aliases import canonical_author, display_label as alias_display_label
+from shared.booksrun import (
     BooksRunAPIError,
     DEFAULT_BASE_URL as BOOKSRUN_DEFAULT_BASE_URL,
     fetch_offer as fetch_booksrun_offer,
     normalise_condition as normalize_booksrun_condition,
 )
-from .bookscouter import (
+from shared.bookscouter import (
     BookScouterAPIError,
     DEFAULT_BASE_URL as BOOKSCOUTER_DEFAULT_BASE_URL,
     fetch_offers as fetch_bookscouter_offers,
@@ -34,7 +34,7 @@ from shared.constants import (
 )
 from shared.database import DatabaseManager
 from .metadata import create_http_session, enrich_authorship, fetch_metadata
-from .series_index import (
+from shared.series_index import (
     SeriesIndex,
     canonical_series,
     now_ts,
@@ -52,8 +52,8 @@ from shared.models import (
 )
 from .probability import build_book_evaluation
 from .lots import build_lots_with_strategies, generate_lot_suggestions
-from .series_catalog import get_or_fetch_series_for_authors
-from .series_finder import attach_series
+from shared.series_catalog import get_or_fetch_series_for_authors
+from shared.series_finder import attach_series
 from .market import fetch_single_market_stat, fetch_market_stats_v2
 from .lot_market import market_snapshot_for_lot
 from .lot_scoring import score_lot
@@ -503,7 +503,7 @@ class BookService:
         failed = 0
         skipped = 0
 
-        from .bookscouter import fetch_metadata_batch
+        from shared.bookscouter import fetch_metadata_batch
         import time
 
         for batch_idx, isbn_batch in enumerate(batches, 1):
@@ -570,7 +570,7 @@ class BookService:
                         self._apply_bookscouter_to_evaluation(evaluation, updated_bookscouter)
                     else:
                         # Create minimal result with just the rank
-                        from .bookscouter import BookScouterResult
+                        from shared.bookscouter import BookScouterResult
                         bookscouter_result = BookScouterResult(
                             isbn_10=metadata_raw.get("Isbn10", ""),
                             isbn_13=metadata_raw.get("Isbn13", isbn),

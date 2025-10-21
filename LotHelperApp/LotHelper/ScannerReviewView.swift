@@ -1348,7 +1348,10 @@ private extension BookInfo {
             author: author,
             series: subtitle ?? categories.first,
             thumbnail: thumbnail,
-            score: nil
+            score: nil,
+            profitPotential: nil,
+            soldCompsMedian: nil,
+            bestVendorPrice: nil
         )
     }
 }

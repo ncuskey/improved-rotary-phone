@@ -92,6 +92,8 @@ struct BookMetadataDetails: Codable, Hashable {
     let description: String?
     let thumbnail: String?
     let categories: [String]?
+    let seriesName: String?
+    let seriesIndex: Int?
 
     enum CodingKeys: String, CodingKey {
         case title
@@ -104,6 +106,8 @@ struct BookMetadataDetails: Codable, Hashable {
         case description
         case thumbnail
         case categories
+        case seriesName = "series_name"
+        case seriesIndex = "series_index"
     }
 
     var primaryAuthor: String? {
@@ -133,6 +137,9 @@ struct BookScouterResult: Codable, Hashable {
     let bestVendor: String?
     let totalVendors: Int
     let amazonSalesRank: Int?  // Lower rank = more popular/higher demand
+    let amazonCount: Int?  // Number of sellers on Amazon
+    let amazonLowestPrice: Double?  // Lowest price on Amazon
+    let amazonTradeInPrice: Double?  // Amazon trade-in value
 
     enum CodingKeys: String, CodingKey {
         case isbn10 = "isbn_10"
@@ -142,10 +149,46 @@ struct BookScouterResult: Codable, Hashable {
         case bestVendor = "best_vendor"
         case totalVendors = "total_vendors"
         case amazonSalesRank = "amazon_sales_rank"
+        case amazonCount = "amazon_count"
+        case amazonLowestPrice = "amazon_lowest_price"
+        case amazonTradeInPrice = "amazon_trade_in_price"
     }
 
     var topOffers: [VendorOffer] {
         Array(offers.sorted { $0.price > $1.price }.prefix(3))
+    }
+}
+
+struct EbayMarketData: Codable, Hashable {
+    let activeCount: Int?
+    let soldCount: Int?
+    let sellThroughRate: Double?
+    let currency: String?
+    let soldCompsCount: Int?
+    let soldCompsMin: Double?
+    let soldCompsMedian: Double?
+    let soldCompsMax: Double?
+    let soldCompsIsEstimate: Bool?
+    let soldCompsSource: String?
+
+    enum CodingKeys: String, CodingKey {
+        case activeCount = "ebay_active_count"
+        case soldCount = "ebay_sold_count"
+        case sellThroughRate = "sell_through"
+        case currency = "ebay_currency"
+        case soldCompsCount = "sold_comps_count"
+        case soldCompsMin = "sold_comps_min"
+        case soldCompsMedian = "sold_comps_median"
+        case soldCompsMax = "sold_comps_max"
+        case soldCompsIsEstimate = "sold_comps_is_estimate"
+        case soldCompsSource = "sold_comps_source"
+    }
+
+    var profitPotential: String {
+        guard let median = soldCompsMedian else { return "Unknown" }
+        if median < 5 { return "Low" }
+        if median < 15 { return "Medium" }
+        return "High"
     }
 }
 
@@ -160,6 +203,7 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let probabilityLabel: String?
     let justification: [String]?
     let metadata: BookMetadataDetails?
+    let market: EbayMarketData?
     let booksrunValueLabel: String?
     let booksrunValueRatio: Double?
     let bookscouter: BookScouterResult?
@@ -180,6 +224,7 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
         case probabilityLabel = "probability_label"
         case justification
         case metadata
+        case market
         case booksrunValueLabel = "booksrun_value_label"
         case booksrunValueRatio = "booksrun_value_ratio"
         case bookscouter
@@ -289,7 +334,7 @@ enum BookAPI {
         let title = lookup.title ?? "Untitled"
         let thumbnail = (lookup.thumbnail?.isEmpty == false)
             ? lookup.thumbnail!
-            : "https://covers.openlibrary.org/b/isbn/\(resolvedISBN)-M.jpg"
+            : "https://covers.openlibrary.org/b/isbn/\(resolvedISBN)-L.jpg"
 
         return BookInfo(
             isbn: resolvedISBN,
@@ -377,7 +422,7 @@ enum BookAPI {
                 let title = lookup.title ?? "Untitled"
                 let thumbnail = (lookup.thumbnail?.isEmpty == false)
                     ? lookup.thumbnail!
-                    : "https://covers.openlibrary.org/b/isbn/\(resolvedISBN)-M.jpg"
+                    : "https://covers.openlibrary.org/b/isbn/\(resolvedISBN)-L.jpg"
 
                 let info = BookInfo(
                     isbn: resolvedISBN,

@@ -480,6 +480,63 @@ class DatabaseManager:
             rows = cursor.fetchall()
         return list(rows)
 
+    def fetch_books_with_missing_covers(self) -> List[sqlite3.Row]:
+        """
+        Fetch books that have missing or broken cover images.
+
+        Returns books where metadata_json is missing cover_url or thumbnail fields.
+        This is useful for identifying books that need cover image updates.
+
+        Returns:
+            List of book rows with missing cover images
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT * FROM books
+                WHERE metadata_json IS NULL
+                   OR metadata_json NOT LIKE '%"cover_url"%'
+                   OR metadata_json NOT LIKE '%"thumbnail"%'
+                   OR metadata_json LIKE '%"cover_url": null%'
+                   OR metadata_json LIKE '%"thumbnail": null%'
+                ORDER BY probability_score DESC, title COLLATE NOCASE
+                """
+            )
+            rows = cursor.fetchall()
+        return list(rows)
+
+    def count_books_with_covers(self) -> Dict[str, int]:
+        """
+        Count books with and without cover images.
+
+        Returns:
+            Dict with 'with_covers', 'without_covers', and 'total' counts
+        """
+        with self._get_connection() as conn:
+            # Total books
+            total = conn.execute("SELECT COUNT(*) FROM books").fetchone()[0]
+
+            # Books with covers (has cover_url or thumbnail in metadata_json)
+            with_covers = conn.execute(
+                """
+                SELECT COUNT(*) FROM books
+                WHERE metadata_json IS NOT NULL
+                  AND (
+                      (metadata_json LIKE '%"cover_url": "http%')
+                      OR (metadata_json LIKE '%"thumbnail": "http%')
+                  )
+                """
+            ).fetchone()[0]
+
+            without_covers = total - with_covers
+
+            return {
+                "total": total,
+                "with_covers": with_covers,
+                "without_covers": without_covers,
+                "coverage_percentage": (with_covers / total * 100) if total > 0 else 0,
+            }
+
     # ------------------------------------------------------------------
     # Lot persistence helpers
 

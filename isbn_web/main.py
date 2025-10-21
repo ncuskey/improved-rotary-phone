@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import sys
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response as FastAPIResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -21,7 +21,7 @@ if str(PROJECT_ROOT) not in sys.path:  # Ensure package imports work when run as
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from isbn_web.api.dependencies import cleanup_book_service, get_book_service
-from isbn_web.api.routes import actions, books, covers, events, lots
+from isbn_web.api.routes import actions, books, covers, covers_check, events, lots, refresh
 from isbn_web.config import settings
 
 if TYPE_CHECKING:  # pragma: no cover - import only for typing
@@ -53,6 +53,18 @@ class NoCacheMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class NoCacheStaticFiles(StaticFiles):
+    """StaticFiles subclass that adds no-cache headers to all responses."""
+
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        # Force no caching for all static files
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+
+
 # Initialize FastAPI app
 app = FastAPI(
     title="ISBN Lot Optimizer",
@@ -64,10 +76,10 @@ app = FastAPI(
 # Add no-cache middleware to prevent browser caching issues
 app.add_middleware(NoCacheMiddleware)
 
-# Mount static files
-app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="static")
+# Mount static files with no-cache headers
+app.mount("/static", NoCacheStaticFiles(directory=str(settings.STATIC_DIR)), name="static")
 
-# Mount cover cache for serving images
+# Mount cover cache for serving images (covers can be cached since they rarely change)
 if settings.COVER_CACHE_DIR.exists():
     app.mount("/covers", StaticFiles(directory=str(settings.COVER_CACHE_DIR)), name="covers")
 
@@ -77,6 +89,8 @@ app.include_router(lots.router, prefix="/api/lots", tags=["lots"])
 app.include_router(actions.router, prefix="/api/actions", tags=["actions"])
 app.include_router(events.router, prefix="/api/events", tags=["events"])
 app.include_router(covers.router, prefix="/api", tags=["covers"])
+app.include_router(covers_check.router, prefix="/api/covers", tags=["covers"])
+app.include_router(refresh.router, prefix="/api/refresh", tags=["refresh"])
 
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))

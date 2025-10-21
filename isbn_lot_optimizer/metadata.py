@@ -15,8 +15,8 @@ GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes"
 OPENLIB_DATA_URL = "https://openlibrary.org/api/books"
 OPENLIB_ISBN_JSON = "https://openlibrary.org/isbn/{isbn}.json"
 OPENLIB_WORK_JSON = "https://openlibrary.org{work_key}.json"
-OPENLIB_COVER_TMPL = "https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
-OPENLIB_COVER_BY_ID = "https://covers.openlibrary.org/b/id/{cover_id}-M.jpg"
+OPENLIB_COVER_TMPL = "https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
+OPENLIB_COVER_BY_ID = "https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
 
 CACHE_PATH = os.path.expanduser("~/.isbn_lot_optimizer/gbooks_cache.json")
 CACHE_TTL_DAYS = 365
@@ -289,6 +289,25 @@ def _normalize_from_gbooks(info: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(cover_url, str) and cover_url.startswith("http://"):
         cover_url = "https://" + cover_url[len("http://") :]
 
+    # Enhance cover URL: try to get larger images from Google Books API
+    # Google Books URLs can be upgraded by modifying the zoom parameter
+    if isinstance(cover_url, str) and "books.google" in cover_url:
+        # Try to upgrade zoom level for larger images (zoom=1 is larger than default zoom=5)
+        if "zoom=5" in cover_url:
+            cover_url = cover_url.replace("zoom=5", "zoom=1")
+        elif "zoom=" not in cover_url:
+            # Add zoom=1 parameter for larger image
+            separator = "&" if "?" in cover_url else "?"
+            cover_url = f"{cover_url}{separator}zoom=1"
+
+    # Prepare Open Library fallback URL for larger covers
+    # This gives the app a high-quality fallback option (500x750px vs Google's ~128x200px)
+    openlibrary_fallback = None
+    if isbn_13:
+        openlibrary_fallback = OPENLIB_COVER_TMPL.format(isbn=isbn_13)
+    elif isbn_10:
+        openlibrary_fallback = OPENLIB_COVER_TMPL.format(isbn=isbn_10)
+
     return {
         "title": title,
         "subtitle": subtitle,
@@ -304,6 +323,7 @@ def _normalize_from_gbooks(info: Dict[str, Any]) -> Dict[str, Any]:
         "ratings_count": info.get("ratingsCount"),
         "language": info.get("language"),
         "cover_url": cover_url,
+        "cover_url_fallback": openlibrary_fallback,
         "description": info.get("description"),
         "isbn_10": isbn_10,
         "isbn_13": isbn_13,

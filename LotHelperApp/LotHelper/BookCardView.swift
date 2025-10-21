@@ -7,6 +7,9 @@ struct BookCardView: View {
         let series: String?
         let thumbnail: String
         let score: String?
+        let profitPotential: String?
+        let soldCompsMedian: Double?
+        let bestVendorPrice: Double?
 
         var coverURL: URL? { URL(string: thumbnail) }
         var coverRequest: URLRequest? {
@@ -16,7 +19,17 @@ struct BookCardView: View {
             return request
         }
 
-        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil)
+        var profitMargin: Double? {
+            guard let median = soldCompsMedian, let vendor = bestVendorPrice, vendor > 0 else { return nil }
+            return median - vendor
+        }
+
+        var profitMarginPercentage: Double? {
+            guard let margin = profitMargin, let vendor = bestVendorPrice, vendor > 0 else { return nil }
+            return (margin / vendor) * 100
+        }
+
+        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, soldCompsMedian: nil, bestVendorPrice: nil)
     }
 
     let book: Book
@@ -53,21 +66,64 @@ struct BookCardView: View {
                         .lineLimit(1)
                 }
                 if let series = book.series, !series.isEmpty {
-                    Text(series)
-                        .font(.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .lineLimit(1)
+                    HStack(spacing: 4) {
+                        Image(systemName: "books.vertical.fill")
+                            .font(.caption2)
+                        Text(series)
+                            .font(.caption)
+                    }
+                    .foregroundStyle(DS.Color.textSecondary)
+                    .lineLimit(1)
+                }
+                if let potential = book.profitPotential {
+                    HStack(spacing: 4) {
+                        Image(systemName: profitIcon(for: potential))
+                            .font(.caption2)
+                        Text("Profit: \(potential)")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(profitColor(for: potential))
+                    .lineLimit(1)
+                }
+                if let margin = book.profitMargin, let percentage = book.profitMarginPercentage {
+                    Text("$\(String(format: "%.2f", margin)) (\(String(format: "%.0f", percentage))%)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
             }
 
             Spacer(minLength: DS.Spacing.md)
 
-            if let score = book.score {
-                Label(score, systemImage: "chart.line.uptrend.xyaxis")
-                    .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .labelStyle(.titleAndIcon)
-                    .accessibilityLabel("Sales signal score \(score)")
+            VStack(alignment: .trailing, spacing: 4) {
+                if let score = book.score {
+                    Label(score, systemImage: "chart.line.uptrend.xyaxis")
+                        .font(.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
+                        .labelStyle(.titleAndIcon)
+                        .accessibilityLabel("Sales signal score \(score)")
+                }
+                if let median = book.soldCompsMedian {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("eBay")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("$\(String(format: "%.2f", median))")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.primary)
+                    }
+                }
+                if let vendor = book.bestVendorPrice, vendor > 0 {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Vendor")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("$\(String(format: "%.2f", vendor))")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.green)
+                    }
+                }
             }
         }
         .padding(DS.Spacing.md)
@@ -80,6 +136,32 @@ struct BookCardView: View {
         }
         .accessibilityElement(children: .combine)
     }
+
+    private func profitColor(for potential: String) -> Color {
+        switch potential.lowercased() {
+        case "high":
+            return .green
+        case "medium":
+            return .orange
+        case "low":
+            return .red
+        default:
+            return .gray
+        }
+    }
+
+    private func profitIcon(for potential: String) -> String {
+        switch potential.lowercased() {
+        case "high":
+            return "arrow.up.circle.fill"
+        case "medium":
+            return "minus.circle.fill"
+        case "low":
+            return "arrow.down.circle.fill"
+        default:
+            return "questionmark.circle.fill"
+        }
+    }
 }
 
 #Preview(traits: .sizeThatFitsLayout) {
@@ -88,7 +170,10 @@ struct BookCardView: View {
         author: "Robin Hobb",
         series: "Liveship Traders",
         thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-M.jpg",
-        score: "92"
+        score: "92",
+        profitPotential: "High",
+        soldCompsMedian: 24.99,
+        bestVendorPrice: 8.50
     ))
     .padding()
     .background(DS.Color.background)

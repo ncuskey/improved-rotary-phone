@@ -24,6 +24,20 @@ final class CachedBook {
     var bookDescription: String?
     var thumbnail: String?
     var categoriesJSON: String? // Store as JSON string
+    var seriesName: String?
+    var seriesIndex: Int?
+
+    // eBay Market data fields (flattened)
+    var ebayActiveCount: Int?
+    var ebaySoldCount: Int?
+    var ebaySellThroughRate: Double?
+    var ebayCurrency: String?
+    var ebaySoldCompsCount: Int?
+    var ebaySoldCompsMin: Double?
+    var ebaySoldCompsMedian: Double?
+    var ebaySoldCompsMax: Double?
+    var ebaySoldCompsIsEstimate: Bool?
+    var ebaySoldCompsSource: String?
 
     // BookScouter fields (flattened)
     var bookscouterIsbn10: String?
@@ -32,6 +46,9 @@ final class CachedBook {
     var bookscouterBestVendor: String?
     var bookscouterTotalVendors: Int?
     var bookscouterAmazonSalesRank: Int?
+    var bookscouterAmazonCount: Int?
+    var bookscouterAmazonLowestPrice: Double?
+    var bookscouterAmazonTradeInPrice: Double?
     var bookscouterOffersJSON: String? // Store offers as JSON string
 
     var booksrunValueLabel: String?
@@ -64,6 +81,20 @@ final class CachedBook {
         self.bookDescription = record.metadata?.description
         self.thumbnail = record.metadata?.thumbnail
         self.categoriesJSON = record.metadata?.categories?.jsonEncoded
+        self.seriesName = record.metadata?.seriesName
+        self.seriesIndex = record.metadata?.seriesIndex
+
+        // Flatten eBay market data
+        self.ebayActiveCount = record.market?.activeCount
+        self.ebaySoldCount = record.market?.soldCount
+        self.ebaySellThroughRate = record.market?.sellThroughRate
+        self.ebayCurrency = record.market?.currency
+        self.ebaySoldCompsCount = record.market?.soldCompsCount
+        self.ebaySoldCompsMin = record.market?.soldCompsMin
+        self.ebaySoldCompsMedian = record.market?.soldCompsMedian
+        self.ebaySoldCompsMax = record.market?.soldCompsMax
+        self.ebaySoldCompsIsEstimate = record.market?.soldCompsIsEstimate
+        self.ebaySoldCompsSource = record.market?.soldCompsSource
 
         // Flatten BookScouter
         self.bookscouterIsbn10 = record.bookscouter?.isbn10
@@ -72,6 +103,9 @@ final class CachedBook {
         self.bookscouterBestVendor = record.bookscouter?.bestVendor
         self.bookscouterTotalVendors = record.bookscouter?.totalVendors
         self.bookscouterAmazonSalesRank = record.bookscouter?.amazonSalesRank
+        self.bookscouterAmazonCount = record.bookscouter?.amazonCount
+        self.bookscouterAmazonLowestPrice = record.bookscouter?.amazonLowestPrice
+        self.bookscouterAmazonTradeInPrice = record.bookscouter?.amazonTradeInPrice
 
         // Encode offers to JSON
         if let offers = record.bookscouter?.offers {
@@ -98,7 +132,22 @@ final class CachedBook {
             publishedYear: publishedYear,
             description: bookDescription,
             thumbnail: thumbnail,
-            categories: categoriesJSON?.jsonDecoded()
+            categories: categoriesJSON?.jsonDecoded(),
+            seriesName: seriesName,
+            seriesIndex: seriesIndex
+        )
+
+        let market = EbayMarketData(
+            activeCount: ebayActiveCount,
+            soldCount: ebaySoldCount,
+            sellThroughRate: ebaySellThroughRate,
+            currency: ebayCurrency,
+            soldCompsCount: ebaySoldCompsCount,
+            soldCompsMin: ebaySoldCompsMin,
+            soldCompsMedian: ebaySoldCompsMedian,
+            soldCompsMax: ebaySoldCompsMax,
+            soldCompsIsEstimate: ebaySoldCompsIsEstimate,
+            soldCompsSource: ebaySoldCompsSource
         )
 
         var bookscouter: BookScouterResult?
@@ -121,7 +170,10 @@ final class CachedBook {
                 bestPrice: bestPrice,
                 bestVendor: bookscouterBestVendor,
                 totalVendors: totalVendors,
-                amazonSalesRank: bookscouterAmazonSalesRank
+                amazonSalesRank: bookscouterAmazonSalesRank,
+                amazonCount: bookscouterAmazonCount,
+                amazonLowestPrice: bookscouterAmazonLowestPrice,
+                amazonTradeInPrice: bookscouterAmazonTradeInPrice
             )
         }
 
@@ -136,6 +188,7 @@ final class CachedBook {
             probabilityLabel: probabilityLabel,
             justification: justificationJSON?.jsonDecoded(),
             metadata: metadata,
+            market: market,
             booksrunValueLabel: booksrunValueLabel,
             booksrunValueRatio: booksrunValueRatio,
             bookscouter: bookscouter,

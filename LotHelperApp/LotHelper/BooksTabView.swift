@@ -108,17 +108,40 @@ private extension BookEvaluationRecord {
     var cardModel: BookCardView.Book {
         let resolvedTitle = metadata?.title?.trimmedNonEmpty ?? metadata?.subtitle?.trimmedNonEmpty ?? isbn
         let resolvedAuthor = metadata?.primaryAuthor?.trimmedNonEmpty
-        let resolvedSeries = metadata?.subtitle?.trimmedNonEmpty ?? metadata?.categories?.first?.trimmedNonEmpty
+
+        // Use series name from metadata if available, otherwise fall back to subtitle or categories
+        let resolvedSeries: String? = {
+            if let seriesName = metadata?.seriesName?.trimmedNonEmpty {
+                // Include series index if available
+                if let index = metadata?.seriesIndex {
+                    return "\(seriesName) #\(index)"
+                }
+                return seriesName
+            }
+            return metadata?.subtitle?.trimmedNonEmpty ?? metadata?.categories?.first?.trimmedNonEmpty
+        }()
+
         let resolvedScore = probabilityLabel?.trimmedNonEmpty
 
         let thumbnail = (metadata?.thumbnail?.trimmedNonEmpty ?? fallbackCoverURLString) ?? ""
+
+        // Calculate profit potential based on eBay median price
+        let profitPotential: String? = {
+            guard let median = market?.soldCompsMedian else { return nil }
+            if median < 5 { return "Low" }
+            if median < 15 { return "Medium" }
+            return "High"
+        }()
 
         return BookCardView.Book(
             title: resolvedTitle,
             author: resolvedAuthor,
             series: resolvedSeries,
             thumbnail: thumbnail,
-            score: resolvedScore
+            score: resolvedScore,
+            profitPotential: profitPotential,
+            soldCompsMedian: market?.soldCompsMedian,
+            bestVendorPrice: bookscouter?.bestPrice
         )
     }
 
@@ -135,7 +158,10 @@ private struct BookDetailView: View {
         List {
             coverSection
             overviewSection
+            profitAnalysisSection
+            ebayMarketSection
             bookscouterSection
+            amazonSection
             metadataSection
             justificationSection
         }
@@ -186,6 +212,153 @@ private struct BookDetailView: View {
             if let probability = record.probabilityLabel, !probability.isEmpty {
                 Text("Probability: \(probability)")
                     .bodyStyle()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var profitAnalysisSection: some View {
+        if let market = record.market,
+           let soldMedian = market.soldCompsMedian,
+           let vendorPrice = record.bookscouter?.bestPrice {
+            Section("Profit Analysis") {
+                HStack {
+                    Text("eBay Sold Price (Median)")
+                        .bodyStyle()
+                    Spacer()
+                    Text(formattedCurrency(soldMedian))
+                        .bodyStyle()
+                        .fontWeight(.semibold)
+                }
+
+                HStack {
+                    Text("Best Vendor Buyback")
+                        .bodyStyle()
+                    Spacer()
+                    Text(formattedCurrency(vendorPrice))
+                        .bodyStyle()
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.green)
+                }
+
+                let margin = soldMedian - vendorPrice
+                let percentage = (margin / vendorPrice) * 100
+
+                Divider()
+
+                HStack {
+                    Text("Profit Margin")
+                        .bodyStyle()
+                        .fontWeight(.semibold)
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(formattedCurrency(margin))
+                            .bodyStyle()
+                            .fontWeight(.bold)
+                            .foregroundStyle(margin > 0 ? .green : .red)
+                        Text("(\(String(format: "%.0f", percentage))%)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if margin > 0 {
+                    let potential: String = {
+                        if soldMedian < 5 { return "Low" }
+                        if soldMedian < 15 { return "Medium" }
+                        return "High"
+                    }()
+
+                    HStack {
+                        Text("Profit Potential")
+                            .bodyStyle()
+                        Spacer()
+                        Text(potential)
+                            .bodyStyle()
+                            .fontWeight(.semibold)
+                            .foregroundStyle(potential == "High" ? .green : potential == "Medium" ? .orange : .red)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var ebayMarketSection: some View {
+        if let market = record.market {
+            Section("eBay Market Data") {
+                if let activeCount = market.activeCount {
+                    HStack {
+                        Text("Active Listings")
+                            .bodyStyle()
+                        Spacer()
+                        Text("\(activeCount)")
+                            .bodyStyle()
+                            .fontWeight(.semibold)
+                    }
+                }
+
+                if let soldCount = market.soldCount {
+                    HStack {
+                        Text("Sold Listings")
+                            .bodyStyle()
+                        Spacer()
+                        Text("\(soldCount)")
+                            .bodyStyle()
+                            .fontWeight(.semibold)
+                    }
+                }
+
+                if let sellThrough = market.sellThroughRate {
+                    HStack {
+                        Text("Sell Through Rate")
+                            .bodyStyle()
+                        Spacer()
+                        Text("\(String(format: "%.1f", sellThrough * 100))%")
+                            .bodyStyle()
+                            .fontWeight(.semibold)
+                            .foregroundStyle(sellThrough > 0.5 ? .green : .orange)
+                    }
+                }
+
+                if let soldMedian = market.soldCompsMedian {
+                    Divider()
+
+                    HStack {
+                        Text("Sold Price (Median)")
+                            .bodyStyle()
+                        Spacer()
+                        Text(formattedCurrency(soldMedian))
+                            .bodyStyle()
+                            .fontWeight(.semibold)
+                    }
+
+                    if let soldMin = market.soldCompsMin {
+                        HStack {
+                            Text("Sold Price (Min)")
+                                .bodyStyle()
+                            Spacer()
+                            Text(formattedCurrency(soldMin))
+                                .bodyStyle()
+                        }
+                    }
+
+                    if let soldMax = market.soldCompsMax {
+                        HStack {
+                            Text("Sold Price (Max)")
+                                .bodyStyle()
+                            Spacer()
+                            Text(formattedCurrency(soldMax))
+                                .bodyStyle()
+                        }
+                    }
+
+                    if let isEstimate = market.soldCompsIsEstimate, isEstimate {
+                        Text("Note: Sold prices are estimated from active listings")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         }
     }
@@ -244,6 +417,63 @@ private struct BookDetailView: View {
     }
 
     @ViewBuilder
+    private var amazonSection: some View {
+        if let bookscouter = record.bookscouter,
+           (bookscouter.amazonSalesRank != nil || bookscouter.amazonCount != nil || bookscouter.amazonLowestPrice != nil || bookscouter.amazonTradeInPrice != nil) {
+            Section("Amazon Market Data") {
+                if let rank = bookscouter.amazonSalesRank {
+                    HStack {
+                        Text("Sales Rank")
+                            .bodyStyle()
+                        Spacer()
+                        Text("#\(rank.formatted())")
+                            .bodyStyle()
+                            .fontWeight(.semibold)
+                    }
+                    Text("Lower rank = higher demand")
+                        .font(.caption)
+                        .foregroundStyle(DS.Color.textSecondary)
+                }
+
+                if let count = bookscouter.amazonCount {
+                    HStack {
+                        Text("Sellers")
+                            .bodyStyle()
+                        Spacer()
+                        Text("\(count)")
+                            .bodyStyle()
+                            .fontWeight(.semibold)
+                    }
+                }
+
+                if let price = bookscouter.amazonLowestPrice {
+                    HStack {
+                        Text("Lowest Amazon Price")
+                            .bodyStyle()
+                        Spacer()
+                        Text(formattedCurrency(price))
+                            .bodyStyle()
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.blue)
+                    }
+                }
+
+                if let tradeIn = bookscouter.amazonTradeInPrice, tradeIn > 0 {
+                    HStack {
+                        Text("Amazon Trade-In")
+                            .bodyStyle()
+                        Spacer()
+                        Text(formattedCurrency(tradeIn))
+                            .bodyStyle()
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
     private var metadataSection: some View {
         if let metadata = record.metadata {
             Section("Metadata") {
@@ -258,6 +488,19 @@ private struct BookDetailView: View {
                 if let author = metadata.primaryAuthor {
                     Text("Author: \(author)")
                         .bodyStyle()
+                }
+                if let seriesName = metadata.seriesName, !seriesName.isEmpty {
+                    HStack {
+                        Image(systemName: "books.vertical.fill")
+                            .foregroundStyle(DS.Color.textSecondary)
+                        if let index = metadata.seriesIndex {
+                            Text("Series: \(seriesName) #\(index)")
+                                .bodyStyle()
+                        } else {
+                            Text("Series: \(seriesName)")
+                                .bodyStyle()
+                        }
+                    }
                 }
                 if let publisher = metadata.publisher, !publisher.isEmpty {
                     Text("Publisher: \(publisher)")
@@ -321,16 +564,30 @@ private struct BookDetailView: View {
                 probabilityLabel: "High",
                 justification: ["Strong demand in recent sales", "Complete series"],
                 metadata: BookMetadataDetails(
-                    title: "Sample Book Title",
+                    title: "Ship of Magic",
                     subtitle: "A Journey into Testing",
-                    authors: ["Jane Doe", "Alex Roe"],
+                    authors: ["Robin Hobb"],
                     creditedAuthors: nil,
-                    canonicalAuthor: "Jane Doe",
+                    canonicalAuthor: "Robin Hobb",
                     publisher: "Sample Publisher",
                     publishedYear: 2018,
                     description: "This is a sample description used for SwiftUI previews.",
                     thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-M.jpg",
-                    categories: ["Fiction", "Adventure"]
+                    categories: ["Fiction", "Adventure"],
+                    seriesName: "Liveship Traders",
+                    seriesIndex: 1
+                ),
+                market: EbayMarketData(
+                    activeCount: 25,
+                    soldCount: 18,
+                    sellThroughRate: 0.72,
+                    currency: "USD",
+                    soldCompsCount: 12,
+                    soldCompsMin: 15.99,
+                    soldCompsMedian: 24.99,
+                    soldCompsMax: 35.50,
+                    soldCompsIsEstimate: false,
+                    soldCompsSource: "marketplace_insights"
                 ),
                 booksrunValueLabel: nil,
                 booksrunValueRatio: nil,
@@ -338,14 +595,17 @@ private struct BookDetailView: View {
                     isbn10: "0670855032",
                     isbn13: "9780670855032",
                     offers: [
-                        VendorOffer(vendorName: "TextbookAgent", vendorId: "70", price: 17.30, updatedAt: "2025-01-15"),
-                        VendorOffer(vendorName: "BooksRun", vendorId: "809", price: 13.44, updatedAt: "2025-01-15"),
-                        VendorOffer(vendorName: "World of Books", vendorId: "836", price: 12.25, updatedAt: "2025-01-15")
+                        VendorOffer(vendorName: "TextbookAgent", vendorId: "70", price: 8.50, updatedAt: "2025-01-15"),
+                        VendorOffer(vendorName: "BooksRun", vendorId: "809", price: 7.44, updatedAt: "2025-01-15"),
+                        VendorOffer(vendorName: "World of Books", vendorId: "836", price: 6.25, updatedAt: "2025-01-15")
                     ],
-                    bestPrice: 17.30,
+                    bestPrice: 8.50,
                     bestVendor: "TextbookAgent",
                     totalVendors: 3,
-                    amazonSalesRank: 15432
+                    amazonSalesRank: 15432,
+                    amazonCount: 69,
+                    amazonLowestPrice: 18.99,
+                    amazonTradeInPrice: 3.50
                 ),
                 bookscouterValueLabel: "High",
                 bookscouterValueRatio: 0.93,

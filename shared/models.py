@@ -99,6 +99,9 @@ class BookScouterResult:
     best_vendor: Optional[str] = None
     total_vendors: int = 0
     amazon_sales_rank: Optional[int] = None  # Lower rank = more popular/higher demand
+    amazon_count: Optional[int] = None  # Number of sellers on Amazon
+    amazon_lowest_price: Optional[float] = None  # Lowest price on Amazon
+    amazon_trade_in_price: Optional[float] = None  # Amazon trade-in value
     raw: Dict[str, Any] = field(default_factory=dict)
 
 

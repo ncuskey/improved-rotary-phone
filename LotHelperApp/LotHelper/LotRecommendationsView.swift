@@ -262,13 +262,16 @@ private struct LotDetailView: View {
                             publishedYear: 1998,
                             description: nil,
                             thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-M.jpg",
-                            categories: ["Fantasy"]
+                            categories: ["Fantasy"],
+                            seriesName: "Liveship Traders",
+                            seriesIndex: 1
                         ),
+                        market: nil,
                         booksrunValueLabel: nil,
                         booksrunValueRatio: nil,
                         bookscouter: nil,
-                        bookscouterValueLabel: nil as String?,
-                        bookscouterValueRatio: nil as Double?,
+                        bookscouterValueLabel: nil,
+                        bookscouterValueRatio: nil,
                         rarity: nil
                     )
                 ],

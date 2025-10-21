@@ -126,8 +126,8 @@ struct VendorOffer: Codable, Hashable {
 }
 
 struct BookScouterResult: Codable, Hashable {
-    let isbn10: String
-    let isbn13: String
+    let isbn10: String?  // Can be null if BookScouter doesn't have ISBN-10
+    let isbn13: String?  // Can be null if BookScouter doesn't have ISBN-13
     let offers: [VendorOffer]
     let bestPrice: Double
     let bestVendor: String?
@@ -228,12 +228,14 @@ struct LotSuggestionDTO: Codable, Identifiable, Hashable {
 }
 
 enum BookAPI {
-    static let baseURLString = "http://192.168.4.50:8000"
+    static let baseURLString = "https://lothelper.clevergirl.app"
 
     private static let session: URLSession = {
         let configuration = URLSessionConfiguration.default
         configuration.waitsForConnectivity = true
-        configuration.requestCachePolicy = .returnCacheDataElseLoad
+        configuration.timeoutIntervalForRequest = 30.0  // 30 second request timeout
+        configuration.timeoutIntervalForResource = 60.0 // 60 second resource timeout
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData  // Don't use stale cache
         configuration.urlCache = URLCache.shared
         return URLSession(configuration: configuration)
     }()
@@ -249,6 +251,7 @@ enum BookAPI {
     /// Async/await variant for ISBN lookup.
     static func lookupISBN(_ isbn: String) async throws -> ISBNLookupResponse {
         guard let url = URL(string: "\(baseURLString)/isbn") else {
+            print("❌ Bad URL: \(baseURLString)/isbn")
             throw URLError(.badURL)
         }
 
@@ -259,7 +262,9 @@ enum BookAPI {
         let payload = ["isbn": isbn]
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
+        print("📡 Fetching ISBN \(isbn) from \(url.absoluteString)")
         let (data, response) = try await session.data(for: request)
+        print("✅ Received response (\(data.count) bytes)")
 
         if let json = String(data: data, encoding: .utf8) {
             print("🔎 Raw response JSON:\n\(json)")
@@ -305,8 +310,15 @@ enum BookAPI {
             do {
                 let info = try await fetchBookInfo(isbn)
                 await MainActor.run { completion(info) }
+            } catch let error as URLError {
+                print("❌ Network error for ISBN \(isbn): \(error.localizedDescription)")
+                print("   Code: \(error.code.rawValue)")
+                if let url = error.failingURL {
+                    print("   URL: \(url.absoluteString)")
+                }
+                await MainActor.run { completion(nil) }
             } catch {
-                print("POST/Decode error: \(error)")
+                print("❌ POST/Decode error for ISBN \(isbn): \(error)")
                 await MainActor.run { completion(nil) }
             }
         }
@@ -446,10 +458,13 @@ enum BookAPI {
     /// Fetch all books from the /api/books/all endpoint
     static func fetchAllBooks() async throws -> [BookEvaluationRecord] {
         guard let url = URL(string: "\(baseURLString)/api/books/all") else {
+            print("❌ Bad URL for /api/books/all")
             throw URLError(.badURL)
         }
 
+        print("📡 Fetching all books from \(url.absoluteString)")
         let (data, response) = try await session.data(from: url)
+        print("✅ Received \(data.count) bytes")
 
         guard let http = response as? HTTPURLResponse else {
             throw URLError(.badServerResponse)
@@ -461,7 +476,17 @@ enum BookAPI {
             throw BookAPIError.badStatus(code: http.statusCode, body: body)
         }
 
-        return try await decodeOnWorker([BookEvaluationRecord].self, from: data)
+        do {
+            let books = try await decodeOnWorker([BookEvaluationRecord].self, from: data)
+            print("✅ Decoded \(books.count) books successfully")
+            return books
+        } catch {
+            print("❌ Failed to decode books: \(error)")
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("📄 Response preview: \(String(jsonString.prefix(500)))")
+            }
+            throw error
+        }
     }
 
     /// Completion-based wrapper for fetchAllBooks

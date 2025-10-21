@@ -31,11 +31,11 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
 
 ### Web Scanner
 - **✅ OCR Text Recognition**: Successfully extracts ISBNs from book cover text
-- **❌ Barcode Scanning**: Currently not working (see `CAMERA_SCANNER_TODO.md`)
+- **❌ Barcode Scanning**: Currently not working (see [Camera Scanner docs](docs/apps/camera-scanner.md))
 - **📱 Mobile-First Design**: Optimized for smartphone use
 - **🔄 Fallback Options**: Manual input when camera fails
 
-**Status**: OCR functionality is working well, but barcode scanning needs fixes. See `CAMERA_SCANNER_README.md` for detailed documentation and `CAMERA_SCANNER_TODO.md` for known issues and next steps.
+**Status**: OCR functionality is working well, but barcode scanning needs fixes. See [Camera Scanner Documentation](docs/apps/camera-scanner.md) for details and [known issues](docs/todo/camera-scanner.md).
 
 ### iOS App (LotHelper)
 - **✅ Dual Input Modes**:
@@ -347,8 +347,33 @@ The command reads an input CSV with an `isbn` column and writes either CSV or Pa
 - eBay Browse OAuth token cache: `~/.isbn_lot_optimizer/ebay_bearer.json`
 - Lot market snapshot cache: `~/.isbn_lot_optimizer/lot_cache.json`
 
+## Documentation
+
+Comprehensive documentation is now organized in the [`docs/`](docs/) directory:
+
+### 📖 Quick Links
+- **[Installation Guide](docs/setup/installation.md)** - Complete setup, local server, troubleshooting
+- **[Configuration](docs/setup/configuration.md)** - Environment variables, API keys, features
+- **[Deployment Guide](docs/deployment/overview.md)** - Railway, Render, Fly.io deployment
+- **[iOS App](docs/apps/ios.md)** - Native iOS scanner documentation
+- **[Series Integration](docs/features/series-integration-temp.md)** - Hardcover & BookSeries.org
+- **[Code Map](docs/development/codemap.md)** - Project structure and architecture
+
+### 📚 Documentation Structure
+```
+docs/
+├── setup/           # Installation and configuration
+├── deployment/      # Cloud platform deployment guides
+├── apps/            # Desktop, Web, iOS app documentation
+├── features/        # Feature-specific guides
+├── development/     # Technical documentation
+└── todo/            # Planning and roadmap
+```
+
+See the **[Documentation Index](docs/README.md)** for the complete guide.
+
 ## Development Notes
-- Source lives in `isbn_lot_optimizer/`, `lothelper/`, and `isbn_web/`; see `CODEMAP.md` for an overview.
+- Source lives in `isbn_lot_optimizer/`, `lothelper/`, and `isbn_web/`; see [Code Map](docs/development/codemap.md) for an overview.
 - **Web Interface**: FastAPI application in `isbn_web/` with modern frontend stack
 - Quick syntax check:
   ```bash

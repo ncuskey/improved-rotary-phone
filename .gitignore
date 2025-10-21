@@ -8,6 +8,7 @@ __pycache__/
 # Virtual environments
 .venv/
 venv/
+ISBN_inner_venv/
 ENV/
 env/
 
@@ -25,10 +26,26 @@ Thumbs.db
 .env
 .idea/
 .vscode/
-*.sqlite
+
+# Development databases (use ~/.isbn_lot_optimizer/ instead)
+books.db
 *.db
+*.sqlite
+
+# Large data files (see data/README.md for regeneration)
+bookseries_complete.json
+*_complete.json
+
+# Test outputs
+test-report.xml
+*.xml
 
 # Generated assets
 *.log
 /tmp/
 tmp.*
+
+# Temporary files
+*.tmp
+tmp.jpg
+tmp.png

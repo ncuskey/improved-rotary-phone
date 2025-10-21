@@ -17,6 +17,7 @@ struct SettingsView: View {
             List {
                 scannerSection
                 dataSourcesSection
+                developerSection
                 aboutSection
                 linksSection
             }
@@ -25,6 +26,14 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(DS.Color.background)
             .navigationTitle("Settings")
+        }
+    }
+
+    private var developerSection: some View {
+        Section("Developer") {
+            NavigationLink(destination: SoundPreviewView()) {
+                Label("Sound Preview", systemImage: "speaker.wave.2")
+            }
         }
     }
 

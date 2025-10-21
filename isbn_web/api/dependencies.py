@@ -16,6 +16,11 @@ _book_service: BookService | None = None
 class ThreadSafeDatabaseManager(DatabaseManager):
     """Database manager that creates thread-safe connections for FastAPI."""
 
+    def __init__(self, db_path):
+        """Initialize with a single shared connection."""
+        self._conn = None  # Initialize before super().__init__ calls _get_connection
+        super().__init__(db_path)
+
     def _get_connection(self) -> sqlite3.Connection:
         """
         Create a thread-safe connection for web requests.

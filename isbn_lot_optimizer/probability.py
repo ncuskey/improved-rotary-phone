@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import math
-from typing import List, Optional, Sequence, Tuple
+import re
+import statistics
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .models import BookEvaluation, BookMetadata, EbayMarketStats
 
@@ -31,8 +33,168 @@ CONDITION_WEIGHTS = {
     "Poor": 0.6,
 }
 
+# Mapping eBay condition IDs/names to our standardized conditions
+EBAY_CONDITION_MAP = {
+    "1000": "New",  # Brand New
+    "1500": "New",  # New other (see details)
+    "2000": "New",  # Manufacturer refurbished
+    "2500": "Like New",  # Seller refurbished
+    "3000": "Like New",  # Used - Like New
+    "4000": "Very Good",  # Used - Very Good
+    "5000": "Good",  # Used - Good
+    "6000": "Acceptable",  # Used - Acceptable
+    "7000": "Poor",  # For parts or not working
+}
 
-def estimate_price(metadata: BookMetadata, market: Optional[EbayMarketStats]) -> float:
+
+def _normalize_condition(ebay_condition: str) -> Optional[str]:
+    """
+    Normalize an eBay condition string to our standard conditions.
+
+    Args:
+        ebay_condition: eBay condition ID or name
+
+    Returns:
+        Standardized condition string or None
+    """
+    if not ebay_condition:
+        return None
+
+    # Check if it's a condition ID
+    condition_normalized = EBAY_CONDITION_MAP.get(str(ebay_condition))
+    if condition_normalized:
+        return condition_normalized
+
+    # Try matching by text
+    lower = ebay_condition.lower()
+    if "new" in lower and "like" not in lower:
+        return "New"
+    elif "like new" in lower:
+        return "Like New"
+    elif "very good" in lower:
+        return "Very Good"
+    elif "good" in lower:
+        return "Good"
+    elif "acceptable" in lower:
+        return "Acceptable"
+    elif "poor" in lower or "parts" in lower:
+        return "Poor"
+
+    return None
+
+
+def _extract_sold_comps_by_condition(
+    market: Optional[EbayMarketStats],
+    target_condition: str,
+    edition: Optional[str] = None,
+) -> Tuple[List[float], int]:
+    """
+    Extract sold comp prices that match the target condition (and optionally edition).
+
+    Args:
+        market: eBay market stats containing raw sold data
+        target_condition: The condition to filter for (e.g., "Like New")
+        edition: Optional edition string to check for (e.g., "First Edition")
+
+    Returns:
+        Tuple of (list of matching prices, total comps examined)
+    """
+    if not market or not market.raw_sold:
+        return [], 0
+
+    def _first_or_default(val):
+        return val[0] if isinstance(val, list) and val else val
+
+    # Extract items from eBay response
+    root_any = market.raw_sold.get("findCompletedItemsResponse")
+    if not root_any:
+        return [], 0
+
+    root_obj = _first_or_default(root_any)
+    if not isinstance(root_obj, dict):
+        return [], 0
+
+    search_result_any = root_obj.get("searchResult")
+    if not search_result_any:
+        return [], 0
+
+    search_obj = _first_or_default(search_result_any)
+    if not isinstance(search_obj, dict):
+        return [], 0
+
+    items_any = search_obj.get("item") or []
+    items = []
+    if isinstance(items_any, list):
+        items = [i for i in items_any if isinstance(i, dict)]
+    elif isinstance(items_any, dict):
+        items = [items_any]
+
+    matching_prices = []
+    total_examined = 0
+
+    for item in items:
+        # Check if it sold
+        status = _first_or_default(item.get("sellingStatus")) or {}
+        state = _first_or_default(status.get("sellingState"))
+        if state != "EndedWithSales":
+            continue
+
+        total_examined += 1
+
+        # Extract condition
+        condition_info = _first_or_default(item.get("condition"))
+        if condition_info and isinstance(condition_info, dict):
+            ebay_condition_id = _first_or_default(condition_info.get("conditionId"))
+            ebay_condition_name = _first_or_default(condition_info.get("conditionDisplayName"))
+
+            item_condition = _normalize_condition(str(ebay_condition_id) if ebay_condition_id else ebay_condition_name)
+
+            # Check if condition matches
+            if item_condition != target_condition:
+                continue
+        else:
+            # No condition info, skip
+            continue
+
+        # If edition is specified, check title for edition keywords
+        if edition:
+            title = _first_or_default(item.get("title")) or ""
+            edition_lower = edition.lower()
+            title_lower = title.lower()
+
+            # Check for first edition
+            if "first" in edition_lower or "1st" in edition_lower:
+                if not ("first" in title_lower or "1st" in title_lower):
+                    continue
+
+            # Check for signed
+            if "signed" in edition_lower:
+                if "signed" not in title_lower and "autograph" not in title_lower:
+                    continue
+
+        # Extract price
+        price_info = _first_or_default(status.get("currentPrice"))
+        if not price_info:
+            price_info = _first_or_default(status.get("convertedCurrentPrice"))
+
+        if isinstance(price_info, dict):
+            value = price_info.get("__value__")
+            if value is not None:
+                try:
+                    price = float(value)
+                    matching_prices.append(price)
+                except (ValueError, TypeError):
+                    pass
+
+    return matching_prices, total_examined
+
+
+def estimate_price(
+    metadata: BookMetadata,
+    market: Optional[EbayMarketStats],
+    condition: Optional[str] = None,
+    edition: Optional[str] = None,
+) -> float:
     base = 4.0
     if metadata.page_count:
         base += min(metadata.page_count * 0.02, 6.0)
@@ -58,11 +220,36 @@ def estimate_price(metadata: BookMetadata, market: Optional[EbayMarketStats]) ->
         multiplier = 0.5 if metadata.currency == "USD" or metadata.currency is None else 0.4
         base = max(base, metadata.list_price * multiplier)
 
-    if market:
+    # If condition is provided, try to get condition-specific comps
+    if market and condition:
+        matching_prices, total_examined = _extract_sold_comps_by_condition(market, condition, edition)
+
+        if matching_prices:
+            # Use condition-specific comps for price estimate
+            condition_median = statistics.median(matching_prices)
+            condition_avg = statistics.mean(matching_prices)
+
+            # Apply condition weight to the baseline
+            weight = CONDITION_WEIGHTS.get(condition, 0.95)
+
+            # Use weighted average of median and mean, adjusted by condition
+            condition_estimate = (condition_median * 0.6 + condition_avg * 0.4) * weight
+
+            # Prioritize condition-specific estimate
+            base = max(base, condition_estimate)
+        elif total_examined > 0:
+            # We found comps but none matched - apply condition weight to general average
+            if market.sold_avg_price:
+                weight = CONDITION_WEIGHTS.get(condition, 0.95)
+                base = max(base, market.sold_avg_price * weight)
+
+    # Fall back to general market data if no condition specified
+    if market and not condition:
         if market.sold_avg_price:
             base = max(base, market.sold_avg_price * 0.9)
         elif market.active_avg_price:
             base = max(base, market.active_avg_price * 0.8)
+
     base = max(base, 3.0)
     return round(base, 2)
 
@@ -280,6 +467,8 @@ def score_probability(
         except Exception:
             pass
 
+    # Cap score at 100 to prevent exceeding 100% confidence
+    score = min(score, 100.0)
     probability_label = classify_probability(score)
     return score, probability_label, reasons, suppress_single
 
@@ -301,7 +490,8 @@ def build_book_evaluation(
     edition: Optional[str],
     amazon_rank: Optional[int] = None,
 ) -> BookEvaluation:
-    estimated_price = estimate_price(metadata, market)
+    # Pass condition and edition to get attribute-specific price estimate
+    estimated_price = estimate_price(metadata, market, condition, edition)
     rarity = compute_rarity(market)
     score, label, reasons, suppress_single = score_probability(
         metadata=metadata,

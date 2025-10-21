@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Form, Request, Response
@@ -10,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 
 from isbn_lot_optimizer.service import BookService
 from isbn_lot_optimizer.utils import normalise_isbn
+from isbn_lot_optimizer.series_integration import enrich_evaluation_with_series, match_and_attach_series
 
 from ..dependencies import get_book_service
 from ...config import settings
@@ -145,6 +147,20 @@ async def scan_book(
             condition=condition,
             edition=edition or None,
         )
+
+        # Try to match the book to a series (non-blocking)
+        try:
+            db_path = Path(service.db.db_path)
+            series_match = match_and_attach_series(evaluation, db_path, auto_save=True)
+            if series_match:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Matched {normalized_isbn} to series: {series_match['series_title']}")
+        except Exception as e:
+            # Don't fail the scan if series matching fails
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to match series for {normalized_isbn}: {e}")
 
         # Set success message header
         response.headers["X-Success-Message"] = f"Added: {evaluation.title or normalized_isbn}"
@@ -283,6 +299,67 @@ async def get_book_evaluation_json(
     return JSONResponse(content=result_dict)
 
 
+@router.post("/{isbn}/refresh", response_class=HTMLResponse)
+async def refresh_book_data(
+    request: Request,
+    isbn: str,
+    service: BookService = Depends(get_book_service),
+):
+    """
+    Refresh book data by re-fetching from external APIs (eBay, BookScouter, etc.).
+
+    This forces a fresh scan which updates:
+    - eBay market data (sold comps)
+    - BookScouter buyback offers
+    - BooksRun data
+    - Metadata if needed
+
+    Returns the updated book detail HTML partial.
+    """
+    normalized_isbn = normalise_isbn(isbn)
+
+    if not normalized_isbn:
+        return templates.TemplateResponse(
+            "components/book_detail.html",
+            {"request": request, "book": None, "error": "Invalid ISBN"},
+        )
+
+    try:
+        # Use refresh_book_market to update market data from eBay, BookScouter, etc.
+        # This method fetches fresh data and persists it to the database
+        book = service.refresh_book_market(
+            normalized_isbn,
+            recalc_lots=False,  # Don't recalculate lots on refresh
+        )
+
+        if not book:
+            # Book doesn't exist in database, scan it fresh
+            book = service.scan_isbn(
+                normalized_isbn,
+                condition="Good",
+                edition=None,
+                include_market=True,
+                recalc_lots=False,
+            )
+        else:
+            # Reload from database to get the persisted v2_stats (sold_comps) data
+            # refresh_book_market persists the data but doesn't return the complete object
+            book = service.get_book(normalized_isbn)
+
+        return templates.TemplateResponse(
+            "components/book_detail.html",
+            {"request": request, "book": book},
+        )
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to refresh book data for {normalized_isbn}: {e}")
+        return templates.TemplateResponse(
+            "components/book_detail.html",
+            {"request": request, "book": None, "error": f"Failed to refresh data: {str(e)}"},
+        )
+
+
 @router.get("/{isbn}", response_class=HTMLResponse)
 async def get_book_detail(
     request: Request,
@@ -303,6 +380,17 @@ async def get_book_detail(
         )
 
     book = service.get_book(normalized_isbn)
+
+    # Enrich with series information if available
+    if book:
+        try:
+            db_path = Path(service.db.db_path)
+            book = enrich_evaluation_with_series(book, db_path)
+        except Exception as e:
+            # Log but don't fail if series enrichment fails
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to enrich book with series: {e}")
 
     return templates.TemplateResponse(
         "components/book_detail.html",

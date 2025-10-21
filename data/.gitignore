@@ -1,0 +1,7 @@
+# Ignore large data files (can be regenerated)
+*.db
+*.json
+
+# Keep sample data
+!samples/
+!samples/**/*

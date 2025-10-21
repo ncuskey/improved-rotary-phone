@@ -6,5 +6,10 @@
     <string>LotHelper</string>
     <key>NSCameraUsageDescription</key>
     <string>This app uses the camera to scan barcodes and QR codes.</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
 </dict>
 </plist>

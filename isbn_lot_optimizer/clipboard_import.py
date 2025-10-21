@@ -352,7 +352,7 @@ def parse_isbns_from_text(text: str) -> list[str]:
             continue
         try:
             # Import here to avoid any import cycles at module import time
-            from .utils import normalise_isbn  # type: ignore
+            from shared.utils import normalise_isbn  # type: ignore
         except Exception:
             continue
         try:

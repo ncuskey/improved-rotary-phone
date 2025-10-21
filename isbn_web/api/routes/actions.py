@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile, BackgroundTasks
 from fastapi.responses import JSONResponse
 
 from isbn_lot_optimizer.service import BookService
-from isbn_lot_optimizer.utils import read_isbn_csv
+from shared.utils import read_isbn_csv
 
 from ..dependencies import get_book_service
 from ..sse_manager import sse_manager

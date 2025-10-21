@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import List, Optional
 
-from .constants import AUTHOR_SPLIT_RE
+from shared.constants import AUTHOR_SPLIT_RE
 
 # Minimal, extensible alias map: credited_name -> canonical_name
 ALIASES = {

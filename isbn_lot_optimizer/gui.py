@@ -32,8 +32,8 @@ except Exception:
 from .clipboard_import import ImportOptions, parse_prices_from_clipboard_text, parse_isbns_from_text
 from shared.models import BookEvaluation, LotSuggestion
 from .service import BookService
-from .constants import COVER_CHOICES
-from .utils import normalise_isbn, isbn10_to_isbn13, compute_isbn10_check_digit
+from shared.constants import COVER_CHOICES
+from shared.utils import normalise_isbn, isbn10_to_isbn13, compute_isbn10_check_digit
 from .author_match import cluster_authors
 from .bulk_helper import extract_offers_from_books, optimize_vendor_bundles, format_bundle_summary
 

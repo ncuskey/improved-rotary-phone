@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from isbn_lot_optimizer.service import BookService
-from isbn_lot_optimizer.utils import normalise_isbn
+from shared.utils import normalise_isbn
 from isbn_lot_optimizer.series_integration import enrich_evaluation_with_series, match_and_attach_series
 
 from ..dependencies import get_book_service

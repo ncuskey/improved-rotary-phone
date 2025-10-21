@@ -34,7 +34,7 @@ from typing import Optional, Sequence
 
 from shared.models import BookEvaluation
 from .service import BookService
-from .utils import normalise_isbn
+from shared.utils import normalise_isbn
 from .author_match import probable_author_matches, cluster_authors
 from shared.database import DatabaseManager
 

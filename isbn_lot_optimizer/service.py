@@ -25,7 +25,7 @@ from .bookscouter import (
     fetch_metadata as fetch_bookscouter_metadata,
     fetch_metadata_batch as fetch_bookscouter_metadata_batch,
 )
-from .constants import (
+from shared.constants import (
     BOOKSRUN_FALLBACK_KEY,
     BOOKSRUN_FALLBACK_AFFILIATE,
     BOOKSCOUTER_FALLBACK_KEY,
@@ -57,7 +57,7 @@ from .series_finder import attach_series
 from .market import fetch_single_market_stat, fetch_market_stats_v2
 from .lot_market import market_snapshot_for_lot
 from .lot_scoring import score_lot
-from .utils import normalise_isbn, read_isbn_csv
+from shared.utils import normalise_isbn, read_isbn_csv
 from .book_routing import route_book, route_books, RoutingDecision
 
 # Re-export for backward compatibility (gui.py imports this)

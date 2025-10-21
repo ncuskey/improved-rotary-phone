@@ -18,7 +18,7 @@ from typing import Dict, List, Tuple
 
 import requests
 
-from .constants import TITLE_NORMALIZER
+from shared.constants import TITLE_NORMALIZER
 
 warnings.warn(
     "series_catalog module is deprecated. Use services.series_resolver (Hardcover integration) instead.",

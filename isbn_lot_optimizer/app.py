@@ -32,11 +32,11 @@ import sys
 from pathlib import Path
 from typing import Optional, Sequence
 
-from .models import BookEvaluation
+from shared.models import BookEvaluation
 from .service import BookService
 from .utils import normalise_isbn
 from .author_match import probable_author_matches, cluster_authors
-from .database import DatabaseManager
+from shared.database import DatabaseManager
 
 DEFAULT_DB_PATH = Path.home() / ".isbn_lot_optimizer" / "catalog.db"
 

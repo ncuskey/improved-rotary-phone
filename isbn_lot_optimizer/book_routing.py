@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import Optional
 
-from .models import BookEvaluation
+from shared.models import BookEvaluation
 
 
 class SalesChannel(Enum):

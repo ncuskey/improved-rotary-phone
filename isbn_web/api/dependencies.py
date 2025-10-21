@@ -4,7 +4,7 @@ from __future__ import annotations
 import sqlite3
 from typing import Generator
 
-from isbn_lot_optimizer.database import DatabaseManager
+from shared.database import DatabaseManager
 from isbn_lot_optimizer.service import BookService
 
 from ..config import settings

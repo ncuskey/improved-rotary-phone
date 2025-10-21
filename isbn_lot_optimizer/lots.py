@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .author_aliases import canonical_author as alias_canonical_author, display_label
-from .models import BookEvaluation, LotSuggestion
+from shared.models import BookEvaluation, LotSuggestion
 
 
 def _series_fields(book: BookEvaluation) -> tuple[str | None, int | None, str | None]:

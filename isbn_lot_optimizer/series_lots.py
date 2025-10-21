@@ -8,7 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Set, Tuple
 
-from .models import BookEvaluation, LotSuggestion
+from shared.models import BookEvaluation, LotSuggestion
 from .series_database import SeriesDatabaseManager
 
 

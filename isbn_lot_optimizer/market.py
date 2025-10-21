@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, TypedDict, cast
 import requests
 from requests.auth import _basic_auth_str
 
-from .models import EbayMarketStats
+from shared.models import EbayMarketStats
 
 EBAY_FINDING_URL = "https://svcs.ebay.com/services/search/FindingService/v1"
 

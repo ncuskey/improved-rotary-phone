@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from isbn_lot_optimizer.models import LotSuggestion
+from shared.models import LotSuggestion
 from isbn_lot_optimizer.service import BookService
 
 from ..dependencies import get_book_service

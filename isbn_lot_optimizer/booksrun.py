@@ -6,7 +6,7 @@ from typing import Any, Iterable, Mapping, Optional
 
 import requests  # type: ignore[reportMissingImports]
 
-from .models import BooksRunOffer
+from shared.models import BooksRunOffer
 
 DEFAULT_BASE_URL = "https://booksrun.com"
 DEFAULT_TIMEOUT = 15

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .series_matcher import SeriesMatcher, normalize_author_name
-from .models import BookEvaluation
+from shared.models import BookEvaluation
 
 
 def match_and_attach_series(

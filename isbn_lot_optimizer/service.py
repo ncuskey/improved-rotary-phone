@@ -32,7 +32,7 @@ from .constants import (
     COVER_CHOICES,
     TITLE_NORMALIZER,
 )
-from .database import DatabaseManager
+from shared.database import DatabaseManager
 from .metadata import create_http_session, enrich_authorship, fetch_metadata
 from .series_index import (
     SeriesIndex,
@@ -40,7 +40,7 @@ from .series_index import (
     now_ts,
     parse_series_volume_hint,
 )
-from .models import (
+from shared.models import (
     BookEvaluation,
     BookMetadata,
     BookScouterResult,

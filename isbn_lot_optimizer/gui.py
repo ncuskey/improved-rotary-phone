@@ -30,7 +30,7 @@ except Exception:
     chime = None  # type: ignore
 
 from .clipboard_import import ImportOptions, parse_prices_from_clipboard_text, parse_isbns_from_text
-from .models import BookEvaluation, LotSuggestion
+from shared.models import BookEvaluation, LotSuggestion
 from .service import BookService
 from .constants import COVER_CHOICES
 from .utils import normalise_isbn, isbn10_to_isbn13, compute_isbn10_check_digit

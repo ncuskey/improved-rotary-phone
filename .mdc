@@ -1,0 +1,381 @@
+# ISBN Lot Optimizer - Model Context
+
+## Project Overview
+
+**Improved Rotary Phone** (formerly LotHelper) is a toolkit for cataloging second-hand books, estimating resale value, and assembling profitable eBay lots. Three interfaces share a common SQLite database.
+
+## Architecture
+
+### Three Applications
+
+1. **Desktop GUI** (`isbn_lot_optimizer/`)
+   - Tkinter desktop application
+   - Book scanning, lot generation, author cleanup
+   - Background refresh jobs with progress feedback
+   - BookScouter multi-vendor buyback integration
+
+2. **Web App** (`isbn_web/`)
+   - FastAPI + Jinja2 templates
+   - HTMX for dynamic updates, Alpine.js for reactive components
+   - 3D book carousel, mobile camera scanner
+   - RESTful API for iOS app
+
+3. **iOS App** (`LotHelperApp/`)
+   - SwiftUI native app
+   - Barcode/OCR scanning, triage workflow
+   - Real-time eBay pricing via token broker
+   - Syncs with backend via REST API
+
+### Supporting Components
+
+- **CLI Tools** (`lothelper/`) - BooksRun bulk quote fetcher
+- **Token Broker** (`token-broker/`) - Node.js OAuth service for iOS app
+- **Scripts** (`scripts/`) - Data management, series scraping, validation
+- **Tests** (`tests/`) - pytest unit tests + shell integration tests
+
+## Database
+
+**Location:** `~/.isbn_lot_optimizer/catalog.db` (SQLite)
+
+**Key Tables:**
+- `books` - Scanned books with metadata, market data, series info
+- `lots` - Generated lot suggestions with scoring
+- `series`, `authors`, `series_books` - BookSeries.org data
+- `book_series_matches` - Fuzzy matches between books and series
+- `series_peers` - Peer titles in a series (Hardcover API)
+- `hc_cache` - Hardcover API response cache (7-day TTL)
+- `bookscouter_json` - Multi-vendor buyback offers
+
+**Caches:**
+- `~/.isbn_lot_optimizer/covers/` - Book cover thumbnails (SHA-256 filenames)
+- `~/.isbn_lot_optimizer/ebay_bearer.json` - eBay OAuth token
+- `~/.isbn_lot_optimizer/lot_cache.json` - Lot market snapshots
+
+## Key Patterns
+
+### Import Hierarchy
+```python
+# Core modules
+isbn_lot_optimizer.database    # DatabaseManager class
+isbn_lot_optimizer.models       # Data classes (BookMetadata, LotSuggestion, etc.)
+isbn_lot_optimizer.service      # BookService - main business logic
+isbn_lot_optimizer.utils        # ISBN normalization, helpers
+
+# Services (external APIs)
+isbn_lot_optimizer.metadata     # Google Books, Open Library
+isbn_lot_optimizer.market       # eBay Finding + Browse APIs
+isbn_lot_optimizer.bookscouter  # Multi-vendor buyback
+isbn_lot_optimizer.services.hardcover  # Series metadata
+
+# Web app imports from core
+from isbn_lot_optimizer.service import BookService
+from isbn_lot_optimizer.models import BookMetadata
+```
+
+### Naming Conventions
+- **Classes:** PascalCase (`BookService`, `DatabaseManager`)
+- **Functions:** snake_case (`normalise_isbn`, `build_book_evaluation`)
+- **Constants:** UPPER_SNAKE_CASE (`CONDITION_WEIGHTS`, `HIGH_DEMAND_KEYWORDS`)
+- **Files:** snake_case matching main class (`book_service.py` → `BookService`)
+
+### Database Access
+- Always use `DatabaseManager` class (in `database.py`)
+- Connection pooling: single persistent connection in `self._conn`
+- Never use `db.py` (deleted in refactoring)
+
+### Series Data
+Two systems (both active):
+1. **Hardcover API** - GraphQL, single book queries, stores in `books` table
+2. **BookSeries.org** - Scraped data, bulk matching, stores in `series` tables
+
+**Deprecated (emit warnings):**
+- `series_index.py`, `series_catalog.py`, `series_finder.py` - Old JSON-based system
+
+## Environment Variables
+
+**Required:** None (app works without any)
+
+**Recommended:**
+```bash
+# eBay APIs
+EBAY_APP_ID=...              # Finding API (sold/unsold)
+EBAY_CLIENT_ID=...           # Browse API (active comps)
+EBAY_CLIENT_SECRET=...       # Browse API + token broker
+
+# BookScouter (replaces BooksRun in GUI)
+BOOKSCOUTER_API_KEY=...
+
+# Hardcover (series detection)
+HARDCOVER_API_TOKEN=Bearer ...
+
+# BooksRun (CLI only)
+BOOKSRUN_KEY=...
+```
+
+See: `docs/setup/configuration.md`
+
+## Common Tasks
+
+### Run Applications
+
+```bash
+# Desktop GUI
+python -m isbn_lot_optimizer
+
+# Web app
+uvicorn isbn_web.main:app --reload
+
+# CLI tool
+python -m lothelper booksrun-sell --in isbns.csv --out quotes.csv
+```
+
+### Run Tests
+
+```bash
+# Unit tests
+pytest tests/
+
+# Integration tests (requires running server)
+cd tests/integration
+./test_web_comprehensive.sh
+```
+
+### Database Operations
+
+```bash
+# View stats
+python -m isbn_lot_optimizer --no-gui --stats
+
+# Refresh metadata
+python -m isbn_lot_optimizer --no-gui --refresh-metadata --limit 100
+
+# Refresh series
+python -m isbn_lot_optimizer --no-gui --refresh-series --limit 100
+
+# Generate lots
+python -m isbn_lot_optimizer --no-gui --refresh-lot-signals
+```
+
+### Data Management
+
+```bash
+# Scrape series data
+python scripts/scrape_bookseries_org.py --output data/bookseries_complete.json
+
+# Import series
+python scripts/import_series_data.py --json-file data/bookseries_complete.json
+
+# Match books to series
+python scripts/match_books_to_series.py --auto-save-threshold 0.9
+
+# Prefetch covers
+python scripts/prefetch_covers.py
+```
+
+## Important Conventions
+
+### Adding a New Feature
+
+1. **Core logic** → `isbn_lot_optimizer/service.py` or new module
+2. **Database changes** → `isbn_lot_optimizer/database.py` (add methods to `DatabaseManager`)
+3. **Data models** → `isbn_lot_optimizer/models.py` (use `@dataclass`)
+4. **GUI** → `isbn_lot_optimizer/gui.py` (background threads for long operations)
+5. **Web** → `isbn_web/api/routes/` (new route file) + template
+6. **Tests** → `tests/test_*.py` (pytest) or `tests/integration/` (shell scripts)
+7. **Docs** → `docs/features/` (if user-facing)
+
+### Background Tasks (GUI)
+
+Use progress callback pattern:
+```python
+def long_operation(progress_cb):
+    progress_cb("Starting...")
+    # do work
+    progress_cb(f"Processed {n} items...")
+    progress_cb("Complete!")
+
+# In GUI
+self._start_progress("Task Name")
+threading.Thread(target=long_operation, args=(self._update_progress,)).start()
+```
+
+### Web App Structure
+
+- **Routes:** `isbn_web/api/routes/*.py` - FastAPI endpoints
+- **Templates:** `isbn_web/templates/*.html` - Jinja2 templates
+- **Components:** `isbn_web/templates/components/*.html` - Reusable HTMX components
+- **Static:** `isbn_web/static/` - CSS, JS (minimal, prefer inline)
+- **Services:** `isbn_web/services/` - Web-specific services (cover cache)
+
+### HTMX Patterns
+
+```html
+<!-- Swap pattern -->
+<div hx-get="/api/books" hx-trigger="load" hx-swap="outerHTML">Loading...</div>
+
+<!-- Form pattern -->
+<form hx-post="/api/books/scan" hx-target="#book-table" hx-swap="outerHTML">
+  <input name="isbn" required>
+</form>
+
+<!-- Delete pattern -->
+<button hx-delete="/api/books/{isbn}" hx-target="closest tr" hx-swap="outerHTML swap:1s">
+  Delete
+</button>
+```
+
+## Gotchas & Special Cases
+
+### ISBN Normalization
+Always use `normalise_isbn()` from `utils.py`:
+- Strips hyphens, spaces
+- Validates format
+- Handles ISBN-10 vs ISBN-13
+
+### Series Field Naming
+- Use `series_name` (not `series`) in new code
+- `BookMetadata.series` is a property alias for backward compatibility
+
+### Environment Variable Names
+**Current (use these):**
+- `BOOKSRUN_KEY` (not `BOOKSRUN_API_KEY`)
+- `BOOKSRUN_AFFILIATE_ID` (not `BOOKSRUN_AFK`)
+
+Old names still work but emit `DeprecationWarning`.
+
+### Database Connection
+- `DatabaseManager` maintains single persistent connection
+- Call `db.close()` in cleanup
+- Don't create `sqlite3.connect()` directly
+
+### eBay URLs
+Heroku-style `postgres://` URLs need fixing:
+```python
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+```
+
+### Rate Limits
+- **BookScouter:** 60 calls/min (1.1s delay)
+- **Hardcover:** 1 req/sec with burst of 5
+- **BooksRun:** 0.2s delay (configurable)
+- **eBay:** No hard limit, but be respectful
+
+### Background Jobs (GUI)
+Progress updates must use `_update_progress()`:
+```python
+# ✅ Correct
+self._update_progress(f"Refreshed {n} books...")
+
+# ❌ Wrong - won't show in status bar
+print(f"Refreshed {n} books...")
+```
+
+### Web App Dependencies
+Web app needs `httpx` but it's not in `.venv` by default. Install with:
+```bash
+pip install httpx
+```
+
+### iOS App Integration
+- Uses token broker on port 8787 (auto-starts with `isbn-web`)
+- Requires `EBAY_CLIENT_ID` + `EBAY_CLIENT_SECRET`
+- Audio file must be in app bundle: `LotHelperApp/LotHelper/Cha-Ching.mp3`
+
+## File Locations
+
+### User Data
+- `~/.isbn_lot_optimizer/catalog.db` - Main database
+- `~/.isbn_lot_optimizer/covers/` - Cover cache
+- `~/.isbn_lot_optimizer/ebay_bearer.json` - OAuth token
+- `~/.isbn_lot_optimizer/lot_cache.json` - Market cache
+
+### Configuration
+- `.env` in repo root - Auto-loaded by python-dotenv
+- Environment variables override `.env`
+
+### Logs (if using launchd)
+- `/Users/nickcuskey/ISBN/logs/lothelper-stdout.log`
+- `/Users/nickcuskey/ISBN/logs/lothelper-stderr.log`
+
+## Documentation Structure
+
+```
+docs/
+├── setup/           # Installation, configuration
+├── deployment/      # Railway, Render, Fly.io, Neon
+├── apps/            # Desktop, web, iOS, camera scanner
+├── features/        # Series integration, sold comps
+├── development/     # Code map, changelog, refactoring
+└── todo/            # Future plans
+```
+
+## Recent Changes
+
+### 2025-10 Refactoring
+- Consolidated constants into `constants.py`
+- Unified author canonicalization in `author_aliases.py`
+- Database connection pooling
+- Deleted `db.py` (merged into `DatabaseManager`)
+- Deprecated old series system (JSON-based)
+
+### 2025-10 Repository Cleanup
+- Phase 1: Removed ~198MB vestigial files
+- Phase 2: Consolidated 21 markdown files → docs/
+- Phase 3: Organized scripts and tests
+
+See: `docs/development/refactoring-2025.md`, `CLEANUP_SUMMARY.md`
+
+## Testing Philosophy
+
+- **Unit tests** (`tests/*.py`) - Fast, no external dependencies
+- **Integration tests** (`tests/integration/*.sh`) - Live HTTP endpoints
+- **Manual testing** - GUI, iOS app, camera scanner
+
+Run both:
+```bash
+pytest tests/                  # Unit tests
+./tests/integration/test_web_comprehensive.sh  # Integration
+```
+
+## Deployment
+
+**Local Server:** Mac Mini with launchd (see `docs/setup/installation.md`)
+**Cloud:** Railway (recommended) or Render (see `docs/deployment/overview.md`)
+
+**Key files:**
+- `Procfile` - Start command for Railway/Render
+- `railway.json` - Railway config
+- `render.yaml` - Render config
+
+## Quick Reference
+
+| Task | Command |
+|------|---------|
+| Run desktop GUI | `python -m isbn_lot_optimizer` |
+| Run web app | `uvicorn isbn_web.main:app --reload` |
+| Run tests | `pytest tests/` |
+| Check syntax | `python -m py_compile isbn_lot_optimizer/*.py` |
+| View stats | `python -m isbn_lot_optimizer --no-gui --stats` |
+| Scan ISBN | `python -m isbn_lot_optimizer --no-gui --scan 9780316769488` |
+| Generate lots | `python -m isbn_lot_optimizer --no-gui --refresh-lot-signals` |
+
+## Key Files to Understand
+
+1. **isbn_lot_optimizer/service.py** - Core business logic
+2. **isbn_lot_optimizer/database.py** - Database access layer
+3. **isbn_lot_optimizer/models.py** - Data structures
+4. **isbn_lot_optimizer/gui.py** - Desktop GUI
+5. **isbn_web/main.py** - Web app entry point
+6. **isbn_web/api/routes/books.py** - Book API endpoints
+7. **LotHelperApp/LotHelper/ScannerReviewView.swift** - iOS scanner
+
+## Support
+
+- **Docs:** `docs/README.md` - Complete documentation index
+- **Issues:** Check relevant TODO files in `docs/todo/`
+- **Troubleshooting:** See deployment/installation guides
+
+---
+
+**Last Updated:** 2025-10-20 (Post Phase 1-3 cleanup)

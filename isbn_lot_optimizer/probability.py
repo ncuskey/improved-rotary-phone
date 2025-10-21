@@ -5,7 +5,7 @@ import re
 import statistics
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from .models import BookEvaluation, BookMetadata, EbayMarketStats
+from shared.models import BookEvaluation, BookMetadata, EbayMarketStats
 
 HIGH_DEMAND_KEYWORDS = (
     "business",

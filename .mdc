@@ -26,6 +26,15 @@
    - Real-time eBay pricing via token broker
    - Syncs with backend via REST API
 
+### Shared Module
+
+- **Shared** (`shared/`) - Common business logic used by all apps
+  - Core: database.py, models.py
+  - Utilities: utils.py, constants.py
+  - API clients: bookscouter.py, booksrun.py
+  - Author system: author_aliases.py
+  - Series system: 6 series_*.py modules
+
 ### Supporting Components
 
 - **CLI Tools** (`lothelper/`) - BooksRun bulk quote fetcher
@@ -55,21 +64,27 @@
 
 ### Import Hierarchy
 ```python
-# Core modules
-isbn_lot_optimizer.database    # DatabaseManager class
-isbn_lot_optimizer.models       # Data classes (BookMetadata, LotSuggestion, etc.)
-isbn_lot_optimizer.service      # BookService - main business logic
-isbn_lot_optimizer.utils        # ISBN normalization, helpers
+# Shared modules (used by all apps)
+shared.database           # DatabaseManager class
+shared.models             # Data classes (BookMetadata, LotSuggestion, etc.)
+shared.utils              # ISBN normalization, CSV helpers
+shared.constants          # Shared constants, API keys, patterns
+shared.bookscouter        # BookScouter API client
+shared.booksrun           # BooksRun API client
+shared.author_aliases     # Author canonicalization
+shared.series_*           # Series system (6 modules)
 
-# Services (external APIs)
+# Desktop app specific
+isbn_lot_optimizer.service      # BookService - main business logic
 isbn_lot_optimizer.metadata     # Google Books, Open Library
 isbn_lot_optimizer.market       # eBay Finding + Browse APIs
-isbn_lot_optimizer.bookscouter  # Multi-vendor buyback
-isbn_lot_optimizer.services.hardcover  # Series metadata
+isbn_lot_optimizer.gui          # Tkinter GUI
 
-# Web app imports from core
-from isbn_lot_optimizer.service import BookService
-from isbn_lot_optimizer.models import BookMetadata
+# Web app imports from shared
+from shared.database import DatabaseManager
+from shared.models import BookMetadata
+from shared.series_integration import match_and_attach_series
+from isbn_lot_optimizer.service import BookService  # Still uses desktop service
 ```
 
 ### Naming Conventions
@@ -88,8 +103,13 @@ Two systems (both active):
 1. **Hardcover API** - GraphQL, single book queries, stores in `books` table
 2. **BookSeries.org** - Scraped data, bulk matching, stores in `series` tables
 
-**Deprecated (emit warnings):**
-- `series_index.py`, `series_catalog.py`, `series_finder.py` - Old JSON-based system
+**Series modules** (all in `shared/` package):
+- `series_database.py` - Database operations
+- `series_matcher.py` - Fuzzy matching algorithms
+- `series_integration.py` - Integration helpers for apps
+- `series_index.py` - Indexing and volume parsing
+- `series_catalog.py` - Catalog management
+- `series_finder.py` - Finding and attachment logic
 
 ## Environment Variables
 
@@ -176,10 +196,10 @@ python scripts/prefetch_covers.py
 
 ### Adding a New Feature
 
-1. **Core logic** → `isbn_lot_optimizer/service.py` or new module
-2. **Database changes** → `isbn_lot_optimizer/database.py` (add methods to `DatabaseManager`)
-3. **Data models** → `isbn_lot_optimizer/models.py` (use `@dataclass`)
-4. **GUI** → `isbn_lot_optimizer/gui.py` (background threads for long operations)
+1. **Shared logic** → `shared/` (if used by multiple apps) or app-specific module
+2. **Database changes** → `shared/database.py` (add methods to `DatabaseManager`)
+3. **Data models** → `shared/models.py` (use `@dataclass`)
+4. **Desktop GUI** → `isbn_lot_optimizer/gui.py` (background threads for long operations)
 5. **Web** → `isbn_web/api/routes/` (new route file) + template
 6. **Tests** → `tests/test_*.py` (pytest) or `tests/integration/` (shell scripts)
 7. **Docs** → `docs/features/` (if user-facing)
@@ -227,10 +247,11 @@ threading.Thread(target=long_operation, args=(self._update_progress,)).start()
 ## Gotchas & Special Cases
 
 ### ISBN Normalization
-Always use `normalise_isbn()` from `utils.py`:
+Always use `normalise_isbn()` from `shared.utils`:
 - Strips hyphens, spaces
 - Validates format
 - Handles ISBN-10 vs ISBN-13
+- Coerces ISBN-10 to ISBN-13
 
 ### Series Field Naming
 - Use `series_name` (not `series`) in new code
@@ -312,19 +333,29 @@ docs/
 
 ## Recent Changes
 
-### 2025-10 Refactoring
-- Consolidated constants into `constants.py`
-- Unified author canonicalization in `author_aliases.py`
-- Database connection pooling
-- Deleted `db.py` (merged into `DatabaseManager`)
-- Deprecated old series system (JSON-based)
+### 2025-10 Repository Restructure
+Complete repository cleanup and refactoring:
 
-### 2025-10 Repository Cleanup
-- Phase 1: Removed ~198MB vestigial files
-- Phase 2: Consolidated 21 markdown files → docs/
-- Phase 3: Organized scripts and tests
+**Phase 1: Cleanup**
+- Removed ~198MB vestigial files (books.db, ISBN_inner_venv/, tmp files)
+- Created data/ directory with .gitignore
 
-See: `docs/development/refactoring-2025.md`, `CLEANUP_SUMMARY.md`
+**Phase 2: Documentation**
+- Consolidated 21 markdown files → organized docs/ structure
+- Created docs/setup/, docs/deployment/, docs/features/, etc.
+
+**Phase 3: Scripts**
+- Organized test scripts → tests/integration/
+- Moved utilities → scripts/utils/
+
+**Phase 4: Shared Module** (3 sub-phases)
+- 4a: Created shared/ with database.py, models.py
+- 4b: Moved utils.py, constants.py to shared/
+- 4c: Moved API clients (bookscouter, booksrun) and series system (6 modules) to shared/
+- Result: 14 modules in shared/, used by all apps
+- Web app no longer depends on isbn_lot_optimizer internals
+
+See: `docs/development/repository-restructure-2025.md`
 
 ## Testing Philosophy
 
@@ -362,13 +393,22 @@ pytest tests/                  # Unit tests
 
 ## Key Files to Understand
 
-1. **isbn_lot_optimizer/service.py** - Core business logic
-2. **isbn_lot_optimizer/database.py** - Database access layer
-3. **isbn_lot_optimizer/models.py** - Data structures
-4. **isbn_lot_optimizer/gui.py** - Desktop GUI
-5. **isbn_web/main.py** - Web app entry point
-6. **isbn_web/api/routes/books.py** - Book API endpoints
-7. **LotHelperApp/LotHelper/ScannerReviewView.swift** - iOS scanner
+**Shared Module (used by all apps):**
+1. **shared/database.py** - DatabaseManager, SQL operations
+2. **shared/models.py** - Data classes (BookMetadata, LotSuggestion, etc.)
+3. **shared/utils.py** - ISBN validation, CSV utilities
+4. **shared/series_integration.py** - Series matching for apps
+
+**Desktop App:**
+5. **isbn_lot_optimizer/service.py** - Main business logic (130KB)
+6. **isbn_lot_optimizer/gui.py** - Tkinter GUI (153KB)
+
+**Web App:**
+7. **isbn_web/main.py** - FastAPI entry point
+8. **isbn_web/api/routes/books.py** - Book API endpoints
+
+**iOS App:**
+9. **LotHelperApp/LotHelper/ScannerReviewView.swift** - Scanner interface
 
 ## Support
 
@@ -378,4 +418,4 @@ pytest tests/                  # Unit tests
 
 ---
 
-**Last Updated:** 2025-10-20 (Post Phase 1-3 cleanup)
+**Last Updated:** 2025-10-20 (Post repository restructure - Phases 1-4c complete)

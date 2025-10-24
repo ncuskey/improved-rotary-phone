@@ -12,7 +12,15 @@ struct LotRecommendationsView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var selectedStrategies: Set<LotStrategy> = Set(LotStrategy.allCases)
+    @State private var sortOption: SortOption = .value
     private var cacheManager: CacheManager { CacheManager(modelContext: modelContext) }
+
+    enum SortOption: String, CaseIterable, Identifiable {
+        case name = "Name (A-Z)"
+        case value = "Value (High-Low)"
+
+        var id: String { rawValue }
+    }
 
     enum LotStrategy: String, CaseIterable, Identifiable {
         case author = "Author"
@@ -60,11 +68,21 @@ struct LotRecommendationsView: View {
             return isMatched
         }
 
+        // Apply sorting
+        let sorted: [LotSuggestionDTO]
+        switch sortOption {
+        case .name:
+            sorted = filtered.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        case .value:
+            sorted = filtered.sorted { $0.estimatedValue > $1.estimatedValue }
+        }
+
         // Debug logging
         print("\n📊 LOTS FILTERING DEBUG")
         print("📊 Total lots loaded: \(lots.count)")
         print("📊 Selected filter strategies: \(selectedStrategies.map { $0.rawValue })")
         print("📊 Filtered result count: \(filtered.count)")
+        print("📊 Sort option: \(sortOption.rawValue)")
 
         // Log strategy distribution
         let strategyCounts = lots.reduce(into: [String: Int]()) { counts, lot in
@@ -78,7 +96,7 @@ struct LotRecommendationsView: View {
         }
         print("")
 
-        return filtered
+        return sorted
     }
 
     var body: some View {
@@ -129,19 +147,38 @@ struct LotRecommendationsView: View {
             .navigationTitle("Lots")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        ForEach(LotStrategy.allCases) { strategy in
-                            Button {
-                                toggleStrategy(strategy)
-                            } label: {
-                                Label(
-                                    strategy.rawValue,
-                                    systemImage: selectedStrategies.contains(strategy) ? "checkmark.circle.fill" : "circle"
-                                )
+                    HStack(spacing: 8) {
+                        // Sort menu
+                        Menu {
+                            ForEach(SortOption.allCases) { option in
+                                Button {
+                                    sortOption = option
+                                } label: {
+                                    Label(
+                                        option.rawValue,
+                                        systemImage: sortOption == option ? "checkmark.circle.fill" : "circle"
+                                    )
+                                }
                             }
+                        } label: {
+                            Label("Sort", systemImage: "arrow.up.arrow.down.circle")
                         }
-                    } label: {
-                        Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+
+                        // Filter menu
+                        Menu {
+                            ForEach(LotStrategy.allCases) { strategy in
+                                Button {
+                                    toggleStrategy(strategy)
+                                } label: {
+                                    Label(
+                                        strategy.rawValue,
+                                        systemImage: selectedStrategies.contains(strategy) ? "checkmark.circle.fill" : "circle"
+                                    )
+                                }
+                            }
+                        } label: {
+                            Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+                        }
                     }
                 }
             }

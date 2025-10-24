@@ -138,23 +138,15 @@ def build_series_lots_enhanced(
                 f"Have {len(have_positions)} of {book_count} books ({completion_pct:.0f}% complete)",
             ]
 
+            # Show all books we have
             if have_book_titles:
-                if len(have_book_titles) <= 5:
-                    # Show all titles if 5 or fewer
-                    for title in have_book_titles:
-                        justification.append(f"✓ {title}")
-                else:
-                    # Show count and range for many books
-                    justification.append(f"Have {len(have_book_titles)} books (see details)")
+                for title in have_book_titles:
+                    justification.append(f"✓ {title}")
 
+            # Show all missing books
             if missing_book_titles:
-                if len(missing_book_titles) <= 5:
-                    # Show all missing titles if 5 or fewer
-                    for title in missing_book_titles:
-                        justification.append(f"○ {title}")
-                else:
-                    # Show count for many missing books
-                    justification.append(f"Missing {len(missing_book_titles)} books (see details)")
+                for title in missing_book_titles:
+                    justification.append(f"○ {title}")
 
             justification.append(f"Estimated value: ${estimated_value:.2f}")
 

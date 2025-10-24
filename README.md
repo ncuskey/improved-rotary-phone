@@ -12,7 +12,8 @@ lot recommendations in real time.
 - **Mobile Camera Scanner**: Smartphone camera integration for ISBN scanning (OCR working, barcode scanning in progress)
 - **Database Statistics**: Comprehensive metrics showing storage usage, API efficiency, data coverage, and freshness
 - **Smart Series Detection**: Hardcover API integration with caching and intelligent rate limiting
-- **Amazon Sales Rank**: BookScouter integration with batch refresh and probability scoring
+- **Real-Time Amazon Pricing**: Optional Amazon PA-API integration for live pricing and sales rank (see [Amazon API Setup](docs/AMAZON_API_SETUP.md))
+- **Multi-Vendor Buyback**: BookScouter integration with batch refresh and probability scoring
 - Barcode-friendly GUI for scanning ISBNs with condition and edition tracking.
 - Background refresh jobs with unified progress feedback for cover prefetching,
   metadata/market updates, and BooksRun offer refresh.
@@ -123,6 +124,11 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
 
    # BookScouter (for multi-vendor quotes and Amazon rank)
    export BOOKSCOUTER_API_KEY=your-bookscouter-api-key
+
+   # Amazon Product Advertising API (for real-time Amazon pricing - OPTIONAL)
+   export AMAZON_ACCESS_KEY=your-amazon-access-key      # PA-API 5.0 credentials
+   export AMAZON_SECRET_KEY=your-amazon-secret-key      # See docs/AMAZON_API_SETUP.md
+   export AMAZON_PARTNER_TAG=yourname-20                 # Your Amazon Associate tag
 
    # Hardcover API (for series metadata)
    export HARDCOVER_API_TOKEN=your-hardcover-jwt-token  # Get from hardcover.app settings

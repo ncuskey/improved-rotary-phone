@@ -26,6 +26,7 @@ from shared.bookscouter import (
     fetch_metadata as fetch_bookscouter_metadata,
     fetch_metadata_batch as fetch_bookscouter_metadata_batch,
 )
+from shared.amazon_api import get_amazon_pricing
 from shared.constants import (
     BOOKSRUN_FALLBACK_KEY,
     BOOKSRUN_FALLBACK_AFFILIATE,
@@ -2966,11 +2967,69 @@ class BookService:
                 timeout=int(self.bookscouter_timeout),
                 session=self._bookscouter_session,
             )
+            # Enrich with Amazon pricing data if available
+            result = self._enrich_with_amazon_pricing(isbn, result)
             return result
         except BookScouterAPIError:
             return None
         except Exception:
             return None
+
+    def _enrich_with_amazon_pricing(
+        self,
+        isbn: str,
+        bookscouter_result: Optional[BookScouterResult]
+    ) -> Optional[BookScouterResult]:
+        """
+        Enrich BookScouterResult with real-time Amazon pricing data.
+
+        Fetches current Amazon pricing via Product Advertising API and merges it
+        into the BookScouterResult. Only calls Amazon API if credentials are set.
+
+        Args:
+            isbn: ISBN to look up
+            bookscouter_result: Existing BookScouterResult to enrich (or None)
+
+        Returns:
+            Enriched BookScouterResult with Amazon pricing data, or original result
+        """
+        try:
+            amazon_pricing = get_amazon_pricing(isbn)
+            if not amazon_pricing:
+                return bookscouter_result
+
+            # If we don't have a BookScouterResult yet, create a minimal one
+            if not bookscouter_result:
+                from shared.utils import normalise_isbn
+                normalized = normalise_isbn(isbn)
+                bookscouter_result = BookScouterResult(
+                    isbn_10=normalized if len(normalized) == 10 else "",
+                    isbn_13=normalized if len(normalized) == 13 else isbn,
+                    offers=[],
+                    best_price=0.0,
+                    best_vendor=None,
+                    total_vendors=0,
+                )
+
+            # Merge Amazon pricing data into BookScouterResult
+            # Replace None values with Amazon data
+            if amazon_pricing.lowest_price:
+                bookscouter_result.amazon_lowest_price = amazon_pricing.lowest_price
+            if amazon_pricing.sales_rank:
+                bookscouter_result.amazon_sales_rank = amazon_pricing.sales_rank
+
+            # Store raw Amazon data for reference
+            if bookscouter_result.raw and isinstance(bookscouter_result.raw, dict):
+                bookscouter_result.raw["amazon_pricing"] = amazon_pricing.raw
+            elif amazon_pricing.raw:
+                bookscouter_result.raw = {"amazon_pricing": amazon_pricing.raw}
+
+            return bookscouter_result
+
+        except Exception as e:
+            # Silently fail - Amazon pricing is supplemental, not critical
+            print(f"Amazon pricing enrichment failed for {isbn}: {e}")
+            return bookscouter_result
 
     def _booksrun_fallback_url(self, isbn: str) -> str:
         root = (self.booksrun_base_url or BOOKSRUN_DEFAULT_BASE_URL).rstrip("/")

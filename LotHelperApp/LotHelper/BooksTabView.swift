@@ -291,24 +291,47 @@ private extension BookEvaluationRecord {
     }
 
     var recencyDate: Date {
+        // Try SQL format first (most common: "2025-10-24 01:43:00")
         if let updatedAt,
-           let date = BookEvaluationRecord.isoFormatterWithFractional.date(from: updatedAt) {
+           let date = BookEvaluationRecord.sqlFormatter.date(from: updatedAt) {
             return date
         }
+        if let createdAt,
+           let date = BookEvaluationRecord.sqlFormatter.date(from: createdAt) {
+            return date
+        }
+
+        // Try ISO8601 with fractional seconds
         if let updatedAt,
-           let date = BookEvaluationRecord.isoFormatter.date(from: updatedAt) {
+           let date = BookEvaluationRecord.isoFormatterWithFractional.date(from: updatedAt) {
             return date
         }
         if let createdAt,
            let date = BookEvaluationRecord.isoFormatterWithFractional.date(from: createdAt) {
             return date
         }
+
+        // Try ISO8601 without fractional seconds
+        if let updatedAt,
+           let date = BookEvaluationRecord.isoFormatter.date(from: updatedAt) {
+            return date
+        }
         if let createdAt,
            let date = BookEvaluationRecord.isoFormatter.date(from: createdAt) {
             return date
         }
+
         return .distantPast
     }
+
+    // Formatter for "2025-10-24 01:43:00" format (space-separated, no timezone)
+    private static let sqlFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
 
     private static let isoFormatterWithFractional: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()

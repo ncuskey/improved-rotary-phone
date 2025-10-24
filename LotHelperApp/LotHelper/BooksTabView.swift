@@ -132,19 +132,27 @@ struct BooksTabView: View {
                         Task { await loadBooks() }
                     }
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: DS.Spacing.md) {
-                            ForEach(filteredAndSortedBooks) { book in
-                                NavigationLink(value: book) {
-                                    BookCardView(book: book.cardModel)
+                    List {
+                        ForEach(filteredAndSortedBooks) { book in
+                            NavigationLink(value: book) {
+                                BookCardView(book: book.cardModel)
+                            }
+                            .buttonStyle(.plain)
+                            .listRowBackground(DS.Color.background)
+                            .listRowInsets(EdgeInsets(top: DS.Spacing.md / 2, leading: DS.Spacing.xl, bottom: DS.Spacing.md / 2, trailing: DS.Spacing.xl))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    Task {
+                                        await deleteBook(book)
+                                    }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
-                        .padding(.vertical, DS.Spacing.md)
-                        .padding(.horizontal, DS.Spacing.xl)
                     }
-                    .scrollIndicators(.hidden)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                     .background(DS.Color.background)
                     .refreshable { await loadBooks() }
                     .navigationDestination(for: BookEvaluationRecord.self) { record in
@@ -209,6 +217,25 @@ struct BooksTabView: View {
             if books.isEmpty {
                 errorMessage = "Failed to load books: \(error.localizedDescription)"
             }
+        }
+    }
+
+    @MainActor
+    private func deleteBook(_ book: BookEvaluationRecord) async {
+        do {
+            // Call API to delete book
+            try await BookAPI.deleteBook(book.isbn)
+
+            // Remove from local state
+            books.removeAll { $0.id == book.id }
+
+            // Update cache
+            cacheManager.saveBooks(books)
+
+            print("✅ Book deleted from local state: \(book.isbn)")
+        } catch {
+            print("❌ Failed to delete book: \(error.localizedDescription)")
+            errorMessage = "Failed to delete book: \(error.localizedDescription)"
         }
     }
 }

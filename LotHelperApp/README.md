@@ -103,6 +103,12 @@ LotHelper helps book resellers make instant buy/reject decisions by:
 - Series completion tests
 - Edge case handling
 
+### **Cache Management**
+- "Refresh All Books" button in Books tab menu
+- Clears local SwiftData cache
+- Re-fetches all books from backend with latest metadata
+- Useful after backend metadata cleanup or database changes
+
 ---
 
 ## 🏗️ **Architecture**

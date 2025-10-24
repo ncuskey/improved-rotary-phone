@@ -179,6 +179,14 @@ struct BooksTabView: View {
                                 Text(option.rawValue).tag(option)
                             }
                         }
+
+                        Divider()
+
+                        Button {
+                            Task { await refreshAll() }
+                        } label: {
+                            Label("Refresh All Books", systemImage: "arrow.clockwise")
+                        }
                     } label: {
                         Label("Sort", systemImage: "arrow.up.arrow.down")
                     }
@@ -221,6 +229,16 @@ struct BooksTabView: View {
                 errorMessage = "Failed to load books: \(error.localizedDescription)"
             }
         }
+    }
+
+    @MainActor
+    private func refreshAll() async {
+        // Clear the cache first to force fresh data
+        cacheManager.clearAllCaches()
+        books = []
+
+        // Reload all books from backend
+        await loadBooks()
     }
 
     @MainActor

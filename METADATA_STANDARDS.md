@@ -129,6 +129,21 @@ python3 scripts/clean_metadata.py --dry-run
 3. **After imports**: After bulk imports from external sources
 4. **When noticed**: If you spot formatting issues
 
+### Syncing iOS App Cache
+
+After cleaning the backend database, the iOS app's SwiftData cache will still have old, uncleaned data. To sync the cleaned metadata to the app:
+
+1. Open the LotHelper app
+2. Go to the **Books** tab
+3. Tap the sort icon (⬆️⬇️) in the top right
+4. Select **"Refresh All Books"**
+5. Wait for the app to re-fetch all books from the backend
+
+This will:
+- Clear the local SwiftData cache
+- Re-fetch all books from the backend (with cleaned metadata)
+- Update all titles, authors, and years to the new standard
+
 ### Verification
 
 Check data quality with SQL queries:

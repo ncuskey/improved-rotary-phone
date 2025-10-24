@@ -67,6 +67,25 @@ def build_series_lots_enhanced(
             author_name = series_info[0]['author_name']
             book_count = series_info[0]['book_count']
 
+            # Check if books have individual series names in metadata
+            # (e.g., standalone novels grouped under umbrella series)
+            metadata_series_names = set()
+            for book in series_books:
+                if book.metadata and hasattr(book.metadata, 'series_name'):
+                    series_name = getattr(book.metadata, 'series_name', None)
+                    if series_name and isinstance(series_name, str) and series_name.strip():
+                        metadata_series_names.add(series_name.strip())
+
+            # Handle "Standalone" series or cases where books share same series_name
+            if len(metadata_series_names) == 1:
+                # If all books share the same metadata series_name, use that
+                actual_series_name = list(metadata_series_names)[0]
+                if actual_series_name.lower() != series_title.lower():
+                    series_title = actual_series_name
+            elif "standalone" in series_title.lower() and metadata_series_names:
+                # For standalone collections, use author name instead of generic title
+                series_title = f"{author_name} Collection"
+
             # Get complete list of books in this series
             all_series_books = series_db.get_series_books(series_id)
 

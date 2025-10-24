@@ -221,6 +221,30 @@ struct ScannerReviewView: View {
                     }
                 }
             }
+            .overlay(alignment: .bottomTrailing) {
+                // Floating action button for quick keypad access
+                if scannedCode == nil || (inputMode == .text && !isScanning) {
+                    Button {
+                        if inputMode == .camera {
+                            // Switch to text mode and show keypad
+                            inputMode = .text
+                        } else {
+                            // Already in text mode, just activate keypad
+                            activateTextEntry()
+                        }
+                    } label: {
+                        Image(systemName: "keyboard.fill")
+                            .font(.title2)
+                            .foregroundStyle(.white)
+                            .frame(width: 56, height: 56)
+                            .background(Color.blue)
+                            .clipShape(Circle())
+                            .shadow(radius: 4)
+                    }
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20)
+                }
+            }
             .onChange(of: inputMode) { oldValue, newValue in
                 if newValue == .text {
                     activateTextEntry()

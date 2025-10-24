@@ -3,12 +3,19 @@
 Refresh all market data for existing books in the catalog.
 
 This script re-scans all books to fetch fresh:
-- eBay market stats (sold comps, active listings)
 - BookScouter offers (vendor buyback offers, Amazon pricing)
-- BooksRun offers
 - Amazon sales ranks
+- BooksRun offers
 
-This is useful after cleaning metadata or to get current market conditions.
+NOTE: eBay market data requires the eBay Browse API which is only available
+through the token broker service (used by the iOS app). The old Finding API
+that this script uses is deprecated and no longer returns data.
+
+For full eBay + Amazon data, use the iOS app's "Refresh All Books" feature
+or the backend API's token broker integration.
+
+This is useful for batch updating vendor offers and Amazon data after
+cleaning metadata or to get current market conditions.
 """
 
 import sys
@@ -162,6 +169,21 @@ def refresh_all_market_data(
         service.close()
 
 
+def load_env_file(env_path: Path) -> dict:
+    """Load environment variables from .env file."""
+    env_vars = {}
+    if env_path.exists():
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    # Remove quotes if present
+                    value = value.strip().strip("'\"")
+                    env_vars[key] = value
+    return env_vars
+
+
 def main():
     """Main entry point."""
     import argparse
@@ -196,8 +218,13 @@ def main():
     parser.add_argument(
         '--ebay-app-id',
         type=str,
-        default=os.environ.get('EBAY_APP_ID'),
-        help='eBay App ID (defaults to EBAY_APP_ID environment variable)'
+        help='eBay App ID (defaults to .env file or EBAY_APP_ID/APP_ID_PROD env var)'
+    )
+    parser.add_argument(
+        '--env-file',
+        type=Path,
+        default=Path(__file__).parent.parent / '.env',
+        help='Path to .env file (default: ../.env)'
     )
 
     args = parser.parse_args()
@@ -206,10 +233,34 @@ def main():
         print(f"Error: Database not found: {args.db}")
         sys.exit(1)
 
+    # Load credentials from .env file
+    env_vars = load_env_file(args.env_file)
+
+    # Determine eBay App ID (priority: CLI arg > .env file > environment variable)
+    ebay_app_id = args.ebay_app_id
+    if not ebay_app_id:
+        ebay_app_id = (
+            env_vars.get('APP_ID_PROD') or
+            env_vars.get('EBAY_CLIENT_ID') or
+            os.environ.get('EBAY_APP_ID') or
+            os.environ.get('APP_ID_PROD')
+        )
+
+    if not ebay_app_id:
+        print()
+        print("⚠️  Warning: No eBay App ID found!")
+        print("   eBay market data will not be fetched.")
+        print("   To fix: Add APP_ID_PROD to .env file or use --ebay-app-id")
+        print()
+
     print()
     print("=" * 60)
     print("Batch Market Data Refresh")
     print("=" * 60)
+    if ebay_app_id:
+        print(f"✓ eBay App ID: {ebay_app_id[:20]}...")
+    else:
+        print("✗ eBay App ID: Not configured")
     print()
 
     refresh_all_market_data(
@@ -217,7 +268,7 @@ def main():
         limit=args.limit,
         delay=args.delay,
         skip_recent=args.skip_recent,
-        ebay_app_id=args.ebay_app_id,
+        ebay_app_id=ebay_app_id,
     )
 
 

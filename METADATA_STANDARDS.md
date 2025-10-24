@@ -220,10 +220,15 @@ python3 scripts/refresh_all_market_data.py --skip-recent 14
 ```
 
 **What gets refreshed:**
-- eBay market stats (sold comps, active listings, sell-through rate)
-- BookScouter vendor offers (buyback prices from multiple vendors)
-- Amazon pricing and sales rank
-- BooksRun offers
+- ✅ BookScouter vendor offers (buyback prices from multiple vendors)
+- ✅ Amazon pricing and sales rank (via BookScouter)
+- ✅ BooksRun offers
+- ❌ eBay market stats (requires Browse API token broker, not available in this script)
+
+**eBay Data Limitation:**
+The batch refresh script uses the old eBay Finding API which is deprecated and no longer returns data. To get full eBay market stats (sold comps, active listings), use one of these methods:
+- **iOS App**: Books tab → Sort menu → "Refresh All Books" (uses eBay Browse API)
+- **Backend API**: The backend has token broker integration for eBay Browse API
 
 **Notes:**
 - Uses a 2-second delay by default to respect API rate limits
@@ -231,6 +236,7 @@ python3 scripts/refresh_all_market_data.py --skip-recent 14
 - Shows progress every 10 books
 - Recalculates lots automatically after completion
 - Safe to interrupt (Ctrl+C) and resume later
+- Best for updating vendor offers in batch; use iOS app for eBay data
 
 ## Tools
 

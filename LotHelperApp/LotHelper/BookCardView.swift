@@ -169,7 +169,7 @@ struct BookCardView: View {
         title: "Ship of Magic",
         author: "Robin Hobb",
         series: "Liveship Traders",
-        thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-M.jpg",
+        thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-L.jpg",
         score: "92",
         profitPotential: "High",
         soldCompsMedian: 24.99,

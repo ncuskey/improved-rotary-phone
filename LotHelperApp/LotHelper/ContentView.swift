@@ -71,7 +71,7 @@ struct ContentView: View {
 //                             publisher: "Spectra",
 //                             publishedYear: 1998,
 //                             description: nil,
-//                             thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-M.jpg",
+//                             thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-L.jpg",
 //                             categories: ["Fantasy"]
 //                         ),
 //                         booksrunValueLabel: nil,

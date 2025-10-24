@@ -158,6 +158,9 @@ struct BooksTabView: View {
                     .navigationDestination(for: BookEvaluationRecord.self) { record in
                         BookDetailView(record: record)
                     }
+                    .navigationDestination(for: LotSuggestionDTO.self) { lot in
+                        LotDetailView(lot: lot)
+                    }
                     .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search by title, author, ISBN, or series")
                 }
             }
@@ -283,7 +286,7 @@ private extension BookEvaluationRecord {
 
     private var fallbackCoverURLString: String? {
         guard !isbn.isEmpty else { return nil }
-        return "https://covers.openlibrary.org/b/isbn/\(isbn)-M.jpg"
+        return "https://covers.openlibrary.org/b/isbn/\(isbn)-L.jpg"
     }
 
     var sortingTitle: String {
@@ -346,13 +349,22 @@ private extension BookEvaluationRecord {
     }()
 }
 
-private struct BookDetailView: View {
+struct BookDetailView: View {
     let record: BookEvaluationRecord
+    @State private var lots: [LotSuggestionDTO] = []
+    @State private var isLoadingLots = false
+
+    var lotsContainingBook: [LotSuggestionDTO] {
+        lots.filter { lot in
+            lot.bookIsbns.contains(record.isbn)
+        }
+    }
 
     var body: some View {
         List {
             coverSection
             overviewSection
+            lotsSection
             profitAnalysisSection
             ebayMarketSection
             bookscouterSection
@@ -364,6 +376,7 @@ private struct BookDetailView: View {
         .scrollContentBackground(.hidden)
         .background(DS.Color.background)
         .navigationTitle(record.metadata?.title ?? record.isbn)
+        .task { await loadLots() }
     }
 
     @ViewBuilder
@@ -381,6 +394,55 @@ private struct BookDetailView: View {
                     }
                     .frame(width: 160, height: 220)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+                    Spacer()
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var lotsSection: some View {
+        let containingLots = lotsContainingBook
+        if !containingLots.isEmpty {
+            Section("Included in Lots (\(containingLots.count))") {
+                ForEach(containingLots) { lot in
+                    NavigationLink(value: lot) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(lot.name)
+                                .bodyStyle()
+                                .fontWeight(.semibold)
+
+                            HStack(spacing: 12) {
+                                Label("\(lot.bookIsbns.count)", systemImage: "book.closed")
+                                    .font(.caption)
+                                    .foregroundStyle(DS.Color.textSecondary)
+
+                                Text(lot.estimatedValue.formatted(.currency(code: "USD")))
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                                    .fontWeight(.medium)
+
+                                if !lot.probabilityLabel.isEmpty {
+                                    Text(lot.probabilityLabel)
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(
+                                            lot.probabilityLabel == "High" ? .green :
+                                            lot.probabilityLabel == "Medium" ? .orange :
+                                            .red
+                                        )
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+        } else if isLoadingLots {
+            Section("Included in Lots") {
+                HStack {
+                    Spacer()
+                    ProgressView()
                     Spacer()
                 }
             }
@@ -735,13 +797,25 @@ private struct BookDetailView: View {
             return url
         }
         if !record.isbn.isEmpty {
-            return URL(string: "https://covers.openlibrary.org/b/isbn/\(record.isbn)-M.jpg")
+            return URL(string: "https://covers.openlibrary.org/b/isbn/\(record.isbn)-L.jpg")
         }
         return nil
     }
 
     private func formattedCurrency(_ value: Double) -> String {
         value.formatted(.currency(code: "USD"))
+    }
+
+    @MainActor
+    private func loadLots() async {
+        isLoadingLots = true
+        do {
+            lots = try await BookAPI.fetchAllLots()
+        } catch {
+            print("Failed to load lots: \(error.localizedDescription)")
+            lots = []
+        }
+        isLoadingLots = false
     }
 }
 
@@ -767,7 +841,7 @@ private struct BookDetailView: View {
                     publisher: "Sample Publisher",
                     publishedYear: 2018,
                     description: "This is a sample description used for SwiftUI previews.",
-                    thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-M.jpg",
+                    thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-L.jpg",
                     categories: ["Fiction", "Adventure"],
                     seriesName: "Liveship Traders",
                     seriesIndex: 1

@@ -142,6 +142,9 @@ struct LotRecommendationsView: View {
                     .navigationDestination(for: LotSuggestionDTO.self) { lot in
                         LotDetailView(lot: lot)
                     }
+                    .navigationDestination(for: BookEvaluationRecord.self) { record in
+                        BookDetailView(record: record)
+                    }
                 }
             }
             .navigationTitle("Lots")
@@ -325,7 +328,7 @@ private struct LotSummaryRow: View {
     }
 }
 
-private struct LotDetailView: View {
+struct LotDetailView: View {
     let lot: LotSuggestionDTO
 
     struct SeriesInfo {
@@ -500,30 +503,32 @@ private struct LotDetailView: View {
             if let books = lot.books, !books.isEmpty {
                 Section("Books in Lot (\(books.count))") {
                     ForEach(books, id: \.isbn) { book in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(book.metadata?.title ?? book.isbn).bodyStyle().fontWeight(.semibold).lineLimit(2)
-                            if let author = book.metadata?.primaryAuthor {
-                                Text(author).font(.caption).foregroundStyle(DS.Color.textSecondary)
-                            }
-                            if let seriesName = book.metadata?.seriesName, let seriesIndex = book.metadata?.seriesIndex {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "books.vertical.fill").font(.caption2)
-                                    Text("\(seriesName) #\(seriesIndex)")
+                        NavigationLink(value: book) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(book.metadata?.title ?? book.isbn).bodyStyle().fontWeight(.semibold).lineLimit(2)
+                                if let author = book.metadata?.primaryAuthor {
+                                    Text(author).font(.caption).foregroundStyle(DS.Color.textSecondary)
                                 }
-                                .font(.caption).foregroundStyle(.blue)
-                            }
-                            HStack(spacing: 8) {
-                                if let price = book.estimatedPrice {
-                                    Text(price, format: .currency(code: "USD")).font(.caption).foregroundStyle(.green).fontWeight(.medium)
+                                if let seriesName = book.metadata?.seriesName, let seriesIndex = book.metadata?.seriesIndex {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "books.vertical.fill").font(.caption2)
+                                        Text("\(seriesName) #\(seriesIndex)")
+                                    }
+                                    .font(.caption).foregroundStyle(.blue)
                                 }
-                                if let probability = book.probabilityLabel {
-                                    Text(probability).font(.caption).fontWeight(.medium).foregroundStyle(
-                                        probability == "High" ? .green : probability == "Medium" ? .orange : .red
-                                    )
+                                HStack(spacing: 8) {
+                                    if let price = book.estimatedPrice {
+                                        Text(price, format: .currency(code: "USD")).font(.caption).foregroundStyle(.green).fontWeight(.medium)
+                                    }
+                                    if let probability = book.probabilityLabel {
+                                        Text(probability).font(.caption).fontWeight(.medium).foregroundStyle(
+                                            probability == "High" ? .green : probability == "Medium" ? .orange : .red
+                                        )
+                                    }
                                 }
                             }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
             }
@@ -596,7 +601,7 @@ private struct LotDetailView: View {
                             publisher: "Spectra",
                             publishedYear: 1998,
                             description: nil,
-                            thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-M.jpg",
+                            thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-L.jpg",
                             categories: ["Fantasy"],
                             seriesName: "Liveship Traders",
                             seriesIndex: 1

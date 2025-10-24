@@ -79,7 +79,7 @@ struct LastScanSummary: View {
             subtitle: "(Liveship Traders #1)",
             description: "A fantasy adventure.",
             publishedYear: 1998,
-            thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-M.jpg",
+            thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-L.jpg",
             categories: ["Fantasy"]
         )
     )

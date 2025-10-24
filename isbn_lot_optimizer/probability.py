@@ -194,6 +194,7 @@ def estimate_price(
     market: Optional[EbayMarketStats],
     condition: Optional[str] = None,
     edition: Optional[str] = None,
+    bookscouter: Optional[BookScouterResult] = None,
 ) -> float:
     base = 4.0
     if metadata.page_count:
@@ -249,6 +250,15 @@ def estimate_price(
             base = max(base, market.sold_avg_price * 0.9)
         elif market.active_avg_price:
             base = max(base, market.active_avg_price * 0.8)
+
+    # Use Amazon lowest price as additional market signal (what customers pay on Amazon)
+    # This is particularly useful when eBay data is sparse or unavailable
+    if bookscouter and bookscouter.amazon_lowest_price:
+        # Apply condition modifier to Amazon price since it may be for different condition
+        condition_weight = CONDITION_WEIGHTS.get(condition, 0.95) if condition else 0.95
+        # Use 70% of Amazon price as conservative eBay sale estimate
+        amazon_estimate = bookscouter.amazon_lowest_price * 0.7 * condition_weight
+        base = max(base, amazon_estimate)
 
     base = max(base, 3.0)
     return round(base, 2)
@@ -359,27 +369,27 @@ def score_probability(
     suppress_single = False
     has_ebay_data = False
 
-    # BookScouter buyback offers (guaranteed profit opportunity)
-    # This is checked FIRST because a good buyback offer = immediate profit
+    # BookScouter buyback offers (instant sale option if profitable)
+    # Note: Profitability depends on purchase price being less than buyback offer
     if bookscouter and bookscouter.best_price > 0:
-        # Strong buyback offer provides certainty (vs. eBay speculation)
+        # Only boost score for objectively valuable buyback offers
+        # Lower offers are mentioned but don't influence the buy decision
+        # since profitability depends entirely on purchase price
         if bookscouter.best_price >= 5.0:
             score += 35
-            reasons.append(f"Strong buyback offer: ${bookscouter.best_price:.2f} from {bookscouter.best_vendor or 'vendor'}")
+            reasons.append(f"Strong buyback offer: ${bookscouter.best_price:.2f} from {bookscouter.best_vendor or 'vendor'} (profitable if purchased < ${bookscouter.best_price:.2f})")
         elif bookscouter.best_price >= 3.0:
             score += 25
-            reasons.append(f"Good buyback offer: ${bookscouter.best_price:.2f} (instant sale option)")
+            reasons.append(f"Good buyback offer: ${bookscouter.best_price:.2f} (instant sale if profitable)")
         elif bookscouter.best_price >= 1.0:
-            score += 15
-            reasons.append(f"Buyback available: ${bookscouter.best_price:.2f} (guaranteed floor)")
-        elif bookscouter.best_price >= 0.25:
-            score += 8
-            reasons.append(f"Modest buyback: ${bookscouter.best_price:.2f}")
+            score += 12
+            reasons.append(f"Buyback available: ${bookscouter.best_price:.2f} (profit depends on purchase price)")
         else:
-            # Very small buyback (< $0.25), mention but don't boost score
-            reasons.append(f"Minimal buyback: ${bookscouter.best_price:.2f} from {bookscouter.best_vendor or 'vendor'}")
+            # Small buyback offers: mention but don't boost score
+            # These are only profitable if book is free/very cheap
+            reasons.append(f"Buyback floor: ${bookscouter.best_price:.2f} from {bookscouter.best_vendor or 'vendor'} (only profitable if free/very cheap)")
 
-        # Multiple vendor competition = higher confidence
+        # Multiple vendor competition = higher confidence in market value
         if bookscouter.total_vendors > 1:
             vendor_count = len([o for o in bookscouter.offers if o.price > 0])
             if vendor_count >= 3:
@@ -522,8 +532,8 @@ def build_book_evaluation(
     amazon_rank: Optional[int] = None,
     bookscouter: Optional[BookScouterResult] = None,
 ) -> BookEvaluation:
-    # Pass condition and edition to get attribute-specific price estimate
-    estimated_price = estimate_price(metadata, market, condition, edition)
+    # Pass condition, edition, and bookscouter to get attribute-specific price estimate
+    estimated_price = estimate_price(metadata, market, condition, edition, bookscouter)
     rarity = compute_rarity(market)
     score, label, reasons, suppress_single = score_probability(
         metadata=metadata,

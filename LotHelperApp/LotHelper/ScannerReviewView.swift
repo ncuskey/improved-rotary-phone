@@ -107,6 +107,14 @@ struct ScannerReviewView: View {
                     // Bottom section: Scrollable detailed analysis
                     ScrollView {
                         VStack(spacing: DS.Spacing.md) {
+                            // Series context (if applicable)
+                            if let evaluation {
+                                let seriesInfo = checkSeriesCompletion(evaluation)
+                                if seriesInfo.isPartOfSeries {
+                                    seriesContextCard(seriesInfo: seriesInfo)
+                                }
+                            }
+
                             if inputMode == .text && !isScanning {
                                 showTextFieldButton
                             }
@@ -245,6 +253,177 @@ struct ScannerReviewView: View {
     }
 
     // MARK: - UI builders
+
+    @ViewBuilder
+    private func seriesContextCard(seriesInfo: (isPartOfSeries: Bool, seriesName: String?, booksInSeries: Int, previousScans: [PreviousSeriesScan], totalInSeries: Int?, missingCount: Int?)) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "books.vertical.fill")
+                    .font(.title2)
+                    .foregroundStyle(.purple)
+                Text("Series Collection")
+                    .font(.headline)
+                Spacer()
+            }
+
+            if let seriesName = seriesInfo.seriesName {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(seriesName)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+
+                    HStack(spacing: 16) {
+                        // Books we have
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("You Have")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: 4) {
+                                Text("\(seriesInfo.booksInSeries)")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.purple)
+                                Text("books")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Divider()
+                            .frame(height: 40)
+
+                        // Strategic value indicator
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Collection Status")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(seriesInfo.booksInSeries >= 3 ? "Near Complete" : "Building")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(seriesInfo.booksInSeries >= 3 ? .green : .orange)
+                        }
+                    }
+
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                            Text("Complete series sell for 2-3x individual book value")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.purple)
+                            Text("Lower profit margin acceptable for series completion")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    // Show previously scanned books with "go back" prompts
+                    if !seriesInfo.previousScans.isEmpty {
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Previously Scanned Books:")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.secondary)
+
+                            ForEach(seriesInfo.previousScans.prefix(5), id: \.isbn) { scan in
+                                HStack(spacing: 8) {
+                                    // Decision indicator
+                                    Image(systemName: scan.decision == "ACCEPTED" ? "checkmark.circle.fill" : "xmark.circle")
+                                        .font(.caption2)
+                                        .foregroundStyle(scan.decision == "ACCEPTED" ? .green : .orange)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        if let title = scan.title {
+                                            Text(title)
+                                                .font(.caption2)
+                                                .fontWeight(.medium)
+                                                .lineLimit(1)
+                                        }
+
+                                        HStack(spacing: 4) {
+                                            if let index = scan.seriesIndex {
+                                                Text("#\(index)")
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.purple)
+                                            }
+
+                                            Text(formatDate(scan.scannedAt))
+                                                .font(.caption2)
+                                                .foregroundStyle(.tertiary)
+
+                                            if let location = scan.locationName {
+                                                Text("•")
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.tertiary)
+                                                Text(location)
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.blue)
+                                            }
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    // "Go back" indicator for rejected books
+                                    if scan.decision != "ACCEPTED" {
+                                        Image(systemName: "arrow.uturn.backward")
+                                            .font(.caption2)
+                                            .foregroundStyle(.orange)
+                                    }
+                                }
+                                .padding(.vertical, 4)
+                                .padding(.horizontal, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(Color.secondary.opacity(0.1))
+                                )
+                            }
+
+                            // Show prompt to go back for rejected books
+                            let rejectedScans = seriesInfo.previousScans.filter { $0.decision != "ACCEPTED" }
+                            if !rejectedScans.isEmpty {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .font(.caption)
+                                        .foregroundStyle(.orange)
+                                    Text("Go back and get the rejected books to complete series!")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.orange)
+                                }
+                                .padding(.top, 4)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [Color.purple.opacity(0.1), Color.purple.opacity(0.05)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: DS.Radius.md)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Radius.md)
+                .stroke(Color.purple.opacity(0.3), lineWidth: 2)
+        )
+        .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
+    }
 
     @ViewBuilder
     private var textInputArea: some View {
@@ -964,7 +1143,7 @@ struct ScannerReviewView: View {
             }
 
             // Profit display (always show if we have profit data)
-            if profit.estimatedProfit != nil || profit.buybackProfit != nil {
+            if profit.estimatedProfit != nil || profit.buybackProfit != nil || profit.amazonProfit != nil {
                 Divider()
 
                 VStack(spacing: 8) {
@@ -995,6 +1174,54 @@ struct ScannerReviewView: View {
                                 profitMetric("Sale", salePrice, color: .blue)
 
                                 if let fees = profit.ebayBreakdown {
+                                    profitMetric("Fees", fees, color: .red, negative: true)
+                                }
+
+                                let costLabel = bookAttributes.purchasePrice > 0 ? "Cost" : "Cost (Free)"
+                                profitMetric(costLabel, bookAttributes.purchasePrice, color: .secondary, negative: true)
+
+                                Spacer()
+
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text("Net")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(formatUSD(netProfit))
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(netProfit > 0 ? .green : .red)
+                                }
+                            }
+                        }
+                    }
+
+                    // Amazon Path
+                    if let amazonPrice = profit.amazonPrice, let netProfit = profit.amazonProfit {
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Image(systemName: "cart.badge.minus")
+                                    .font(.caption2)
+                                    .foregroundStyle(.blue)
+                                Text("Amazon Route:")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+
+                                Text("(Lowest Price)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+
+                                // Show rank if available
+                                if let rank = eval.bookscouter?.amazonSalesRank {
+                                    Text("Rank: \(formatRank(rank))")
+                                        .font(.caption2)
+                                        .foregroundStyle(rankColor(for: rank))
+                                }
+                            }
+
+                            HStack(spacing: 12) {
+                                profitMetric("Sale", amazonPrice, color: .blue)
+
+                                if let fees = profit.amazonBreakdown {
                                     profitMetric("Fees", fees, color: .red, negative: true)
                                 }
 
@@ -1097,7 +1324,29 @@ struct ScannerReviewView: View {
         return (fees: totalFees, netProceeds: netProceeds)
     }
 
-    private func calculateProfit(_ eval: BookEvaluationRecord) -> (estimatedProfit: Double?, buybackProfit: Double?, ebayBreakdown: Double?, salePrice: Double?) {
+    /// Calculate Amazon fees for a given sale price
+    /// Amazon charges: 15% referral fee + $1.80 closing fee for books
+    /// Assumes seller-fulfilled shipping (buyer pays shipping separately)
+    private func calculateAmazonFees(salePrice: Double) -> (fees: Double, netProceeds: Double) {
+        let referralFeeRate = 0.15 // 15% for books category
+        let closingFee = 1.80
+
+        let referralFee = salePrice * referralFeeRate
+        let totalFees = referralFee + closingFee
+        let netProceeds = salePrice - totalFees
+
+        return (fees: totalFees, netProceeds: netProceeds)
+    }
+
+    private func calculateProfit(_ eval: BookEvaluationRecord) -> (
+        estimatedProfit: Double?,
+        buybackProfit: Double?,
+        amazonProfit: Double?,
+        ebayBreakdown: Double?,
+        amazonBreakdown: Double?,
+        salePrice: Double?,
+        amazonPrice: Double?
+    ) {
         // Allow $0 purchase price (free books)
         let purchasePrice = bookAttributes.purchasePrice
 
@@ -1118,14 +1367,28 @@ struct ScannerReviewView: View {
             ebayBreakdown = breakdown.fees
         }
 
+        // Amazon net profit (after fees, seller-fulfilled)
+        var amazonProfit: Double?
+        var amazonBreakdown: Double?
+        var amazonPrice: Double?
+        if let amzPrice = eval.bookscouter?.amazonLowestPrice, amzPrice > 0 {
+            amazonPrice = amzPrice
+            let breakdown = calculateAmazonFees(salePrice: amzPrice)
+            amazonProfit = breakdown.netProceeds - purchasePrice
+            amazonBreakdown = breakdown.fees
+        }
+
         // Buyback profit (no fees, vendor pays shipping)
         let buybackProfit = (eval.bookscouter?.bestPrice ?? 0) - purchasePrice
 
         return (
             estimatedProfit: estimatedProfit,
             buybackProfit: buybackProfit > 0 ? buybackProfit : nil,
+            amazonProfit: amazonProfit,
             ebayBreakdown: ebayBreakdown,
-            salePrice: salePrice
+            amazonBreakdown: amazonBreakdown,
+            salePrice: salePrice,
+            amazonPrice: amazonPrice
         )
     }
 
@@ -1136,77 +1399,197 @@ struct ScannerReviewView: View {
         fetchEvaluation(for: isbn)
     }
 
+    // MARK: - Series Completion Logic
+
+    // MARK: - Series History Data Structure
+
+    struct PreviousSeriesScan {
+        let isbn: String
+        let title: String?
+        let seriesIndex: Int?
+        let scannedAt: Date
+        let locationName: String?
+        let decision: String?
+        let estimatedPrice: Double?
+    }
+
+    /// Check if this book is part of a series we've previously encountered
+    /// This includes both accepted books AND rejected scans
+    private func checkSeriesCompletion(_ eval: BookEvaluationRecord) -> (
+        isPartOfSeries: Bool,
+        seriesName: String?,
+        booksInSeries: Int,
+        previousScans: [PreviousSeriesScan],
+        totalInSeries: Int?,
+        missingCount: Int?
+    ) {
+        guard let seriesName = eval.metadata?.seriesName else {
+            return (false, nil, 0, [], nil, nil)
+        }
+
+        var previousScans: [PreviousSeriesScan] = []
+
+        // 1. Check accepted/saved books from database
+        let descriptor = FetchDescriptor<CachedBook>(
+            predicate: #Predicate { book in
+                book.seriesName == seriesName
+            },
+            sortBy: [SortDescriptor(\.lastUpdated, order: .reverse)]
+        )
+
+        if let existingBooks = try? modelContext.fetch(descriptor) {
+            for book in existingBooks {
+                previousScans.append(PreviousSeriesScan(
+                    isbn: book.isbn,
+                    title: book.title,
+                    seriesIndex: book.seriesIndex,
+                    scannedAt: book.lastUpdated,
+                    locationName: nil, // CachedBook doesn't store location
+                    decision: "ACCEPTED",
+                    estimatedPrice: book.estimatedPrice
+                ))
+            }
+        }
+
+        // 2. Check scan history via backend API (includes rejected scans)
+        // This is an async call, so we'll do it in the background and update state
+        Task {
+            await checkScanHistoryForSeries(seriesName: seriesName, currentIsbn: eval.isbn)
+        }
+
+        // 3. Check active lots for this series
+        let lotDescriptor = FetchDescriptor<CachedLot>(
+            predicate: #Predicate { lot in
+                lot.canonicalSeries == seriesName || lot.seriesName == seriesName
+            }
+        )
+
+        if let lots = try? modelContext.fetch(lotDescriptor), !lots.isEmpty {
+            // Series is in an active lot suggestion
+            let lot = lots.first!
+            var booksInLot = 0
+            if let jsonString = lot.bookIsbnsJSON,
+               let data = jsonString.data(using: .utf8),
+               let isbns = try? JSONDecoder().decode([String].self, from: data) {
+                booksInLot = isbns.count
+            }
+
+            let totalCount = max(previousScans.count, booksInLot)
+            return (true, seriesName, totalCount, previousScans, nil, nil)
+        }
+
+        let isPartOfSeries = !previousScans.isEmpty
+        return (isPartOfSeries, seriesName, previousScans.count, previousScans, nil, nil)
+    }
+
+    /// Check scan history for other books in this series (includes rejected scans)
+    private func checkScanHistoryForSeries(seriesName: String, currentIsbn: String) async {
+        // This would call the backend API to get scan history
+        // For now, we'll rely on the local database check above
+        // In the future, this could call:
+        // BookAPI.getScanHistory() filtered by series_name
+    }
+
     private func makeBuyDecision(_ eval: BookEvaluationRecord) -> (shouldBuy: Bool, reason: String) {
         let score = eval.probabilityScore ?? 0
         let label = eval.probabilityLabel?.lowercased() ?? ""
         let amazonRank = eval.bookscouter?.amazonSalesRank
 
-        // Always calculate buyback profit if we have a buyback offer
-        // If no purchase price is set, assume $0 (free book)
-        var buybackNetProfit: Double?
-        if let buybackOffer = eval.bookscouter?.bestPrice, buybackOffer > 0 {
-            let purchasePrice = bookAttributes.purchasePrice // Use 0 if not set
-            buybackNetProfit = buybackOffer - purchasePrice
-        }
+        // Calculate all profit paths
+        let profit = calculateProfit(eval)
+        let buybackNetProfit = profit.buybackProfit
+        let ebayNetProfit = profit.estimatedProfit
+        let amazonNetProfit = profit.amazonProfit
 
-        // RULE 1: Buyback offer > purchase price = instant buy (guaranteed profit)
+        // Find the best profit among all exit strategies
+        let bestProfit = [buybackNetProfit, ebayNetProfit, amazonNetProfit].compactMap { $0 }.max()
+
+        // Check if this is part of an ongoing series
+        let seriesCheck = checkSeriesCompletion(eval)
+
+        // RULE 1: Buyback offer > purchase price = instant buy (guaranteed profit, no risk)
         // Check this FIRST before anything else
         if let buybackNet = buybackNetProfit, buybackNet > 0 {
             let vendorName = eval.bookscouter?.bestVendor ?? "vendor"
+
+            // Add series context if applicable
+            if seriesCheck.isPartOfSeries, let series = seriesCheck.seriesName {
+                return (true, "Guaranteed \(formatUSD(buybackNet)) via \(vendorName) + Completes \(series) series")
+            }
+
             return (true, "Guaranteed \(formatUSD(buybackNet)) profit via \(vendorName)")
         }
 
-        // Calculate eBay net profit
-        var ebayNetProfit: Double?
-        if bookAttributes.purchasePrice > 0 {
-            let profit = calculateProfit(eval)
-            ebayNetProfit = profit.estimatedProfit
-        } else {
-            // If no purchase price set, calculate net proceeds only
-            // Prefer live eBay median over backend estimate
-            var salePrice: Double?
-            if let liveMedian = pricing.currentSummary?.median, liveMedian > 0 {
-                salePrice = liveMedian
-            } else if let backendEstimate = eval.estimatedPrice {
-                salePrice = backendEstimate
+        // RULE 1.5: Series Completion - Buy if part of ongoing series AND profit is reasonable
+        // This takes priority over general profit rules because completing series adds strategic value
+        if seriesCheck.isPartOfSeries, let series = seriesCheck.seriesName {
+            let booksWeHave = seriesCheck.booksInSeries
+
+            // More lenient profit requirements for series completion
+            // Accept profit as low as $3 if:
+            // - Part of ongoing series (we have 1+ books)
+            // - Not a loss (profit > 0)
+            // - Confidence score is decent (≥50)
+            if let netProfit = bestProfit, netProfit >= 3.0 && score >= 50 {
+                return (true, "Series: \(series) (\(booksWeHave) books) + \(formatUSD(netProfit)) profit")
             }
 
-            if let price = salePrice {
-                let breakdown = calculateEbayFees(salePrice: price)
-                ebayNetProfit = breakdown.netProceeds
+            // Even more lenient: If we have 3+ books in the series and it's break-even or small profit
+            if booksWeHave >= 3, let netProfit = bestProfit, netProfit >= 1.0 {
+                return (true, "Near-complete series: \(series) (\(booksWeHave) books) + \(formatUSD(netProfit))")
+            }
+
+            // If series has high value, accept even small losses (up to $2) to complete
+            if booksWeHave >= 3, let netProfit = bestProfit, netProfit >= -2.0 && score >= 60 {
+                return (true, "Complete series: \(series) (\(booksWeHave) books) - strategic buy")
             }
         }
 
-        // RULE 2: Net profit $10+ on eBay = strong buy
-        if let netProfit = ebayNetProfit, netProfit >= 10 {
-            if label.contains("high") || score >= 60 {
-                return (true, "Strong: \(formatUSD(netProfit)) net profit after fees")
+        // RULE 2: Net profit $10+ on any platform = strong buy
+        if let maxProfit = bestProfit, maxProfit >= 10 {
+            // Determine which platform offers best profit
+            var platform = "eBay"
+            if let amz = amazonNetProfit, amz == maxProfit {
+                platform = "Amazon"
+            } else if let ebay = ebayNetProfit, ebay == maxProfit {
+                platform = "eBay"
             }
-            return (true, "Net profit \(formatUSD(netProfit)) after eBay fees")
+
+            if label.contains("high") || score >= 60 {
+                return (true, "Strong: \(formatUSD(maxProfit)) net via \(platform)")
+            }
+            return (true, "Net profit \(formatUSD(maxProfit)) via \(platform)")
         }
 
         // RULE 3: Net profit $5-10 = conditional buy
-        if let netProfit = ebayNetProfit, netProfit >= 5 {
+        if let maxProfit = bestProfit, maxProfit >= 5 {
+            var platform = "eBay"
+            if let amz = amazonNetProfit, amz == maxProfit {
+                platform = "Amazon"
+            } else if let ebay = ebayNetProfit, ebay == maxProfit {
+                platform = "eBay"
+            }
+
             if label.contains("high") || score >= 70 {
-                return (true, "Good confidence + \(formatUSD(netProfit)) net profit")
+                return (true, "Good confidence + \(formatUSD(maxProfit)) via \(platform)")
             }
             if let rank = amazonRank, rank < 100000 {
-                return (true, "Fast-moving + \(formatUSD(netProfit)) net profit")
+                return (true, "Fast-moving + \(formatUSD(maxProfit)) via \(platform)")
             }
-            return (false, "Only \(formatUSD(netProfit)) profit - needs higher confidence")
+            return (false, "Only \(formatUSD(maxProfit)) profit - needs higher confidence")
         }
 
         // RULE 4: Positive but small profit ($1-5)
-        if let netProfit = ebayNetProfit, netProfit > 0 {
+        if let maxProfit = bestProfit, maxProfit > 0 {
             if label.contains("high") && score >= 80 {
                 return (true, "Very high confidence offsets low margin")
             }
-            return (false, "Net profit only \(formatUSD(netProfit)) - too thin")
+            return (false, "Net profit only \(formatUSD(maxProfit)) - too thin")
         }
 
-        // RULE 5: No profit or loss
-        if let netProfit = ebayNetProfit, netProfit <= 0 {
-            return (false, "Would lose \(formatUSD(abs(netProfit))) after eBay fees")
+        // RULE 5: No profit or loss on best channel
+        if let maxProfit = bestProfit, maxProfit <= 0 {
+            return (false, "Would lose \(formatUSD(abs(maxProfit))) after fees")
         }
 
         // RULE 6: No pricing data - use confidence only
@@ -1277,6 +1660,12 @@ struct ScannerReviewView: View {
             f.currencyCode = "USD"
             return f.string(from: x as NSNumber) ?? "$\(x)"
         }
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 
     private func formatDate(_ isoString: String) -> String {

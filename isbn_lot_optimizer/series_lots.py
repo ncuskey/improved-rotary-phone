@@ -82,8 +82,9 @@ def build_series_lots_enhanced(
                 actual_series_name = list(metadata_series_names)[0]
                 if actual_series_name.lower() != series_title.lower():
                     series_title = actual_series_name
-            elif "standalone" in series_title.lower() and metadata_series_names:
+            elif "standalone" in series_title.lower():
                 # For standalone collections, use author name instead of generic title
+                # (Standalone novels typically don't have individual series names)
                 series_title = f"{author_name} Collection"
 
             # Get complete list of books in this series

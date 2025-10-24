@@ -199,9 +199,43 @@ As of last cleanup (October 2025):
   - Author capitalization: 100%
   - Whitespace normalization: 100%
 
+## Refreshing Market Data
+
+After cleaning metadata, you may want to refresh all market data (vendor offers, eBay prices, Amazon data) to ensure books have current pricing information:
+
+```bash
+cd ~/ISBN
+
+# Test with a few books first
+python3 scripts/refresh_all_market_data.py --limit 10
+
+# Run on all books (takes ~24 minutes for 713 books)
+python3 scripts/refresh_all_market_data.py
+
+# Adjust delay between API calls (default: 2 seconds)
+python3 scripts/refresh_all_market_data.py --delay 1.5
+
+# Skip recently updated books (default: skip books updated in last 7 days)
+python3 scripts/refresh_all_market_data.py --skip-recent 14
+```
+
+**What gets refreshed:**
+- eBay market stats (sold comps, active listings, sell-through rate)
+- BookScouter vendor offers (buyback prices from multiple vendors)
+- Amazon pricing and sales rank
+- BooksRun offers
+
+**Notes:**
+- Uses a 2-second delay by default to respect API rate limits
+- Estimated time: ~2 seconds per book (24 minutes for 713 books)
+- Shows progress every 10 books
+- Recalculates lots automatically after completion
+- Safe to interrupt (Ctrl+C) and resume later
+
 ## Tools
 
 - **Cleaning Script**: `scripts/clean_metadata.py`
+- **Market Refresh Script**: `scripts/refresh_all_market_data.py`
 - **Standards Module**: `shared/metadata_standards.py`
 - **Test Data**: `tests/test_metadata_standards.py` (to be created)
 

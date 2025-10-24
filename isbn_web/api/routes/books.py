@@ -2,14 +2,18 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import quote_plus
 
 from fastapi import APIRouter, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 from isbn_lot_optimizer.service import BookService
+from isbn_lot_optimizer.metadata import fetch_metadata, create_http_session
 from shared.utils import normalise_isbn
 from shared.series_integration import enrich_evaluation_with_series, match_and_attach_series
 
@@ -99,6 +103,24 @@ def _book_evaluation_to_dict(evaluation) -> Dict[str, Any]:
 
     if evaluation.rarity is not None:
         result["rarity"] = evaluation.rarity
+
+    def _format_timestamp(value: Any) -> str:
+        try:
+            if isinstance(value, (int, float)):
+                return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat()
+            if isinstance(value, str) and value.isdigit():
+                return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat()
+            return str(value)
+        except Exception:
+            return str(value)
+
+    updated_at = getattr(evaluation, "updated_at", None)
+    if updated_at is not None:
+        result["updated_at"] = _format_timestamp(updated_at)
+
+    created_at = getattr(evaluation, "created_at", None)
+    if created_at is not None:
+        result["created_at"] = _format_timestamp(created_at)
 
     return result
 
@@ -509,3 +531,189 @@ async def bulk_delete_books(
         "components/book_table.html",
         {"request": request, "books": books},
     )
+
+
+class MetadataSearchRequest(BaseModel):
+    """Schema for metadata search by title/author."""
+    title: str
+    author: Optional[str] = None
+    publication_year: Optional[int] = None
+    edition: Optional[str] = None
+
+
+class MetadataSearchResult(BaseModel):
+    """A single search result with metadata and reference links."""
+    isbn_13: Optional[str]
+    isbn_10: Optional[str]
+    title: str
+    subtitle: Optional[str]
+    authors: List[str]
+    publisher: Optional[str]
+    publication_year: Optional[int]
+    cover_url: Optional[str]
+    description: Optional[str]
+    categories: List[str]
+    series_name: Optional[str]
+    series_index: Optional[int]
+    source: str
+    ebay_search_url: str
+    google_search_url: str
+
+
+@router.post("/search-metadata")
+async def search_metadata(
+    data: MetadataSearchRequest,
+) -> JSONResponse:
+    """
+    Search for book metadata by title and author.
+
+    This endpoint helps users find ISBNs for books without barcodes by:
+    1. Searching Google Books API by title + author
+    2. Returning matching results with ISBNs and metadata
+    3. Providing reference links to eBay and Google for manual research
+
+    Returns a list of candidates with:
+    - ISBN (if found)
+    - Full metadata (title, author, year, cover, etc.)
+    - eBay search link for manual price research
+    - Google search link for additional information
+    """
+    import requests
+
+    # Build Google Books search query
+    query_parts = []
+    if data.title:
+        query_parts.append(f'intitle:"{data.title}"')
+    if data.author:
+        query_parts.append(f'inauthor:"{data.author}"')
+
+    query = " ".join(query_parts)
+
+    if not query:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Must provide at least title or author"}
+        )
+
+    # Fetch from Google Books API
+    GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes"
+    params = {
+        "q": query,
+        "maxResults": "10",
+        "printType": "books",
+        "fields": (
+            "items(volumeInfo/title,volumeInfo/subtitle,volumeInfo/authors,"
+            "volumeInfo/publisher,volumeInfo/publishedDate,volumeInfo/pageCount,"
+            "volumeInfo/categories,volumeInfo/industryIdentifiers,"
+            "volumeInfo/imageLinks/thumbnail,volumeInfo/description)"
+        ),
+    }
+
+    import os
+    api_key = os.getenv("GOOGLE_BOOKS_API_KEY")
+    if api_key:
+        params["key"] = api_key
+
+    try:
+        response = requests.get(GOOGLE_BOOKS_URL, params=params, timeout=15)
+        response.raise_for_status()
+        payload = response.json() or {}
+    except Exception as e:
+        return JSONResponse(
+            status_code=502,
+            content={"error": f"Failed to search Google Books: {str(e)}"}
+        )
+
+    items = payload.get("items") or []
+    results = []
+
+    for item in items:
+        info = item.get("volumeInfo")
+        if not isinstance(info, dict):
+            continue
+
+        # Extract ISBNs
+        identifiers = info.get("industryIdentifiers") or []
+        isbn_10 = None
+        isbn_13 = None
+        for ident in identifiers:
+            if not isinstance(ident, dict):
+                continue
+            if ident.get("type") == "ISBN_10" and ident.get("identifier"):
+                isbn_10 = ident["identifier"].replace("-", "")
+            if ident.get("type") == "ISBN_13" and ident.get("identifier"):
+                isbn_13 = ident["identifier"].replace("-", "")
+
+        # Skip results without ISBN
+        if not isbn_10 and not isbn_13:
+            continue
+
+        # Extract metadata
+        title = info.get("title") or ""
+        subtitle = info.get("subtitle")
+        authors = [str(a) for a in info.get("authors", []) if a]
+        publisher = info.get("publisher")
+
+        published_date = (info.get("publishedDate") or "").strip()
+        import re
+        match = re.match(r"^(\d{4})", published_date)
+        publication_year = int(match.group(1)) if match else None
+
+        categories = [str(cat) for cat in info.get("categories", []) if cat]
+
+        image_links = info.get("imageLinks") or {}
+        cover_url = image_links.get("thumbnail") or image_links.get("smallThumbnail")
+        if isinstance(cover_url, str) and cover_url.startswith("http://"):
+            cover_url = "https://" + cover_url[7:]
+
+        description = info.get("description")
+
+        # Extract series info from title (Google Books pattern)
+        combined_title = " ".join(filter(None, [title, subtitle]))
+        series_name = None
+        series_index = None
+        paren_match = re.search(r"\(([^()]+?),\s*#?(\d+)\)", combined_title)
+        if paren_match:
+            series_name = paren_match.group(1).strip()
+            try:
+                series_index = int(paren_match.group(2))
+            except ValueError:
+                pass
+
+        # Build search query for reference links
+        search_query = title
+        if authors:
+            search_query += f" {authors[0]}"
+        if data.edition:
+            search_query += f" {data.edition}"
+
+        # eBay search URL (books category, sorted by sold listings)
+        ebay_query = quote_plus(search_query)
+        ebay_url = (
+            f"https://www.ebay.com/sch/i.html?_nkw={ebay_query}"
+            f"&_sacat=267&LH_Sold=1&LH_Complete=1&_sop=13"
+        )
+
+        # Google search URL
+        google_query = quote_plus(f"{search_query} book value price")
+        google_url = f"https://www.google.com/search?q={google_query}"
+
+        results.append({
+            "isbn_13": isbn_13,
+            "isbn_10": isbn_10,
+            "title": title,
+            "subtitle": subtitle,
+            "authors": authors,
+            "publisher": publisher,
+            "publication_year": publication_year,
+            "cover_url": cover_url,
+            "description": description,
+            "categories": categories,
+            "series_name": series_name,
+            "series_index": series_index,
+            "source": "google_books",
+            "ebay_search_url": ebay_url,
+            "google_search_url": google_url,
+        })
+
+    return JSONResponse(content={"results": results, "total": len(results)})

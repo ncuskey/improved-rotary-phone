@@ -18,6 +18,7 @@ from shared.booksrun import (
     fetch_offer as fetch_booksrun_offer,
     normalise_condition as normalize_booksrun_condition,
 )
+from .recent_scans import RecentScansCache
 from shared.bookscouter import (
     BookScouterAPIError,
     DEFAULT_BASE_URL as BOOKSCOUTER_DEFAULT_BASE_URL,
@@ -103,6 +104,7 @@ class BookService:
         self._series_index_bootstrapped: set[str] = set(self.series_index.canonical_authors())
         self._lot_manual_cache: dict[str, str] = {}
         self._series_catalog_fetched: set[str] = set()
+        self.recent_scans = RecentScansCache(max_size=100)
         # Standardize on BOOKSRUN_KEY (deprecated: BOOKSRUN_API_KEY)
         key_from_env = os.getenv("BOOKSRUN_KEY") or os.getenv("BOOKSRUN_API_KEY")
         if os.getenv("BOOKSRUN_API_KEY") and not os.getenv("BOOKSRUN_KEY"):
@@ -289,6 +291,10 @@ class BookService:
         evaluation.quantity = max(1, existing_quantity)
 
         self._register_book_in_series_index(evaluation)
+        # Check for series matches BEFORE tracking this scan
+        self._enhance_evaluation_with_series_context(evaluation)
+        # Now track this scan for future series-aware recommendations
+        self._track_recent_scan(evaluation)
         v2_stats_result = None
         try:
             v2_stats_result = fetch_market_stats_v2(normalized)
@@ -2611,6 +2617,118 @@ class BookService:
             )
         except Exception:
             return None
+
+    def _enhance_evaluation_with_series_context(self, evaluation: BookEvaluation) -> None:
+        """
+        Add series-aware justification if this book belongs to a series with recently scanned books
+        that have NOT yet been accepted into the database.
+
+        This checks the recent scans cache to see if we've scanned other books in the same series.
+        It filters out books that are already in the database (already accepted), so we only
+        recommend going back for books that were left behind.
+        """
+        metadata = getattr(evaluation, "metadata", None)
+        if not metadata:
+            return
+
+        series_name = getattr(metadata, "series_name", None) or getattr(metadata, "series", None)
+        if not series_name:
+            return
+
+        # Build series ID for matching
+        series_id = None
+        authors = getattr(metadata, "authors", ()) or ()
+        author_display = authors[0].strip() if authors else None
+        if author_display:
+            canonical_author_value = canonical_author(author_display)
+            canonical_series_value = canonical_series(series_name)
+            if canonical_author_value and canonical_series_value:
+                series_id = f"{canonical_author_value}:{canonical_series_value}"
+
+        # Check if we have other books from this series in recent scans
+        matches = self.recent_scans.get_series_matches(series_name=series_name, series_id=series_id)
+
+        # Exclude the current book from matches (it may not be in cache yet, but just in case)
+        isbn = getattr(evaluation, "isbn", None)
+        matches = [m for m in matches if m.isbn != isbn]
+
+        # Filter out books that are already in the database (already accepted)
+        # Only recommend books that haven't been added to the catalog yet
+        matches_not_in_db = []
+        for match in matches:
+            if not self.db.fetch_book(match.isbn):
+                matches_not_in_db.append(match)
+
+        matches = matches_not_in_db
+
+        if matches:
+            # Build justification message
+            if len(matches) == 1:
+                match = matches[0]
+                position = f" ({match.series_position})" if match.series_position else ""
+                justification_msg = (
+                    f"Series lot opportunity: You recently scanned another book from the '{series_name}' series"
+                    f"{position}. Consider going back to get it for a series lot."
+                )
+            else:
+                positions = [m.series_position for m in matches if m.series_position]
+                if positions:
+                    positions_str = ", ".join(positions)
+                    justification_msg = (
+                        f"Series lot opportunity: You recently scanned {len(matches)} other books "
+                        f"from the '{series_name}' series ({positions_str}). Consider going back to get them for a series lot."
+                    )
+                else:
+                    justification_msg = (
+                        f"Series lot opportunity: You recently scanned {len(matches)} other books "
+                        f"from the '{series_name}' series. Consider going back to get them for a series lot."
+                    )
+
+            # Add to justification list
+            existing_justification = list(evaluation.justification) if evaluation.justification else []
+            existing_justification.append(justification_msg)
+            evaluation.justification = tuple(existing_justification)
+
+    def _track_recent_scan(self, evaluation: BookEvaluation) -> None:
+        """Track this scan in the recent scans cache for series-aware recommendations."""
+        isbn = getattr(evaluation, "isbn", None)
+        if not isbn:
+            return
+
+        metadata = getattr(evaluation, "metadata", None)
+        if not metadata:
+            return
+
+        series_name = getattr(metadata, "series_name", None) or getattr(metadata, "series", None)
+        series_position = getattr(metadata, "series_index", None)
+        title = getattr(metadata, "title", None)
+
+        # Create a series ID from canonical author + series name for better matching
+        series_id = None
+        if series_name:
+            authors = getattr(metadata, "authors", ()) or ()
+            author_display = authors[0].strip() if authors else None
+            if author_display:
+                canonical_author_value = canonical_author(author_display)
+                canonical_series_value = canonical_series(series_name)
+                if canonical_author_value and canonical_series_value:
+                    series_id = f"{canonical_author_value}:{canonical_series_value}"
+
+        # Format series position as string if available
+        position_str = None
+        if series_position is not None:
+            if isinstance(series_position, (int, float)):
+                position_str = f"#{int(series_position)}"
+            else:
+                position_str = str(series_position)
+
+        self.recent_scans.add_scan(
+            isbn=isbn,
+            series_name=series_name,
+            series_id=series_id,
+            series_position=position_str,
+            title=title,
+        )
 
     def _register_book_in_series_index(self, evaluation: BookEvaluation) -> None:
         isbn = getattr(evaluation, "isbn", None)

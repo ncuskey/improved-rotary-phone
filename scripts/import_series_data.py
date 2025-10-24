@@ -10,7 +10,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from isbn_lot_optimizer.series_database import SeriesDatabaseManager
+from shared.series_database import SeriesDatabaseManager
 
 
 def import_series_data(json_file: Path, db_path: Path) -> None:

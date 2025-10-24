@@ -6,7 +6,96 @@ struct BooksTabView: View {
     @State private var books: [BookEvaluationRecord] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var searchText = ""
+    @State private var sortOption: SortOption = .recencyDescending
     private var cacheManager: CacheManager { CacheManager(modelContext: modelContext) }
+
+    enum SortOption: String, CaseIterable, Identifiable {
+        case recencyDescending = "Newest First"
+        case recencyAscending = "Oldest First"
+        case titleAscending = "Title (A-Z)"
+        case titleDescending = "Title (Z-A)"
+        case profitDescending = "Highest Profit"
+        case profitAscending = "Lowest Profit"
+        case priceDescending = "Highest Price"
+        case priceAscending = "Lowest Price"
+
+        var id: String { rawValue }
+    }
+
+    var filteredAndSortedBooks: [BookEvaluationRecord] {
+        var result = books
+
+        // Apply search filter
+        if !searchText.isEmpty {
+            result = result.filter { book in
+                let title = book.metadata?.title?.lowercased() ?? ""
+                let author = book.metadata?.primaryAuthor?.lowercased() ?? ""
+                let isbn = book.isbn.lowercased()
+                let series = book.metadata?.seriesName?.lowercased() ?? ""
+                let searchLower = searchText.lowercased()
+
+                return title.contains(searchLower) ||
+                       author.contains(searchLower) ||
+                       isbn.contains(searchLower) ||
+                       series.contains(searchLower)
+            }
+        }
+
+        let originalOrder = Dictionary(uniqueKeysWithValues: result.enumerated().map { ($1.id, $0) })
+
+        // Apply sorting
+        result.sort { book1, book2 in
+            let index1 = originalOrder[book1.id] ?? 0
+            let index2 = originalOrder[book2.id] ?? 0
+            switch sortOption {
+            case .recencyDescending:
+                let date1 = book1.recencyDate
+                let date2 = book2.recencyDate
+                if date1 != date2 { return date1 > date2 }
+                return index1 < index2
+            case .recencyAscending:
+                let date1 = book1.recencyDate
+                let date2 = book2.recencyDate
+                if date1 != date2 { return date1 < date2 }
+                return index1 < index2
+            case .titleAscending:
+                let title1 = book1.sortingTitle
+                let title2 = book2.sortingTitle
+                let comparison = title1.localizedCaseInsensitiveCompare(title2)
+                if comparison != .orderedSame { return comparison == .orderedAscending }
+                return index1 < index2
+            case .titleDescending:
+                let title1 = book1.sortingTitle
+                let title2 = book2.sortingTitle
+                let comparison = title1.localizedCaseInsensitiveCompare(title2)
+                if comparison != .orderedSame { return comparison == .orderedDescending }
+                return index1 < index2
+            case .profitDescending:
+                let profit1 = (book1.market?.soldCompsMedian ?? 0) - (book1.bookscouter?.bestPrice ?? 0)
+                let profit2 = (book2.market?.soldCompsMedian ?? 0) - (book2.bookscouter?.bestPrice ?? 0)
+                if profit1 != profit2 { return profit1 > profit2 }
+                return index1 < index2
+            case .profitAscending:
+                let profit1 = (book1.market?.soldCompsMedian ?? 0) - (book1.bookscouter?.bestPrice ?? 0)
+                let profit2 = (book2.market?.soldCompsMedian ?? 0) - (book2.bookscouter?.bestPrice ?? 0)
+                if profit1 != profit2 { return profit1 < profit2 }
+                return index1 < index2
+            case .priceDescending:
+                let price1 = book1.market?.soldCompsMedian ?? 0
+                let price2 = book2.market?.soldCompsMedian ?? 0
+                if price1 != price2 { return price1 > price2 }
+                return index1 < index2
+            case .priceAscending:
+                let price1 = book1.market?.soldCompsMedian ?? 0
+                let price2 = book2.market?.soldCompsMedian ?? 0
+                if price1 != price2 { return price1 < price2 }
+                return index1 < index2
+            }
+        }
+
+        return result
+    }
 
     var body: some View {
         NavigationStack {
@@ -45,7 +134,7 @@ struct BooksTabView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: DS.Spacing.md) {
-                            ForEach(books) { book in
+                            ForEach(filteredAndSortedBooks) { book in
                                 NavigationLink(value: book) {
                                     BookCardView(book: book.cardModel)
                                 }
@@ -61,9 +150,29 @@ struct BooksTabView: View {
                     .navigationDestination(for: BookEvaluationRecord.self) { record in
                         BookDetailView(record: record)
                     }
+                    .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search by title, author, ISBN, or series")
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: CacheManager.booksDidChange)) { _ in
+                let cached = cacheManager.getCachedBooks()
+                if !cached.isEmpty {
+                    books = cached
                 }
             }
             .navigationTitle("Books")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Picker("Sort By", selection: $sortOption) {
+                            ForEach(SortOption.allCases) { option in
+                                Text(option.rawValue).tag(option)
+                            }
+                        }
+                    } label: {
+                        Label("Sort", systemImage: "arrow.up.arrow.down")
+                    }
+                }
+            }
             .task { await initialLoadIfNeeded() }
         }
         .background(DS.Color.background)
@@ -149,6 +258,42 @@ private extension BookEvaluationRecord {
         guard !isbn.isEmpty else { return nil }
         return "https://covers.openlibrary.org/b/isbn/\(isbn)-M.jpg"
     }
+
+    var sortingTitle: String {
+        metadata?.title ?? isbn
+    }
+
+    var recencyDate: Date {
+        if let updatedAt,
+           let date = BookEvaluationRecord.isoFormatterWithFractional.date(from: updatedAt) {
+            return date
+        }
+        if let updatedAt,
+           let date = BookEvaluationRecord.isoFormatter.date(from: updatedAt) {
+            return date
+        }
+        if let createdAt,
+           let date = BookEvaluationRecord.isoFormatterWithFractional.date(from: createdAt) {
+            return date
+        }
+        if let createdAt,
+           let date = BookEvaluationRecord.isoFormatter.date(from: createdAt) {
+            return date
+        }
+        return .distantPast
+    }
+
+    private static let isoFormatterWithFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
 }
 
 private struct BookDetailView: View {
@@ -587,7 +732,16 @@ private struct BookDetailView: View {
                     soldCompsMedian: 24.99,
                     soldCompsMax: 35.50,
                     soldCompsIsEstimate: false,
-                    soldCompsSource: "marketplace_insights"
+                    soldCompsSource: "marketplace_insights",
+                    soldCompsLastSoldDate: "2025-01-10T00:00:00Z"
+                ),
+                booksrun: BooksRunOffer(
+                    condition: "good",
+                    cashPrice: 7.25,
+                    storeCredit: 8.00,
+                    currency: "USD",
+                    url: "https://www.booksrun.com",
+                    updatedAt: "2025-01-14"
                 ),
                 booksrunValueLabel: nil,
                 booksrunValueRatio: nil,
@@ -609,7 +763,9 @@ private struct BookDetailView: View {
                 ),
                 bookscouterValueLabel: "High",
                 bookscouterValueRatio: 0.93,
-                rarity: nil
+                rarity: nil,
+                updatedAt: "2025-01-15T12:00:00Z",
+                createdAt: "2025-01-10T12:00:00Z"
             )
         )
     }

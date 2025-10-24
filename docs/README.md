@@ -63,6 +63,7 @@ Documentation for each application interface.
   - 3D book carousel
   - Mobile optimization
   - API endpoints
+  - Metadata search endpoint (title/author → ISBN)
   - Camera scanner
 
 - **[iOS App](apps/ios.md)**
@@ -70,6 +71,9 @@ Documentation for each application interface.
   - Barcode scanning with OCR
   - Real-time eBay pricing
   - Triage workflow
+  - Books library with search and sorting
+  - Lot filtering by strategy
+  - Metadata search for books without barcodes
   - Token broker integration
 
 - **[Camera Scanner](apps/camera-scanner.md)**

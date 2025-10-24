@@ -3,6 +3,8 @@ import SwiftData
 
 @MainActor
 class CacheManager {
+    static let booksDidChange = Notification.Name("CacheManager.booksDidChange")
+
     private let modelContext: ModelContext
 
     // Staleness thresholds (in seconds)
@@ -83,8 +85,26 @@ class CacheManager {
 
         do {
             try modelContext.save()
+            notifyBooksChanged()
         } catch {
             print("Failed to save books to cache: \(error)")
+        }
+    }
+
+    func upsertBook(_ book: BookEvaluationRecord) {
+        let descriptor = FetchDescriptor<CachedBook>(predicate: #Predicate { $0.isbn == book.isbn })
+        if let existing = try? modelContext.fetch(descriptor), let cached = existing.first {
+            modelContext.delete(cached)
+        }
+
+        let cachedBook = CachedBook(from: book)
+        modelContext.insert(cachedBook)
+
+        do {
+            try modelContext.save()
+            notifyBooksChanged()
+        } catch {
+            print("Failed to upsert book in cache: \(error)")
         }
     }
 
@@ -166,8 +186,13 @@ class CacheManager {
             try modelContext.delete(model: CachedBook.self)
             try modelContext.delete(model: CachedLot.self)
             try modelContext.save()
+            notifyBooksChanged()
         } catch {
             print("Failed to clear caches: \(error)")
         }
+    }
+
+    private func notifyBooksChanged() {
+        NotificationCenter.default.post(name: Self.booksDidChange, object: nil)
     }
 }

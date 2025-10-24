@@ -43,6 +43,12 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
   - Text entry mode for Bluetooth barcode scanners with auto-focus workflow
   - Auto-refocuses after every scan (success or error) for hands-free operation
   - Toggle between modes via toolbar, preference persists
+- **📚 Books Library & Lot Management**:
+  - Browse complete catalog with search (title, author, ISBN, series)
+  - 8 sort options: recency (newest/oldest), title (A-Z/Z-A), profit (high/low), price (high/low)
+  - Real-time cache updates via NotificationCenter
+  - Filter lot recommendations by strategy (author, series complete/partial/incomplete, value)
+  - Detailed book cards with cover images and market data
 - **📊 Full-Screen Analysis View**: Complete transparency into decision-making:
   - Camera disappears after scan to maximize analysis space
   - Accept/Reject buttons at very top (no scrolling needed)
@@ -58,6 +64,7 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
   - Complete breakdown: Sale → Fees → Cost → Net
   - Uses live eBay median pricing when available
   - Shows "(Live)" or "(Est.)" indicator for price transparency
+  - Enhanced BooksRun offer tracking with complete buyback data
 - **💵 Smart Profit Calculator**:
   - Set price once with $0.25 increment picker ($0.00 - $50.00)
   - Works with $0 (free books from donations, estate sales)
@@ -73,6 +80,10 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
   - Auto-accepts previous BUY when new scan arrives
   - Auto-rejects previous DON'T BUY when new scan arrives
   - Perfect for high-volume scanning sessions
+- **🔍 Metadata Search**: Find ISBNs for books without barcodes
+  - Search by title and author via Google Books API
+  - Get eBay and Google reference links for manual research
+  - Perfect for books with damaged or missing barcodes
 - **✅ Accept/Reject Workflow**: Make informed keep/reject decisions with full analysis
 - **🚀 Professional Launch**: Branded splash screen with loading status updates
 - **🔒 Secure Token Management**: eBay OAuth tokens handled server-side via token broker
@@ -145,6 +156,9 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
    - `GET /api/books/all` – JSON payload of every stored book (matches GUI list order).
    - `GET /api/lots/list.json` – JSON payload of the saved lot suggestions, including
      embedded book metadata when available.
+   - `POST /api/books/search-metadata` – Search for books by title/author when ISBN is unknown.
+     Returns Google Books results with eBay and Google reference links for manual research.
+     Perfect for books with damaged or missing barcodes.
    - These endpoints power the LotHelper iOS prototype; restart `isbn-web` after
      deploying changes so the routes are reloaded.
    - **iOS UI tip:** ship a minimal `LaunchScreen.storyboard` (white `systemBackground`

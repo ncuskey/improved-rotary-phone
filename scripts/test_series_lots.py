@@ -71,7 +71,7 @@ def main():
 
     # Match books to series
     print("Matching books to series...")
-    from isbn_lot_optimizer.series_matcher import SeriesMatcher
+    from shared.series_matcher import SeriesMatcher
 
     matcher = SeriesMatcher(db_path)
     books = service.list_books()

@@ -11,7 +11,75 @@ struct LotRecommendationsView: View {
     @State private var lots: [LotSuggestionDTO] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var selectedStrategies: Set<LotStrategy> = Set(LotStrategy.allCases)
     private var cacheManager: CacheManager { CacheManager(modelContext: modelContext) }
+
+    enum LotStrategy: String, CaseIterable, Identifiable {
+        case author = "Author"
+        case seriesComplete = "Series (Complete)"
+        case seriesPartial = "Series (Partial)"
+        case seriesIncomplete = "Series (Incomplete)"
+        case series = "Series"
+        case value = "Value Bundle"
+
+        var id: String { rawValue }
+
+        func matches(_ strategy: String) -> Bool {
+            switch self {
+            case .author:
+                return strategy.contains("author")
+            case .seriesComplete:
+                return strategy.contains("series_complete")
+            case .seriesPartial:
+                return strategy.contains("series_partial")
+            case .seriesIncomplete:
+                return strategy.contains("series_incomplete")
+            case .series:
+                return strategy.contains("series") &&
+                       !strategy.contains("series_complete") &&
+                       !strategy.contains("series_partial") &&
+                       !strategy.contains("series_incomplete")
+            case .value:
+                return strategy.contains("value")
+            }
+        }
+    }
+
+    var filteredLots: [LotSuggestionDTO] {
+        let filtered = lots.filter { lot in
+            // A lot should be shown if ANY of the selected strategies matches it
+            let isMatched = selectedStrategies.contains { strategy in
+                strategy.matches(lot.strategy)
+            }
+
+            // Debug individual lot
+            if !isMatched {
+                print("❌ Filtered out: '\(lot.name)' (strategy: '\(lot.strategy)')")
+            }
+
+            return isMatched
+        }
+
+        // Debug logging
+        print("\n📊 LOTS FILTERING DEBUG")
+        print("📊 Total lots loaded: \(lots.count)")
+        print("📊 Selected filter strategies: \(selectedStrategies.map { $0.rawValue })")
+        print("📊 Filtered result count: \(filtered.count)")
+
+        // Log strategy distribution
+        let strategyCounts = lots.reduce(into: [String: Int]()) { counts, lot in
+            counts[lot.strategy, default: 0] += 1
+        }
+        print("\n📊 Strategy distribution in data:")
+        for (strategy, count) in strategyCounts.sorted(by: { $0.key < $1.key }) {
+            let matchingFilter = selectedStrategies.first { $0.matches(strategy) }
+            let isFiltered = matchingFilter != nil
+            print("   - '\(strategy)': \(count) lots \(isFiltered ? "✅ SHOWN (matches \(matchingFilter!.rawValue))" : "❌ HIDDEN (no match)")")
+        }
+        print("")
+
+        return filtered
+    }
 
     var body: some View {
         NavigationStack {
@@ -43,7 +111,7 @@ struct LotRecommendationsView: View {
                         Task { await loadLots() }
                     }
                 } else {
-                    List(lots) { lot in
+                    List(filteredLots) { lot in
                         NavigationLink(value: lot) {
                             LotSummaryRow(lot: lot)
                         }
@@ -59,9 +127,35 @@ struct LotRecommendationsView: View {
                 }
             }
             .navigationTitle("Lots")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        ForEach(LotStrategy.allCases) { strategy in
+                            Button {
+                                toggleStrategy(strategy)
+                            } label: {
+                                Label(
+                                    strategy.rawValue,
+                                    systemImage: selectedStrategies.contains(strategy) ? "checkmark.circle.fill" : "circle"
+                                )
+                            }
+                        }
+                    } label: {
+                        Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+                    }
+                }
+            }
             .task { await initialLoadIfNeeded() }
         }
         .background(DS.Color.background)
+    }
+
+    private func toggleStrategy(_ strategy: LotStrategy) {
+        if selectedStrategies.contains(strategy) {
+            selectedStrategies.remove(strategy)
+        } else {
+            selectedStrategies.insert(strategy)
+        }
     }
 
     @MainActor
@@ -124,25 +218,68 @@ private extension LotSuggestionDTO {
 private struct LotSummaryRow: View {
     let lot: LotSuggestionDTO
 
+    var strategyBadge: (String, Color) {
+        let strategy = lot.strategy
+        if strategy.contains("series_complete") {
+            return ("Complete", .green)
+        } else if strategy.contains("series_partial") {
+            return ("Partial", .orange)
+        } else if strategy.contains("series_incomplete") {
+            return ("Incomplete", .red)
+        } else if strategy.contains("series") {
+            return ("Series", .blue)
+        } else if strategy.contains("author") {
+            return ("Author", .purple)
+        } else if strategy.contains("value") {
+            return ("Value", .gray)
+        } else {
+            return ("Other", .gray)
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(lot.name)
-                .bodyStyle().fontWeight(.semibold)
+            HStack {
+                Text(lot.name)
+                    .bodyStyle().fontWeight(.semibold)
+                    .lineLimit(2)
+
+                Spacer()
+
+                Text(strategyBadge.0)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(strategyBadge.1.opacity(0.2))
+                    .foregroundStyle(strategyBadge.1)
+                    .clipShape(Capsule())
+            }
+
             if let authorLabel = lot.displayAuthorLabel, !authorLabel.isEmpty {
                 Text(authorLabel)
                     .subtitleStyle()
             }
+
             HStack(spacing: 12) {
-                Text("Books: \(lot.bookIsbns.count)")
+                Label("\(lot.bookIsbns.count)", systemImage: "book.closed")
                     .font(.caption)
                     .foregroundStyle(DS.Color.textSecondary)
-                Text("Value: \(lot.estimatedValue.formatted(.currency(code: "USD")))")
+
+                Text(lot.estimatedValue.formatted(.currency(code: "USD")))
                     .font(.caption)
-                    .foregroundStyle(DS.Color.textSecondary)
+                    .foregroundStyle(.green)
+                    .fontWeight(.medium)
+
                 if !lot.probabilityLabel.isEmpty {
                     Text(lot.probabilityLabel)
                         .font(.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
+                        .fontWeight(.medium)
+                        .foregroundStyle(
+                            lot.probabilityLabel == "High" ? .green :
+                            lot.probabilityLabel == "Medium" ? .orange :
+                            .red
+                        )
                 }
             }
         }
@@ -154,61 +291,198 @@ private struct LotSummaryRow: View {
 private struct LotDetailView: View {
     let lot: LotSuggestionDTO
 
+    struct SeriesInfo {
+        let completionText: String
+        let haveIndices: [Int]
+        let missingIndices: [Int]
+    }
+
+    var seriesInfo: SeriesInfo? {
+        guard let justification = lot.justification,
+              lot.strategy.contains("series") else {
+            return nil
+        }
+
+        var completionText = ""
+        var haveIndices: [Int] = []
+        var missingIndices: [Int] = []
+
+        for line in justification {
+            if line.starts(with: "Have ") && line.contains("of") && line.contains("books") {
+                completionText = line
+            } else if line.starts(with: "Have: ") {
+                let indices = line.replacingOccurrences(of: "Have: ", with: "")
+                haveIndices = parseIndices(indices)
+            } else if line.starts(with: "Missing: ") {
+                let indices = line.replacingOccurrences(of: "Missing: ", with: "")
+                missingIndices = parseIndices(indices)
+            }
+        }
+
+        if !completionText.isEmpty {
+            return SeriesInfo(
+                completionText: completionText,
+                haveIndices: haveIndices,
+                missingIndices: missingIndices
+            )
+        }
+        return nil
+    }
+
+    func parseIndices(_ text: String) -> [Int] {
+        var indices: [Int] = []
+        if text.contains("books") { return [] }
+
+        let parts = text.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+        for part in parts {
+            if part.contains("-") {
+                let range = part.split(separator: "-")
+                if range.count == 2,
+                   let start = Int(range[0].replacingOccurrences(of: "#", with: "")),
+                   let end = Int(range[1].replacingOccurrences(of: "#", with: "")) {
+                    indices.append(contentsOf: start...end)
+                }
+            } else {
+                if let num = Int(part.replacingOccurrences(of: "#", with: "")) {
+                    indices.append(num)
+                }
+            }
+        }
+        return indices.sorted()
+    }
+
     var body: some View {
         List {
             Section("Overview") {
                 Text(lot.name)
                     .bodyStyle().fontWeight(.semibold)
-                if let strategy = lot.strategy.split(separator: ".").last {
-                    Text("Strategy: \(strategy)")
-                        .subtitleStyle()
-                } else {
-                    Text("Strategy: \(lot.strategy)")
-                        .subtitleStyle()
+
+                HStack {
+                    Text("Strategy").foregroundStyle(DS.Color.textSecondary)
+                    Spacer()
+                    if lot.strategy.contains("series_complete") {
+                        Text("Series (Complete)").fontWeight(.medium).foregroundStyle(.green)
+                    } else if lot.strategy.contains("series_partial") {
+                        Text("Series (Partial)").fontWeight(.medium).foregroundStyle(.orange)
+                    } else if lot.strategy.contains("series_incomplete") {
+                        Text("Series (Incomplete)").fontWeight(.medium).foregroundStyle(.red)
+                    } else if lot.strategy.contains("series") {
+                        Text("Series").fontWeight(.medium).foregroundStyle(.blue)
+                    } else if lot.strategy.contains("author") {
+                        Text("Author").fontWeight(.medium).foregroundStyle(.purple)
+                    } else if lot.strategy.contains("value") {
+                        Text("Value Bundle").fontWeight(.medium).foregroundStyle(.gray)
+                    } else {
+                        Text(lot.strategy)
+                    }
                 }
-                Text("Estimated value: \(lot.estimatedValue.formatted(.currency(code: "USD")))")
+
+                HStack {
+                    Text("Estimated value").foregroundStyle(DS.Color.textSecondary)
+                    Spacer()
+                    Text(lot.estimatedValue.formatted(.currency(code: "USD"))).fontWeight(.medium).foregroundStyle(.green)
+                }
+
                 if let sellThrough = lot.sellThrough {
-                    Text("Sell-through: \(sellThrough, format: .percent)")
+                    HStack {
+                        Text("Sell-through").foregroundStyle(DS.Color.textSecondary)
+                        Spacer()
+                        Text(sellThrough, format: .percent).fontWeight(.medium)
+                    }
                 }
-                Text("Probability: \(lot.probabilityLabel)")
+
+                HStack {
+                    Text("Probability").foregroundStyle(DS.Color.textSecondary)
+                    Spacer()
+                    Text(lot.probabilityLabel).fontWeight(.medium).foregroundStyle(
+                        lot.probabilityLabel == "High" ? .green : lot.probabilityLabel == "Medium" ? .orange : .red
+                    )
+                }
+
                 if let canonical = lot.canonicalAuthor {
-                    Text("Canonical author: \(canonical)")
+                    HStack {
+                        Text("Author").foregroundStyle(DS.Color.textSecondary)
+                        Spacer()
+                        Text(canonical).fontWeight(.medium)
+                    }
                 }
+
                 if let series = lot.seriesName, !series.isEmpty {
-                    Text("Series: \(series)")
+                    HStack {
+                        Text("Series").foregroundStyle(DS.Color.textSecondary)
+                        Spacer()
+                        Text(series).fontWeight(.medium)
+                    }
+                }
+            }
+
+            if let seriesInfo = seriesInfo {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(seriesInfo.completionText).font(.subheadline).fontWeight(.semibold)
+
+                        if !seriesInfo.haveIndices.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                                    Text("Books You Have").font(.caption).fontWeight(.semibold).foregroundStyle(.green)
+                                }
+                                Text(formatIndices(seriesInfo.haveIndices)).font(.caption).foregroundStyle(DS.Color.textSecondary)
+                            }
+                        }
+
+                        if !seriesInfo.missingIndices.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Image(systemName: "circle").foregroundStyle(.orange)
+                                    Text("Books Still Needed").font(.caption).fontWeight(.semibold).foregroundStyle(.orange)
+                                }
+                                Text(formatIndices(seriesInfo.missingIndices)).font(.caption).foregroundStyle(DS.Color.textSecondary)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 8)
+                } header: {
+                    Text("Series Completion")
                 }
             }
 
             if let justification = lot.justification, !justification.isEmpty {
                 Section("Justification") {
-                    ForEach(justification, id: \.self) { reason in
-                        Text(reason)
+                    ForEach(justification.filter { line in
+                        if seriesInfo != nil {
+                            return !line.starts(with: "Have ") && !line.starts(with: "Missing: ")
+                        }
+                        return true
+                    }, id: \.self) { reason in
+                        Text(reason).font(.subheadline)
                     }
                 }
             }
 
             if let books = lot.books, !books.isEmpty {
-                Section("Books in Lot") {
+                Section("Books in Lot (\(books.count))") {
                     ForEach(books, id: \.isbn) { book in
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(book.metadata?.title ?? book.isbn)
-                                .bodyStyle().fontWeight(.semibold)
-                                .lineLimit(2)
+                            Text(book.metadata?.title ?? book.isbn).bodyStyle().fontWeight(.semibold).lineLimit(2)
                             if let author = book.metadata?.primaryAuthor {
-                                Text(author)
-                                    .font(.caption)
-                                    .foregroundStyle(DS.Color.textSecondary)
+                                Text(author).font(.caption).foregroundStyle(DS.Color.textSecondary)
+                            }
+                            if let seriesName = book.metadata?.seriesName, let seriesIndex = book.metadata?.seriesIndex {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "books.vertical.fill").font(.caption2)
+                                    Text("\(seriesName) #\(seriesIndex)")
+                                }
+                                .font(.caption).foregroundStyle(.blue)
                             }
                             HStack(spacing: 8) {
                                 if let price = book.estimatedPrice {
-                                    Text(price, format: .currency(code: "USD"))
-                                        .font(.caption)
-                                        .foregroundStyle(DS.Color.textSecondary)
+                                    Text(price, format: .currency(code: "USD")).font(.caption).foregroundStyle(.green).fontWeight(.medium)
                                 }
                                 if let probability = book.probabilityLabel {
-                                    Text(probability)
-                                        .font(.caption)
-                                        .foregroundStyle(DS.Color.textSecondary)
+                                    Text(probability).font(.caption).fontWeight(.medium).foregroundStyle(
+                                        probability == "High" ? .green : probability == "Medium" ? .orange : .red
+                                    )
                                 }
                             }
                         }
@@ -221,6 +495,30 @@ private struct LotDetailView: View {
         .scrollContentBackground(.hidden)
         .background(DS.Color.background)
         .navigationTitle(lot.name)
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    func formatIndices(_ indices: [Int]) -> String {
+        if indices.isEmpty { return "None" }
+        var ranges: [(Int, Int)] = []
+        var start = indices[0], end = indices[0]
+
+        for i in 1..<indices.count {
+            if indices[i] == end + 1 {
+                end = indices[i]
+            } else {
+                ranges.append((start, end))
+                start = indices[i]; end = indices[i]
+            }
+        }
+        ranges.append((start, end))
+
+        let formatted = ranges.map { range in
+            if range.0 == range.1 { return "#\(range.0)" }
+            else if range.1 == range.0 + 1 { return "#\(range.0), #\(range.1)" }
+            else { return "#\(range.0)-#\(range.1)" }
+        }
+        return formatted.joined(separator: ", ")
     }
 }
 
@@ -267,12 +565,15 @@ private struct LotDetailView: View {
                             seriesIndex: 1
                         ),
                         market: nil,
+                        booksrun: nil,
                         booksrunValueLabel: nil,
                         booksrunValueRatio: nil,
                         bookscouter: nil,
                         bookscouterValueLabel: nil,
                         bookscouterValueRatio: nil,
-                        rarity: nil
+                        rarity: nil,
+                        updatedAt: "2025-01-15T00:00:00Z",
+                        createdAt: "2025-01-14T00:00:00Z"
                     )
                 ],
                 marketJson: nil

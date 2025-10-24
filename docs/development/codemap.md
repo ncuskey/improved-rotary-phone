@@ -1,6 +1,6 @@
 # CODEMAP
 
-**Last Updated:** 2025-10-20 (Post repository restructure)
+**Last Updated:** 2025-10-23 (iOS enhancements and metadata search API)
 
 ## Top Level
 - `README.md` – Project overview, quick start, and links to documentation
@@ -109,7 +109,7 @@ FastAPI + Jinja2 + HTMX + Alpine.js web interface with REST API for iOS app.
 - **`main.py`** – FastAPI application entry point
 - **`config.py`** – Configuration management
 - **`api/`** – API routes and dependencies
-  - `routes/books.py` – Book scanning, CRUD, series integration
+  - `routes/books.py` – Book scanning, CRUD, series integration, metadata search
   - `routes/lots.py` – Lot generation and display
   - `routes/actions.py` – Bulk actions (delete, import CSV)
   - `dependencies.py` – Thread-safe database manager for web requests
@@ -123,6 +123,7 @@ FastAPI + Jinja2 + HTMX + Alpine.js web interface with REST API for iOS app.
 ### Features
 - 3D book carousel with momentum scrolling
 - Mobile camera scanner (media capture API)
+- Metadata search API (`POST /api/books/search-metadata`) for title/author lookup
 - HTMX for dynamic updates
 - Alpine.js for reactive components
 - RESTful API endpoints for iOS app
@@ -135,8 +136,12 @@ FastAPI + Jinja2 + HTMX + Alpine.js web interface with REST API for iOS app.
 SwiftUI native iOS application with barcode/OCR scanning.
 
 ### Key Files
-- **`BookAPI.swift`** – REST API client for backend communication
+- **`BookAPI.swift`** – REST API client for backend communication (includes metadata search)
 - **`ScannerReviewView.swift`** – Scanner interface and triage workflow
+- **`BooksTabView.swift`** – Books library with search and sorting
+- **`LotRecommendationsView.swift`** – Lot recommendations with strategy filtering
+- **`CacheManager.swift`** – SwiftData cache with NotificationCenter updates
+- **`CachedBook.swift`** – SwiftData model with BooksRun offers and timestamps
 - **`SettingsView.swift`** – App configuration
 - **`ContentView.swift`** – Main navigation
 
@@ -144,6 +149,11 @@ SwiftUI native iOS application with barcode/OCR scanning.
 - Barcode scanning via camera
 - OCR text extraction
 - Real-time eBay pricing via token broker
+- Books library with search (title/author/ISBN/series) and 8 sort options
+- Lot filtering by strategy (author, series complete/partial/incomplete, value)
+- Metadata search for books without barcodes (title/author → ISBN + references)
+- SwiftData caching with real-time updates
+- Enhanced BooksRun buyback offer tracking
 - Triage workflow (Keep/Sell/List/Donate)
 - Syncs with backend API
 

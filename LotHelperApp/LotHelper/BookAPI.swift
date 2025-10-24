@@ -129,6 +129,24 @@ struct VendorOffer: Codable, Hashable {
     }
 }
 
+struct BooksRunOffer: Codable, Hashable {
+    let condition: String?
+    let cashPrice: Double?
+    let storeCredit: Double?
+    let currency: String?
+    let url: String?
+    let updatedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case condition
+        case cashPrice = "cash_price"
+        case storeCredit = "store_credit"
+        case currency
+        case url
+        case updatedAt = "updated_at"
+    }
+}
+
 struct BookScouterResult: Codable, Hashable {
     let isbn10: String?  // Can be null if BookScouter doesn't have ISBN-10
     let isbn13: String?  // Can be null if BookScouter doesn't have ISBN-13
@@ -170,6 +188,7 @@ struct EbayMarketData: Codable, Hashable {
     let soldCompsMax: Double?
     let soldCompsIsEstimate: Bool?
     let soldCompsSource: String?
+    let soldCompsLastSoldDate: String?
 
     enum CodingKeys: String, CodingKey {
         case activeCount = "ebay_active_count"
@@ -182,6 +201,7 @@ struct EbayMarketData: Codable, Hashable {
         case soldCompsMax = "sold_comps_max"
         case soldCompsIsEstimate = "sold_comps_is_estimate"
         case soldCompsSource = "sold_comps_source"
+        case soldCompsLastSoldDate = "sold_comps_last_sold_date"
     }
 
     var profitPotential: String {
@@ -204,12 +224,15 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let justification: [String]?
     let metadata: BookMetadataDetails?
     let market: EbayMarketData?
+    let booksrun: BooksRunOffer?
     let booksrunValueLabel: String?
     let booksrunValueRatio: Double?
     let bookscouter: BookScouterResult?
     let bookscouterValueLabel: String?
     let bookscouterValueRatio: Double?
     let rarity: Double?
+    let updatedAt: String?
+    let createdAt: String?
 
     var id: String { isbn }
 
@@ -225,12 +248,15 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
         case justification
         case metadata
         case market
+        case booksrun
         case booksrunValueLabel = "booksrun_value_label"
         case booksrunValueRatio = "booksrun_value_ratio"
         case bookscouter
         case bookscouterValueLabel = "bookscouter_value_label"
         case bookscouterValueRatio = "bookscouter_value_ratio"
         case rarity
+        case updatedAt = "updated_at"
+        case createdAt = "created_at"
     }
 }
 
@@ -579,5 +605,92 @@ enum BookAPI {
                 await MainActor.run { completion(nil) }
             }
         }
+    }
+
+    /// Search for book metadata by title and author
+    static func searchMetadata(
+        title: String,
+        author: String? = nil,
+        publicationYear: Int? = nil,
+        edition: String? = nil
+    ) async throws -> [MetadataSearchResult] {
+        guard let url = URL(string: "\(baseURLString)/api/books/search-metadata") else {
+            throw URLError(.badURL)
+        }
+
+        var payload: [String: Any] = ["title": title]
+        if let author = author { payload["author"] = author }
+        if let year = publicationYear { payload["publication_year"] = year }
+        if let edition = edition { payload["edition"] = edition }
+
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ POST /api/books/search-metadata failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        struct SearchResponse: Codable {
+            let results: [MetadataSearchResult]
+            let total: Int
+        }
+
+        let searchResponse = try await decodeOnWorker(SearchResponse.self, from: data)
+        return searchResponse.results
+    }
+}
+
+struct MetadataSearchResult: Codable, Identifiable, Hashable {
+    let isbn13: String?
+    let isbn10: String?
+    let title: String
+    let subtitle: String?
+    let authors: [String]
+    let publisher: String?
+    let publicationYear: Int?
+    let coverUrl: String?
+    let description: String?
+    let categories: [String]
+    let seriesName: String?
+    let seriesIndex: Int?
+    let source: String
+    let ebaySearchUrl: String
+    let googleSearchUrl: String
+
+    var id: String {
+        isbn13 ?? isbn10 ?? title
+    }
+
+    var preferredIsbn: String? {
+        isbn13 ?? isbn10
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case isbn13 = "isbn_13"
+        case isbn10 = "isbn_10"
+        case title
+        case subtitle
+        case authors
+        case publisher
+        case publicationYear = "publication_year"
+        case coverUrl = "cover_url"
+        case description
+        case categories
+        case seriesName = "series_name"
+        case seriesIndex = "series_index"
+        case source
+        case ebaySearchUrl = "ebay_search_url"
+        case googleSearchUrl = "google_search_url"
     }
 }

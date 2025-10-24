@@ -1,4 +1,6 @@
 import SwiftUI
+import SwiftData
+import UIKit
 
 enum ScannerInputMode: String, CaseIterable {
     case camera = "Camera"
@@ -21,10 +23,13 @@ struct ScannerReviewView: View {
     @State private var bookAttributes = BookAttributes()
     @State private var persistentPurchasePrice: Double = 0.0
     @State private var textInput: String = ""
+    @State private var useHiddenScanner = false
     @FocusState private var isTextFieldFocused: Bool
 
     // eBay pricing integration
     // Token broker accessible via Cloudflare tunnel for remote access
+    @Environment(\.modelContext) private var modelContext
+
     @StateObject private var pricing: ScannerPricingVM = {
         let config = TokenBrokerConfig(
             baseURL: URL(string: "https://tokens.lothelper.clevergirl.app")!,
@@ -38,8 +43,14 @@ struct ScannerReviewView: View {
     var body: some View {
         GeometryReader { geo in
             VStack(spacing: 0) {
-                // Show input area only when scanning or loading
-                if isScanning || isLoading || isLoadingEvaluation {
+                HiddenScannerInput(
+                    isActive: useHiddenScanner && inputMode == .text,
+                    onSubmit: handleScan
+                )
+                .frame(width: 0, height: 0)
+
+                // Show input area only while actively scanning
+                if isScanning {
                     if inputMode == .camera {
                         // Camera mode - top third
                         BarcodeScannerView(isActive: $isScanning) { code in
@@ -51,7 +62,7 @@ struct ScannerReviewView: View {
                             ReticleView()
                                 .padding(.horizontal, 28)
                         )
-                    } else {
+                    } else if inputMode == .text {
                         // Text entry mode - compact input area
                         textInputArea
                             .frame(height: 120)
@@ -93,6 +104,21 @@ struct ScannerReviewView: View {
                     // Bottom section: Scrollable detailed analysis
                     ScrollView {
                         VStack(spacing: DS.Spacing.md) {
+                            if inputMode == .text && !isScanning {
+                                showTextFieldButton
+                            }
+
+                            if scannedCode != nil {
+                                Button {
+                                    refreshData()
+                                } label: {
+                                    Label("Refresh market data", systemImage: "arrow.clockwise")
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(.blue)
+                            }
+
                             if isLoading {
                                 ProgressView("Looking up \(scannedCode ?? "")…")
                                     .frame(maxWidth: .infinity)
@@ -101,7 +127,7 @@ struct ScannerReviewView: View {
                                 BookCardView(book: book.cardModel)
                             } else if let code = scannedCode {
                                 fallbackCard(for: code)
-                            } else {
+                            } else if inputMode == .camera {
                                 idleCard
                             }
 
@@ -137,7 +163,7 @@ struct ScannerReviewView: View {
                         }
                     }
                 }
-                .frame(height: (isScanning || isLoading || isLoadingEvaluation) ? geo.size.height * 2 / 3 : geo.size.height)
+                .frame(height: isScanning ? geo.size.height * 2 / 3 : geo.size.height)
                 .padding(.horizontal)
                 .padding(.bottom, DS.Spacing.xl)
                 .background(DS.Color.background.opacity(0.95))
@@ -149,8 +175,11 @@ struct ScannerReviewView: View {
                     Menu {
                         Picker("Input Mode", selection: $inputMode) {
                             ForEach(ScannerInputMode.allCases, id: \.self) { mode in
-                                Label(mode.rawValue, systemImage: mode == .camera ? "camera.fill" : "keyboard.fill")
-                                    .tag(mode)
+                                Label(
+                                    mode.rawValue,
+                                    systemImage: mode == .camera ? "camera.fill" : "keyboard.fill"
+                                )
+                                .tag(mode)
                             }
                         }
                     } label: {
@@ -174,10 +203,15 @@ struct ScannerReviewView: View {
             }
             .onChange(of: inputMode) { oldValue, newValue in
                 if newValue == .text {
-                    isScanning = true // Reset to input state
-                    isTextFieldFocused = true
+                    activateTextEntry()
                 } else {
                     isTextFieldFocused = false
+                    useHiddenScanner = false
+                }
+            }
+            .task {
+                if inputMode == .text {
+                    activateTextEntry()
                 }
             }
             .sheet(isPresented: $showAttributesSheet) {
@@ -231,17 +265,24 @@ struct ScannerReviewView: View {
         }
     }
 
+    @ViewBuilder
+    private var showTextFieldButton: some View {
+        Button {
+            activateTextEntry()
+        } label: {
+            Label("Show Keypad", systemImage: "keyboard")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .frame(minHeight: 44)
+    }
+
     private func submitTextInput() {
         let trimmed = textInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
         handleScan(trimmed)
         textInput = ""
-
-        // Re-focus after a short delay to allow for next scan
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            isTextFieldFocused = true
-        }
     }
 
     @ViewBuilder
@@ -441,7 +482,6 @@ struct ScannerReviewView: View {
                     .font(.headline)
             }
 
-            // Estimated Price Source
             if let estimated = eval.estimatedPrice {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
@@ -456,82 +496,241 @@ struct ScannerReviewView: View {
                             .font(.title3)
                             .bold()
                     }
-                    Text("Calculated from eBay sold comps, condition adjustments, and edition premiums")
+                    Text("Baseline from backend (eBay sold comps + condition/edition heuristics)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 8)
             }
 
-            Divider()
+            if let market = eval.market {
+                Divider()
+                ebayMarketSection(market)
+            }
 
-            // BookScouter Data
             if let bookscouter = eval.bookscouter {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Image(systemName: "arrow.2.circlepath.circle.fill")
-                            .foregroundStyle(.green)
-                            .font(.caption)
-                        Text("BookScouter:")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                        Spacer()
-                        if bookscouter.bestPrice > 0 {
-                            Text(formatUSD(bookscouter.bestPrice))
-                                .font(.title3)
-                                .bold()
-                                .foregroundStyle(.green)
-                        }
-                    }
-                    if bookscouter.bestPrice > 0 {
-                        Text("Best buyback offer from \(bookscouter.totalVendors) vendors · Safety net for risk mitigation")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("No buyback offers available from \(bookscouter.totalVendors) vendors")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if let rank = bookscouter.amazonSalesRank {
-                        HStack {
-                            Image(systemName: "chart.line.uptrend.xyaxis")
-                                .font(.caption2)
-                            Text("Amazon Rank: \(formatRank(rank))")
-                                .font(.caption)
-                            Text("·")
-                                .foregroundStyle(.secondary)
-                            Text(rankDescription(for: rank))
-                                .font(.caption)
-                                .foregroundStyle(rankColor(for: rank))
-                        }
-                        .padding(.top, 4)
-                    }
-                }
-                .padding(.vertical, 8)
+                Divider()
+                bookscouterSection(
+                    bookscouter,
+                    valueLabel: eval.bookscouterValueLabel,
+                    valueRatio: eval.bookscouterValueRatio
+                )
             }
 
-            Divider()
-
-            // eBay Real-Time Data
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: "cart.fill")
-                        .foregroundStyle(.orange)
-                        .font(.caption)
-                    Text("eBay Live Comps:")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                }
-                Text("See detailed pricing panel below for active listings and sold history")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            if eval.booksrun != nil || eval.booksrunValueLabel != nil {
+                Divider()
+                booksRunSection(
+                    eval.booksrun,
+                    valueLabel: eval.booksrunValueLabel,
+                    valueRatio: eval.booksrunValueRatio
+                )
             }
-            .padding(.vertical, 8)
         }
         .padding()
         .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
         .shadow(color: DS.Shadow.card, radius: 4, x: 0, y: 2)
+    }
+
+    @ViewBuilder
+    private func ebayMarketSection(_ market: EbayMarketData) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "shippingbox.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+                Text("eBay Market Snapshot")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                Spacer()
+                if let source = market.soldCompsSource {
+                    Text(source == "marketplace_insights" ? "Marketplace Insights" : "Estimated")
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill((source == "marketplace_insights" ? Color.green : Color.orange).opacity(0.14))
+                        )
+                }
+            }
+
+            if market.activeCount != nil || market.soldCount != nil || market.sellThroughRate != nil {
+                HStack(spacing: 12) {
+                    if let active = market.activeCount {
+                        metricChip("Active", "\(active)")
+                    }
+                    if let sold = market.soldCount {
+                        metricChip("Sold (30d)", "\(sold)")
+                    }
+                    if let rate = market.sellThroughRate {
+                        metricChip("Sell-through", rate.formatted(.percent.precision(.fractionLength(0))))
+                    }
+                }
+            }
+
+            if market.soldCompsMin != nil || market.soldCompsMedian != nil || market.soldCompsMax != nil {
+                HStack(spacing: 12) {
+                    if let min = market.soldCompsMin {
+                        metricChip("Sold Min", formatUSD(min))
+                    }
+                    if let median = market.soldCompsMedian {
+                        metricChip("Sold Median", formatUSD(median), emphasis: true)
+                    }
+                    if let max = market.soldCompsMax {
+                        metricChip("Sold Max", formatUSD(max))
+                    }
+                }
+            }
+
+            if let date = market.soldCompsLastSoldDate {
+                Text("Last sold on \(formatDate(date))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func bookscouterSection(
+        _ bookscouter: BookScouterResult,
+        valueLabel: String?,
+        valueRatio: Double?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "arrow.2.circlepath.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+                Text("BookScouter Buyback")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                Spacer()
+                if bookscouter.bestPrice > 0 {
+                    Text(formatUSD(bookscouter.bestPrice))
+                        .font(.title3)
+                        .bold()
+                        .foregroundStyle(.green)
+                } else {
+                    Text("No offers")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let label = valueLabel, let ratioText = formatRatio(valueRatio) {
+                Text("Value vs. eBay: \(label) (\(ratioText))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let rank = bookscouter.amazonSalesRank {
+                HStack(spacing: 6) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.caption2)
+                    Text("Amazon Rank: \(formatRank(rank))")
+                        .font(.caption)
+                        .foregroundStyle(rankColor(for: rank))
+                    if let count = bookscouter.amazonCount {
+                        Text("(\(count) sellers)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            HStack(spacing: 12) {
+                if let lowest = bookscouter.amazonLowestPrice, lowest > 0 {
+                    metricChip("Amazon Low", formatUSD(lowest))
+                }
+                if let tradeIn = bookscouter.amazonTradeInPrice, tradeIn > 0 {
+                    metricChip("Amazon Trade-in", formatUSD(tradeIn))
+                }
+            }
+
+            if !bookscouter.offers.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Top Offers")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    ForEach(Array(bookscouter.offers.prefix(3)), id: \.vendorId) { offer in
+                        HStack {
+                            Text(offer.vendorName)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text(formatUSD(offer.price))
+                                .font(.caption)
+                                .bold()
+                            if !offer.updatedAt.isEmpty {
+                                Text(offer.updatedAt)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    if bookscouter.offers.count > 3 {
+                        Text("+\(bookscouter.offers.count - 3) more vendors")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func booksRunSection(
+        _ offer: BooksRunOffer?,
+        valueLabel: String?,
+        valueRatio: Double?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "book.closed.fill")
+                    .foregroundStyle(.purple)
+                    .font(.caption)
+                Text("BooksRun Offer")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+            }
+
+            if let label = valueLabel, let ratioText = formatRatio(valueRatio) {
+                Text("Value vs. eBay: \(label) (\(ratioText))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let offer {
+                HStack(spacing: 12) {
+                    if let cash = offer.cashPrice, cash > 0 {
+                        metricChip("Cash", formatUSD(cash), emphasis: true)
+                    }
+                    if let credit = offer.storeCredit, credit > 0 {
+                        metricChip("Store Credit", formatUSD(credit))
+                    }
+                }
+
+                if let condition = offer.condition, !condition.isEmpty {
+                    Text("Condition: \(condition.capitalized)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let urlString = offer.url, let url = URL(string: urlString) {
+                    Link("Open BooksRun offer", destination: url)
+                        .font(.caption)
+                }
+
+                if let updated = offer.updatedAt, !updated.isEmpty {
+                    Text("Last updated \(updated)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("No BooksRun offer retrieved for this ISBN.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     @ViewBuilder
@@ -604,6 +803,28 @@ struct ScannerReviewView: View {
                 .fontWeight(.semibold)
                 .foregroundStyle(color)
         }
+    }
+
+    private func metricChip(_ title: String, _ value: String, emphasis: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.bold())
+                .foregroundStyle(emphasis ? Color.blue : Color.primary)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(emphasis ? Color.blue.opacity(0.12) : DS.Color.cardBg.opacity(0.9))
+        )
+    }
+
+    private func formatRatio(_ ratio: Double?) -> String? {
+        guard let ratio else { return nil }
+        return ratio.formatted(.percent.precision(.fractionLength(0)))
     }
 
     @ViewBuilder
@@ -890,6 +1111,13 @@ struct ScannerReviewView: View {
         )
     }
 
+    private func refreshData() {
+        guard let isbn = scannedCode else { return }
+        fetchPreview(for: isbn)
+        pricing.load(for: isbn)
+        fetchEvaluation(for: isbn)
+    }
+
     private func makeBuyDecision(_ eval: BookEvaluationRecord) -> (shouldBuy: Bool, reason: String) {
         let score = eval.probabilityScore ?? 0
         let label = eval.probabilityLabel?.lowercased() ?? ""
@@ -1100,6 +1328,12 @@ struct ScannerReviewView: View {
 
         // Always allow new scans (remove the isScanning guard)
         isScanning = false
+        if inputMode == .text {
+            isTextFieldFocused = false
+            useHiddenScanner = true
+        } else {
+            useHiddenScanner = false
+        }
 
         // Play scan detected sound
         SoundFeedback.scanDetected()
@@ -1144,6 +1378,15 @@ struct ScannerReviewView: View {
         }
     }
 
+    private func activateTextEntry() {
+        guard inputMode == .text else { return }
+        useHiddenScanner = false
+        isScanning = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            isTextFieldFocused = true
+        }
+    }
+
     /// Convert ISBN-10 to ISBN-13 if needed (eBay requires 13-digit GTIN)
     private func normalizeToISBN13(_ isbn: String) -> String {
         let digits = isbn.filter { $0.isNumber }
@@ -1182,7 +1425,11 @@ struct ScannerReviewView: View {
         evaluation = nil
         isLoading = false
         isLoadingEvaluation = false
-        isScanning = true
+        if inputMode == .text {
+            activateTextEntry()
+        } else {
+            isScanning = true
+        }
     }
 
     private func acceptAndContinue() {
@@ -1195,13 +1442,6 @@ struct ScannerReviewView: View {
         bookAttributes.purchasePrice = persistentPurchasePrice
 
         rescan()
-
-        // Re-focus text field if in text mode
-        if inputMode == .text {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                isTextFieldFocused = true
-            }
-        }
     }
 
     private func reject() {
@@ -1220,13 +1460,6 @@ struct ScannerReviewView: View {
 
                     rescan()
                     provideHaptic(.success)
-
-                    // Re-focus text field if in text mode
-                    if inputMode == .text {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isTextFieldFocused = true
-                        }
-                    }
                 }
             } catch {
                 await MainActor.run {
@@ -1244,6 +1477,7 @@ struct ScannerReviewView: View {
             do {
                 let eval = try await BookAPI.fetchBookEvaluation(isbn)
                 await MainActor.run {
+                    CacheManager(modelContext: modelContext).upsertBook(eval)
                     evaluation = eval
                     isLoadingEvaluation = false
 
@@ -1255,16 +1489,6 @@ struct ScannerReviewView: View {
                     } else {
                         SoundFeedback.dontBuyRecommendation() // Rejection
                         provideHaptic(.warning)
-                    }
-
-                    // Re-enable scanning immediately - always ready for next scan
-                    isScanning = true
-
-                    // Re-focus text field if in text mode
-                    if inputMode == .text {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isTextFieldFocused = true
-                        }
                     }
                 }
             } catch let error as BookAPIError {
@@ -1284,13 +1508,6 @@ struct ScannerReviewView: View {
                         isLoadingEvaluation = false
                         errorMessage = "Evaluation failed: \(error.localizedDescription)"
                         print("❌ Evaluation fetch error: \(error)")
-
-                        // Re-focus text field if in text mode
-                        if inputMode == .text {
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                isTextFieldFocused = true
-                            }
-                        }
                     }
                 }
             } catch {
@@ -1298,13 +1515,6 @@ struct ScannerReviewView: View {
                     isLoadingEvaluation = false
                     errorMessage = "Evaluation failed: \(error.localizedDescription)"
                     print("❌ Evaluation fetch error: \(error)")
-
-                    // Re-focus text field if in text mode
-                    if inputMode == .text {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            isTextFieldFocused = true
-                        }
-                    }
                 }
             }
         }
@@ -1356,6 +1566,98 @@ private extension BookInfo {
     }
 }
 
+private struct HiddenScannerInput: UIViewRepresentable {
+    var isActive: Bool
+    var onSubmit: (String) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onSubmit: onSubmit)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField(frame: .zero)
+        textField.delegate = context.coordinator
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.spellCheckingType = .no
+        textField.returnKeyType = .done
+        textField.enablesReturnKeyAutomatically = false
+        textField.tintColor = .clear
+        textField.textColor = .clear
+        textField.backgroundColor = .clear
+
+        // Prevent on-screen keyboard from appearing while still receiving hardware input.
+        textField.inputView = UIView(frame: .zero)
+        return textField
+    }
+
+    func updateUIView(_ textField: UITextField, context: Context) {
+        if isActive {
+            if !textField.isFirstResponder {
+                DispatchQueue.main.async {
+                    textField.becomeFirstResponder()
+                }
+            }
+        } else {
+            context.coordinator.reset()
+            textField.text = ""
+            if textField.isFirstResponder {
+                DispatchQueue.main.async {
+                    textField.resignFirstResponder()
+                }
+            }
+        }
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        private var buffer = ""
+        private let onSubmit: (String) -> Void
+
+        init(onSubmit: @escaping (String) -> Void) {
+            self.onSubmit = onSubmit
+        }
+
+        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+            if string.isEmpty {
+                if !buffer.isEmpty {
+                    buffer.removeLast()
+                }
+                return false
+            }
+
+            let newlineSet = CharacterSet.newlines
+            let pieces = string.components(separatedBy: newlineSet)
+
+            for (index, piece) in pieces.enumerated() {
+                if !piece.isEmpty {
+                    buffer.append(piece)
+                }
+
+                let isLastPiece = index == pieces.count - 1
+                if !isLastPiece {
+                    commitBuffer(textField)
+                }
+            }
+
+            return false
+        }
+
+        func reset() {
+            buffer = ""
+        }
+
+        private func commitBuffer(_ textField: UITextField) {
+            let trimmed = buffer.trimmingCharacters(in: .whitespacesAndNewlines)
+            buffer = ""
+            textField.text = ""
+
+            if !trimmed.isEmpty {
+                onSubmit(trimmed)
+            }
+        }
+    }
+}
+
 private struct ReticleView: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 14)
@@ -1372,4 +1674,3 @@ private struct ReticleView: View {
         ScannerReviewView()
     }
 }
-

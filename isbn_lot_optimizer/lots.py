@@ -93,7 +93,7 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[
     # Try enhanced series lots using bookseries.org data (if db_path provided)
     if db_path:
         try:
-            from shared.series_lots import build_series_lots_enhanced
+            from isbn_lot_optimizer.series_lots import build_series_lots_enhanced
             enhanced_series_lots = build_series_lots_enhanced(books, db_path)
             suggestions.extend(enhanced_series_lots)
             using_enhanced_series = True

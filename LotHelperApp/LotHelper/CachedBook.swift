@@ -1,6 +1,12 @@
 import Foundation
 import SwiftData
 
+private let cachedBookISOFormatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return formatter
+}()
+
 @Model
 final class CachedBook {
     @Attribute(.unique) var isbn: String
@@ -38,6 +44,7 @@ final class CachedBook {
     var ebaySoldCompsMax: Double?
     var ebaySoldCompsIsEstimate: Bool?
     var ebaySoldCompsSource: String?
+    var ebaySoldCompsLastSoldDate: String?
 
     // BookScouter fields (flattened)
     var bookscouterIsbn10: String?
@@ -51,11 +58,21 @@ final class CachedBook {
     var bookscouterAmazonTradeInPrice: Double?
     var bookscouterOffersJSON: String? // Store offers as JSON string
 
+    // BooksRun fields
+    var booksrunCondition: String?
+    var booksrunCashPrice: Double?
+    var booksrunStoreCredit: Double?
+    var booksrunCurrency: String?
+    var booksrunUrl: String?
+    var booksrunUpdatedAt: String?
+
     var booksrunValueLabel: String?
     var booksrunValueRatio: Double?
     var bookscouterValueLabel: String?
     var bookscouterValueRatio: Double?
     var rarity: Double?
+    var remoteUpdatedAt: String?
+    var remoteCreatedAt: String?
 
     var lastUpdated: Date
 
@@ -95,6 +112,7 @@ final class CachedBook {
         self.ebaySoldCompsMax = record.market?.soldCompsMax
         self.ebaySoldCompsIsEstimate = record.market?.soldCompsIsEstimate
         self.ebaySoldCompsSource = record.market?.soldCompsSource
+        self.ebaySoldCompsLastSoldDate = record.market?.soldCompsLastSoldDate
 
         // Flatten BookScouter
         self.bookscouterIsbn10 = record.bookscouter?.isbn10
@@ -112,13 +130,28 @@ final class CachedBook {
             self.bookscouterOffersJSON = try? JSONEncoder().encode(offers).base64EncodedString()
         }
 
+        // BooksRun
+        self.booksrunCondition = record.booksrun?.condition
+        self.booksrunCashPrice = record.booksrun?.cashPrice
+        self.booksrunStoreCredit = record.booksrun?.storeCredit
+        self.booksrunCurrency = record.booksrun?.currency
+        self.booksrunUrl = record.booksrun?.url
+        self.booksrunUpdatedAt = record.booksrun?.updatedAt
+
         self.booksrunValueLabel = record.booksrunValueLabel
         self.booksrunValueRatio = record.booksrunValueRatio
         self.bookscouterValueLabel = record.bookscouterValueLabel
         self.bookscouterValueRatio = record.bookscouterValueRatio
         self.rarity = record.rarity
+        let now = Date()
+        if let updated = record.updatedAt {
+            self.remoteUpdatedAt = updated
+        } else {
+            self.remoteUpdatedAt = cachedBookISOFormatter.string(from: now)
+        }
+        self.remoteCreatedAt = record.createdAt
 
-        self.lastUpdated = Date()
+        self.lastUpdated = now
     }
 
     func toBookEvaluationRecord() -> BookEvaluationRecord {
@@ -147,7 +180,8 @@ final class CachedBook {
             soldCompsMedian: ebaySoldCompsMedian,
             soldCompsMax: ebaySoldCompsMax,
             soldCompsIsEstimate: ebaySoldCompsIsEstimate,
-            soldCompsSource: ebaySoldCompsSource
+            soldCompsSource: ebaySoldCompsSource,
+            soldCompsLastSoldDate: ebaySoldCompsLastSoldDate
         )
 
         var bookscouter: BookScouterResult?
@@ -177,6 +211,23 @@ final class CachedBook {
             )
         }
 
+        var booksrunOffer: BooksRunOffer?
+        if booksrunCondition != nil ||
+            booksrunCashPrice != nil ||
+            booksrunStoreCredit != nil ||
+            booksrunCurrency != nil ||
+            booksrunUrl != nil ||
+            booksrunUpdatedAt != nil {
+            booksrunOffer = BooksRunOffer(
+                condition: booksrunCondition,
+                cashPrice: booksrunCashPrice,
+                storeCredit: booksrunStoreCredit,
+                currency: booksrunCurrency,
+                url: booksrunUrl,
+                updatedAt: booksrunUpdatedAt
+            )
+        }
+
         return BookEvaluationRecord(
             isbn: isbn,
             originalIsbn: originalIsbn,
@@ -189,12 +240,15 @@ final class CachedBook {
             justification: justificationJSON?.jsonDecoded(),
             metadata: metadata,
             market: market,
+            booksrun: booksrunOffer,
             booksrunValueLabel: booksrunValueLabel,
             booksrunValueRatio: booksrunValueRatio,
             bookscouter: bookscouter,
             bookscouterValueLabel: bookscouterValueLabel,
             bookscouterValueRatio: bookscouterValueRatio,
-            rarity: rarity
+            rarity: rarity,
+            updatedAt: remoteUpdatedAt ?? cachedBookISOFormatter.string(from: lastUpdated),
+            createdAt: remoteCreatedAt
         )
     }
 }

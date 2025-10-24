@@ -11,7 +11,7 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from isbn_lot_optimizer.series_matcher import SeriesMatcher, normalize_author_name
+from shared.series_matcher import SeriesMatcher, normalize_author_name
 
 
 def match_existing_books(db_path: Path, limit: int = None, verbose: bool = False) -> None:

@@ -366,7 +366,7 @@ class DatabaseManager:
     def fetch_all_books(self) -> List[sqlite3.Row]:
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "SELECT * FROM books ORDER BY probability_score DESC, title COLLATE NOCASE"
+                "SELECT * FROM books ORDER BY datetime(updated_at) DESC"
             )
             rows = cursor.fetchall()
         return list(rows)

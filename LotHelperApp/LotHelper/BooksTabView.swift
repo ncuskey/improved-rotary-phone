@@ -8,6 +8,9 @@ struct BooksTabView: View {
     @State private var errorMessage: String?
     @State private var searchText = ""
     @State private var sortOption: SortOption = .recencyDescending
+    @State private var isRefreshing = false
+    @State private var showRefreshAlert = false
+    @State private var refreshMessage = ""
     private var cacheManager: CacheManager { CacheManager(modelContext: modelContext) }
 
     enum SortOption: String, CaseIterable, Identifiable {
@@ -187,12 +190,45 @@ struct BooksTabView: View {
                         } label: {
                             Label("Refresh All Books", systemImage: "arrow.clockwise")
                         }
+                        .disabled(isRefreshing)
                     } label: {
                         Label("Sort", systemImage: "arrow.up.arrow.down")
                     }
                 }
             }
             .task { await initialLoadIfNeeded() }
+            .overlay {
+                if isRefreshing {
+                    ZStack {
+                        Color.black.opacity(0.3)
+                            .ignoresSafeArea()
+
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.white)
+
+                            Text("Refreshing Books...")
+                                .font(.headline)
+                                .foregroundColor(.white)
+
+                            Text("Fetching latest market data from backend")
+                                .font(.subheadline)
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                        .padding(32)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.black.opacity(0.8))
+                        )
+                    }
+                }
+            }
+            .alert("Refresh Complete", isPresented: $showRefreshAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(refreshMessage)
+            }
         }
         .background(DS.Color.background)
     }
@@ -233,12 +269,34 @@ struct BooksTabView: View {
 
     @MainActor
     private func refreshAll() async {
+        isRefreshing = true
+        errorMessage = nil
+
         // Clear the cache first to force fresh data
         cacheManager.clearAllCaches()
         books = []
 
-        // Reload all books from backend
-        await loadBooks()
+        do {
+            // Reload all books from backend
+            let freshBooks = try await BookAPI.fetchAllBooks()
+            books = freshBooks
+            cacheManager.saveBooks(freshBooks)
+
+            // Show success message
+            refreshMessage = "✅ Successfully refreshed \(freshBooks.count) books with latest market data from backend"
+            showRefreshAlert = true
+
+            print("✅ Refresh complete: \(freshBooks.count) books")
+        } catch {
+            // Show error message
+            refreshMessage = "❌ Failed to refresh books: \(error.localizedDescription)"
+            showRefreshAlert = true
+            errorMessage = "Refresh failed: \(error.localizedDescription)"
+
+            print("❌ Refresh failed: \(error)")
+        }
+
+        isRefreshing = false
     }
 
     @MainActor

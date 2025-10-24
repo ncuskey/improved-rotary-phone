@@ -105,9 +105,12 @@ LotHelper helps book resellers make instant buy/reject decisions by:
 
 ### **Cache Management**
 - "Refresh All Books" button in Books tab menu
-- Clears local SwiftData cache
-- Re-fetches all books from backend with latest metadata
+- Clears local SwiftData cache and re-fetches all books from backend
+- Shows progress overlay with loading indicator
+- Displays success/error alert with book count
+- Fetches latest metadata, eBay pricing, and Amazon data
 - Useful after backend metadata cleanup or database changes
+- Disabled while refresh is in progress
 
 ---
 

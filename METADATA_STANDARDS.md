@@ -137,12 +137,15 @@ After cleaning the backend database, the iOS app's SwiftData cache will still ha
 2. Go to the **Books** tab
 3. Tap the sort icon (⬆️⬇️) in the top right
 4. Select **"Refresh All Books"**
-5. Wait for the app to re-fetch all books from the backend
+5. A progress overlay will appear showing "Refreshing Books..."
+6. When complete, you'll see a success alert with the number of books refreshed
 
 This will:
 - Clear the local SwiftData cache
 - Re-fetch all books from the backend (with cleaned metadata)
 - Update all titles, authors, and years to the new standard
+- Fetch latest eBay market stats and Amazon pricing
+- Show progress and results with visual feedback
 
 ### Verification
 

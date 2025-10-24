@@ -96,13 +96,17 @@ def build_series_lots_enhanced(
 
             have_positions = []
             missing_positions = []
+            have_book_titles = []
+            missing_book_titles = []
 
             for pos, book_title in enumerate(series_book_titles, 1):
                 normalized = _normalize_title(book_title)
                 if normalized in have_titles:
                     have_positions.append(pos)
+                    have_book_titles.append(book_title)
                 else:
                     missing_positions.append(pos)
+                    missing_book_titles.append(book_title)
 
             # Calculate value
             estimated_value = sum(book.estimated_price for book in series_books)
@@ -134,19 +138,23 @@ def build_series_lots_enhanced(
                 f"Have {len(have_positions)} of {book_count} books ({completion_pct:.0f}% complete)",
             ]
 
-            if have_positions:
-                if len(have_positions) <= 10:
-                    have_str = ', '.join(f"#{p}" for p in sorted(have_positions))
-                    justification.append(f"Have: {have_str}")
+            if have_book_titles:
+                if len(have_book_titles) <= 5:
+                    # Show all titles if 5 or fewer
+                    for title in have_book_titles:
+                        justification.append(f"✓ {title}")
                 else:
-                    justification.append(f"Have: #{min(have_positions)}-#{max(have_positions)} (and more)")
+                    # Show count and range for many books
+                    justification.append(f"Have {len(have_book_titles)} books (see details)")
 
-            if missing_positions:
-                if len(missing_positions) <= 10:
-                    missing_str = ', '.join(f"#{p}" for p in sorted(missing_positions))
-                    justification.append(f"Missing: {missing_str}")
+            if missing_book_titles:
+                if len(missing_book_titles) <= 5:
+                    # Show all missing titles if 5 or fewer
+                    for title in missing_book_titles:
+                        justification.append(f"○ {title}")
                 else:
-                    justification.append(f"Missing: {len(missing_positions)} books")
+                    # Show count for many missing books
+                    justification.append(f"Missing {len(missing_book_titles)} books (see details)")
 
             justification.append(f"Estimated value: ${estimated_value:.2f}")
 

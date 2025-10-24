@@ -450,9 +450,19 @@ struct ScannerReviewView: View {
                     TextField("Type or scan ISBN...", text: $textInput)
                         .textFieldStyle(.roundedBorder)
                         .keyboardType(.numberPad)
+                        .autocorrectionDisabled(true)
+                        .textInputAutocapitalization(.never)
                         .focused($isTextFieldFocused)
                         .onSubmit {
                             submitTextInput()
+                        }
+                        .toolbar {
+                            ToolbarItemGroup(placement: .keyboard) {
+                                Spacer()
+                                Button("Done") {
+                                    submitTextInput()
+                                }
+                            }
                         }
 
                     Button(action: submitTextInput) {
@@ -468,6 +478,12 @@ struct ScannerReviewView: View {
                     .foregroundStyle(.secondary)
             }
             .padding()
+        }
+        .onAppear {
+            // Force keyboard to show when text input area appears
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isTextFieldFocused = true
+            }
         }
     }
 

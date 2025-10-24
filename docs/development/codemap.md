@@ -1,6 +1,6 @@
 # CODEMAP
 
-**Last Updated:** 2025-10-23 (iOS enhancements and metadata search API)
+**Last Updated:** 2025-10-23 (Scan history with location tracking)
 
 ## Top Level
 - `README.md` – Project overview, quick start, and links to documentation
@@ -24,6 +24,8 @@ Common business logic used by all three applications. **14 modules total:**
 
 ### Core Infrastructure
 - **`database.py`** – `DatabaseManager` class with connection pooling, schema creation, query helpers
+  - Scan history: `log_scan()`, `get_scan_history()`, `get_scan_locations()`, `get_scan_stats()`
+  - Table: `scan_history` (17 fields with location data, 4 indexes)
 - **`models.py`** – Data classes: `BookMetadata`, `LotSuggestion`, `BookEvaluation`, `EbayMarketStats`, etc.
 
 ### Utilities
@@ -72,6 +74,7 @@ Tkinter desktop GUI and supporting desktop-specific logic. **20 modules remainin
 - **`service.py`** (130KB) – `BookService` class: main business logic
   - Book storage, metadata/market refresh, lot recomputation
   - HTTP session reuse, database connection lifecycle
+  - Scan history: `log_scan()` method, auto-logging on ACCEPT
   - Used by both GUI and CLI
 - **`metadata.py`** (26KB) – Google Books/Open Library API integration
 - **`probability.py`** (18KB) – Probability scoring (condition weights, demand keywords, bundling rules)
@@ -109,7 +112,8 @@ FastAPI + Jinja2 + HTMX + Alpine.js web interface with REST API for iOS app.
 - **`main.py`** – FastAPI application entry point
 - **`config.py`** – Configuration management
 - **`api/`** – API routes and dependencies
-  - `routes/books.py` – Book scanning, CRUD, series integration, metadata search
+  - `routes/books.py` – Book scanning, CRUD, series integration, metadata search, scan history
+    - Scan history endpoints: `POST /api/books/log-scan`, `GET /api/books/scan-history`, `GET /api/books/scan-locations`, `GET /api/books/scan-stats`
   - `routes/lots.py` – Lot generation and display
   - `routes/actions.py` – Bulk actions (delete, import CSV)
   - `dependencies.py` – Thread-safe database manager for web requests
@@ -136,8 +140,18 @@ FastAPI + Jinja2 + HTMX + Alpine.js web interface with REST API for iOS app.
 SwiftUI native iOS application with barcode/OCR scanning.
 
 ### Key Files
-- **`BookAPI.swift`** – REST API client for backend communication (includes metadata search)
+- **`BookAPI.swift`** – REST API client for backend communication (includes metadata search and scan history)
+  - Scan history methods: `logScan()`, `getScanHistory()`, `getScanLocations()`, `getScanStats()`
+- **`LocationManager.swift`** – Core Location integration with GPS tracking and reverse geocoding
+  - ObservableObject with @Published location data
+  - Location caching via @AppStorage
+  - CLLocationManagerDelegate implementation
 - **`ScannerReviewView.swift`** – Scanner interface and triage workflow
+  - Location tracking on scan accept/reject
+  - Auto-logs REJECT decisions with location data
+- **`ScanHistoryView.swift`** – Scan history browser with location filtering
+  - Accept/reject filtering, location-based summaries
+  - Statistics dashboard with acceptance rates
 - **`BooksTabView.swift`** – Books library with search and sorting
 - **`LotRecommendationsView.swift`** – Lot recommendations with strategy filtering
 - **`CacheManager.swift`** – SwiftData cache with NotificationCenter updates
@@ -155,6 +169,12 @@ SwiftUI native iOS application with barcode/OCR scanning.
 - SwiftData caching with real-time updates
 - Enhanced BooksRun buyback offer tracking
 - Triage workflow (Keep/Sell/List/Donate)
+- **Location-based scan history with GPS tracking**
+  - Automatic location tracking on all scans (with user permission)
+  - Complete audit trail (ACCEPT and REJECT decisions)
+  - Store performance analytics and acceptance rates
+  - Reverse geocoding to location names
+  - Location caching for offline use
 - Syncs with backend API
 
 ### Integration
@@ -210,6 +230,10 @@ Node.js OAuth service providing eBay tokens to iOS app.
 - `books` – Scanned books with metadata, market data, series info
   - Series columns: `series_name`, `series_slug`, `series_id_hardcover`, `series_position`, `series_confidence`, `series_last_checked`
   - BookScouter: `bookscouter_json` (full JSON with all vendor offers)
+- `scan_history` – Complete audit trail of all scans (ACCEPT, REJECT, SKIP)
+  - 17 fields: ISBN, decision, book details, location data (name, address, GPS coordinates)
+  - 4 indexes: isbn, scanned_at DESC, decision, location_name
+  - Supports location-based analytics and "previously scanned" warnings
 - `lots` – Generated lot suggestions with scoring
 - `series`, `authors`, `series_books` – BookSeries.org data
 - `book_series_matches` – Fuzzy matches between books and series
@@ -452,6 +476,30 @@ docs/
 ```
 
 ## Recent Changes (2025-10)
+
+### Scan History with Location Tracking (2025-10-23)
+Complete scan audit trail system with GPS location tracking:
+
+**Backend:**
+- New `scan_history` table in SQLite (17 fields, 4 indexes)
+- Database methods: `log_scan()`, `get_scan_history()`, `get_scan_locations()`, `get_scan_stats()`
+- Service layer: Auto-logging on ACCEPT, manual logging support
+- REST API: 4 new endpoints for logging and querying scan history
+
+**iOS:**
+- Core Location integration with GPS tracking and reverse geocoding
+- `LocationManager.swift` with location caching and permission handling
+- Auto-logging REJECT decisions with location data
+- `ScanHistoryView.swift` for browsing history with filtering
+- Location-based analytics and acceptance rates
+
+**Use Cases:**
+- Avoid rescanning the same book
+- Track which stores have best acceptance rates
+- Remember where valuable books were seen
+- "Previously scanned" warnings
+
+See: `SCAN_HISTORY_FEATURE.md`, `IMPLEMENTATION_SUMMARY.md`, `iOS_INTEGRATION_COMPLETE.md`
 
 ### Repository Restructure (Phases 1-4c)
 Complete cleanup and refactoring with 14 modules moved to `shared/`:

@@ -64,6 +64,7 @@ Documentation for each application interface.
   - Mobile optimization
   - API endpoints
   - Metadata search endpoint (title/author → ISBN)
+  - **Scan history API (log scans, query history, location summaries)**
   - Camera scanner
 
 - **[iOS App](apps/ios.md)**
@@ -74,6 +75,9 @@ Documentation for each application interface.
   - Books library with search and sorting
   - Lot filtering by strategy
   - Metadata search for books without barcodes
+  - **Location-based scan history with GPS tracking**
+  - **Complete audit trail (accepted AND rejected scans)**
+  - **Store performance analytics and acceptance rates**
   - Token broker integration
 
 - **[Camera Scanner](apps/camera-scanner.md)**

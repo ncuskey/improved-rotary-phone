@@ -649,6 +649,145 @@ enum BookAPI {
         let searchResponse = try await decodeOnWorker(SearchResponse.self, from: data)
         return searchResponse.results
     }
+
+    /// Log a scan decision with optional location data
+    static func logScan(
+        isbn: String,
+        decision: String,
+        locationName: String? = nil,
+        locationAddress: String? = nil,
+        locationLatitude: Double? = nil,
+        locationLongitude: Double? = nil,
+        locationAccuracy: Double? = nil,
+        deviceId: String? = nil,
+        appVersion: String? = nil,
+        notes: String? = nil
+    ) async throws {
+        guard let url = URL(string: "\(baseURLString)/api/books/log-scan") else {
+            throw URLError(.badURL)
+        }
+
+        var payload: [String: Any] = [
+            "isbn": isbn,
+            "decision": decision
+        ]
+
+        if let locationName = locationName { payload["location_name"] = locationName }
+        if let locationAddress = locationAddress { payload["location_address"] = locationAddress }
+        if let locationLatitude = locationLatitude { payload["location_latitude"] = locationLatitude }
+        if let locationLongitude = locationLongitude { payload["location_longitude"] = locationLongitude }
+        if let locationAccuracy = locationAccuracy { payload["location_accuracy"] = locationAccuracy }
+        if let deviceId = deviceId { payload["device_id"] = deviceId }
+        if let appVersion = appVersion { payload["app_version"] = appVersion }
+        if let notes = notes { payload["notes"] = notes }
+
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ POST /api/books/log-scan failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        print("✓ Logged scan: \(isbn) - \(decision)")
+    }
+
+    /// Get scan history with optional filters
+    static func getScanHistory(
+        limit: Int = 100,
+        isbn: String? = nil,
+        locationName: String? = nil,
+        decision: String? = nil
+    ) async throws -> [ScanHistoryRecord] {
+        var components = URLComponents(string: "\(baseURLString)/api/books/scan-history")!
+        var queryItems: [URLQueryItem] = [URLQueryItem(name: "limit", value: String(limit))]
+
+        if let isbn = isbn { queryItems.append(URLQueryItem(name: "isbn", value: isbn)) }
+        if let locationName = locationName { queryItems.append(URLQueryItem(name: "location_name", value: locationName)) }
+        if let decision = decision { queryItems.append(URLQueryItem(name: "decision", value: decision)) }
+
+        components.queryItems = queryItems
+
+        guard let url = components.url else {
+            throw URLError(.badURL)
+        }
+
+        let (data, response) = try await session.data(from: url)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        struct HistoryResponse: Codable {
+            let scans: [ScanHistoryRecord]
+            let total: Int
+        }
+
+        let historyResponse = try await decodeOnWorker(HistoryResponse.self, from: data)
+        return historyResponse.scans
+    }
+
+    /// Get scan location summaries
+    static func getScanLocations() async throws -> [ScanLocationSummary] {
+        guard let url = URL(string: "\(baseURLString)/api/books/scan-locations") else {
+            throw URLError(.badURL)
+        }
+
+        let (data, response) = try await session.data(from: url)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        struct LocationsResponse: Codable {
+            let locations: [ScanLocationSummary]
+            let total: Int
+        }
+
+        let locationsResponse = try await decodeOnWorker(LocationsResponse.self, from: data)
+        return locationsResponse.locations
+    }
+
+    /// Get scan statistics
+    static func getScanStats() async throws -> ScanStatistics {
+        guard let url = URL(string: "\(baseURLString)/api/books/scan-stats") else {
+            throw URLError(.badURL)
+        }
+
+        let (data, response) = try await session.data(from: url)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        let stats = try await decodeOnWorker(ScanStatistics.self, from: data)
+        return stats
+    }
 }
 
 struct MetadataSearchResult: Codable, Identifiable, Hashable {
@@ -692,5 +831,90 @@ struct MetadataSearchResult: Codable, Identifiable, Hashable {
         case source
         case ebaySearchUrl = "ebay_search_url"
         case googleSearchUrl = "google_search_url"
+    }
+}
+
+struct ScanHistoryRecord: Codable, Identifiable, Hashable {
+    let id: Int
+    let isbn: String
+    let scannedAt: String
+    let decision: String
+    let title: String?
+    let authors: String?
+    let estimatedPrice: Double?
+    let probabilityLabel: String?
+    let probabilityScore: Double?
+    let locationName: String?
+    let locationAddress: String?
+    let locationLatitude: Double?
+    let locationLongitude: Double?
+    let locationAccuracy: Double?
+    let deviceId: String?
+    let appVersion: String?
+    let notes: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case isbn
+        case scannedAt = "scanned_at"
+        case decision
+        case title
+        case authors
+        case estimatedPrice = "estimated_price"
+        case probabilityLabel = "probability_label"
+        case probabilityScore = "probability_score"
+        case locationName = "location_name"
+        case locationAddress = "location_address"
+        case locationLatitude = "location_latitude"
+        case locationLongitude = "location_longitude"
+        case locationAccuracy = "location_accuracy"
+        case deviceId = "device_id"
+        case appVersion = "app_version"
+        case notes
+    }
+}
+
+struct ScanLocationSummary: Codable, Identifiable, Hashable {
+    let locationName: String
+    let scanCount: Int
+    let acceptedCount: Int
+    let rejectedCount: Int
+    let lastScan: String
+
+    var id: String { locationName }
+
+    var acceptanceRate: Double {
+        guard scanCount > 0 else { return 0 }
+        return Double(acceptedCount) / Double(scanCount) * 100
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case locationName = "location_name"
+        case scanCount = "scan_count"
+        case acceptedCount = "accepted_count"
+        case rejectedCount = "rejected_count"
+        case lastScan = "last_scan"
+    }
+}
+
+struct ScanStatistics: Codable {
+    let totalScans: Int
+    let uniqueBooks: Int
+    let accepted: Int
+    let rejected: Int
+    let skipped: Int
+    let firstScan: String?
+    let lastScan: String?
+    let uniqueLocations: Int
+
+    enum CodingKeys: String, CodingKey {
+        case totalScans = "total_scans"
+        case uniqueBooks = "unique_books"
+        case accepted
+        case rejected
+        case skipped
+        case firstScan = "first_scan"
+        case lastScan = "last_scan"
+        case uniqueLocations = "unique_locations"
     }
 }

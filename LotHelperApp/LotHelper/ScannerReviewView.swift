@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import CoreLocation
 
 enum ScannerInputMode: String, CaseIterable {
     case camera = "Camera"
@@ -39,6 +40,8 @@ struct ScannerReviewView: View {
         let soldAPI = SoldAPI(config: config)
         return ScannerPricingVM(broker: broker, soldAPI: soldAPI, zip: "60601")
     }()
+
+    @StateObject private var locationManager = LocationManager()
 
     var body: some View {
         GeometryReader { geo in
@@ -222,6 +225,21 @@ struct ScannerReviewView: View {
             }
             .onChange(of: persistentPurchasePrice) { oldValue, newValue in
                 bookAttributes.purchasePrice = newValue
+            }
+            .onAppear {
+                // Request location permission and start tracking
+                print("📍 Location authorization status: \(locationManager.authorizationStatus.rawValue)")
+
+                if locationManager.authorizationStatus == .notDetermined {
+                    print("📍 Requesting location permission...")
+                    locationManager.requestLocationPermission()
+                } else if locationManager.authorizationStatus == .authorizedWhenInUse ||
+                          locationManager.authorizationStatus == .authorizedAlways {
+                    print("📍 Location authorized, requesting current location...")
+                    locationManager.requestLocation()
+                } else {
+                    print("⚠️ Location denied or restricted")
+                }
             }
         }
     }
@@ -1449,10 +1467,26 @@ struct ScannerReviewView: View {
 
         SoundFeedback.reject()
 
-        // Delete the book from the database
+        // Log the rejection with location data
         Task {
             do {
+                // Log the REJECT decision
+                let location = locationManager.locationData
+                try await BookAPI.logScan(
+                    isbn: isbn,
+                    decision: "REJECT",
+                    locationName: location.name,
+                    locationLatitude: location.latitude,
+                    locationLongitude: location.longitude,
+                    locationAccuracy: location.accuracy,
+                    deviceId: UIDevice.current.identifierForVendor?.uuidString,
+                    appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+                    notes: "User tapped Don't Buy"
+                )
+
+                // Delete the book from the database
                 try await BookAPI.deleteBook(isbn)
+
                 await MainActor.run {
                     // Reset attributes but keep the persistent purchase price
                     bookAttributes = BookAttributes()

@@ -3214,6 +3214,62 @@ class BookService:
 
         self.db.upsert_book(payload)
 
+        # Automatically log ACCEPT decision when book is persisted
+        try:
+            self.log_scan(evaluation, decision="ACCEPT")
+        except Exception as e:
+            # Don't fail the whole operation if scan logging fails
+            print(f"Warning: Failed to log scan history: {e}")
+
+    def log_scan(
+        self,
+        evaluation: BookEvaluation,
+        decision: str,
+        location_name: Optional[str] = None,
+        location_address: Optional[str] = None,
+        location_latitude: Optional[float] = None,
+        location_longitude: Optional[float] = None,
+        location_accuracy: Optional[float] = None,
+        device_id: Optional[str] = None,
+        app_version: Optional[str] = None,
+        notes: Optional[str] = None,
+    ) -> int:
+        """
+        Log a book scan to the scan_history table.
+
+        Args:
+            evaluation: The book evaluation
+            decision: ACCEPT, REJECT, SKIP, etc.
+            location_name: Optional location name
+            location_address: Optional address
+            location_latitude: Optional GPS latitude
+            location_longitude: Optional GPS longitude
+            location_accuracy: Optional GPS accuracy
+            device_id: Optional device identifier
+            app_version: Optional app version
+            notes: Optional notes
+
+        Returns:
+            The scan history ID
+        """
+        return self.db.log_scan(
+            isbn=evaluation.isbn,
+            decision=decision,
+            title=evaluation.metadata.title if evaluation.metadata else None,
+            authors="; ".join(evaluation.metadata.authors) if evaluation.metadata and evaluation.metadata.authors else None,
+            estimated_price=evaluation.estimated_price,
+            probability_label=evaluation.probability_label,
+            probability_score=evaluation.probability_score,
+            location_name=location_name,
+            location_address=location_address,
+            location_latitude=location_latitude,
+            location_longitude=location_longitude,
+            location_accuracy=location_accuracy,
+            device_id=device_id,
+            app_version=app_version,
+            notes=notes,
+        )
+
     def _row_to_evaluation(self, row) -> BookEvaluation:
         metadata_json = row["metadata_json"]
         market_json = row["market_json"]

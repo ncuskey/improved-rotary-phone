@@ -84,6 +84,14 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
   - Search by title and author via Google Books API
   - Get eBay and Google reference links for manual research
   - Perfect for books with damaged or missing barcodes
+- **📍 Location-Based Scan History**: Complete audit trail with GPS tracking
+  - Automatic location tracking with "When In Use" permission
+  - Reverse geocoding to friendly place names (e.g., "212 N Second St, Bellevue")
+  - Logs all scans (accepted AND rejected) with timestamps
+  - Track which stores have better acceptance rates
+  - Remember where you saw valuable books you passed on
+  - Device ID and app version tracking for analytics
+  - Works offline with cached location data
 - **✅ Accept/Reject Workflow**: Make informed keep/reject decisions with full analysis
 - **🚀 Professional Launch**: Branded splash screen with loading status updates
 - **🔒 Secure Token Management**: eBay OAuth tokens handled server-side via token broker
@@ -159,6 +167,11 @@ The web interface includes a mobile-optimized camera scanner for ISBN detection,
    - `POST /api/books/search-metadata` – Search for books by title/author when ISBN is unknown.
      Returns Google Books results with eBay and Google reference links for manual research.
      Perfect for books with damaged or missing barcodes.
+   - `POST /api/books/log-scan` – Log scan decisions (ACCEPT/REJECT) with location data.
+     Tracks GPS coordinates, place names, device ID, and notes for complete audit trail.
+   - `GET /api/books/scan-history` – Query scan history with filters (limit, ISBN, location, decision).
+   - `GET /api/books/scan-locations` – Summary of all scan locations with acceptance rates.
+   - `GET /api/books/scan-stats` – Overall statistics (total scans, acceptance rates, unique locations).
    - These endpoints power the LotHelper iOS prototype; restart `isbn-web` after
      deploying changes so the routes are reloaded.
    - **iOS UI tip:** ship a minimal `LaunchScreen.storyboard` (white `systemBackground`

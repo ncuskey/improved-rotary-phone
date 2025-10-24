@@ -717,3 +717,139 @@ async def search_metadata(
         })
 
     return JSONResponse(content={"results": results, "total": len(results)})
+
+
+class ScanDecisionRequest(BaseModel):
+    """Schema for logging a scan decision."""
+    isbn: str
+    decision: str  # ACCEPT, REJECT, SKIP, etc.
+    location_name: Optional[str] = None
+    location_address: Optional[str] = None
+    location_latitude: Optional[float] = None
+    location_longitude: Optional[float] = None
+    location_accuracy: Optional[float] = None
+    device_id: Optional[str] = None
+    app_version: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@router.post("/log-scan")
+async def log_scan_decision(
+    data: ScanDecisionRequest,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Log a scan decision (ACCEPT, REJECT, SKIP, etc.) to scan history.
+
+    This endpoint allows the iOS app and other clients to log all scan decisions,
+    including rejected books, with optional location data.
+
+    The scan will be logged even if the book doesn't exist in the catalog yet
+    (useful for logging rejects before full evaluation).
+    """
+    normalized_isbn = normalise_isbn(data.isbn)
+    if not normalized_isbn:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid ISBN", "isbn": data.isbn}
+        )
+
+    # Try to get existing book evaluation for richer data
+    book = service.get_book(normalized_isbn)
+
+    if book:
+        # Log with full book evaluation data
+        scan_id = service.log_scan(
+            evaluation=book,
+            decision=data.decision,
+            location_name=data.location_name,
+            location_address=data.location_address,
+            location_latitude=data.location_latitude,
+            location_longitude=data.location_longitude,
+            location_accuracy=data.location_accuracy,
+            device_id=data.device_id,
+            app_version=data.app_version,
+            notes=data.notes,
+        )
+    else:
+        # Book not in catalog yet - log with minimal data
+        scan_id = service.db.log_scan(
+            isbn=normalized_isbn,
+            decision=data.decision,
+            location_name=data.location_name,
+            location_address=data.location_address,
+            location_latitude=data.location_latitude,
+            location_longitude=data.location_longitude,
+            location_accuracy=data.location_accuracy,
+            device_id=data.device_id,
+            app_version=data.app_version,
+            notes=data.notes,
+        )
+
+    return JSONResponse(content={
+        "success": True,
+        "scan_id": scan_id,
+        "isbn": normalized_isbn,
+        "decision": data.decision
+    })
+
+
+@router.get("/scan-history")
+async def get_scan_history(
+    limit: int = 100,
+    isbn: Optional[str] = None,
+    location_name: Optional[str] = None,
+    decision: Optional[str] = None,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Get scan history with optional filters.
+
+    Query parameters:
+    - limit: Maximum number of scans to return (default 100)
+    - isbn: Filter by ISBN
+    - location_name: Filter by location name
+    - decision: Filter by decision (ACCEPT, REJECT, SKIP, etc.)
+    """
+    scans = service.db.get_scan_history(
+        limit=limit,
+        isbn=normalise_isbn(isbn) if isbn else None,
+        location_name=location_name,
+        decision=decision,
+    )
+
+    return JSONResponse(content={
+        "scans": [dict(scan) for scan in scans],
+        "total": len(scans)
+    })
+
+
+@router.get("/scan-locations")
+async def get_scan_locations(
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Get summary of all scan locations with acceptance rates.
+
+    Returns location names, scan counts, acceptance rates, and last visit dates.
+    """
+    locations = service.db.get_scan_locations()
+
+    return JSONResponse(content={
+        "locations": locations,
+        "total": len(locations)
+    })
+
+
+@router.get("/scan-stats")
+async def get_scan_stats(
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Get overall scan statistics.
+
+    Returns total scans, unique books, acceptance rates, date ranges, etc.
+    """
+    stats = service.db.get_scan_stats()
+
+    return JSONResponse(content=stats)

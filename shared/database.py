@@ -96,6 +96,35 @@ class DatabaseManager:
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(name, strategy)
                 );
+
+                CREATE TABLE IF NOT EXISTS scan_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    isbn TEXT NOT NULL,
+                    scanned_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    decision TEXT,
+                    title TEXT,
+                    authors TEXT,
+                    estimated_price REAL,
+                    probability_label TEXT,
+                    probability_score REAL,
+                    location_name TEXT,
+                    location_address TEXT,
+                    location_latitude REAL,
+                    location_longitude REAL,
+                    location_accuracy REAL,
+                    device_id TEXT,
+                    app_version TEXT,
+                    notes TEXT
+                );
+
+                CREATE INDEX IF NOT EXISTS idx_scan_history_isbn
+                    ON scan_history(isbn);
+                CREATE INDEX IF NOT EXISTS idx_scan_history_scanned_at
+                    ON scan_history(scanned_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_scan_history_decision
+                    ON scan_history(decision);
+                CREATE INDEX IF NOT EXISTS idx_scan_history_location
+                    ON scan_history(location_name);
                 """
             )
             self._ensure_lot_justification(conn)
@@ -634,6 +663,162 @@ class DatabaseManager:
                 "publication_year": publication_year,
                 "metadata_json": metadata_json,
             })
+
+    def log_scan(
+        self,
+        isbn: str,
+        decision: str,
+        title: Optional[str] = None,
+        authors: Optional[str] = None,
+        estimated_price: Optional[float] = None,
+        probability_label: Optional[str] = None,
+        probability_score: Optional[float] = None,
+        location_name: Optional[str] = None,
+        location_address: Optional[str] = None,
+        location_latitude: Optional[float] = None,
+        location_longitude: Optional[float] = None,
+        location_accuracy: Optional[float] = None,
+        device_id: Optional[str] = None,
+        app_version: Optional[str] = None,
+        notes: Optional[str] = None,
+    ) -> int:
+        """
+        Log a book scan to the scan_history table.
+
+        Args:
+            isbn: The book's ISBN
+            decision: User's decision (ACCEPT, REJECT, SKIP, etc.)
+            title: Book title
+            authors: Book authors
+            estimated_price: Estimated resale price
+            probability_label: Probability label (HIGH, MEDIUM, LOW)
+            probability_score: Numerical probability score
+            location_name: Name of the location (e.g., "Barnes & Noble Downtown")
+            location_address: Full address
+            location_latitude: GPS latitude
+            location_longitude: GPS longitude
+            location_accuracy: GPS accuracy in meters
+            device_id: Device identifier
+            app_version: App version string
+            notes: Any additional notes
+
+        Returns:
+            The ID of the inserted scan history record
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO scan_history (
+                    isbn, decision, title, authors, estimated_price,
+                    probability_label, probability_score,
+                    location_name, location_address,
+                    location_latitude, location_longitude, location_accuracy,
+                    device_id, app_version, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    isbn, decision, title, authors, estimated_price,
+                    probability_label, probability_score,
+                    location_name, location_address,
+                    location_latitude, location_longitude, location_accuracy,
+                    device_id, app_version, notes,
+                ),
+            )
+            conn.commit()
+            return cursor.lastrowid
+
+    def get_scan_history(
+        self,
+        limit: Optional[int] = 100,
+        isbn: Optional[str] = None,
+        location_name: Optional[str] = None,
+        decision: Optional[str] = None,
+    ) -> List[sqlite3.Row]:
+        """
+        Retrieve scan history with optional filters.
+
+        Args:
+            limit: Maximum number of records to return
+            isbn: Filter by ISBN
+            location_name: Filter by location name
+            decision: Filter by decision (ACCEPT, REJECT, etc.)
+
+        Returns:
+            List of scan history records, newest first
+        """
+        query = "SELECT * FROM scan_history WHERE 1=1"
+        params = []
+
+        if isbn:
+            query += " AND isbn = ?"
+            params.append(isbn)
+        if location_name:
+            query += " AND location_name = ?"
+            params.append(location_name)
+        if decision:
+            query += " AND decision = ?"
+            params.append(decision)
+
+        query += " ORDER BY scanned_at DESC"
+
+        if limit:
+            query += " LIMIT ?"
+            params.append(limit)
+
+        with self._get_connection() as conn:
+            cursor = conn.execute(query, params)
+            rows = cursor.fetchall()
+        return list(rows)
+
+    def get_scan_locations(self) -> List[Dict[str, Any]]:
+        """
+        Get a summary of all scan locations with counts.
+
+        Returns:
+            List of dicts with location_name, scan_count, last_scan
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT
+                    location_name,
+                    COUNT(*) as scan_count,
+                    MAX(scanned_at) as last_scan,
+                    COUNT(CASE WHEN decision = 'ACCEPT' THEN 1 END) as accepted_count,
+                    COUNT(CASE WHEN decision = 'REJECT' THEN 1 END) as rejected_count
+                FROM scan_history
+                WHERE location_name IS NOT NULL
+                GROUP BY location_name
+                ORDER BY last_scan DESC
+                """
+            )
+            rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+
+    def get_scan_stats(self) -> Dict[str, Any]:
+        """
+        Get overall scan statistics.
+
+        Returns:
+            Dictionary with scan counts by decision, total scans, unique ISBNs, etc.
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT
+                    COUNT(*) as total_scans,
+                    COUNT(DISTINCT isbn) as unique_books,
+                    COUNT(CASE WHEN decision = 'ACCEPT' THEN 1 END) as accepted,
+                    COUNT(CASE WHEN decision = 'REJECT' THEN 1 END) as rejected,
+                    COUNT(CASE WHEN decision = 'SKIP' THEN 1 END) as skipped,
+                    MIN(scanned_at) as first_scan,
+                    MAX(scanned_at) as last_scan,
+                    COUNT(DISTINCT location_name) as unique_locations
+                FROM scan_history
+                """
+            )
+            row = cursor.fetchone()
+        return dict(row) if row else {}
 
 
 def ensure_metadata_columns(conn: sqlite3.Connection) -> None:

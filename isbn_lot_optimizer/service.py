@@ -287,6 +287,7 @@ class BookService:
             condition=condition,
             edition=edition,
             amazon_rank=amazon_rank,
+            bookscouter=bookscouter_result,
         )
         evaluation.quantity = max(1, existing_quantity)
 
@@ -364,10 +365,12 @@ class BookService:
             except Exception:
                 market_stats = None
 
-        # Extract Amazon rank from existing bookscouter data if available
+        # Extract Amazon rank and bookscouter data from existing record if available
         amazon_rank = None
+        bookscouter_result = None
         if existing.bookscouter:
             amazon_rank = existing.bookscouter.amazon_sales_rank
+            bookscouter_result = existing.bookscouter
 
         evaluation = build_book_evaluation(
             isbn=existing.isbn,
@@ -377,6 +380,7 @@ class BookService:
             condition=existing.condition,
             edition=existing.edition,
             amazon_rank=amazon_rank,
+            bookscouter=bookscouter_result,
         )
         evaluation.quantity = max(1, getattr(existing, "quantity", 1))
 
@@ -550,6 +554,9 @@ class BookService:
                         continue
 
                     # Rebuild evaluation with new Amazon rank
+                    # Preserve existing bookscouter data
+                    bookscouter_result = existing.bookscouter if hasattr(existing, 'bookscouter') else None
+
                     evaluation = build_book_evaluation(
                         isbn=existing.isbn,
                         original_isbn=existing.original_isbn,
@@ -558,6 +565,7 @@ class BookService:
                         condition=existing.condition,
                         edition=existing.edition,
                         amazon_rank=amazon_rank,
+                        bookscouter=bookscouter_result,
                     )
                     evaluation.quantity = max(1, getattr(existing, "quantity", 1))
 
@@ -2375,10 +2383,12 @@ class BookService:
                 except Exception:
                     market_stats = None
 
-        # Extract Amazon rank from existing bookscouter data if available
+        # Extract Amazon rank and bookscouter data from existing record if available
         amazon_rank = None
+        bookscouter_result = None
         if existing.bookscouter:
             amazon_rank = existing.bookscouter.amazon_sales_rank
+            bookscouter_result = existing.bookscouter
 
         evaluation = build_book_evaluation(
             isbn=existing.isbn,
@@ -2388,6 +2398,7 @@ class BookService:
             condition=existing.condition,
             edition=existing.edition,
             amazon_rank=amazon_rank,
+            bookscouter=bookscouter_result,
         )
         evaluation.quantity = max(1, getattr(existing, "quantity", 1))
 

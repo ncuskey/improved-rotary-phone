@@ -5,7 +5,7 @@ import re
 import statistics
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from shared.models import BookEvaluation, BookMetadata, EbayMarketStats
+from shared.models import BookEvaluation, BookMetadata, BookScouterResult, EbayMarketStats
 
 HIGH_DEMAND_KEYWORDS = (
     "business",
@@ -352,11 +352,42 @@ def score_probability(
     condition: str,
     edition: Optional[str],
     amazon_rank: Optional[int] = None,
+    bookscouter: Optional[BookScouterResult] = None,
 ) -> Tuple[float, str, List[str], bool]:
     score = 0.0
     reasons: List[str] = []
     suppress_single = False
     has_ebay_data = False
+
+    # BookScouter buyback offers (guaranteed profit opportunity)
+    # This is checked FIRST because a good buyback offer = immediate profit
+    if bookscouter and bookscouter.best_price > 0:
+        # Strong buyback offer provides certainty (vs. eBay speculation)
+        if bookscouter.best_price >= 5.0:
+            score += 35
+            reasons.append(f"Strong buyback offer: ${bookscouter.best_price:.2f} from {bookscouter.best_vendor or 'vendor'}")
+        elif bookscouter.best_price >= 3.0:
+            score += 25
+            reasons.append(f"Good buyback offer: ${bookscouter.best_price:.2f} (instant sale option)")
+        elif bookscouter.best_price >= 1.0:
+            score += 15
+            reasons.append(f"Buyback available: ${bookscouter.best_price:.2f} (guaranteed floor)")
+        elif bookscouter.best_price >= 0.25:
+            score += 8
+            reasons.append(f"Modest buyback: ${bookscouter.best_price:.2f}")
+        else:
+            # Very small buyback (< $0.25), mention but don't boost score
+            reasons.append(f"Minimal buyback: ${bookscouter.best_price:.2f} from {bookscouter.best_vendor or 'vendor'}")
+
+        # Multiple vendor competition = higher confidence
+        if bookscouter.total_vendors > 1:
+            vendor_count = len([o for o in bookscouter.offers if o.price > 0])
+            if vendor_count >= 3:
+                score += 8
+                reasons.append(f"{vendor_count} vendors bidding (competitive demand)")
+            elif vendor_count >= 2:
+                score += 4
+                reasons.append(f"{vendor_count} vendors interested")
 
     # Check if we have eBay sell-through data
     sell_through = market.sell_through_rate if market else None
@@ -489,6 +520,7 @@ def build_book_evaluation(
     condition: str,
     edition: Optional[str],
     amazon_rank: Optional[int] = None,
+    bookscouter: Optional[BookScouterResult] = None,
 ) -> BookEvaluation:
     # Pass condition and edition to get attribute-specific price estimate
     estimated_price = estimate_price(metadata, market, condition, edition)
@@ -500,6 +532,7 @@ def build_book_evaluation(
         condition=condition,
         edition=edition,
         amazon_rank=amazon_rank,
+        bookscouter=bookscouter,
     )
     return BookEvaluation(
         isbn=isbn,

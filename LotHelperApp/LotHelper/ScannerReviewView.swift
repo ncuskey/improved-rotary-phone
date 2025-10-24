@@ -27,6 +27,10 @@ struct ScannerReviewView: View {
     @State private var useHiddenScanner = false
     @FocusState private var isTextFieldFocused: Bool
 
+    // Duplicate detection
+    @State private var isDuplicate = false
+    @State private var existingBookDate: Date?
+
     // eBay pricing integration
     // Token broker accessible via Cloudflare tunnel for remote access
     @Environment(\.modelContext) private var modelContext
@@ -94,6 +98,11 @@ struct ScannerReviewView: View {
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .frame(minHeight: 44)
+                            }
+
+                            // Duplicate warning
+                            if isDuplicate {
+                                duplicateWarningBanner
                             }
 
                             // Buy recommendation immediately below buttons
@@ -1115,6 +1124,35 @@ struct ScannerReviewView: View {
 
     // MARK: - Helpers
 
+    private var duplicateWarningBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title2)
+                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Already in Database")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+
+                if let date = existingBookDate {
+                    Text("Added \(formatDate(date))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Text("Consider rejecting to avoid duplicate purchase")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+        }
+        .padding()
+        .background(Color.orange.opacity(0.1))
+        .cornerRadius(12)
+    }
+
     @ViewBuilder
     private func buyRecommendation(for eval: BookEvaluationRecord) -> some View {
         let decision = makeBuyDecision(eval)
@@ -1752,6 +1790,8 @@ struct ScannerReviewView: View {
         errorMessage = nil
         book = nil
         evaluation = nil
+        isDuplicate = false
+        existingBookDate = nil
 
         // Set purchase price from persistent value
         bookAttributes.purchasePrice = persistentPurchasePrice
@@ -1898,6 +1938,9 @@ struct ScannerReviewView: View {
         isLoadingEvaluation = true
         Task {
             do {
+                // Check for duplicates BEFORE fetching evaluation
+                await checkForDuplicate(isbn: isbn)
+
                 let eval = try await BookAPI.fetchBookEvaluation(isbn)
                 await MainActor.run {
                     CacheManager(modelContext: modelContext).upsertBook(eval)
@@ -1939,6 +1982,24 @@ struct ScannerReviewView: View {
                     errorMessage = "Evaluation failed: \(error.localizedDescription)"
                     print("❌ Evaluation fetch error: \(error)")
                 }
+            }
+        }
+    }
+
+    private func checkForDuplicate(isbn: String) async {
+        await MainActor.run {
+            let descriptor = FetchDescriptor<CachedBook>(
+                predicate: #Predicate { $0.isbn == isbn }
+            )
+
+            if let cachedBooks = try? modelContext.fetch(descriptor),
+               let existingBook = cachedBooks.first {
+                isDuplicate = true
+                existingBookDate = existingBook.lastUpdated
+                print("⚠️ Duplicate detected: \(isbn) (added \(existingBook.lastUpdated))")
+            } else {
+                isDuplicate = false
+                existingBookDate = nil
             }
         }
     }

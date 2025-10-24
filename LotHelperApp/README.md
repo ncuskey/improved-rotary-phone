@@ -53,6 +53,13 @@ LotHelper helps book resellers make instant buy/reject decisions by:
 
 ## 📊 **Recent Updates (October 2025)**
 
+### **Duplicate Detection**
+- Scanner now warns when scanning books already in database
+- Shows when book was previously added with relative time ("2 days ago")
+- Orange warning banner appears above buy recommendation
+- Helps avoid duplicate purchases even when recommendation is BUY
+- Checks local SwiftData cache for instant feedback
+
 ### **Bidirectional Book-Lot Navigation**
 - Book details now show all lots containing that book
 - Click any lot from book view to jump to lot details
@@ -518,6 +525,7 @@ Copyright © 2025 Nick Cuskey. All rights reserved.
 
 ✅ **35 comprehensive tests** covering all decision logic
 ✅ **3 exit strategies** analyzed simultaneously
+✅ **Duplicate detection** prevents buying books twice
 ✅ **Series completion** with retroactive detection
 ✅ **Bidirectional navigation** between books and lots
 ✅ **High-res cover images** (1000px+) for better UX

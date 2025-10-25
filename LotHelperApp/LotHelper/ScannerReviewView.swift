@@ -2075,6 +2075,7 @@ struct ScannerReviewView: View {
         // Log the rejection in background - don't block UI
         // NOTE: We DON'T change the book's status in the database
         // This allows rejecting duplicate scans while keeping the original accepted book
+        let context = modelContext
         Task.detached {
             do {
                 try await BookAPI.logScan(
@@ -2089,6 +2090,20 @@ struct ScannerReviewView: View {
                     notes: "User tapped Don't Buy"
                 )
                 print("✅ Logged rejection for \(isbn)")
+
+                // Refresh Books cache to remove any stale REJECT-status books
+                // (When scanning new books via /isbn, they're created with status='REJECT'
+                // and won't appear in Books tab query, but cache might be stale)
+                do {
+                    let books = try await BookAPI.fetchAllBooks()
+                    await MainActor.run {
+                        CacheManager(modelContext: context).saveBooks(books)
+                        UserDefaults.standard.set(Date(), forKey: "lastBooksSync")
+                        print("✅ Refreshed books cache after rejection: \(books.count) books")
+                    }
+                } catch {
+                    print("⚠️ Failed to refresh books cache after rejection: \(error)")
+                }
             } catch {
                 print("⚠️ Failed to log rejection: \(error)")
                 // Don't show error to user - logging is not critical

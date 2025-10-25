@@ -2221,8 +2221,10 @@ private extension BookInfo {
             thumbnail: thumbnail,
             score: nil,
             profitPotential: nil,
+            estimatedPrice: nil,
             soldCompsMedian: nil,
-            bestVendorPrice: nil
+            bestVendorPrice: nil,
+            amazonLowestPrice: nil
         )
     }
 }

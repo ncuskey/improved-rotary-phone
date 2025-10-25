@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import statistics
 import time
 import os
@@ -46,7 +47,24 @@ def get_app_token() -> str:
     return str(_token_cache["access_token"])
 
 
-def browse_active_by_isbn(isbn: str, limit: int = 50, marketplace: str = MARKETPLACE) -> Dict[str, Any]:
+def browse_active_by_isbn(
+    isbn: str,
+    limit: int = 50,
+    marketplace: str = MARKETPLACE,
+    include_signed: bool = False
+) -> Dict[str, Any]:
+    """
+    Fetch active eBay listings by ISBN with smart filtering.
+
+    Args:
+        isbn: ISBN to search for
+        limit: Maximum number of results to fetch
+        marketplace: eBay marketplace ID
+        include_signed: If False, filter out signed/autographed copies
+
+    Returns:
+        Dict with pricing stats and filtering metadata
+    """
     tok = get_app_token()
     r = requests.get(
         BROWSE_URL,
@@ -58,15 +76,55 @@ def browse_active_by_isbn(isbn: str, limit: int = 50, marketplace: str = MARKETP
         return {"error": f"http_{r.status_code}", "body": r.text[:400], "source": "browse"}
     js: Dict[str, Any] = r.json()
     items = cast(List[Dict[str, Any]], js.get("itemSummaries", []) or [])
+
+    # Keywords to filter out (case-insensitive)
+    LOT_KEYWORDS = ["lot of", "set of", "bundle", "collection"]
+    SIGNED_KEYWORDS = ["signed", "autographed", "signature"]
+
     prices: List[float] = []
+    signed_count = 0
+    lot_count = 0
+    filtered_count = 0
+    total_count = 0
+
     for it in items:
         if not isinstance(it, dict):
             continue
+        total_count += 1
+
+        # Extract title and price
+        title = (it.get("title") or "").lower()
         p = it.get("price", {}).get("value")
+
+        # Check for problematic keywords
+        is_lot = any(keyword in title for keyword in LOT_KEYWORDS)
+        is_signed = any(keyword in title for keyword in SIGNED_KEYWORDS)
+
+        # Track occurrences
+        if is_lot:
+            lot_count += 1
+        if is_signed:
+            signed_count += 1
+
+        # Filter logic
+        should_exclude = False
+        if is_lot:
+            # Always filter out multi-book lots
+            should_exclude = True
+        elif is_signed and not include_signed:
+            # Filter signed copies unless user indicated their book is signed
+            should_exclude = True
+
+        if should_exclude:
+            filtered_count += 1
+            continue
+
+        # Add price if valid
         try:
             prices.append(float(p))  # type: ignore[arg-type]
         except Exception:
             pass
+
     stats: Dict[str, Any] = {
         "active_count": len(prices),
         "median_price": statistics.median(prices) if prices else None,
@@ -77,6 +135,12 @@ def browse_active_by_isbn(isbn: str, limit: int = 50, marketplace: str = MARKETP
         "completed_count": None,
         "sell_through": None,
         "source": "browse",
+        # Filtering metadata
+        "total_listings": total_count,
+        "filtered_count": filtered_count,
+        "signed_listings_detected": signed_count,
+        "lot_listings_detected": lot_count,
+        "include_signed": include_signed,
     }
     return stats
 
@@ -155,11 +219,16 @@ def collect_ebay_market_stats(
     return stats
 
 
-def _browse_active_by_isbn(isbn: str, limit: int = 50) -> Optional[Dict[str, Any]]:
+def _browse_active_by_isbn(isbn: str, limit: int = 50, include_signed: bool = False) -> Optional[Dict[str, Any]]:
     """
     Internal: Fetch active comps via eBay Browse API and return raw price list/currency.
     Returns None if no prices found or on HTTP error.
+    Filters out multi-book lots and (optionally) signed copies.
     """
+    # Keywords to filter out (case-insensitive)
+    LOT_KEYWORDS = ["lot of", "set of", "bundle", "collection"]
+    SIGNED_KEYWORDS = ["signed", "autographed", "signature"]
+
     tok = get_app_token()
     r = requests.get(
         BROWSE_URL,
@@ -176,6 +245,18 @@ def _browse_active_by_isbn(isbn: str, limit: int = 50) -> Optional[Dict[str, Any
     for it in items:
         if not isinstance(it, dict):
             continue
+
+        # Extract title for filtering
+        title = (it.get("title") or "").lower()
+
+        # Check for problematic keywords
+        is_lot = any(keyword in title for keyword in LOT_KEYWORDS)
+        is_signed = any(keyword in title for keyword in SIGNED_KEYWORDS)
+
+        # Filter logic
+        if is_lot or (is_signed and not include_signed):
+            continue
+
         pinfo = it.get("price") or {}
         p = pinfo.get("value")
         c = pinfo.get("currency")
@@ -421,3 +502,254 @@ def _first_or_default(value: Any) -> Any:
     if isinstance(value, list):
         return value[0] if value else None
     return value
+
+
+# ==================== LOT PRICING ====================
+
+class LotComp(TypedDict):
+    """Single lot listing comp from eBay."""
+    title: str
+    price: float
+    lot_size: int
+    per_book_price: float
+    currency: str
+    item_id: str
+
+
+class LotPricingResult(TypedDict):
+    """Aggregated lot pricing analysis."""
+    search_term: str
+    total_comps: int
+    lot_sizes: Dict[int, List[float]]  # lot_size -> list of per-book prices
+    comps: List[LotComp]
+    optimal_lot_size: Optional[int]
+    optimal_per_book_price: Optional[float]
+    avg_per_book_by_size: Dict[int, float]  # lot_size -> average per-book price
+
+
+def parse_lot_size_from_title(title: str) -> Optional[int]:
+    """
+    Extract lot size from eBay listing title.
+
+    Handles patterns like:
+    - "Lot of 7"
+    - "Lot 7"
+    - "Set of 7 Books"
+    - "7 Book Lot"
+    - "7 Books"
+    - "Complete Set 7"
+    - "Lot 1st 12" / "Lot First 12"
+    - "12 Novels"
+
+    Args:
+        title: eBay listing title
+
+    Returns:
+        Lot size as integer, or None if not found
+    """
+    title = title.lower()
+
+    # Pattern 1: "lot of N", "set of N"
+    match = re.search(r'(?:lot|set)\s+of\s+(\d+)', title)
+    if match:
+        return int(match.group(1))
+
+    # Pattern 2: "lot 1st N", "lot first N", "set 1st N" (e.g., "Lot 1st 12 Alex Cross")
+    match = re.search(r'(?:lot|set)\s+(?:1st|first|2nd|second|3rd|third|4th|fourth|5th|fifth|\d+(?:st|nd|rd|th)?)\s+(\d+)', title)
+    if match:
+        size = int(match.group(1))
+        if 2 <= size <= 50:
+            return size
+
+    # Pattern 3: "lot N", "set N" (but not "lot 1" to avoid false positives)
+    match = re.search(r'(?:lot|set)\s+(\d+)', title)
+    if match:
+        size = int(match.group(1))
+        if size >= 2:  # Avoid matching single books
+            return size
+
+    # Pattern 4: "N book lot", "N books", "N novels"
+    match = re.search(r'(\d+)\s+(?:books?|novels?)(?:\s+lot)?', title)
+    if match:
+        size = int(match.group(1))
+        if 2 <= size <= 50:
+            return size
+
+    # Pattern 5: "complete set N", "full set N", "entire set N"
+    match = re.search(r'(?:complete|full|entire)\s+set\s+(\d+)', title)
+    if match:
+        return int(match.group(1))
+
+    # Pattern 6: "#N" (e.g., "#7") - but only if reasonable
+    match = re.search(r'#\s*(\d+)', title)
+    if match:
+        size = int(match.group(1))
+        if 2 <= size <= 50:
+            return size
+
+    return None
+
+
+def search_ebay_lot_comps(
+    search_term: str,
+    limit: int = 50,
+    marketplace: str = MARKETPLACE
+) -> LotPricingResult:
+    """
+    Search eBay for lot listings and analyze per-book pricing.
+    
+    Args:
+        search_term: Search query (e.g., "Alex Cross Lot", "James Patterson Books")
+        limit: Maximum number of results to fetch
+        marketplace: eBay marketplace ID
+        
+    Returns:
+        LotPricingResult with pricing analysis
+    """
+    # Ensure search includes lot keywords
+    if not any(keyword in search_term.lower() for keyword in ['lot', 'set', 'books', 'series']):
+        search_term += " lot"
+    
+    # Search eBay Browse API
+    tok = get_app_token()
+    r = requests.get(
+        BROWSE_URL,
+        params={"q": search_term, "limit": str(limit)},
+        headers={"Authorization": f"Bearer {tok}", "X-EBAY-C-MARKETPLACE-ID": marketplace},
+        timeout=30,
+    )
+    
+    if r.status_code != 200:
+        return {
+            "search_term": search_term,
+            "total_comps": 0,
+            "lot_sizes": {},
+            "comps": [],
+            "optimal_lot_size": None,
+            "optimal_per_book_price": None,
+            "avg_per_book_by_size": {},
+        }
+    
+    js: Dict[str, Any] = r.json()
+    items = cast(List[Dict[str, Any]], js.get("itemSummaries", []) or [])
+    
+    # Parse lot comps
+    comps: List[LotComp] = []
+    lot_sizes: Dict[int, List[float]] = {}
+    
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        
+        title = item.get("title", "")
+        item_id = item.get("itemId", "")
+        
+        # Extract price
+        price_info = item.get("price", {})
+        price = price_info.get("value")
+        currency = price_info.get("currency", "USD")
+        
+        if not price:
+            continue
+        
+        try:
+            price = float(price)
+        except (ValueError, TypeError):
+            continue
+        
+        # Parse lot size from title
+        lot_size = parse_lot_size_from_title(title)
+        if not lot_size or lot_size < 2:
+            continue
+        
+        # Calculate per-book price
+        per_book_price = price / lot_size
+        
+        # Store comp
+        comp: LotComp = {
+            "title": title,
+            "price": price,
+            "lot_size": lot_size,
+            "per_book_price": per_book_price,
+            "currency": currency,
+            "item_id": item_id,
+        }
+        comps.append(comp)
+        
+        # Group by lot size
+        if lot_size not in lot_sizes:
+            lot_sizes[lot_size] = []
+        lot_sizes[lot_size].append(per_book_price)
+    
+    # Calculate averages by lot size
+    avg_per_book_by_size: Dict[int, float] = {}
+    for size, prices in lot_sizes.items():
+        avg_per_book_by_size[size] = statistics.mean(prices)
+    
+    # Find optimal lot size (highest average per-book price)
+    optimal_lot_size: Optional[int] = None
+    optimal_per_book_price: Optional[float] = None
+    
+    if avg_per_book_by_size:
+        optimal_lot_size = max(avg_per_book_by_size.items(), key=lambda x: x[1])[0]
+        optimal_per_book_price = avg_per_book_by_size[optimal_lot_size]
+    
+    return {
+        "search_term": search_term,
+        "total_comps": len(comps),
+        "lot_sizes": lot_sizes,
+        "comps": comps,
+        "optimal_lot_size": optimal_lot_size,
+        "optimal_per_book_price": optimal_per_book_price,
+        "avg_per_book_by_size": avg_per_book_by_size,
+    }
+
+
+def get_lot_pricing_for_series(
+    series_name: str,
+    author_name: Optional[str] = None
+) -> LotPricingResult:
+    """
+    Get lot pricing analysis for a book series.
+    
+    Args:
+        series_name: Name of the series (e.g., "Alex Cross")
+        author_name: Optional author name for more specific search
+        
+    Returns:
+        LotPricingResult with pricing analysis
+    """
+    # Build search term
+    if author_name:
+        search_term = f"{author_name} {series_name} lot"
+    else:
+        search_term = f"{series_name} lot"
+    
+    return search_ebay_lot_comps(search_term)
+
+
+# CLI test interface
+if __name__ == "__main__":
+    import sys
+    import json
+    
+    if len(sys.argv) < 2:
+        print("Usage: python -m isbn_lot_optimizer.market <series_name> [author_name]")
+        print("Example: python -m isbn_lot_optimizer.market 'Alex Cross' 'James Patterson'")
+        sys.exit(1)
+    
+    series = sys.argv[1]
+    author = sys.argv[2] if len(sys.argv) > 2 else None
+    
+    result = get_lot_pricing_for_series(series, author)
+    print(json.dumps(result, indent=2))
+    
+    print("\nLot Size Analysis:")
+    for size in sorted(result["avg_per_book_by_size"].keys()):
+        avg = result["avg_per_book_by_size"][size]
+        count = len(result["lot_sizes"][size])
+        print(f"  {size} books: ${avg:.2f}/book (n={count})")
+    
+    if result["optimal_lot_size"]:
+        print(f"\nOptimal lot size: {result['optimal_lot_size']} books")
+        print(f"Optimal per-book price: ${result['optimal_per_book_price']:.2f}")

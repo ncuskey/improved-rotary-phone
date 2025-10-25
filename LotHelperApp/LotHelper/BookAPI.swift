@@ -189,6 +189,11 @@ struct EbayMarketData: Codable, Hashable {
     let soldCompsIsEstimate: Bool?
     let soldCompsSource: String?
     let soldCompsLastSoldDate: String?
+    // Smart filtering metadata
+    let signedListingsDetected: Int?
+    let lotListingsDetected: Int?
+    let filteredCount: Int?
+    let totalListings: Int?
 
     enum CodingKeys: String, CodingKey {
         case activeCount = "ebay_active_count"
@@ -202,6 +207,10 @@ struct EbayMarketData: Codable, Hashable {
         case soldCompsIsEstimate = "sold_comps_is_estimate"
         case soldCompsSource = "sold_comps_source"
         case soldCompsLastSoldDate = "sold_comps_last_sold_date"
+        case signedListingsDetected = "signed_listings_detected"
+        case lotListingsDetected = "lot_listings_detected"
+        case filteredCount = "filtered_count"
+        case totalListings = "total_listings"
     }
 
     var profitPotential: String {
@@ -277,7 +286,22 @@ struct LotSuggestionDTO: Codable, Identifiable, Hashable {
     let books: [BookEvaluationRecord]?
     let marketJson: String?
 
-    var id: String { lotID.map(String.init) ?? name }
+    // Lot pricing fields from eBay lot comp data
+    let lotMarketValue: Double?
+    let lotOptimalSize: Int?
+    let lotPerBookPrice: Double?
+    let lotCompsCount: Int?
+    let useLotPricing: Bool?
+    let individualValue: Double?  // Sum of individual book prices (for comparison)
+
+    // Generate unique ID from lotID or create one from name + strategy
+    var id: String {
+        if let lotID = lotID {
+            return String(lotID)
+        }
+        // Fallback: combine name and strategy to ensure uniqueness
+        return "\(name)|\(strategy)"
+    }
 
     enum CodingKeys: String, CodingKey {
         case lotID = "id"
@@ -295,6 +319,12 @@ struct LotSuggestionDTO: Codable, Identifiable, Hashable {
         case seriesName = "series_name"
         case books
         case marketJson = "market_json"
+        case lotMarketValue = "lot_market_value"
+        case lotOptimalSize = "lot_optimal_size"
+        case lotPerBookPrice = "lot_per_book_price"
+        case lotCompsCount = "lot_comps_count"
+        case useLotPricing = "use_lot_pricing"
+        case individualValue = "individual_value"
     }
 }
 
@@ -307,6 +337,17 @@ enum BookAPI {
         configuration.timeoutIntervalForRequest = 30.0  // 30 second request timeout
         configuration.timeoutIntervalForResource = 60.0 // 60 second resource timeout
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData  // Don't use stale cache
+        configuration.urlCache = URLCache.shared
+        return URLSession(configuration: configuration)
+    }()
+
+    // Long-running session for expensive operations like lot recalculation
+    private static let longRunningSession: URLSession = {
+        let configuration = URLSessionConfiguration.default
+        configuration.waitsForConnectivity = true
+        configuration.timeoutIntervalForRequest = 300.0  // 5 minute request timeout
+        configuration.timeoutIntervalForResource = 600.0 // 10 minute resource timeout
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.urlCache = URLCache.shared
         return URLSession(configuration: configuration)
     }()
@@ -638,6 +679,34 @@ enum BookAPI {
                 await MainActor.run { completion(nil) }
             }
         }
+    }
+
+    /// Trigger lot recalculation and return fresh lots
+    /// This is a long-running operation that includes eBay lot comp searches
+    /// Uses extended timeout (5 minutes) to allow for market data collection
+    static func regenerateLots() async throws -> [LotSuggestionDTO] {
+        guard let url = URL(string: "\(baseURLString)/api/lots/regenerate.json") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        // Use long-running session for this expensive operation
+        let (data, response) = try await longRunningSession.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ POST /api/lots/regenerate.json failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        return try await decodeOnWorker([LotSuggestionDTO].self, from: data)
     }
 
     /// Search for book metadata by title and author

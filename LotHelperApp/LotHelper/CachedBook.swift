@@ -181,7 +181,11 @@ final class CachedBook {
             soldCompsMax: ebaySoldCompsMax,
             soldCompsIsEstimate: ebaySoldCompsIsEstimate,
             soldCompsSource: ebaySoldCompsSource,
-            soldCompsLastSoldDate: ebaySoldCompsLastSoldDate
+            soldCompsLastSoldDate: ebaySoldCompsLastSoldDate,
+            signedListingsDetected: nil,
+            lotListingsDetected: nil,
+            filteredCount: nil,
+            totalListings: nil
         )
 
         var bookscouter: BookScouterResult?
@@ -270,6 +274,15 @@ final class CachedLot {
     var seriesName: String?
     var marketJson: String?
     var booksJSON: String? // Store books array as JSON string
+
+    // Lot pricing fields
+    var lotMarketValue: Double?
+    var lotOptimalSize: Int?
+    var lotPerBookPrice: Double?
+    var lotCompsCount: Int?
+    var useLotPricing: Bool?
+    var individualValue: Double?
+
     var lastUpdated: Date
 
     init(from lot: LotSuggestionDTO) {
@@ -292,6 +305,14 @@ final class CachedLot {
         if let books = lot.books {
             self.booksJSON = try? JSONEncoder().encode(books).base64EncodedString()
         }
+
+        // Store lot pricing fields
+        self.lotMarketValue = lot.lotMarketValue
+        self.lotOptimalSize = lot.lotOptimalSize
+        self.lotPerBookPrice = lot.lotPerBookPrice
+        self.lotCompsCount = lot.lotCompsCount
+        self.useLotPricing = lot.useLotPricing
+        self.individualValue = lot.individualValue
 
         self.lastUpdated = Date()
     }
@@ -319,21 +340,27 @@ final class CachedLot {
             canonicalSeries: canonicalSeries,
             seriesName: seriesName,
             books: books,
-            marketJson: marketJson
+            marketJson: marketJson,
+            lotMarketValue: lotMarketValue,
+            lotOptimalSize: lotOptimalSize,
+            lotPerBookPrice: lotPerBookPrice,
+            lotCompsCount: lotCompsCount,
+            useLotPricing: useLotPricing,
+            individualValue: individualValue
         )
     }
 }
 
 // MARK: - JSON Encoding/Decoding Helpers
 
-private extension Array where Element == String {
+extension Array where Element == String {
     var jsonEncoded: String? {
         guard let data = try? JSONEncoder().encode(self) else { return nil }
         return String(data: data, encoding: .utf8)
     }
 }
 
-private extension String {
+extension String {
     func jsonDecoded() -> [String]? {
         guard let data = self.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode([String].self, from: data)

@@ -11,6 +11,7 @@ struct LotRecommendationsView: View {
     @State private var lots: [LotSuggestionDTO] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var searchText = ""
     @State private var selectedStrategies: Set<LotStrategy> = Set(LotStrategy.allCases)
     @State private var sortOption: SortOption = .value
     private var cacheManager: CacheManager { CacheManager(modelContext: modelContext) }
@@ -54,7 +55,28 @@ struct LotRecommendationsView: View {
     }
 
     var filteredLots: [LotSuggestionDTO] {
-        let filtered = lots.filter { lot in
+        var result = lots
+
+        // Apply search filter
+        if !searchText.isEmpty {
+            result = result.filter { lot in
+                let name = lot.name.lowercased()
+                let author = lot.canonicalAuthor?.lowercased() ?? ""
+                let displayAuthor = lot.displayAuthorLabel?.lowercased() ?? ""
+                let series = lot.seriesName?.lowercased() ?? ""
+                let canonicalSeries = lot.canonicalSeries?.lowercased() ?? ""
+                let searchLower = searchText.lowercased()
+
+                return name.contains(searchLower) ||
+                       author.contains(searchLower) ||
+                       displayAuthor.contains(searchLower) ||
+                       series.contains(searchLower) ||
+                       canonicalSeries.contains(searchLower)
+            }
+        }
+
+        // Apply strategy filter
+        let filtered = result.filter { lot in
             // A lot should be shown if ANY of the selected strategies matches it
             let isMatched = selectedStrategies.contains { strategy in
                 strategy.matches(lot.strategy)
@@ -103,7 +125,9 @@ struct LotRecommendationsView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    List(Array(repeating: LotSuggestionDTO.placeholder, count: 5), id: \.name) { lot in
+                    List(Array(0..<5).map { index in
+                        LotSuggestionDTO.placeholder(id: index)
+                    }, id: \.id) { lot in
                         LotSummaryRow(lot: lot)
                     }
                     .listStyle(.plain)
@@ -145,12 +169,21 @@ struct LotRecommendationsView: View {
                     .navigationDestination(for: BookEvaluationRecord.self) { record in
                         BookDetailView(record: record)
                     }
+                    .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search by name, author, or series")
                 }
             }
             .navigationTitle("Lots")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 8) {
+                        // Recalculate button
+                        Button {
+                            Task { await recalculateLots() }
+                        } label: {
+                            Label("Recalculate", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        .disabled(isLoading)
+
                         // Sort menu
                         Menu {
                             ForEach(SortOption.allCases) { option in
@@ -219,6 +252,7 @@ struct LotRecommendationsView: View {
         isLoading = lots.isEmpty // Only show loading if we have no data
         errorMessage = nil
         do {
+            // Fetch existing lots (fast - no recalculation)
             let freshLots = try await BookAPI.fetchAllLots()
             lots = freshLots
             cacheManager.saveLots(freshLots)
@@ -231,13 +265,47 @@ struct LotRecommendationsView: View {
             }
         }
     }
+
+    @MainActor
+    private func recalculateLots() async {
+        print("🔄 Starting lot recalculation...")
+        isLoading = true
+        errorMessage = nil
+        let startTime = Date()
+
+        do {
+            print("📡 Requesting lot recalculation from server...")
+            // Trigger full lot recalculation (slow - includes eBay searches)
+            let freshLots = try await BookAPI.regenerateLots()
+
+            let duration = Date().timeIntervalSince(startTime)
+            print("✅ Recalculation complete! Received \(freshLots.count) lots in \(String(format: "%.1f", duration))s")
+
+            // Count lots with lot pricing
+            let lotsWithPricing = freshLots.filter { $0.useLotPricing == true }.count
+            if lotsWithPricing > 0 {
+                print("💰 \(lotsWithPricing) lots have eBay lot comp pricing")
+            } else {
+                print("ℹ️ No lots found with eBay lot comp pricing (series may not have active lot markets)")
+            }
+
+            lots = freshLots
+            cacheManager.saveLots(freshLots)
+            isLoading = false
+        } catch {
+            let duration = Date().timeIntervalSince(startTime)
+            print("❌ Recalculation failed after \(String(format: "%.1f", duration))s: \(error.localizedDescription)")
+            isLoading = false
+            errorMessage = "Failed to recalculate lots: \(error.localizedDescription)"
+        }
+    }
 }
 
 private extension LotSuggestionDTO {
-    static var placeholder: LotSuggestionDTO {
+    static func placeholder(id: Int) -> LotSuggestionDTO {
         LotSuggestionDTO(
-            lotID: nil,
-            name: "Sample Lot",
+            lotID: -id - 1,  // Negative IDs for placeholders
+            name: "Sample Lot \(id)",
             strategy: "placeholder.strategy",
             bookIsbns: Array(repeating: "0000000000", count: 3),
             estimatedValue: 0,
@@ -250,7 +318,13 @@ private extension LotSuggestionDTO {
             canonicalSeries: nil,
             seriesName: nil,
             books: nil,
-            marketJson: nil
+            marketJson: nil,
+            lotMarketValue: nil,
+            lotOptimalSize: nil,
+            lotPerBookPrice: nil,
+            lotCompsCount: nil,
+            useLotPricing: nil,
+            individualValue: nil
         )
     }
 }
@@ -456,6 +530,123 @@ struct LotDetailView: View {
                 }
             }
 
+            // Lot Market Pricing Section - shown when lot comp data is available
+            if lot.useLotPricing == true,
+               let lotMarketValue = lot.lotMarketValue,
+               let lotCompsCount = lot.lotCompsCount,
+               lotCompsCount > 0 {
+                Section {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Market-based pricing indicator
+                        HStack {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .foregroundStyle(.blue)
+                            Text("Lot comp pricing")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.blue)
+                            Spacer()
+                            Text("\(lotCompsCount) eBay comps")
+                                .font(.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+
+                        Divider()
+
+                        // Pricing display
+                        VStack(spacing: 8) {
+                            HStack {
+                                Text("Lot market value")
+                                    .foregroundStyle(DS.Color.textPrimary)
+                                Spacer()
+                                Text(lotMarketValue.formatted(.currency(code: "USD")))
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.green)
+                            }
+
+                            if let perBookPrice = lot.lotPerBookPrice {
+                                HStack {
+                                    Text("Per-book price")
+                                        .foregroundStyle(DS.Color.textSecondary)
+                                    Spacer()
+                                    Text(perBookPrice.formatted(.currency(code: "USD")))
+                                        .font(.caption)
+                                        .foregroundStyle(DS.Color.textSecondary)
+                                }
+                            }
+
+                            // Show individual pricing comparison if available
+                            if let individualValue = lot.individualValue {
+                                Divider()
+                                    .padding(.vertical, 4)
+
+                                HStack {
+                                    Text("Individual pricing")
+                                        .foregroundStyle(DS.Color.textSecondary)
+                                        .font(.caption)
+                                    Spacer()
+                                    Text(individualValue.formatted(.currency(code: "USD")))
+                                        .font(.caption)
+                                        .foregroundStyle(DS.Color.textSecondary)
+                                }
+
+                                // Pricing insight
+                                let priceDiff = lotMarketValue - individualValue
+                                let percentDiff = abs(priceDiff / individualValue) * 100
+
+                                HStack(spacing: 6) {
+                                    Image(systemName: priceDiff > 0 ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                                        .font(.caption)
+                                        .foregroundStyle(priceDiff > 0 ? .green : .orange)
+                                    Text(priceDiff > 0 ?
+                                        "+\(abs(priceDiff).formatted(.currency(code: "USD"))) (\(percentDiff, specifier: "%.1f")%) vs individual sales" :
+                                        "\(abs(priceDiff).formatted(.currency(code: "USD"))) (\(percentDiff, specifier: "%.1f")%) vs individual sales")
+                                        .font(.caption2)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(priceDiff > 0 ? .green : .orange)
+                                }
+                                .padding(.vertical, 4)
+                                .padding(.horizontal, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(priceDiff > 0 ? Color.green.opacity(0.1) : Color.orange.opacity(0.1))
+                                )
+                            }
+                        }
+
+                        Text("Using lot comps as more direct comparable")
+                            .font(.caption2)
+                            .foregroundStyle(DS.Color.textSecondary)
+                            .italic()
+                    }
+                    .padding(.vertical, 8)
+                } header: {
+                    Text("Lot Market Pricing")
+                }
+            }
+
+            // Optimal Lot Size Recommendation - shown when available
+            if let optimalSize = lot.lotOptimalSize,
+               optimalSize != lot.bookIsbns.count {
+                Section {
+                    HStack(spacing: 10) {
+                        Image(systemName: "lightbulb.fill")
+                            .foregroundStyle(.yellow)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Optimal lot size: \(optimalSize) books")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            Text("You have \(lot.bookIsbns.count) books. Market data suggests \(optimalSize)-book lots perform best for this series.")
+                                .font(.caption)
+                                .foregroundStyle(DS.Color.textSecondary)
+                        }
+                    }
+                    .padding(.vertical, 6)
+                } header: {
+                    Text("Recommendation")
+                }
+            }
+
             if let seriesInfo = seriesInfo {
                 Section {
                     VStack(alignment: .leading, spacing: 12) {
@@ -618,7 +809,13 @@ struct LotDetailView: View {
                         createdAt: "2025-01-14T00:00:00Z"
                     )
                 ],
-                marketJson: nil
+                marketJson: nil,
+                lotMarketValue: 55.0,
+                lotOptimalSize: 3,
+                lotPerBookPrice: 18.33,
+                lotCompsCount: 8,
+                useLotPricing: true,
+                individualValue: 60.0
             )
         )
     }

@@ -66,6 +66,11 @@ class EbayMarketStats:
     sold_comps_is_estimate: bool = True  # True = Track B estimate, False = Track A real
     sold_comps_source: Optional[str] = None  # "estimate" or "marketplace_insights"
     sold_comps_last_sold_date: Optional[str] = None  # ISO 8601 date (Track A only)
+    # Smart filtering metadata
+    signed_listings_detected: Optional[int] = None  # Count of signed/autographed listings found
+    lot_listings_detected: Optional[int] = None  # Count of multi-book lot listings found
+    filtered_count: Optional[int] = None  # Total number of listings filtered out
+    total_listings: Optional[int] = None  # Total listings before filtering
 
 
 @dataclass
@@ -144,6 +149,13 @@ class LotSuggestion:
     canonical_series: Optional[str] = None
     series_name: Optional[str] = None
     books: Sequence[BookEvaluation] = field(default_factory=tuple)
+    # eBay lot market pricing fields
+    lot_market_value: Optional[float] = None  # Value based on eBay lot comps
+    lot_optimal_size: Optional[int] = None  # Optimal lot size from market analysis
+    lot_per_book_price: Optional[float] = None  # Per-book price at optimal size
+    lot_comps_count: Optional[int] = None  # Number of lot comps found
+    use_lot_pricing: bool = False  # True if lot pricing is being used (always True when lot_market_value exists)
+    individual_value: Optional[float] = None  # Sum of individual book prices (for comparison)
 
 
 @dataclass
@@ -170,3 +182,9 @@ class LotCandidate:
     ebay_active_count: Optional[int] = None
     ebay_sold_count: Optional[int] = None
     display_author_label: Optional[str] = None
+    # eBay lot market pricing fields
+    lot_market_value: Optional[float] = None
+    lot_optimal_size: Optional[int] = None
+    lot_per_book_price: Optional[float] = None
+    lot_comps_count: Optional[int] = None
+    use_lot_pricing: bool = False

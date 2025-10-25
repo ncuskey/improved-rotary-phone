@@ -150,17 +150,60 @@ class CacheManager {
     }
 
     func saveLots(_ lots: [LotSuggestionDTO]) {
-        // Delete old cached lots
-        do {
-            try modelContext.delete(model: CachedLot.self)
-        } catch {
-            print("Failed to delete old cached lots: \(error)")
+        // Build a set of new lot IDs
+        let newLotIDs = Set(lots.map { $0.id })
+
+        // Fetch existing cached lots
+        let descriptor = FetchDescriptor<CachedLot>()
+        let existingLots = (try? modelContext.fetch(descriptor)) ?? []
+
+        // Delete lots that are no longer in the new set
+        for existing in existingLots {
+            if !newLotIDs.contains(existing.lotID) {
+                modelContext.delete(existing)
+            }
         }
 
-        // Insert new cached lots
+        // Upsert new lots (update existing, insert new)
         for lot in lots {
-            let cachedLot = CachedLot(from: lot)
-            modelContext.insert(cachedLot)
+            let lotDescriptor = FetchDescriptor<CachedLot>(
+                predicate: #Predicate { $0.lotID == lot.id }
+            )
+
+            if let existing = try? modelContext.fetch(lotDescriptor).first {
+                // Update existing lot
+                existing.name = lot.name
+                existing.strategy = lot.strategy
+                existing.bookIsbnsJSON = lot.bookIsbns.jsonEncoded
+                existing.estimatedValue = lot.estimatedValue
+                existing.probabilityScore = lot.probabilityScore
+                existing.probabilityLabel = lot.probabilityLabel
+                existing.sellThrough = lot.sellThrough
+                existing.justificationJSON = lot.justification?.jsonEncoded
+                existing.displayAuthorLabel = lot.displayAuthorLabel
+                existing.canonicalAuthor = lot.canonicalAuthor
+                existing.canonicalSeries = lot.canonicalSeries
+                existing.seriesName = lot.seriesName
+                existing.marketJson = lot.marketJson
+                existing.lotMarketValue = lot.lotMarketValue
+                existing.lotOptimalSize = lot.lotOptimalSize
+                existing.lotPerBookPrice = lot.lotPerBookPrice
+                existing.lotCompsCount = lot.lotCompsCount
+                existing.useLotPricing = lot.useLotPricing
+                existing.individualValue = lot.individualValue
+                existing.lastUpdated = Date()
+
+                // Update books JSON
+                if let books = lot.books {
+                    existing.booksJSON = try? JSONEncoder().encode(books).base64EncodedString()
+                } else {
+                    existing.booksJSON = nil
+                }
+            } else {
+                // Insert new lot
+                let cachedLot = CachedLot(from: lot)
+                modelContext.insert(cachedLot)
+            }
         }
 
         do {

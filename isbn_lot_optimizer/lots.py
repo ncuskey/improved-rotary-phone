@@ -7,6 +7,13 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from shared.author_aliases import canonical_author as alias_canonical_author, display_label
 from shared.models import BookEvaluation, LotSuggestion
 
+# Import lot pricing functions
+try:
+    from isbn_lot_optimizer.market import get_lot_pricing_for_series
+    LOT_PRICING_AVAILABLE = True
+except Exception:
+    LOT_PRICING_AVAILABLE = False
+
 
 def _series_fields(book: BookEvaluation) -> tuple[str | None, int | None, str | None]:
     name = getattr(book.metadata, "series_name", None) or getattr(book.metadata, "series", None)
@@ -127,6 +134,7 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[
                 f"Combined estimated value ${_sum_price(author_books):.2f}",
                 _probability_summary(author_books),
             ],
+            author_name=canonical_name,
         )
         if suggestion:
             suggestion.canonical_author = canonical_name
@@ -176,6 +184,8 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[
                 strategy="series",
                 books=series_books,
                 justification=justification,
+                series_name=series_name,
+                author_name=canonical_name,
             )
             if suggestion:
                 suggestion.series_name = series_name
@@ -205,25 +215,111 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[
     return suggestions
 
 
-def _compose_lot(name: str, strategy: str, books: Sequence[BookEvaluation], justification: Sequence[str]) -> LotSuggestion | None:
-    estimated_value = _sum_price(books)
-    if estimated_value < 10:
+def _compose_lot(
+    name: str,
+    strategy: str,
+    books: Sequence[BookEvaluation],
+    justification: Sequence[str],
+    series_name: Optional[str] = None,
+    author_name: Optional[str] = None
+) -> LotSuggestion | None:
+    """
+    Compose a lot suggestion with market-based pricing when available.
+
+    For series and author lots, attempts to fetch eBay lot comp pricing
+    and compares it to individual book pricing.
+    """
+    # Calculate individual book pricing
+    individual_value = _sum_price(books)
+    if individual_value < 10:
         return None
+
     avg_probability = sum(book.probability_score for book in books) / len(books)
     # Slight bump for grouping synergy
     probability_score = min(100.0, avg_probability + 8)
     sell_through_values = [book.market.sell_through_rate for book in books if book.market and book.market.sell_through_rate]
     sell_through = sum(sell_through_values) / len(sell_through_values) if sell_through_values else None
     label = _classify(probability_score)
+
+    # Initialize lot pricing fields
+    lot_market_value = None
+    lot_optimal_size = None
+    lot_per_book_price = None
+    lot_comps_count = None
+    use_lot_pricing = False
+    final_value = individual_value
+    updated_justification = list(justification)
+
+    # Fetch lot market pricing for series and author lots
+    if LOT_PRICING_AVAILABLE and strategy in ("series", "author") and len(books) >= 2:
+        try:
+            # Determine search term
+            search_series = series_name
+            search_author = author_name
+
+            # For series lots, prefer series name
+            if strategy == "series" and search_series:
+                lot_pricing = get_lot_pricing_for_series(search_series, search_author)
+            # For author lots, use author name
+            elif strategy == "author" and search_author:
+                # Search for "Author Name Lot" to find author collections
+                from isbn_lot_optimizer.market import search_ebay_lot_comps
+                lot_pricing = search_ebay_lot_comps(f"{search_author} lot", limit=50)
+            else:
+                lot_pricing = None
+
+            # If we found lot comps, calculate market-based value
+            if lot_pricing and lot_pricing.get("total_comps", 0) > 0:
+                lot_comps_count = lot_pricing["total_comps"]
+                lot_optimal_size = lot_pricing.get("optimal_lot_size")
+                lot_per_book_price = lot_pricing.get("optimal_per_book_price")
+
+                if lot_per_book_price:
+                    # Calculate market value for our lot size
+                    lot_market_value = round(lot_per_book_price * len(books), 2)
+
+                    # Always prefer lot comp pricing as more direct comparable
+                    use_lot_pricing = True
+                    final_value = lot_market_value
+
+                    # Update justification with pricing comparison
+                    pricing_comparison = (
+                        f"Market lot pricing: ${lot_market_value:.2f} "
+                        f"(${lot_per_book_price:.2f}/book based on {lot_comps_count} eBay comps)"
+                    )
+                    updated_justification.insert(0, pricing_comparison)
+
+                    # Show comparison to individual pricing
+                    if lot_market_value > individual_value:
+                        benefit = lot_market_value - individual_value
+                        benefit_pct = (benefit / individual_value) * 100
+                        updated_justification.insert(1, f"+${benefit:.2f} ({benefit_pct:.0f}%) vs individual pricing (${individual_value:.2f})")
+                    else:
+                        diff = individual_value - lot_market_value
+                        diff_pct = (diff / individual_value) * 100
+                        updated_justification.insert(1, f"Individual pricing higher: ${individual_value:.2f} (+${diff:.2f}/+{diff_pct:.0f}%)")
+        except Exception as e:
+            # Log error but continue - lot pricing is optional enhancement
+            import traceback
+            print(f"⚠️ Lot pricing search failed for '{search_series or search_author}': {e}")
+            print(traceback.format_exc())
+            pass
+
     return LotSuggestion(
         name=name,
         strategy=strategy,
         book_isbns=[book.isbn for book in books],
-        estimated_value=round(estimated_value, 2),
+        estimated_value=round(final_value, 2),
         probability_score=round(probability_score, 1),
         probability_label=label,
         sell_through=sell_through,
-        justification=list(justification),
+        justification=updated_justification,
+        lot_market_value=lot_market_value,
+        lot_optimal_size=lot_optimal_size,
+        lot_per_book_price=lot_per_book_price,
+        lot_comps_count=lot_comps_count,
+        use_lot_pricing=use_lot_pricing,
+        individual_value=round(individual_value, 2) if individual_value else None,
     )
 
 
@@ -293,6 +389,7 @@ def build_lots_with_strategies(books: Sequence[BookEvaluation], strategies: set[
                     f"Combined estimated value ${_sum_price(author_books):.2f}",
                     _probability_summary(author_books),
                 ],
+                author_name=author,
             )
             if suggestion:
                 suggestions.append(suggestion)
@@ -335,6 +432,7 @@ def build_lots_with_strategies(books: Sequence[BookEvaluation], strategies: set[
                 strategy="series",
                 books=series_books,
                 justification=justification,
+                series_name=series_name,
             )
             if suggestion:
                 suggestion.series_name = series_name

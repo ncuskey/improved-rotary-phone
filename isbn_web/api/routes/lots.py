@@ -106,6 +106,22 @@ async def regenerate_lots(
     return response_html
 
 
+@router.post("/regenerate.json", response_class=JSONResponse)
+async def regenerate_lots_json(
+    service: BookService = Depends(get_book_service),
+):
+    """
+    Regenerate lot suggestions and return them as JSON.
+
+    This triggers a full recalculation of lots with the latest data,
+    including lot market pricing integration.
+    """
+    # Recalculate lots (includes lot pricing integration)
+    lots = service.recompute_lots()
+
+    return [_lot_suggestion_to_dict(lot) for lot in lots]
+
+
 @router.get("/all", response_class=JSONResponse)
 @router.get("/all.json", response_class=JSONResponse)
 @router.get("/list", response_class=JSONResponse)

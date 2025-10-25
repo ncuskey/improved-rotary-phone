@@ -1501,10 +1501,10 @@ struct ScannerReviewView: View {
 
         var previousScans: [PreviousSeriesScan] = []
 
-        // 1. Check accepted/saved books from database
+        // 1. Check accepted/saved books from database (excluding the current book being scanned)
         let descriptor = FetchDescriptor<CachedBook>(
             predicate: #Predicate { book in
-                book.seriesName == seriesName
+                book.seriesName == seriesName && book.isbn != eval.isbn
             },
             sortBy: [SortDescriptor(\.lastUpdated, order: .reverse)]
         )
@@ -2123,6 +2123,7 @@ struct ScannerReviewView: View {
                     CacheManager(modelContext: modelContext).upsertBook(eval)
                     evaluation = eval
                     isLoadingEvaluation = false
+                    errorMessage = nil  // Clear any previous errors
 
                     // Play sound based on buy recommendation
                     let decision = makeBuyDecision(eval)
@@ -2136,11 +2137,12 @@ struct ScannerReviewView: View {
                 }
             } catch let error as BookAPIError {
                 // Handle 404 - book might not be processed yet, retry
-                if case .badStatus(let code, _) = error, code == 404, retryCount < 3 {
-                    // Wait longer and retry (exponential backoff)
-                    let delay = Double(retryCount + 1) * 1.0
+                if case .badStatus(let code, _) = error, code == 404, retryCount < 5 {
+                    // Wait longer and retry (exponential backoff: 2s, 3s, 4s, 5s, 6s)
+                    let delay = Double(retryCount + 2)
                     await MainActor.run {
-                        print("⏳ Book not ready yet, retrying in \(delay)s (attempt \(retryCount + 1)/3)...")
+                        errorMessage = "Processing book data... (attempt \(retryCount + 1)/5)"
+                        print("⏳ Book not ready yet, retrying in \(delay)s (attempt \(retryCount + 1)/5)...")
                     }
                     try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                     await MainActor.run {

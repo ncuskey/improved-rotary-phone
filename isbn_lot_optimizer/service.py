@@ -3313,6 +3313,27 @@ class BookService:
             except (ValueError, TypeError):
                 pass
 
+        # Parse Amazon Count (number of sellers)
+        amazon_count = None
+        count_value = blob.get("amazon_count")
+        if count_value is not None:
+            try:
+                amazon_count = int(count_value)
+            except (ValueError, TypeError):
+                pass
+
+        # Parse Amazon Lowest Price
+        amazon_lowest_price = None
+        price_value = blob.get("amazon_lowest_price")
+        if price_value is not None:
+            amazon_lowest_price = self._safe_float(price_value)
+
+        # Parse Amazon Trade-In Price
+        amazon_trade_in = None
+        trade_in_value = blob.get("amazon_trade_in_price")
+        if trade_in_value is not None:
+            amazon_trade_in = self._safe_float(trade_in_value)
+
         # Parse vendor offers
         offers_data = blob.get("offers", [])
         offers = []
@@ -3339,6 +3360,9 @@ class BookService:
             best_vendor=best_vendor,
             total_vendors=total_vendors,
             amazon_sales_rank=amazon_rank,
+            amazon_count=amazon_count,
+            amazon_lowest_price=amazon_lowest_price,
+            amazon_trade_in_price=amazon_trade_in,
             raw=raw_payload,
         )
 

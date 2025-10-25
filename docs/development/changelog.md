@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [2025-10-24] - Performance & Caching Optimization
 
+### Fixed
+- **Amazon Pricing Display**: Fixed bug where Amazon lowest price, seller count, and trade-in price weren't being extracted from database and sent to iOS app, even though data was stored in bookscouter_json field
+
 ### Added
 - **Books Tab Sorting Options**:
   - Added sort by vendor price (high/low)

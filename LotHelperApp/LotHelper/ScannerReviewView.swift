@@ -1809,10 +1809,32 @@ struct ScannerReviewView: View {
                         deviceId: UIDevice.current.identifierForVendor?.uuidString,
                         appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
                     )
-                    // Refresh caches in background - don't block the scan flow
+                    // Proactively refresh Books and Lots tabs in background
                     let context = modelContext
                     Task.detached {
-                        await Self.refreshCachesInBackground(context: context)
+                        // Fetch fresh books list (includes the newly accepted book)
+                        do {
+                            let books = try await BookAPI.fetchAllBooks()
+                            await MainActor.run {
+                                CacheManager(modelContext: context).saveBooks(books)
+                                UserDefaults.standard.set(Date(), forKey: "lastBooksSync")
+                                print("✅ Refreshed books cache: \(books.count) books")
+                            }
+                        } catch {
+                            print("⚠️ Failed to refresh books cache: \(error)")
+                        }
+
+                        // Fetch fresh lots list (includes updated lot compositions)
+                        do {
+                            let lots = try await BookAPI.fetchAllLots()
+                            await MainActor.run {
+                                CacheManager(modelContext: context).saveLots(lots)
+                                UserDefaults.standard.set(Date(), forKey: "lastLotsSync")
+                                print("✅ Refreshed lots cache: \(lots.count) lots")
+                            }
+                        } catch {
+                            print("⚠️ Failed to refresh lots cache: \(error)")
+                        }
                     }
                 } else {
                     // Auto-reject DON'T BUY books

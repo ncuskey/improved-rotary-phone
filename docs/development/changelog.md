@@ -21,8 +21,15 @@ All notable changes to this project will be documented in this file.
 - **Books Tab Price Display**:
   - Now shows Amazon lowest price from BookScouter API
   - Now shows calculated estimated price (using max() algorithm)
+  - Now shows eBay median from Track B sold comps (active listings estimate)
   - Four prices displayed: eBay median, Vendor buyback, Amazon lowest, Estimate
   - Color-coded for clarity: primary, green, orange, blue respectively
+- **eBay Track B Integration**:
+  - Replaced deprecated Finding API with Browse API + sold comps
+  - Track B uses 25th percentile for used books, median for new books
+  - Automatically fetches during book scanning (include_market=True)
+  - Provides conservative pricing estimates from active listings
+  - Works without Marketplace Insights API approval
 
 ### Changed
 - **Accept/Reject Workflow**:

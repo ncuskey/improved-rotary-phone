@@ -130,18 +130,26 @@ async def isbn_lookup(
     data: ISBNRequest,
     service: "BookService" = Depends(get_book_service),
 ):
-    """Return core book metadata for a supplied ISBN."""
+    """
+    Return core book metadata for a supplied ISBN.
+
+    NOTE: This endpoint evaluates and persists the book with status="REJECT" by default.
+    To accept the book into inventory, call POST /api/books/{isbn}/accept
+    """
 
     book = service.get_book(data.isbn)
 
     if book is None:
         try:
+            # Use scan_isbn to persist with REJECT status by default
+            # User can later accept the book to change status to ACCEPT
             book = service.scan_isbn(
                 raw_isbn=data.isbn,
                 condition=data.condition or "Good",
                 edition=data.edition,
                 include_market=True,  # Fetch market data for mobile triage
-                recalc_lots=False,
+                recalc_lots=False,  # Don't recalc lots for rejected scans
+                status="REJECT",  # Default to REJECT - only accepted when user taps Accept
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -189,3 +197,14 @@ async def isbn_lookup(
 
     # Remove keys with None values for a cleaner response
     return {key: value for key, value in response_payload.items() if value is not None}
+
+
+@app.post("/api/books/{isbn}/reject")
+def reject_book(isbn: str):
+    """
+    Mark a book as REJECTED (removes it from inventory if it was previously accepted).
+    """
+    # Update the book's status to REJECT
+    service.db.update_book_record(isbn, columns={"status": "REJECT"})
+
+    return {"success": True, "message": f"Book {isbn} marked as REJECT"}

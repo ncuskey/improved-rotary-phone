@@ -26,6 +26,7 @@ struct ScannerReviewView: View {
     @State private var textInput: String = ""
     @State private var useHiddenScanner = false
     @FocusState private var isTextFieldFocused: Bool
+    @State private var forceKeyboardVisible = false
 
     // Duplicate detection
     @State private var isDuplicate = false
@@ -471,23 +472,13 @@ struct ScannerReviewView: View {
                 }
 
                 HStack(spacing: 12) {
-                    TextField("Type or scan ISBN...", text: $textInput)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.numberPad)
-                        .autocorrectionDisabled(true)
-                        .textInputAutocapitalization(.never)
-                        .focused($isTextFieldFocused)
-                        .onSubmit {
-                            submitTextInput()
-                        }
-                        .toolbar {
-                            ToolbarItemGroup(placement: .keyboard) {
-                                Spacer()
-                                Button("Done") {
-                                    submitTextInput()
-                                }
-                            }
-                        }
+                    ForceKeyboardTextField(
+                        placeholder: "Type or scan ISBN...",
+                        text: $textInput,
+                        onSubmit: submitTextInput,
+                        isFocused: $isTextFieldFocused,
+                        forceKeyboard: $forceKeyboardVisible
+                    )
 
                     Button(action: submitTextInput) {
                         Image(systemName: "arrow.right.circle.fill")
@@ -526,6 +517,9 @@ struct ScannerReviewView: View {
     private func submitTextInput() {
         let trimmed = textInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+
+        // Dismiss keyboard
+        isTextFieldFocused = false
 
         handleScan(trimmed)
         textInput = ""
@@ -1794,19 +1788,46 @@ struct ScannerReviewView: View {
 
     private func handleScan(_ code: String) {
         // If we have an existing evaluation (from a previous scan), handle it
-        // For DON'T BUY: auto-reject and delete from database
         // For BUY: auto-accept and add to catalog
+        // For DON'T BUY: auto-reject and log
         if let existingEval = evaluation, let isbn = scannedCode {
             Task {
                 let decision = makeBuyDecision(existingEval)
+                let location = locationManager.locationData
+
                 if decision.shouldBuy {
                     // Auto-accept BUY books
                     print("✅ Auto-accepting previous BUY: \(isbn)")
-                    // Book is already in database from scan, no action needed
+                    _ = try? await BookAPI.acceptBook(
+                        isbn: isbn,
+                        condition: bookAttributes.condition,
+                        edition: bookAttributes.editionNotes,
+                        locationName: location.name,
+                        locationLatitude: location.latitude,
+                        locationLongitude: location.longitude,
+                        locationAccuracy: location.accuracy,
+                        deviceId: UIDevice.current.identifierForVendor?.uuidString,
+                        appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+                    )
+                    // Refresh caches in background - don't block the scan flow
+                    let context = modelContext
+                    Task.detached {
+                        await Self.refreshCachesInBackground(context: context)
+                    }
                 } else {
                     // Auto-reject DON'T BUY books
                     print("❌ Auto-rejecting previous DON'T BUY: \(isbn)")
-                    try? await BookAPI.deleteBook(isbn)
+                    try? await BookAPI.logScan(
+                        isbn: isbn,
+                        decision: "REJECT",
+                        locationName: location.name,
+                        locationLatitude: location.latitude,
+                        locationLongitude: location.longitude,
+                        locationAccuracy: location.accuracy,
+                        deviceId: UIDevice.current.identifierForVendor?.uuidString,
+                        appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+                        notes: "Auto-rejected (scanned next book)"
+                    )
                 }
             }
         }
@@ -1867,11 +1888,19 @@ struct ScannerReviewView: View {
 
     private func activateTextEntry() {
         guard inputMode == .text else { return }
-        useHiddenScanner = false
+
+        // Keep hidden scanner enabled for bluetooth input
+        // Show visible text field for visual feedback
+        useHiddenScanner = true
+
+        // Clear any existing text
+        textInput = ""
+
+        // Show the text field
         isScanning = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            isTextFieldFocused = true
-        }
+
+        // DON'T force focus - let hidden scanner keep focus for bluetooth
+        // User can tap the text field manually if they want to type with on-screen keyboard
     }
 
     /// Convert ISBN-10 to ISBN-13 if needed (eBay requires 13-digit GTIN)
@@ -1920,41 +1949,55 @@ struct ScannerReviewView: View {
     }
 
     private func acceptAndContinue() {
-        // Book is already in database, just move to next scan
+        guard let isbn = scannedCode else { return }
+
         SoundFeedback.success()
         provideHaptic(.success)
 
-        // Reset attributes but keep the persistent purchase price
-        bookAttributes = BookAttributes()
-        bookAttributes.purchasePrice = persistentPurchasePrice
-
-        rescan()
-    }
-
-    private func reject() {
-        guard let isbn = scannedCode else { return }
-
-        SoundFeedback.reject()
-
-        // Log the rejection with location data
+        // Accept the book and add to inventory
         Task {
             do {
-                // Log the REJECT decision
                 let location = locationManager.locationData
-                try await BookAPI.logScan(
+                _ = try await BookAPI.acceptBook(
                     isbn: isbn,
-                    decision: "REJECT",
+                    condition: bookAttributes.condition,
+                    edition: bookAttributes.editionNotes,
                     locationName: location.name,
                     locationLatitude: location.latitude,
                     locationLongitude: location.longitude,
                     locationAccuracy: location.accuracy,
                     deviceId: UIDevice.current.identifierForVendor?.uuidString,
-                    appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
-                    notes: "User tapped Don't Buy"
+                    appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
                 )
 
-                // Delete the book from the database
-                try await BookAPI.deleteBook(isbn)
+                // Proactively refresh both Books and Lots tabs in background
+                // This ensures tabs show updated data immediately when user switches to them
+                let context = modelContext
+                Task.detached {
+                    // Fetch fresh books list (includes the newly accepted book)
+                    do {
+                        let books = try await BookAPI.fetchAllBooks()
+                        await MainActor.run {
+                            CacheManager(modelContext: context).saveBooks(books)
+                            UserDefaults.standard.set(Date(), forKey: "lastBooksSync")
+                            print("✅ Refreshed books cache: \(books.count) books")
+                        }
+                    } catch {
+                        print("⚠️ Failed to refresh books cache: \(error)")
+                    }
+
+                    // Fetch fresh lots list (includes updated lot compositions)
+                    do {
+                        let lots = try await BookAPI.fetchAllLots()
+                        await MainActor.run {
+                            CacheManager(modelContext: context).saveLots(lots)
+                            UserDefaults.standard.set(Date(), forKey: "lastLotsSync")
+                            print("✅ Refreshed lots cache: \(lots.count) lots")
+                        }
+                    } catch {
+                        print("⚠️ Failed to refresh lots cache: \(error)")
+                    }
+                }
 
                 await MainActor.run {
                     // Reset attributes but keep the persistent purchase price
@@ -1962,14 +2005,71 @@ struct ScannerReviewView: View {
                     bookAttributes.purchasePrice = persistentPurchasePrice
 
                     rescan()
-                    provideHaptic(.success)
                 }
             } catch {
                 await MainActor.run {
-                    errorMessage = "Failed to reject book: \(error.localizedDescription)"
+                    errorMessage = "Failed to accept book: \(error.localizedDescription)"
                     SoundFeedback.error()
                     provideHaptic(.error)
                 }
+            }
+        }
+    }
+
+    private func reject() {
+        guard let isbn = scannedCode else { return }
+
+        SoundFeedback.reject()
+
+        // Dismiss keyboard first to allow tab switching
+        isTextFieldFocused = false
+
+        // Immediately reset UI to prepare for next scan - don't wait for API
+        bookAttributes = BookAttributes()
+        bookAttributes.purchasePrice = persistentPurchasePrice
+
+        // Reset state but don't force keyboard focus
+        errorMessage = nil
+        scannedCode = nil
+        book = nil
+        evaluation = nil
+        isLoading = false
+        isLoadingEvaluation = false
+        textInput = "" // Clear text input
+
+        // Don't call rescan() which would re-focus keyboard
+        // Just enable scanning mode without forcing focus
+        if inputMode == .camera {
+            isScanning = true
+        }
+
+        provideHaptic(.success)
+
+        // Capture location data and device info before detached task
+        let location = locationManager.locationData
+        let deviceId = UIDevice.current.identifierForVendor?.uuidString
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+
+        // Log the rejection in background - don't block UI
+        // NOTE: We DON'T change the book's status in the database
+        // This allows rejecting duplicate scans while keeping the original accepted book
+        Task.detached {
+            do {
+                try await BookAPI.logScan(
+                    isbn: isbn,
+                    decision: "REJECT",
+                    locationName: location.name,
+                    locationLatitude: location.latitude,
+                    locationLongitude: location.longitude,
+                    locationAccuracy: location.accuracy,
+                    deviceId: deviceId,
+                    appVersion: appVersion,
+                    notes: "User tapped Don't Buy"
+                )
+                print("✅ Logged rejection for \(isbn)")
+            } catch {
+                print("⚠️ Failed to log rejection: \(error)")
+                // Don't show error to user - logging is not critical
             }
         }
     }
@@ -2125,10 +2225,9 @@ private struct HiddenScannerInput: UIViewRepresentable {
         } else {
             context.coordinator.reset()
             textField.text = ""
+            // Resign immediately (not async) to allow visible TextField to take focus faster
             if textField.isFirstResponder {
-                DispatchQueue.main.async {
-                    textField.resignFirstResponder()
-                }
+                textField.resignFirstResponder()
             }
         }
     }
@@ -2190,6 +2289,127 @@ private struct ReticleView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 140)
             .accessibilityHidden(true)
+    }
+}
+
+/// Custom UITextField that forces software keyboard even with bluetooth keyboard
+class AlwaysShowKeyboardTextField: UITextField {
+    // Override to force software keyboard
+    override var inputAccessoryView: UIView? {
+        get { super.inputAccessoryView }
+        set { super.inputAccessoryView = newValue }
+    }
+}
+
+/// Custom TextField that forces on-screen keyboard even when bluetooth keyboard connected
+struct ForceKeyboardTextField: UIViewRepresentable {
+    let placeholder: String
+    @Binding var text: String
+    var onSubmit: () -> Void
+    var isFocused: FocusState<Bool>.Binding
+    @Binding var forceKeyboard: Bool
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text, onSubmit: onSubmit, isFocused: isFocused)
+    }
+
+    func makeUIView(context: Context) -> AlwaysShowKeyboardTextField {
+        let textField = AlwaysShowKeyboardTextField()
+        textField.placeholder = placeholder
+        textField.borderStyle = .roundedRect
+        textField.keyboardType = .numberPad
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.delegate = context.coordinator
+
+        // This is the key: disable automatic keyboard suppression
+        textField.inputAssistantItem.leadingBarButtonGroups = []
+        textField.inputAssistantItem.trailingBarButtonGroups = []
+
+        // Add toolbar with Done button above keyboard
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+        let doneButton = UIBarButtonItem(title: "Done", style: .done, target: context.coordinator, action: #selector(Coordinator.doneButtonTapped))
+        toolbar.items = [flexSpace, doneButton]
+        textField.inputAccessoryView = toolbar
+
+        return textField
+    }
+
+    func updateUIView(_ uiView: AlwaysShowKeyboardTextField, context: Context) {
+        uiView.text = text
+
+        // Check if we should force keyboard focus
+        if forceKeyboard && !uiView.isFirstResponder {
+            DispatchQueue.main.async {
+                uiView.becomeFirstResponder()
+                // Reload input views to ensure keyboard appears if possible
+                uiView.reloadInputViews()
+            }
+            // Reset the trigger
+            DispatchQueue.main.async {
+                self.forceKeyboard = false
+            }
+        }
+
+        // Handle normal focus state changes
+        if isFocused.wrappedValue {
+            if !uiView.isFirstResponder {
+                DispatchQueue.main.async {
+                    uiView.becomeFirstResponder()
+                }
+            }
+        } else {
+            if uiView.isFirstResponder {
+                DispatchQueue.main.async {
+                    uiView.resignFirstResponder()
+                }
+            }
+        }
+    }
+
+    class Coordinator: NSObject, UITextFieldDelegate {
+        @Binding var text: String
+        var onSubmit: () -> Void
+        var isFocused: FocusState<Bool>.Binding
+
+        init(text: Binding<String>, onSubmit: @escaping () -> Void, isFocused: FocusState<Bool>.Binding) {
+            _text = text
+            self.onSubmit = onSubmit
+            self.isFocused = isFocused
+        }
+
+        @objc func doneButtonTapped() {
+            onSubmit()
+        }
+
+        func textFieldDidChangeSelection(_ textField: UITextField) {
+            text = textField.text ?? ""
+        }
+
+        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+            // Update binding
+            if let currentText = textField.text,
+               let textRange = Range(range, in: currentText) {
+                let updatedText = currentText.replacingCharacters(in: textRange, with: string)
+                text = updatedText
+            }
+            return true
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            onSubmit()
+            return true
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            isFocused.wrappedValue = true
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            isFocused.wrappedValue = false
+        }
     }
 }
 

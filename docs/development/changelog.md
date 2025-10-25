@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-24] - Performance & Caching Optimization
+
+### Added
+- **Persistent Storage & Smart Caching**:
+  - iOS app now uses persistent SwiftData storage (was in-memory)
+  - Smart cache with 5-minute window to avoid unnecessary network calls
+  - Proactive background refresh after accepting books
+  - Books and Lots tabs load instantly from cache on subsequent launches
+- **Incremental Sync Support**:
+  - Backend API supports `?since=` query parameter for `/api/books/all`
+  - Database layer: `fetch_books_updated_since()` method
+  - Service layer: `get_books_updated_since()` method
+  - Client-side: `BookAPI.fetchBooksUpdatedSince()` method
+- **Extended Splash Screen**:
+  - Increased from 0.2s to 2.0s to display branding
+  - Performance improvements made app load so fast splash needed to be extended
+
+### Changed
+- **Accept/Reject Workflow**:
+  - Accept: Proactively refreshes Books and Lots caches in background
+  - Reject: Only logs to scan_history, doesn't change book status
+  - Accept updates visible immediately when switching to Books/Lots tabs
+  - Rejected books kept in scan_history for lot building and series matching
+- **Cache Strategy**:
+  - < 5 minutes: Uses cached data (instant load)
+  - > 5 minutes: Full sync from backend (removes rejected books from cache)
+  - Background refresh after accept ensures tabs are always current
+- **Database Access Pattern**:
+  - Fixed ThreadSafeDatabaseManager usage in `accept_book()`
+  - Now uses `update_book_record()` instead of direct connection access
+
+### Fixed
+- **AttributeError in accept_book()**: Fixed ThreadSafeDatabaseManager attribute error
+- **Rejected Books in Books Tab**: Cache now properly filters status='REJECT' books
+- **Performance Issues**: Eliminated 30-second black screen on launch
+- **UI Blocking**: Accept/reject operations no longer block UI or tab switching
+
+### Technical Improvements
+- Persistent SwiftData storage eliminates full data download on every launch
+- 5-minute cache window balances performance and data freshness
+- Background refresh ensures tabs ready when user switches to them
+- Proper ThreadSafeDatabaseManager method usage throughout codebase
+- Incremental sync infrastructure (currently does full sync after 5min)
+
 ## [Unreleased] - 2025-10-18
 
 ### Added

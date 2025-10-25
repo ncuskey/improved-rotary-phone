@@ -573,6 +573,39 @@ enum BookAPI {
         }
     }
 
+    /// Fetch books updated since a given timestamp (incremental sync)
+    static func fetchBooksUpdatedSince(_ timestamp: Date) async throws -> [BookEvaluationRecord] {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let sinceParam = isoFormatter.string(from: timestamp)
+
+        guard var urlComponents = URLComponents(string: "\(baseURLString)/api/books/all") else {
+            throw URLError(.badURL)
+        }
+        urlComponents.queryItems = [URLQueryItem(name: "since", value: sinceParam)]
+
+        guard let url = urlComponents.url else {
+            throw URLError(.badURL)
+        }
+
+        print("📡 Fetching books updated since \(sinceParam)")
+        let (data, response) = try await session.data(from: url)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ GET /api/books/all?since=... failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        let books = try await decodeOnWorker([BookEvaluationRecord].self, from: data)
+        print("✅ Fetched \(books.count) updated books")
+        return books
+    }
+
     /// Fetch all lot suggestions from the /api/lots/list.json endpoint
     static func fetchAllLots() async throws -> [LotSuggestionDTO] {
         guard let url = URL(string: "\(baseURLString)/api/lots/list.json") else {
@@ -700,6 +733,99 @@ enum BookAPI {
         }
 
         print("✓ Logged scan: \(isbn) - \(decision)")
+    }
+
+    /// Accept a book and add it to inventory
+    static func acceptBook(
+        isbn: String,
+        condition: String = "Good",
+        edition: String? = nil,
+        locationName: String? = nil,
+        locationLatitude: Double? = nil,
+        locationLongitude: Double? = nil,
+        locationAccuracy: Double? = nil,
+        deviceId: String? = nil,
+        appVersion: String? = nil
+    ) async throws -> BookEvaluationRecord {
+        guard let url = URL(string: "\(baseURLString)/api/books/\(isbn)/accept") else {
+            throw URLError(.badURL)
+        }
+
+        var payload: [String: Any] = [
+            "condition": condition
+        ]
+
+        if let edition = edition, !edition.isEmpty {
+            payload["edition"] = edition
+        }
+
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+
+        print("📡 Accepting book: \(isbn)")
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ POST /api/books/\(isbn)/accept failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        struct AcceptResponse: Codable {
+            let success: Bool
+            let book: BookEvaluationRecord
+        }
+
+        let acceptResponse = try await decodeOnWorker(AcceptResponse.self, from: data)
+
+        // Also log the ACCEPT decision in scan history
+        try await logScan(
+            isbn: isbn,
+            decision: "ACCEPT",
+            locationName: locationName,
+            locationLatitude: locationLatitude,
+            locationLongitude: locationLongitude,
+            locationAccuracy: locationAccuracy,
+            deviceId: deviceId,
+            appVersion: appVersion,
+            notes: "User tapped Accept"
+        )
+
+        print("✓ Book accepted and added to inventory: \(isbn)")
+        return acceptResponse.book
+    }
+
+    /// Reject a book and remove from inventory (set status to REJECT)
+    static func rejectBook(isbn: String) async throws {
+        guard let url = URL(string: "\(baseURLString)/api/books/\(isbn)/reject") else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        print("📡 Rejecting book: \(isbn)")
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ POST /api/books/\(isbn)/reject failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        print("✓ Book rejected: \(isbn)")
     }
 
     /// Get scan history with optional filters

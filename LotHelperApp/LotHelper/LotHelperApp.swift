@@ -13,8 +13,8 @@ import UIKit
 struct LotHelperApp: App {
 
     init() {
-        // One-time database cleanup before any other initialization
-        Self.cleanupDatabaseFiles()
+        // Removed database cleanup - we now use persistent storage for faster launches
+        // Self.cleanupDatabaseFiles()
         let background = UIColor(named: "AppBackground") ?? .systemBackground
 
         configureURLCache()
@@ -96,15 +96,15 @@ struct LotHelperApp: App {
             CachedLot.self,
         ])
 
-        // Use in-memory storage to avoid database corruption issues during development
+        // Use persistent storage for faster launches (only sync changes)
         let modelConfiguration = ModelConfiguration(
             schema: schema,
-            isStoredInMemoryOnly: true  // Changed to true to avoid persistent storage issues
+            isStoredInMemoryOnly: false  // Persistent storage
         )
 
         do {
             let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-            print("✅ ModelContainer created successfully (in-memory)")
+            print("✅ ModelContainer created successfully (persistent)")
             return container
         } catch {
             print("❌ Failed to create ModelContainer: \(error)")
@@ -136,27 +136,13 @@ struct LotHelperApp: App {
     }
 
     private func performStartup() async {
-        // Show initialization status
-        await MainActor.run {
-            loadingStatus = "Setting up database..."
-        }
-
-        // Simulate checking database (since we're in-memory, this is quick)
-        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-
-        await MainActor.run {
-            loadingStatus = "Loading cached data..."
-        }
-
-        // Give time for cache manager to initialize
-        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-
+        // Show initialization status briefly
         await MainActor.run {
             loadingStatus = "Ready!"
         }
 
-        // Brief pause to show "Ready!" message
-        try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+        // Display splash screen for a couple seconds to show branding
+        try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
 
         // Fade out splash screen
         await MainActor.run {

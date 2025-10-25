@@ -395,7 +395,30 @@ class DatabaseManager:
     def fetch_all_books(self) -> List[sqlite3.Row]:
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "SELECT * FROM books ORDER BY datetime(updated_at) DESC"
+                "SELECT * FROM books WHERE status='ACCEPT' ORDER BY datetime(updated_at) DESC"
+            )
+            rows = cursor.fetchall()
+        return list(rows)
+
+    def fetch_books_updated_since(self, since_timestamp: str) -> List[sqlite3.Row]:
+        """
+        Fetch books that have been updated since the given timestamp.
+
+        Args:
+            since_timestamp: ISO 8601 formatted timestamp string
+
+        Returns:
+            List of book rows updated after the given timestamp
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                """
+                SELECT * FROM books
+                WHERE status='ACCEPT'
+                  AND datetime(updated_at) > datetime(?)
+                ORDER BY datetime(updated_at) DESC
+                """,
+                (since_timestamp,)
             )
             rows = cursor.fetchall()
         return list(rows)
@@ -410,7 +433,8 @@ class DatabaseManager:
             cursor = conn.execute(
                 """
                 SELECT * FROM books
-                WHERE isbn LIKE ? OR title LIKE ? OR authors LIKE ?
+                WHERE (isbn LIKE ? OR title LIKE ? OR authors LIKE ?)
+                  AND status='ACCEPT'
                 ORDER BY probability_score DESC, title COLLATE NOCASE
                 """,
                 (q, q, q),

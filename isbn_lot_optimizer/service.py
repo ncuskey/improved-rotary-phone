@@ -187,15 +187,29 @@ class BookService:
         except Exception:
             pass
 
-    def scan_isbn(
+    def evaluate_isbn(
         self,
         raw_isbn: str,
         *,
         condition: str = "Good",
         edition: Optional[str] = None,
         include_market: bool = True,
-        recalc_lots: bool = True,
     ) -> BookEvaluation:
+        """
+        Evaluate a book WITHOUT persisting to database.
+
+        This method fetches metadata, market data, and calculates probability,
+        but does not save the book to the database. Use accept_book() to persist.
+
+        Args:
+            raw_isbn: The ISBN to evaluate
+            condition: Book condition (default: "Good")
+            edition: Edition notes
+            include_market: Whether to fetch market data (default: True)
+
+        Returns:
+            BookEvaluation with all data populated but not persisted
+        """
         original_isbn = raw_isbn.strip()
         normalized = normalise_isbn(original_isbn)
         if not normalized:
@@ -263,20 +277,20 @@ class BookService:
                 max_results=self.ebay_entries,
             )
 
-        # Fetch BookScouter offers (skip metadata fetch since we already did it above)
+        # Fetch BookScouter offers
         booksrun_offer: Optional[BooksRunOffer] = None
         bookscouter_result: Optional[BookScouterResult] = None
         if include_market:
             booksrun_offer = self._fetch_booksrun_offer(normalized, condition=condition)
 
-            # Only fetch offers, not metadata (we already got metadata + Amazon rank above)
-            fetch_amazon_rank_flag = (amazon_rank is None)  # Only if we don't have it yet
+            # Always fetch Amazon data (includes price, rank, count)
+            # Even if we got rank from metadata fetch, we need price and count
             bookscouter_result = self._fetch_bookscouter_offers_internal(
                 normalized,
-                fetch_amazon_rank=fetch_amazon_rank_flag
+                fetch_amazon_rank=True  # Always True to get full Amazon data
             )
 
-            # If we didn't get Amazon rank from metadata call, try to get it from offers result
+            # Use Amazon rank from BookScouter result if we didn't get it from metadata
             if amazon_rank is None and bookscouter_result:
                 amazon_rank = bookscouter_result.amazon_sales_rank
 
@@ -313,10 +327,106 @@ class BookService:
 
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
         self._apply_bookscouter_to_evaluation(evaluation, bookscouter_result)
-        self._persist_book(evaluation, v2_stats=v2_stats_result)
+
+        # Store v2_stats for later use when accepting
+        if v2_stats_result:
+            evaluation._v2_stats_result = v2_stats_result
+
+        # NOTE: Does NOT persist to database - call accept_book() to persist
+        return evaluation
+
+    def scan_isbn(
+        self,
+        raw_isbn: str,
+        *,
+        condition: str = "Good",
+        edition: Optional[str] = None,
+        include_market: bool = True,
+        recalc_lots: bool = True,
+        status: str = "REJECT",
+    ) -> BookEvaluation:
+        """
+        Evaluate a book AND persist to database with given status.
+
+        This is a convenience method that calls evaluate_isbn() and then persists.
+        For non-persisting evaluation, use evaluate_isbn() directly.
+
+        Args:
+            status: Book status - "REJECT" (default) or "ACCEPT"
+        """
+        # Evaluate the book without persisting
+        evaluation = self.evaluate_isbn(
+            raw_isbn,
+            condition=condition,
+            edition=edition,
+            include_market=include_market,
+        )
+
+        # Persist to database with given status
+        v2_stats_result = getattr(evaluation, '_v2_stats_result', None)
+        self._persist_book(evaluation, v2_stats=v2_stats_result, status=status)
+
         if recalc_lots:
             self.recalculate_lots()
+
         return evaluation
+
+    def accept_book(
+        self,
+        isbn: str,
+        *,
+        condition: str = "Good",
+        edition: Optional[str] = None,
+        recalc_lots: bool = True,
+    ) -> BookEvaluation:
+        """
+        Accept a previously scanned book by updating its status to "ACCEPT".
+
+        If the book doesn't exist, it will be evaluated and persisted with "ACCEPT" status.
+
+        Args:
+            isbn: The ISBN to accept
+            condition: Book condition
+            edition: Edition notes
+            recalc_lots: Whether to recalculate lots after accepting
+
+        Returns:
+            BookEvaluation that has been accepted
+        """
+        normalized = normalise_isbn(isbn)
+        if not normalized:
+            raise ValueError(f"Invalid ISBN: {isbn}")
+
+        # Check if book exists in database
+        existing = self.get_book(normalized)
+
+        if existing:
+            # Book exists - just update status to ACCEPT
+            self.db.update_book_record(
+                normalized,
+                columns={"status": "ACCEPT"}
+            )
+
+            # Log the accept decision
+            try:
+                self.log_scan(existing, decision="ACCEPT")
+            except Exception as e:
+                print(f"Warning: Failed to log scan history: {e}")
+
+            if recalc_lots:
+                self.recalculate_lots()
+
+            return existing
+        else:
+            # Book doesn't exist - evaluate and persist with ACCEPT status
+            return self.scan_isbn(
+                isbn,
+                condition=condition,
+                edition=edition,
+                include_market=True,
+                recalc_lots=recalc_lots,
+                status="ACCEPT",
+            )
 
     def import_csv(
         self,
@@ -417,6 +527,19 @@ class BookService:
     def get_all_books(self) -> List[BookEvaluation]:
         """Return all books currently stored in the database."""
         return self.list_books()
+
+    def get_books_updated_since(self, since_timestamp: str) -> List[BookEvaluation]:
+        """
+        Return books updated since the given timestamp.
+
+        Args:
+            since_timestamp: ISO 8601 formatted timestamp string
+
+        Returns:
+            List of BookEvaluation objects updated after the given timestamp
+        """
+        rows = self.db.fetch_books_updated_since(since_timestamp)
+        return [self._row_to_evaluation(row) for row in rows]
 
     def route_book(self, isbn: str) -> Optional[RoutingDecision]:
         """
@@ -3199,7 +3322,7 @@ class BookService:
             raw=raw_payload,
         )
 
-    def _persist_book(self, evaluation: BookEvaluation, v2_stats: Optional[Dict[str, Any]] = None) -> None:
+    def _persist_book(self, evaluation: BookEvaluation, v2_stats: Optional[Dict[str, Any]] = None, status: str = "REJECT") -> None:
         metadata_dict = asdict(evaluation.metadata)
         metadata_dict["authors"] = list(metadata_dict.get("authors") or [])
         metadata_dict["credited_authors"] = list(metadata_dict.get("credited_authors") or [])
@@ -3263,6 +3386,7 @@ class BookService:
                 "edition": evaluation.edition,
                 "quantity": max(1, int(getattr(evaluation, "quantity", 1) or 1)),
             },
+            "status": status,
         }
 
         # Add sold comps columns if available from v2_stats
@@ -3284,9 +3408,9 @@ class BookService:
 
         self.db.upsert_book(payload)
 
-        # Automatically log ACCEPT decision when book is persisted
+        # Automatically log scan decision based on status
         try:
-            self.log_scan(evaluation, decision="ACCEPT")
+            self.log_scan(evaluation, decision=status)
         except Exception as e:
             # Don't fail the whole operation if scan logging fails
             print(f"Warning: Failed to log scan history: {e}")

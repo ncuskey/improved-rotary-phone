@@ -127,11 +127,21 @@ def _book_evaluation_to_dict(evaluation) -> Dict[str, Any]:
 
 @router.get("/all", response_class=JSONResponse)
 async def get_all_books_json(
+    since: Optional[str] = None,
     service: BookService = Depends(get_book_service),
 ):
-    """Return all books and their metadata as JSON."""
+    """
+    Return all books and their metadata as JSON.
 
-    evaluations = service.get_all_books()
+    Query parameters:
+    - since: Optional ISO 8601 timestamp. If provided, only returns books updated after this time.
+    """
+
+    if since:
+        evaluations = service.get_books_updated_since(since)
+    else:
+        evaluations = service.get_all_books()
+
     payload = [_book_evaluation_to_dict(evaluation) for evaluation in evaluations]
     return payload
 
@@ -319,6 +329,58 @@ async def get_book_evaluation_json(
     result_dict = _book_evaluation_to_dict(book)
     print(f"DEBUG: Result dict - condition={result_dict.get('condition')!r}, edition={result_dict.get('edition')!r}")
     return JSONResponse(content=result_dict)
+
+
+@router.post("/{isbn}/accept")
+async def accept_book(
+    isbn: str,
+    condition: Optional[str] = None,
+    edition: Optional[str] = None,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Accept a book and add it to inventory.
+
+    This endpoint explicitly adds the book to the database inventory.
+    Books should only be added when the user accepts them (taps "Accept" button),
+    not automatically when scanned.
+
+    Args:
+        isbn: The ISBN to accept
+        condition: Book condition (default: "Good")
+        edition: Edition notes (optional)
+
+    Returns:
+        JSON with the accepted book's full evaluation data
+    """
+    normalized_isbn = normalise_isbn(isbn)
+
+    if not normalized_isbn:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid ISBN", "isbn": isbn}
+        )
+
+    try:
+        # Use accept_book which will persist to database and log ACCEPT
+        book = service.accept_book(
+            normalized_isbn,
+            condition=condition or "Good",
+            edition=edition,
+            recalc_lots=True,
+        )
+
+        result_dict = _book_evaluation_to_dict(book)
+        return JSONResponse(
+            status_code=200,
+            content={"success": True, "book": result_dict}
+        )
+
+    except Exception as exc:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(exc), "message": f"Failed to accept book {normalized_isbn}"}
+        )
 
 
 @router.post("/{isbn}/refresh", response_class=HTMLResponse)

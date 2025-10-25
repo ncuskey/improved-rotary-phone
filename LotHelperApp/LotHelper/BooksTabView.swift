@@ -251,18 +251,38 @@ struct BooksTabView: View {
 
     @MainActor
     private func loadBooks() async {
-        isLoading = books.isEmpty // Only show loading if we have no data
+        // With persistent storage, we already have cached data loaded from SwiftData
+        // Only show loading spinner if cache is truly empty
+        isLoading = books.isEmpty
         errorMessage = nil
+
+        // Check when we last synced
+        let lastSync = UserDefaults.standard.object(forKey: "lastBooksSync") as? Date ?? .distantPast
+        let minutesSinceSync = Date().timeIntervalSince(lastSync) / 60
+
+        // If cache exists and was synced very recently (< 5 minutes ago), skip network fetch
+        if !books.isEmpty && minutesSinceSync < 5.0 {
+            print("✅ Using cached books (last synced \(String(format: "%.1f", minutesSinceSync)) minutes ago)")
+            return
+        }
+
+        // After 5 minutes, always do a full sync to ensure cache is clean
+        // (removes books that were deleted or changed to REJECT status)
         do {
+            print("📡 Syncing all books from backend...")
             let freshBooks = try await BookAPI.fetchAllBooks()
             books = freshBooks
             cacheManager.saveBooks(freshBooks)
+            UserDefaults.standard.set(Date(), forKey: "lastBooksSync")
+            print("✅ Synced \(freshBooks.count) books")
             isLoading = false
         } catch {
             isLoading = false
             // Only show error if we have no cached data to display
             if books.isEmpty {
                 errorMessage = "Failed to load books: \(error.localizedDescription)"
+            } else {
+                print("⚠️ Sync failed, using cached data: \(error)")
             }
         }
     }
@@ -281,6 +301,7 @@ struct BooksTabView: View {
             let freshBooks = try await BookAPI.fetchAllBooks()
             books = freshBooks
             cacheManager.saveBooks(freshBooks)
+            UserDefaults.standard.set(Date(), forKey: "lastBooksSync")
 
             // Show success message
             refreshMessage = "✅ Successfully refreshed \(freshBooks.count) books with latest market data from backend"
@@ -464,6 +485,7 @@ struct BookDetailView: View {
                     AsyncImage(url: url) { image in
                         image
                             .resizable()
+                            .interpolation(.high)
                             .scaledToFit()
                     } placeholder: {
                         ProgressView()

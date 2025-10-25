@@ -8,6 +8,7 @@ struct BookCardView: View {
         let thumbnail: String
         let score: String?
         let profitPotential: String?
+        let estimatedPrice: Double?
         let soldCompsMedian: Double?
         let bestVendorPrice: Double?
         let amazonLowestPrice: Double?
@@ -30,7 +31,7 @@ struct BookCardView: View {
             return (margin / vendor) * 100
         }
 
-        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, soldCompsMedian: nil, bestVendorPrice: nil, amazonLowestPrice: nil)
+        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, estimatedPrice: nil, soldCompsMedian: nil, bestVendorPrice: nil, amazonLowestPrice: nil)
     }
 
     let book: Book
@@ -137,6 +138,17 @@ struct BookCardView: View {
                             .foregroundStyle(.orange)
                     }
                 }
+                if let estimated = book.estimatedPrice, estimated > 0 {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Estimate")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("$\(String(format: "%.2f", estimated))")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.blue)
+                    }
+                }
             }
         }
         .padding(DS.Spacing.md)
@@ -185,8 +197,10 @@ struct BookCardView: View {
         thumbnail: "https://covers.openlibrary.org/b/isbn/9780670855032-L.jpg",
         score: "92",
         profitPotential: "High",
+        estimatedPrice: 22.50,
         soldCompsMedian: 24.99,
-        bestVendorPrice: 8.50
+        bestVendorPrice: 8.50,
+        amazonLowestPrice: 28.99
     ))
     .padding()
     .background(DS.Color.background)

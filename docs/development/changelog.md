@@ -18,12 +18,17 @@ All notable changes to this project will be documented in this file.
 - **Extended Splash Screen**:
   - Increased from 0.2s to 2.0s to display branding
   - Performance improvements made app load so fast splash needed to be extended
+- **Books Tab Price Display**:
+  - Now shows Amazon lowest price from BookScouter API
+  - Now shows calculated estimated price (using max() algorithm)
+  - Four prices displayed: eBay median, Vendor buyback, Amazon lowest, Estimate
+  - Color-coded for clarity: primary, green, orange, blue respectively
 
 ### Changed
 - **Accept/Reject Workflow**:
   - Accept: Proactively refreshes Books and Lots caches in background
-  - Reject: Only logs to scan_history, doesn't change book status
-  - Accept updates visible immediately when switching to Books/Lots tabs
+  - Reject: Logs to scan_history and refreshes Books cache to remove rejected books
+  - Accept/reject updates visible immediately when switching to Books/Lots tabs
   - Rejected books kept in scan_history for lot building and series matching
 - **Cache Strategy**:
   - < 5 minutes: Uses cached data (instant load)

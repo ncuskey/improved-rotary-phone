@@ -270,12 +270,32 @@ class BookService:
 
         market_stats: Optional[EbayMarketStats] = None
         if include_market and self.ebay_app_id:
-            market_stats = fetch_single_market_stat(
-                isbn=normalized,
-                app_id=self.ebay_app_id,
-                global_id=self.ebay_global_id,
-                max_results=self.ebay_entries,
-            )
+            # Use v2 API which includes Browse API + sold comps (Track B)
+            try:
+                stats_dict = fetch_market_stats_v2(normalized, include_sold_comps=True)
+                if stats_dict and "error" not in stats_dict:
+                    # Convert dict to EbayMarketStats
+                    market_stats = EbayMarketStats(
+                        isbn=normalized,
+                        active_count=stats_dict.get("active_count", 0) or 0,
+                        active_avg_price=stats_dict.get("median_price"),  # Use median as avg
+                        active_median_price=stats_dict.get("median_price"),
+                        sold_count=stats_dict.get("sold_count", 0) or 0,
+                        sold_avg_price=None,  # Not available from Browse API
+                        sold_median_price=None,  # Not available from Browse API
+                        sell_through_rate=stats_dict.get("sell_through"),
+                        currency="USD",
+                        # Sold comps from Track B (active listing estimate)
+                        sold_comps_count=stats_dict.get("sold_comps_count"),
+                        sold_comps_min=stats_dict.get("sold_comps_min"),
+                        sold_comps_median=stats_dict.get("sold_comps_median"),
+                        sold_comps_max=stats_dict.get("sold_comps_max"),
+                        sold_comps_is_estimate=stats_dict.get("sold_comps_is_estimate", True),
+                        sold_comps_source=stats_dict.get("sold_comps_source", "estimate"),
+                        sold_comps_last_sold_date=stats_dict.get("sold_comps_last_sold_date"),
+                    )
+            except Exception as e:
+                print(f"⚠️  eBay market data fetch failed: {e}")
 
         # Fetch BookScouter offers
         booksrun_offer: Optional[BooksRunOffer] = None

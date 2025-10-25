@@ -1,0 +1,32 @@
+import unittest
+from app import get_probability
+
+class TestProbabilityScoring(unittest.TestCase):
+
+    def test_probability_score_over_10(self):
+        """Scores over 10 should have a probability of 1.0"""
+        self.assertEqual(get_probability(11), 1.0)
+        self.assertEqual(get_probability(100), 1.0)
+
+    def test_probability_score_6_to_10(self):
+        """Scores > 5 and <= 10 should have a probability of 0.75"""
+        self.assertEqual(get_probability(6), 0.75)
+        self.assertEqual(get_probability(10), 0.75)
+
+    def test_probability_score_4_to_5(self):
+        """Scores > 3 and <= 5 should have a probability of 0.5"""
+        self.assertEqual(get_probability(4), 0.5)
+        self.assertEqual(get_probability(5), 0.5)
+
+    def test_probability_score_1_to_3(self):
+        """Scores > 0 and <= 3 should have a probability of 0.25"""
+        self.assertEqual(get_probability(1), 0.25)
+        self.assertEqual(get_probability(3), 0.25)
+
+    def test_probability_score_zero_or_less(self):
+        """Scores <= 0 should have a probability of 0.0"""
+        self.assertEqual(get_probability(0), 0.0)
+        self.assertEqual(get_probability(-5), 0.0)
+
+if __name__ == '__main__':
+    unittest.main()

@@ -1,0 +1,21 @@
+import unittest
+from app import get_probability
+
+class TestProbabilityScoring(unittest.TestCase):
+    def test_base_probability(self):
+        data = {}
+        prob = get_probability(data)
+        self.assertEqual(prob, 0.5)
+    
+    def test_risk_factor(self):
+        data = {'risk_factor': 1.0}
+        prob = get_probability(data)
+        self.assertAlmostEqual(prob, 0.7, places=1)
+    
+    def test_historical_data(self):
+        data = {'historical_data': [1, 2, 3, 4]}
+        prob = get_probability(data)
+        self.assertAlmostEqual(prob, 0.9, places=1)
+
+if __name__ == '__main__':
+    unittest.main()

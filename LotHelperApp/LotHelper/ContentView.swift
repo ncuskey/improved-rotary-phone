@@ -23,12 +23,8 @@ struct ContentView: View {
                 .tabItem { Label("Settings", systemImage: "gear") }
         }
         .background(DS.Color.background.ignoresSafeArea())
-    }
-}
-
-#Preview("App Shell") {
-    ContentView()
         .modelContainer(for: [CachedBook.self, CachedLot.self], inMemory: true)
+    }
 }
 
 // NOTE: This preview referenced `LotDetailView`, which isn't currently in scope.

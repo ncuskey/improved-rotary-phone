@@ -39,6 +39,58 @@ All notable changes to this project will be documented in this file.
   - Automatically fetches during book scanning (include_market=True)
   - Provides conservative pricing estimates from active listings
   - Works without Marketplace Insights API approval
+- **Redesigned Book Detail View**:
+  - Complete visual redesign following scanner results design philosophy
+  - Card-based panels with rounded corners and consistent shadows
+  - ScrollView layout for better control and smoother scrolling
+  - Hero section with large cover image and quick stats badges
+  - Price comparison panel with 2x2 grid of all four price types
+  - Profit analysis panel showing margin and percentage markup
+  - Color-coded sections: blue for info, green for buyback, orange for eBay/Amazon
+  - Market data panel with metric chips for active/sold counts and sell-through rate
+  - Buyback offers panel showing top 5 vendor offers
+  - Amazon data panel with sales rank, seller count, and trade-in value
+  - Lots panel showing which lots contain this book
+  - Book info panel with publisher, year, categories, and description
+  - Justification panel with numbered evaluation factors
+  - File: `BookDetailViewRedesigned.swift` (replaces old List-based BookDetailView)
+- **Smart eBay Listing Filtering**:
+  - Automatically filters out multi-book lots ("lot of", "set of", "bundle", "collection")
+  - Filters out signed/autographed copies by default to avoid inflated pricing
+  - Tracks detection of signed listings for future user prompting
+  - Returns filtering metadata: total listings, filtered count, signed count, lot count
+  - Optional `include_signed` parameter to include signed copies when user confirms
+  - Applied to both active listings (Browse API) and sold comps (Track B estimates)
+  - Prevents inaccurate pricing from special edition or multi-book listings
+- **Signed Copy Detection Infrastructure**:
+  - Backend: Updated `EbayMarketStats` model with filtering metadata fields
+  - Backend: `browse_active_by_isbn()` now returns `signed_listings_detected`, `lot_listings_detected`, `filtered_count`, `total_listings`
+  - Backend: Updated `fetch_market_stats_v2()` to pass filtering data through to API
+  - iOS: Added filtering fields to `EbayMarketData` model in BookAPI.swift
+  - iOS: Ready for signed copy prompt implementation when signed copies detected
+  - iOS: Fixed compilation errors in `CachedBook.swift` and `BooksTabView.swift`
+  - Files: `shared/models.py`, `isbn_lot_optimizer/service.py`, `LotHelperApp/LotHelper/BookAPI.swift`
+- **eBay Lot Comp Pricing (Fully Integrated)**:
+  - **Search & Analysis**: Search eBay for lot listings by series name or author
+  - **Lot Size Detection**: Parse lot sizes from listing titles using regex patterns
+  - **Per-Book Pricing**: Calculate per-book pricing by dividing total price by lot size
+  - **Size Optimization**: Analyze pricing across different lot sizes (e.g., 3-book vs 7-book lots)
+  - **Market Intelligence**: Identify optimal lot size with highest per-book price
+  - **Integrated into Lot Generation**: Automatically fetches lot pricing during lot recalculation
+  - **Smart Pricing Logic**: Compares lot market value vs individual book pricing
+  - **Database Storage**: Stores lot pricing data (market value, optimal size, per-book price, comps count)
+  - **Justification Updates**: Adds lot pricing details to lot justification when used
+  - **Database Migration**: Created `scripts/migrate_lot_pricing_fields.py` for existing databases
+  - **CLI Test Interface**: `python -m isbn_lot_optimizer.market "Alex Cross" "James Patterson"`
+  - **Data Models**: Added 5 new fields to `LotSuggestion` and `LotCandidate` models
+  - **Database Schema**: Added 5 new columns to lots table (lot_market_value, lot_optimal_size, lot_per_book_price, lot_comps_count, use_lot_pricing)
+  - **Files Modified**:
+    - `isbn_lot_optimizer/market.py` (search & analysis functions)
+    - `isbn_lot_optimizer/lots.py` (_compose_lot() integration)
+    - `isbn_lot_optimizer/service.py` (serialization & conversion)
+    - `shared/models.py` (LotSuggestion & LotCandidate fields)
+    - `shared/database.py` (schema & INSERT statement)
+  - **Documentation**: `docs/LOT_PRICING_FEATURE.md` with complete API reference and examples
 
 ### Changed
 - **Accept/Reject Workflow**:

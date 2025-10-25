@@ -1,0 +1,13 @@
+def get_probability(data):
+    # Implement probability scoring matching iOS app logic
+    base_score = 0.5
+    
+    # Example factors that might influence probability
+    if 'risk_factor' in data:
+        base_score += data['risk_factor'] * 0.2
+    
+    if 'historical_data' in data:
+        base_score += len(data['historical_data']) * 0.1
+    
+    # Ensure probability is between 0 and 1
+    return max(0, min(1, base_score))

@@ -10,6 +10,7 @@ import requests
 from requests.auth import _basic_auth_str
 
 from shared.models import EbayMarketStats
+from shared.timing import timer
 
 EBAY_FINDING_URL = "https://svcs.ebay.com/services/search/FindingService/v1"
 
@@ -100,13 +101,14 @@ def get_app_token() -> str:
     if not cid or not csec:
         raise RuntimeError("EBAY_CLIENT_ID/EBAY_CLIENT_SECRET not set")
     basic = _basic_auth_str(cid, csec)
-    r = requests.post(
-        OAUTH_URL,
-        headers={"Content-Type": "application/x-www-form-urlencoded", "Authorization": basic},
-        data={"grant_type": "client_credentials", "scope": "https://api.ebay.com/oauth/api_scope"},
-        timeout=20,
-    )
-    r.raise_for_status()
+    with timer("eBay OAuth token request", log=True, record=True):
+        r = requests.post(
+            OAUTH_URL,
+            headers={"Content-Type": "application/x-www-form-urlencoded", "Authorization": basic},
+            data={"grant_type": "client_credentials", "scope": "https://api.ebay.com/oauth/api_scope"},
+            timeout=20,
+        )
+        r.raise_for_status()
     js = r.json()
     _token_cache["access_token"] = js["access_token"]
     _token_cache["expires_at"] = now + float(js.get("expires_in", 7200))
@@ -694,15 +696,16 @@ def search_ebay_lot_comps(
     # Ensure search includes lot keywords
     if not any(keyword in search_term.lower() for keyword in ['lot', 'set', 'books', 'series']):
         search_term += " lot"
-    
+
     # Search eBay Browse API
     tok = get_app_token()
-    r = requests.get(
-        BROWSE_URL,
-        params={"q": search_term, "limit": str(limit)},
-        headers={"Authorization": f"Bearer {tok}", "X-EBAY-C-MARKETPLACE-ID": marketplace},
-        timeout=30,
-    )
+    with timer(f"eBay lot search: '{search_term[:40]}...'", log=True, record=True):
+        r = requests.get(
+            BROWSE_URL,
+            params={"q": search_term, "limit": str(limit)},
+            headers={"Authorization": f"Bearer {tok}", "X-EBAY-C-MARKETPLACE-ID": marketplace},
+            timeout=30,
+        )
     
     if r.status_code != 200:
         return {

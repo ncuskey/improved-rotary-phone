@@ -1,0 +1,11 @@
+import Foundation
+func isPalindrome(_ s: String) -> Bool {
+    return String(s.reversed()) == s // BUG
+}
+func assert(_ cond: Bool) { if !cond { exit(1) } }
+assert(isPalindrome("racecar"))
+assert(isPalindrome("RaceCar"))
+assert(isPalindrome("A man, a plan, a canal: Panama!"))
+assert(!isPalindrome("hello"))
+assert(isPalindrome("No 'x' in Nixon"))
+print("ALL_PASS")

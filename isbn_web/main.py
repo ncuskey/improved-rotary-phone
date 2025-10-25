@@ -23,6 +23,7 @@ if str(PROJECT_ROOT) not in sys.path:  # Ensure package imports work when run as
 from isbn_web.api.dependencies import cleanup_book_service, get_book_service
 from isbn_web.api.routes import actions, books, covers, covers_check, events, lots, refresh
 from isbn_web.config import settings
+from isbn_web.logging_middleware import HTTPLoggingMiddleware
 
 if TYPE_CHECKING:  # pragma: no cover - import only for typing
     from isbn_lot_optimizer.service import BookService
@@ -72,6 +73,9 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Add HTTP logging middleware (logs all requests/responses)
+app.add_middleware(HTTPLoggingMiddleware)
 
 # Add no-cache middleware to prevent browser caching issues
 app.add_middleware(NoCacheMiddleware)

@@ -1,0 +1,4 @@
+def update_probability(data):
+    # Similar logic as in iOS app
+    result = calculate_score(data)
+    return result

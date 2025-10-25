@@ -1,0 +1,14 @@
+{
+  "prompts": [
+    {
+      "name": "/explain-cheap",
+      "use": "API (GPT-4o Mini - cheap)",
+      "prompt": "Explain the selected code in concise bullet points, focusing on side effects and complexity hotspots."
+    },
+    {
+      "name": "/refactor-multifile",
+      "use": "API (Gemini 2.5 Pro)",
+      "prompt": "Propose a refactor plan across the open files. Note risks, tests to add, and migration steps. Then implement minimal diffs."
+    }
+  ]
+}

@@ -207,7 +207,7 @@ struct BooksTabView: View {
                     .background(DS.Color.background)
                     .refreshable { await loadBooks() }
                     .navigationDestination(for: BookEvaluationRecord.self) { record in
-                        BookDetailView(record: record)
+                        BookDetailViewRedesigned(record: record)
                     }
                     .navigationDestination(for: LotSuggestionDTO.self) { lot in
                         LotDetailView(lot: lot)
@@ -1005,7 +1005,11 @@ struct BookDetailView: View {
                     soldCompsMax: 35.50,
                     soldCompsIsEstimate: false,
                     soldCompsSource: "marketplace_insights",
-                    soldCompsLastSoldDate: "2025-01-10T00:00:00Z"
+                    soldCompsLastSoldDate: "2025-01-10T00:00:00Z",
+                    signedListingsDetected: nil,
+                    lotListingsDetected: nil,
+                    filteredCount: nil,
+                    totalListings: nil
                 ),
                 booksrun: BooksRunOffer(
                     condition: "good",

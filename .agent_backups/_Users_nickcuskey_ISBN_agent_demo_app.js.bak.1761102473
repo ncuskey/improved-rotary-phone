@@ -1,0 +1,11 @@
+function isPalindrome(s) {
+  if (typeof s !== 'string') return false;
+  s = s.toLowerCase();
+  let left = 0, right = s.length - 1;
+  while (left < right) {
+    if (s[left] !== s[right]) return false;
+    left++;
+    right--;
+  }
+  return true;
+}

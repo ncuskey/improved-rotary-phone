@@ -1,0 +1,13 @@
+public class Main {
+    public static boolean isPalindrome(String s) {
+        return new StringBuilder(s).reverse().toString().equals(s); // BUG
+    }
+    public static void main(String[] args) {
+        if (!isPalindrome("racecar")) System.exit(1);
+        if (!isPalindrome("RaceCar")) System.exit(1);
+        if (!isPalindrome("A man, a plan, a canal: Panama!")) System.exit(1);
+        if (isPalindrome("hello")) System.exit(1);
+        if (!isPalindrome("No 'x' in Nixon")) System.exit(1);
+        System.out.println("ALL_PASS");
+    }
+}

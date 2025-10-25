@@ -93,6 +93,11 @@ class DatabaseManager:
                     probability_score REAL,
                     sell_through REAL,
                     justification TEXT,
+                    lot_market_value REAL,
+                    lot_optimal_size INTEGER,
+                    lot_per_book_price REAL,
+                    lot_comps_count INTEGER,
+                    use_lot_pricing INTEGER DEFAULT 0,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(name, strategy)
                 );
@@ -607,11 +612,17 @@ class DatabaseManager:
                 INSERT INTO lots (
                     name, strategy, book_isbns,
                     estimated_value, probability_label, probability_score,
-                    sell_through, justification, updated_at
+                    sell_through, justification,
+                    lot_market_value, lot_optimal_size, lot_per_book_price,
+                    lot_comps_count, use_lot_pricing,
+                    updated_at
                 ) VALUES (
                     :name, :strategy, :book_isbns,
                     :estimated_value, :probability_label, :probability_score,
-                    :sell_through, :justification, CURRENT_TIMESTAMP
+                    :sell_through, :justification,
+                    :lot_market_value, :lot_optimal_size, :lot_per_book_price,
+                    :lot_comps_count, :use_lot_pricing,
+                    CURRENT_TIMESTAMP
                 )
                 """,
                 lot_payloads,

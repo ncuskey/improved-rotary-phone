@@ -216,7 +216,7 @@ def _fetch_google_books_raw(isbn: str, api_key: Optional[str], sess: requests.Se
             "volumeInfo/publisher,volumeInfo/publishedDate,volumeInfo/pageCount,"
             "volumeInfo/categories,volumeInfo/averageRating,volumeInfo/ratingsCount,"
             "volumeInfo/language,volumeInfo/industryIdentifiers,"
-            "volumeInfo/imageLinks/thumbnail,volumeInfo/description)"
+            "volumeInfo/imageLinks,volumeInfo/description)"
         ),
     }
     if api_key:
@@ -285,7 +285,16 @@ def _normalize_from_gbooks(info: Dict[str, Any]) -> Dict[str, Any]:
     categories_str = ", ".join(categories) if categories else None
 
     image_links = info.get("imageLinks") or {}
-    cover_url = image_links.get("thumbnail") or image_links.get("smallThumbnail")
+    # Prioritize highest resolution images available from Google Books
+    # Sizes: extraLarge (1280px) > large (800px) > medium (500px) > small (300px) > thumbnail (128px)
+    cover_url = (
+        image_links.get("extraLarge")
+        or image_links.get("large")
+        or image_links.get("medium")
+        or image_links.get("small")
+        or image_links.get("thumbnail")
+        or image_links.get("smallThumbnail")
+    )
     if isinstance(cover_url, str) and cover_url.startswith("http://"):
         cover_url = "https://" + cover_url[len("http://") :]
 
@@ -294,14 +303,14 @@ def _normalize_from_gbooks(info: Dict[str, Any]) -> Dict[str, Any]:
     if isinstance(cover_url, str) and "books.google" in cover_url:
         # Try to upgrade zoom level for larger images (zoom=1 is larger than default zoom=5)
         if "zoom=5" in cover_url:
-            cover_url = cover_url.replace("zoom=5", "zoom=1")
+            cover_url = cover_url.replace("zoom=5", "zoom=0")
         elif "zoom=" not in cover_url:
-            # Add zoom=1 parameter for larger image
+            # Add zoom=0 parameter for largest image (zoom=0 is larger than zoom=1)
             separator = "&" if "?" in cover_url else "?"
-            cover_url = f"{cover_url}{separator}zoom=1"
+            cover_url = f"{cover_url}{separator}zoom=0"
 
-    # Prepare Open Library fallback URL for larger covers
-    # This gives the app a high-quality fallback option (500x750px vs Google's ~128x200px)
+    # Prepare Open Library fallback URL for covers
+    # OpenLibrary provides ~500x750px covers which serve as a backup if Google Books fails
     openlibrary_fallback = None
     if isbn_13:
         openlibrary_fallback = OPENLIB_COVER_TMPL.format(isbn=isbn_13)

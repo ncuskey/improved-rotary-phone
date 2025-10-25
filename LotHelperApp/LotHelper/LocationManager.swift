@@ -7,6 +7,7 @@
 
 import SwiftUI
 import CoreLocation
+import MapKit
 import Combine
 
 @MainActor
@@ -61,8 +62,7 @@ class LocationManager: NSObject, ObservableObject {
     }
 
     private func reverseGeocode(location: CLLocation) {
-        // Note: CLGeocoder deprecated in iOS 26, but we're targeting iOS 15+
-        // Will migrate to MapKit MKReverseGeocodingRequest when iOS 26 is adopted
+        // Use CLGeocoder for broad OS compatibility
         let geocoder = CLGeocoder()
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
             guard let self = self else { return }
@@ -188,3 +188,4 @@ extension LocationManager: CLLocationManagerDelegate {
         }
     }
 }
+

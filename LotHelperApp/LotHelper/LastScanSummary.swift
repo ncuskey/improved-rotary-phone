@@ -16,6 +16,7 @@ struct LastScanSummary: View {
                     case .success(let image):
                         image
                             .resizable()
+                            .interpolation(.high)
                             .scaledToFill()
                     case .failure:
                         placeholder

@@ -1,0 +1,4565 @@
+{
+  "king|a natural woman": {
+    "canonical_author": "king",
+    "canonical_series": "a natural woman",
+    "display_author": "King, Carole",
+    "display_series": "A natural woman",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781455512614": {
+        "volume": null,
+        "title": "A Natural Woman: A Memoir"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "deighton|xpd": {
+    "canonical_author": "deighton",
+    "canonical_series": "xpd",
+    "display_author": "DEIGHTON, Len.",
+    "display_series": "XPD",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780345299062": {
+        "volume": null,
+        "title": "XPD"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "holland|sun valley": {
+    "canonical_author": "holland",
+    "canonical_series": "sun valley",
+    "display_author": "Holland, Wendolyn",
+    "display_series": "Sun Valley",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781560445876": {
+        "volume": null,
+        "title": "Sun Valley: An Extraordinary History"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "shinn|world class": {
+    "canonical_author": "shinn",
+    "canonical_series": "world class",
+    "display_author": "Shinn, Peggy",
+    "display_series": "World Class",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781512600650": {
+        "volume": null,
+        "title": "World Class: The Making of the U.S. Women's Cross-Country Ski Team"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "rowling j k|harry potter book 1": {
+    "canonical_author": "rowling j k",
+    "canonical_series": "harry potter book 1",
+    "display_author": "Rowling.J.K.",
+    "display_series": "Harry Potter, Book 1",
+    "expected_vols": {
+      "1": "Harry Potter and the Philosopher's Stone"
+    },
+    "known_isbns": {
+      "9780747532743": {
+        "volume": 1,
+        "title": "Harry Potter and the Philosopher's Stone"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "j h weaver|code word rose": {
+    "canonical_author": "j h weaver",
+    "canonical_series": "code word rose",
+    "display_author": "J. H. Weaver",
+    "display_series": "Code Word Rose",
+    "expected_vols": {},
+    "known_isbns": {
+      "9798631092976": {
+        "volume": null,
+        "title": "Code Word Rose"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "marc cameron|jack ryan novel": {
+    "canonical_author": "marc cameron",
+    "canonical_series": "jack ryan novel",
+    "display_author": "Marc Cameron",
+    "display_series": "Jack Ryan novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780735215955": {
+        "volume": null,
+        "title": "Jack Ryan Novel"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "jeffrey cardenas|sea level": {
+    "canonical_author": "jeffrey cardenas",
+    "canonical_series": "sea level",
+    "display_author": "Jeffrey Cardenas",
+    "display_series": "Sea level",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781886967137": {
+        "volume": null,
+        "title": "Sea Level"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "carol doumani|untitled nude": {
+    "canonical_author": "carol doumani",
+    "canonical_series": "untitled nude",
+    "display_author": "Carol Doumani",
+    "display_series": "Untitled, nude",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780964235960": {
+        "volume": null,
+        "title": "Untitled, Nude"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "norman katkov|blood orchids": {
+    "canonical_author": "norman katkov",
+    "canonical_series": "blood orchids",
+    "display_author": "Norman Katkov",
+    "display_series": "Blood & orchids",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780312083953": {
+        "volume": null,
+        "title": "Blood & Orchids"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "robert ludlum|jason bourne": {
+    "canonical_author": "robert ludlum",
+    "canonical_series": "jason bourne",
+    "display_author": "Robert Ludlum",
+    "display_series": "jason bourne",
+    "expected_vols": {
+      "1": "The Bourne Identity",
+      "2": "The Bourne Supremacy",
+      "3": "The Bourne Ultimatum",
+      "4": "The Bourne Legacy",
+      "5": "The Bourne Betrayal",
+      "6": "The Bourne Sanction",
+      "7": "The Bourne Deception",
+      "8": "The Bourne Objective",
+      "9": "The Bourne Dominion",
+      "10": "The Bourne Imperative",
+      "11": "The Bourne Retribution",
+      "12": "The Bourne Ascendancy",
+      "13": "The Bourne Enigma",
+      "14": "The Bourne Initiative",
+      "15": "The Bourne Evolution",
+      "16": "The Bourne Treachery",
+      "17": "The Bourne Sacrifice"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "robert ludlum|new jason bourne": {
+    "canonical_author": "robert ludlum",
+    "canonical_series": "new jason bourne",
+    "display_author": "Robert Ludlum",
+    "display_series": "New Jason Bourne",
+    "expected_vols": {
+      "1": "Robert Ludlum's The Bourne sanction"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "robert ludlum|covert one": {
+    "canonical_author": "robert ludlum",
+    "canonical_series": "covert one",
+    "display_author": "Robert Ludlum",
+    "display_series": "Covert One",
+    "expected_vols": {
+      "1": "Robert Ludlum's The Hades Factor",
+      "2": "The Altman Code",
+      "3": "Robert Ludlum's The Paris Option"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "robert ludlum|the icarus agenda": {
+    "canonical_author": "robert ludlum",
+    "canonical_series": "the icarus agenda",
+    "display_author": "Robert Ludlum",
+    "display_series": "The Icarus Agenda",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780394543970": {
+        "volume": null,
+        "title": "The Icarus Agenda"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "martin cruz smith|three stations": {
+    "canonical_author": "martin cruz smith",
+    "canonical_series": "three stations",
+    "display_author": "Martin Cruz Smith",
+    "display_series": "Three Stations",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780743276740": {
+        "volume": null,
+        "title": "Three Stations"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "robert crais|joe pike": {
+    "canonical_author": "robert crais",
+    "canonical_series": "joe pike",
+    "display_author": "Robert Crais",
+    "display_series": "Joe Pike",
+    "expected_vols": {
+      "1": "The Watchman",
+      "2": "The first rule"
+    },
+    "known_isbns": {
+      "9780399156137": {
+        "volume": 2,
+        "title": "The First Rule"
+      }
+    },
+    "last_enriched": 1761191538,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "robert crais|last detective the forgotten man hostage elvis cole": {
+    "canonical_author": "robert crais",
+    "canonical_series": "last detective the forgotten man hostage elvis cole",
+    "display_author": "Robert Crais",
+    "display_series": "Last Detective The Forgotten Man Hostage Elvis Cole",
+    "expected_vols": {
+      "1": "Robert Crais CD Collection"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "robert crais|a joe pike novel": {
+    "canonical_author": "robert crais",
+    "canonical_series": "a joe pike novel",
+    "display_author": "Robert Crais",
+    "display_series": "A Joe Pike novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780399156137": {
+        "volume": null,
+        "title": "The First Rule"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "ridley pearson|boldt matthews 1": {
+    "canonical_author": "ridley pearson",
+    "canonical_series": "boldt matthews 1",
+    "display_author": "Ridley Pearson",
+    "display_series": "Boldt/Matthews (1)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780312914851": {
+        "volume": null,
+        "title": "Under Currents"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "tim ryan|on someone else s nickel": {
+    "canonical_author": "tim ryan",
+    "canonical_series": "on someone else s nickel",
+    "display_author": "Tim Ryan",
+    "display_series": "On Someone Else's Nickel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781682306741": {
+        "volume": null,
+        "title": "On Someone Else's Nickel"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "alexis landau|the empire of the senses": {
+    "canonical_author": "alexis landau",
+    "canonical_series": "the empire of the senses",
+    "display_author": "Alexis Landau",
+    "display_series": "The empire of the senses",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781101870075": {
+        "volume": null,
+        "title": "The Empire of the Senses"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "patricia a marx|him her him again the end of him": {
+    "canonical_author": "patricia a marx",
+    "canonical_series": "him her him again the end of him",
+    "display_author": "Patricia A. Marx",
+    "display_series": "Him   Her   Him Again   The End of Him",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780743296236": {
+        "volume": null,
+        "title": "Him, Her, Him Again, the End of Him"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "lina wertmu ller|la scala": {
+    "canonical_author": "lina wertmu ller",
+    "canonical_series": "la scala",
+    "display_author": "Lina Wertmüller",
+    "display_series": "La Scala",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780688011246": {
+        "volume": null,
+        "title": "Essere o avere, ma per essere devo avere la testa di Alvise su un piatto d'argento"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "jason sheehan|cooking dirty": {
+    "canonical_author": "jason sheehan",
+    "canonical_series": "cooking dirty",
+    "display_author": "Jason Sheehan",
+    "display_series": "Cooking dirty",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780374289218": {
+        "volume": null,
+        "title": "Cooking dirty"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "utpal dutt|rural development and social citizenship territories institutions and local actors": {
+    "canonical_author": "utpal dutt",
+    "canonical_series": "rural development and social citizenship territories institutions and local actors",
+    "display_author": "Utpal Dutt",
+    "display_series": "Rural Development and Social Citizenship: Territories, Institutions and Local Actors",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781234567897": {
+        "volume": null,
+        "title": "AK47 Seeds (7 seeds set) [Paperback] [Jan 01, 2018] Utpal Dutt"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "bruce robinson|they all love jack": {
+    "canonical_author": "bruce robinson",
+    "canonical_series": "they all love jack",
+    "display_author": "Bruce Robinson",
+    "display_series": "They all love Jack",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062296375": {
+        "volume": null,
+        "title": "They All Love Jack"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "jo nesbo|harry hole": {
+    "canonical_author": "jo nesbo",
+    "canonical_series": "harry hole",
+    "display_author": "Jo Nesbo",
+    "display_series": "Harry Hole series",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385352161": {
+        "volume": null,
+        "title": "The Thirst"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "josephine hart|sin": {
+    "canonical_author": "josephine hart",
+    "canonical_series": "sin",
+    "display_author": "Josephine Hart",
+    "display_series": "Sin",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780679416739": {
+        "volume": null,
+        "title": "Sin"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "douglas corleone|janson": {
+    "canonical_author": "douglas corleone",
+    "canonical_series": "janson",
+    "display_author": "Douglas Corleone",
+    "display_series": "Janson series",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781455577675": {
+        "volume": null,
+        "title": "Robert Ludlum's (TM) The Janson Equation"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "gabriel garc a m rquez|memories of my melancholy whores": {
+    "canonical_author": "gabriel garc a m rquez",
+    "canonical_series": "memories of my melancholy whores",
+    "display_author": "Gabriel García Márquez",
+    "display_series": "Memories of My Melancholy Whores",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781400044603": {
+        "volume": null,
+        "title": "Memories of My Melancholy Whores"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "debbie cenziper|love wins": {
+    "canonical_author": "debbie cenziper",
+    "canonical_series": "love wins",
+    "display_author": "Debbie Cenziper",
+    "display_series": "Love wins",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062456083": {
+        "volume": null,
+        "title": "Love Wins"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "wilbur smith|desert god a novel of ancient egypt": {
+    "canonical_author": "wilbur smith",
+    "canonical_series": "desert god a novel of ancient egypt",
+    "display_author": "Wilbur Smith",
+    "display_series": "Desert God: A Novel of Ancient Egypt",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062276452": {
+        "volume": null,
+        "title": "Desert God"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "josephine hart|damage": {
+    "canonical_author": "josephine hart",
+    "canonical_series": "damage",
+    "display_author": "Josephine Hart",
+    "display_series": "Damage",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780679401353": {
+        "volume": null,
+        "title": "Damage"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "len deighton|charity": {
+    "canonical_author": "len deighton",
+    "canonical_series": "charity",
+    "display_author": "Len Deighton",
+    "display_series": "Charity",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780060187286": {
+        "volume": null,
+        "title": "Charity"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|alex cross": {
+    "canonical_author": "james patterson",
+    "canonical_series": "alex cross",
+    "display_author": "James Patterson",
+    "display_series": "alex cross",
+    "expected_vols": {
+      "1": "Along Came a Spider",
+      "2": "Kiss the Girls",
+      "3": "Jack & Jill",
+      "4": "Cat & Mouse",
+      "5": "Pop Goes the Weasel",
+      "6": "Roses Are Red",
+      "7": "Violets Are Blue",
+      "8": "Four Blind Mice",
+      "9": "The Big Bad Wolf",
+      "10": "London Bridges",
+      "11": "Mary, Mary",
+      "12": "Cross",
+      "13": "Double Cross",
+      "14": "Cross Country",
+      "15": "Alex Cross's Trial",
+      "16": "I, Alex Cross",
+      "17": "Cross Fire",
+      "18": "Kill Alex Cross",
+      "19": "Merry Christmas, Alex Cross",
+      "20": "Alex Cross, Run",
+      "21": "Cross My Heart",
+      "22": "Hope to Die",
+      "23": "Cross Justice",
+      "24": "Cross Kill",
+      "25": "Cross the Line",
+      "26": "The People vs. Alex Cross",
+      "27": "Target: Alex Cross",
+      "28": "Criss Cross",
+      "29": "Deadly Cross",
+      "30": "Fear No Evil",
+      "31": "Triple Cross",
+      "32": "Alex Cross Must Die"
+    },
+    "known_isbns": {
+      "9780316198738": {
+        "volume": 18,
+        "title": "Kill Alex Cross"
+      },
+      "9780316210911": {
+        "volume": 21,
+        "title": "Cross my heart"
+      },
+      "9780316710596": {
+        "volume": 10,
+        "title": "London Bridges"
+      },
+      "9780316015059": {
+        "volume": 13,
+        "title": "Double Cross"
+      },
+      "9780316407045": {
+        "volume": 23,
+        "title": "Cross Justice"
+      },
+      "9780316036177": {
+        "volume": 17,
+        "title": "Cross fire"
+      },
+      "9780316018722": {
+        "volume": 14,
+        "title": "Cross Country"
+      },
+      "9780316210683": {
+        "volume": 19,
+        "title": "Merry Christmas, Alex Cross"
+      },
+      "9780316602907": {
+        "volume": 9,
+        "title": "The Big Bad Wolf"
+      },
+      "9780316499149": {
+        "volume": 30,
+        "title": "Fear No Evil"
+      },
+      "9780316159760": {
+        "volume": 11,
+        "title": "Mary, Mary"
+      },
+      "9780316693004": {
+        "volume": 8,
+        "title": "Four blind mice"
+      },
+      "9780316420259": {
+        "volume": 29,
+        "title": "Deadly Cross"
+      },
+      "9780316407090": {
+        "volume": 25,
+        "title": "Cross the line"
+      }
+    },
+    "last_enriched": 1761191538,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "james patterson|the dangerous days of daniel x": {
+    "canonical_author": "james patterson",
+    "canonical_series": "the dangerous days of daniel x",
+    "display_author": "James Patterson",
+    "display_series": "The Dangerous Days of Daniel X",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316002929": {
+        "volume": null,
+        "title": "The Dangerous Days of Daniel X"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|the private": {
+    "canonical_author": "james patterson",
+    "canonical_series": "the private",
+    "display_author": "James Patterson",
+    "display_series": "The Private novels",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316407052": {
+        "volume": null,
+        "title": "Private Paris"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "deborah goodrich royce|reef road": {
+    "canonical_author": "deborah goodrich royce",
+    "canonical_series": "reef road",
+    "display_author": "Deborah Goodrich Royce",
+    "display_series": "Reef Road",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781637584965": {
+        "volume": null,
+        "title": "Reef Road"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|bookshots": {
+    "canonical_author": "james patterson",
+    "canonical_series": "bookshots",
+    "display_author": "James Patterson",
+    "display_series": "BookShots",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316317122": {
+        "volume": null,
+        "title": "Zoo 2"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "nelson de mille|the quest": {
+    "canonical_author": "nelson de mille",
+    "canonical_series": "the quest",
+    "display_author": "Nelson De Mille",
+    "display_series": "The quest",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781455576425": {
+        "volume": null,
+        "title": "The quest"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "jo nesbo|the leopard": {
+    "canonical_author": "jo nesbo",
+    "canonical_series": "the leopard",
+    "display_author": "Jo Nesbo",
+    "display_series": "The Leopard",
+    "expected_vols": {
+      "8": "The Leopard"
+    },
+    "known_isbns": {
+      "9780307743183": {
+        "volume": 8,
+        "title": "The Leopard"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "paul joseph fronczak|the foundling": {
+    "canonical_author": "paul joseph fronczak",
+    "canonical_series": "the foundling",
+    "display_author": "Paul Joseph Fronczak",
+    "display_series": "The foundling",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781501142123": {
+        "volume": null,
+        "title": "The Foundling"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "dave eggers|heroes of the frontier": {
+    "canonical_author": "dave eggers",
+    "canonical_series": "heroes of the frontier",
+    "display_author": "Dave Eggers",
+    "display_series": "Heroes of the frontier",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780451493804": {
+        "volume": null,
+        "title": "Heroes of the Frontier"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|alex cross 21": {
+    "canonical_author": "james patterson",
+    "canonical_series": "alex cross 21",
+    "display_author": "James Patterson",
+    "display_series": "Alex Cross -- [21]",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316210911": {
+        "volume": null,
+        "title": "Cross my heart"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james w hall|under cover of daylight": {
+    "canonical_author": "james w hall",
+    "canonical_series": "under cover of daylight",
+    "display_author": "James W. Hall",
+    "display_series": "Under cover of daylight",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780393024845": {
+        "volume": null,
+        "title": "Under cover of daylight"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "eric van lustbader|new jason bourne": {
+    "canonical_author": "eric van lustbader",
+    "canonical_series": "new jason bourne",
+    "display_author": "Eric Van Lustbader",
+    "display_series": "New Jason Bourne",
+    "expected_vols": {
+      "1": "Robert Ludlum's The Bourne sanction",
+      "2": "Robert Ludlum's The Bourne Betrayal"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "eric van lustbader|nicholas linnear": {
+    "canonical_author": "eric van lustbader",
+    "canonical_series": "nicholas linnear",
+    "display_author": "Eric Van Lustbader",
+    "display_series": "Nicholas Linnear",
+    "expected_vols": {
+      "1": "Floating City",
+      "2": "The Kaisho"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "eric van lustbader|french kiss": {
+    "canonical_author": "eric van lustbader",
+    "canonical_series": "french kiss",
+    "display_author": "Eric Van Lustbader",
+    "display_series": "French Kiss",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780449903681": {
+        "volume": null,
+        "title": "French Kiss"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "ha jin|war trash": {
+    "canonical_author": "ha jin",
+    "canonical_series": "war trash",
+    "display_author": "Ha Jin",
+    "display_series": "War trash",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780375422768": {
+        "volume": null,
+        "title": "War trash"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "anne tyler|new three complete": {
+    "canonical_author": "anne tyler",
+    "canonical_series": "new three complete",
+    "display_author": "Anne Tyler",
+    "display_series": "New Collection Three Complete",
+    "expected_vols": {
+      "1": "Anne Tyler"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "anne tyler|vinegar girl": {
+    "canonical_author": "anne tyler",
+    "canonical_series": "vinegar girl",
+    "display_author": "Anne Tyler",
+    "display_series": "Vinegar Girl",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781781090190": {
+        "volume": null,
+        "title": "Vinegar Girl"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "jeffery deaver|lincoln rhyme": {
+    "canonical_author": "jeffery deaver",
+    "canonical_series": "lincoln rhyme",
+    "display_author": "Jeffery Deaver",
+    "display_series": "Lincoln Rhyme",
+    "expected_vols": {
+      "1": "The Stone Monkey",
+      "2": "The Twelfth Card",
+      "3": "The Broken Window"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "jeffery deaver|kathryn dance": {
+    "canonical_author": "jeffery deaver",
+    "canonical_series": "kathryn dance",
+    "display_author": "Jeffery Deaver",
+    "display_series": "Kathryn Dance",
+    "expected_vols": {
+      "1": "Roadside crosses"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "jeffery deaver|lincoln rhyme novel": {
+    "canonical_author": "jeffery deaver",
+    "canonical_series": "lincoln rhyme novel",
+    "display_author": "Jeffery Deaver",
+    "display_series": "Lincoln Rhyme novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781455517138": {
+        "volume": null,
+        "title": "The Skin Collector"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "abraham b yehoshua|the liberated bride": {
+    "canonical_author": "abraham b yehoshua",
+    "canonical_series": "the liberated bride",
+    "display_author": "Abraham B. Yehoshua",
+    "display_series": "The Liberated Bride",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780151006533": {
+        "volume": null,
+        "title": "The Liberated Bride"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "todd balf|the last river": {
+    "canonical_author": "todd balf",
+    "canonical_series": "the last river",
+    "display_author": "Todd Balf",
+    "display_series": "The Last River",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780609606254": {
+        "volume": null,
+        "title": "The last river"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "stephen r lawhead|celtic crusades 1": {
+    "canonical_author": "stephen r lawhead",
+    "canonical_series": "celtic crusades 1",
+    "display_author": "Stephen R. Lawhead",
+    "display_series": "Celtic Crusades (1)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780061050329": {
+        "volume": null,
+        "title": "The Iron Lance"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "jane smiley|private life": {
+    "canonical_author": "jane smiley",
+    "canonical_series": "private life",
+    "display_author": "Jane Smiley",
+    "display_series": "Private life",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781400040605": {
+        "volume": null,
+        "title": "Private Life"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "elmore leonard|pagan babies": {
+    "canonical_author": "elmore leonard",
+    "canonical_series": "pagan babies",
+    "display_author": "Elmore Leonard",
+    "display_series": "Pagan babies",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385333924": {
+        "volume": null,
+        "title": "Pagan Babies"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "frederick busch|north": {
+    "canonical_author": "frederick busch",
+    "canonical_series": "north",
+    "display_author": "Frederick Busch",
+    "display_series": "North",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780393051032": {
+        "volume": null,
+        "title": "North"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "wilbur smith|courtney 10": {
+    "canonical_author": "wilbur smith",
+    "canonical_series": "courtney 10",
+    "display_author": "Wilbur Smith",
+    "display_series": "Courtney (10)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780312971540": {
+        "volume": null,
+        "title": "Monsoon (A Courtney Family Adventure)"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "stuart woods|stone barrington": {
+    "canonical_author": "stuart woods",
+    "canonical_series": "stone barrington",
+    "display_author": "Stuart Woods",
+    "display_series": "Stone Barrington",
+    "expected_vols": {
+      "1": "Hot mahogany",
+      "2": "Reckless abandon",
+      "53": "Hit List"
+    },
+    "known_isbns": {
+      "9780593083222": {
+        "volume": 53,
+        "title": "Hit List"
+      }
+    },
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "stuart woods|will lee": {
+    "canonical_author": "stuart woods",
+    "canonical_series": "will lee",
+    "display_author": "Stuart Woods",
+    "display_series": "Will Lee",
+    "expected_vols": {
+      "1": "Capital Crimes"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "tod goldberg|gangsterland": {
+    "canonical_author": "tod goldberg",
+    "canonical_series": "gangsterland",
+    "display_author": "Tod Goldberg",
+    "display_series": "Gangsterland",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781619023444": {
+        "volume": null,
+        "title": "Gangsterland"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brad thor|scott harvath": {
+    "canonical_author": "brad thor",
+    "canonical_series": "scott harvath",
+    "display_author": "Brad Thor",
+    "display_series": "Scott Harvath",
+    "expected_vols": {
+      "19": "Backlash"
+    },
+    "known_isbns": {
+      "9781982104030": {
+        "volume": 19,
+        "title": "Backlash"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "a s byatt|angels insects": {
+    "canonical_author": "a s byatt",
+    "canonical_series": "angels insects",
+    "display_author": "A. S. Byatt",
+    "display_series": "Angels & insects",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780679405122": {
+        "volume": null,
+        "title": "Angels & insects"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "matthew specktor|always crashing in the same car": {
+    "canonical_author": "matthew specktor",
+    "canonical_series": "always crashing in the same car",
+    "display_author": "Matthew Specktor",
+    "display_series": "Always Crashing in the Same Car",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781951142629": {
+        "volume": null,
+        "title": "Always Crashing in the Same Car"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "joe hill|the fireman": {
+    "canonical_author": "joe hill",
+    "canonical_series": "the fireman",
+    "display_author": "Joe Hill",
+    "display_series": "The Fireman",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062200631": {
+        "volume": null,
+        "title": "The Fireman"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "uri bar joseph|the angel": {
+    "canonical_author": "uri bar joseph",
+    "canonical_series": "the angel",
+    "display_author": "Uri Bar-Joseph",
+    "display_series": "The angel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062420107": {
+        "volume": null,
+        "title": "The Angel"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "dean ray koontz|dark rivers of the heart": {
+    "canonical_author": "dean ray koontz",
+    "canonical_series": "dark rivers of the heart",
+    "display_author": "Dean Ray Koontz",
+    "display_series": "Dark Rivers of the Heart",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780679425243": {
+        "volume": null,
+        "title": "Dark Rivers of the Heart"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|women s murder club": {
+    "canonical_author": "james patterson",
+    "canonical_series": "women s murder club",
+    "display_author": "James Patterson",
+    "display_series": "Women's Murder Club",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316097499": {
+        "volume": null,
+        "title": "11th hour"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "stu mittleman|slow burn": {
+    "canonical_author": "stu mittleman",
+    "canonical_series": "slow burn",
+    "display_author": "Stu Mittleman",
+    "display_series": "Slow Burn",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062716125": {
+        "volume": null,
+        "title": "Slow Burn"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "jonathan kozol|rachel and her children": {
+    "canonical_author": "jonathan kozol",
+    "canonical_series": "rachel and her children",
+    "display_author": "Jonathan Kozol",
+    "display_series": "Rachel and her children",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780517567302": {
+        "volume": null,
+        "title": "Rachel and Her Children"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "mark sarvas|memento park": {
+    "canonical_author": "mark sarvas",
+    "canonical_series": "memento park",
+    "display_author": "Mark Sarvas",
+    "display_series": "Memento Park",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780374206376": {
+        "volume": null,
+        "title": "Memento Park"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "caleb carr|killing time": {
+    "canonical_author": "caleb carr",
+    "canonical_series": "killing time",
+    "display_author": "Caleb Carr",
+    "display_series": "Killing time",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780679463320": {
+        "volume": null,
+        "title": "Killing Time"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "donna leon|give unto others": {
+    "canonical_author": "donna leon",
+    "canonical_series": "give unto others",
+    "display_author": "Donna Leon",
+    "display_series": "Give unto Others",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780802159403": {
+        "volume": null,
+        "title": "Give unto Others"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "joseph heywood|the berkut": {
+    "canonical_author": "joseph heywood",
+    "canonical_series": "the berkut",
+    "display_author": "Joseph Heywood",
+    "display_series": "The berkut",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780394560885": {
+        "volume": null,
+        "title": "The Berkut"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael f roizen|you the owner s manual": {
+    "canonical_author": "michael f roizen",
+    "canonical_series": "you the owner s manual",
+    "display_author": "Michael F. Roizen",
+    "display_series": "YOU: The Owner's Manual",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780060765316": {
+        "volume": null,
+        "title": "YOU: The Owner's Manual"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael f roizen|you on a diet": {
+    "canonical_author": "michael f roizen",
+    "canonical_series": "you on a diet",
+    "display_author": "Michael F. Roizen",
+    "display_series": "You: On A Diet",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780743292542": {
+        "volume": null,
+        "title": "You, on a Diet: The Owner's Manual for Waist Management"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "joe haldeman|ace science fiction": {
+    "canonical_author": "joe haldeman",
+    "canonical_series": "ace science fiction",
+    "display_author": "Joe Haldeman",
+    "display_series": "Ace science fiction",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780441007691": {
+        "volume": null,
+        "title": "The Coming"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "auster|the brooklyn follies": {
+    "canonical_author": "auster",
+    "canonical_series": "the brooklyn follies",
+    "display_author": "AUSTER, PAUL.",
+    "display_series": "The Brooklyn Follies",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780805077148": {
+        "volume": null,
+        "title": "The Brooklyn Follies: A Novel"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "terry brooks|high druid of shannara": {
+    "canonical_author": "terry brooks",
+    "canonical_series": "high druid of shannara",
+    "display_author": "Terry Brooks",
+    "display_series": "High Druid of Shannara",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780345451125": {
+        "volume": null,
+        "title": "Straken"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "tad williams|otherland 1": {
+    "canonical_author": "tad williams",
+    "canonical_series": "otherland 1",
+    "display_author": "Tad Williams",
+    "display_series": "Otherland (1)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780886777630": {
+        "volume": null,
+        "title": "Otherland"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "stephen king|insomnia": {
+    "canonical_author": "stephen king",
+    "canonical_series": "insomnia",
+    "display_author": "Stephen King",
+    "display_series": "Insomnia",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780670855032": {
+        "volume": null,
+        "title": "Insomnia"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "roger bennett|bar mitzvah disco": {
+    "canonical_author": "roger bennett",
+    "canonical_series": "bar mitzvah disco",
+    "display_author": "Roger Bennett",
+    "display_series": "Bar Mitzvah Disco",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781400080441": {
+        "volume": null,
+        "title": "Bar Mitzvah Disco"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|1st case": {
+    "canonical_author": "james patterson",
+    "canonical_series": "1st case",
+    "display_author": "James Patterson",
+    "display_series": "1st Case",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316418188": {
+        "volume": null,
+        "title": "1st Case"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "humphrey burton|yehudi menuhin": {
+    "canonical_author": "humphrey burton",
+    "canonical_series": "yehudi menuhin",
+    "display_author": "Humphrey Burton",
+    "display_series": "Yehudi Menuhin",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781555534653": {
+        "volume": null,
+        "title": "Yehudi Menuhin"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "danielle steel|undercover": {
+    "canonical_author": "danielle steel",
+    "canonical_series": "undercover",
+    "display_author": "Danielle Steel",
+    "display_series": "Undercover",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780345531049": {
+        "volume": null,
+        "title": "Undercover"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "elmore leonard|tishomingo blues": {
+    "canonical_author": "elmore leonard",
+    "canonical_series": "tishomingo blues",
+    "display_author": "Elmore Leonard",
+    "display_series": "Tishomingo blues",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780060008727": {
+        "volume": null,
+        "title": "Tishomingo blues"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "eric van lustbader|the pearl": {
+    "canonical_author": "eric van lustbader",
+    "canonical_series": "the pearl",
+    "display_author": "Eric Van Lustbader",
+    "display_series": "The pearl ;",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780312872359": {
+        "volume": null,
+        "title": "The Ring of Five Dragons"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "g bruce knecht|the proving ground": {
+    "canonical_author": "g bruce knecht",
+    "canonical_series": "the proving ground",
+    "display_author": "G. Bruce Knecht",
+    "display_series": "The proving ground",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316499552": {
+        "volume": null,
+        "title": "The Proving Ground"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "robert ludlum|the prometheus deception": {
+    "canonical_author": "robert ludlum",
+    "canonical_series": "the prometheus deception",
+    "display_author": "Robert Ludlum",
+    "display_series": "The Prometheus deception",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780312253462": {
+        "volume": null,
+        "title": "The Prometheus deception"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "cristina comencini|the missing pages": {
+    "canonical_author": "cristina comencini",
+    "canonical_series": "the missing pages",
+    "display_author": "Cristina Comencini",
+    "display_series": "The missing pages",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780679430766": {
+        "volume": null,
+        "title": "The Missing Pages"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "jo nesbo|doctor proctor s fart powder 4": {
+    "canonical_author": "jo nesbo",
+    "canonical_series": "doctor proctor s fart powder 4",
+    "display_author": "Jo Nesbo",
+    "display_series": "Doctor Proctor's fart powder -- [4]",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781442493421": {
+        "volume": null,
+        "title": "The Magical Fruit"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "robert ludlum|the janson directive": {
+    "canonical_author": "robert ludlum",
+    "canonical_series": "the janson directive",
+    "display_author": "Robert Ludlum",
+    "display_series": "The Janson directive",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780312253486": {
+        "volume": null,
+        "title": "The Janson Directive"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michel houellebecq|the elementary particles": {
+    "canonical_author": "michel houellebecq",
+    "canonical_series": "the elementary particles",
+    "display_author": "Michel Houellebecq",
+    "display_series": "The elementary particles",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780375407703": {
+        "volume": null,
+        "title": "The elementary particles"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "sue miller|the distinguished guest": {
+    "canonical_author": "sue miller",
+    "canonical_series": "the distinguished guest",
+    "display_author": "Sue Miller",
+    "display_series": "The distinguished guest",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780060176730": {
+        "volume": null,
+        "title": "The Distinguished Guest"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "sutherland|wings of fire book four the dark secret": {
+    "canonical_author": "sutherland",
+    "canonical_series": "wings of fire book four the dark secret",
+    "display_author": "Sutherland,Tui,T",
+    "display_series": "Wings of Fire Book Four: The Dark Secret",
+    "expected_vols": {
+      "4": "The Dark Secret (Wings of Fire #4) (4)"
+    },
+    "known_isbns": {
+      "9780545349260": {
+        "volume": 4,
+        "title": "The Dark Secret (Wings of Fire #4) (4)"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "wilbur smith|the blue horizon": {
+    "canonical_author": "wilbur smith",
+    "canonical_series": "the blue horizon",
+    "display_author": "Wilbur Smith",
+    "display_series": "The Blue Horizon",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780312278243": {
+        "volume": null,
+        "title": "The Blue Horizon"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "anne tyler|the beginner s goodbye": {
+    "canonical_author": "anne tyler",
+    "canonical_series": "the beginner s goodbye",
+    "display_author": "Anne Tyler",
+    "display_series": "The beginner's goodbye",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780307957276": {
+        "volume": null,
+        "title": "The beginner's goodbye"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "clive cussler|an isaac bell adventure": {
+    "canonical_author": "clive cussler",
+    "canonical_series": "an isaac bell adventure",
+    "display_author": "Clive Cussler",
+    "display_series": "An Isaac Bell adventure",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780399171758": {
+        "volume": null,
+        "title": "The assassin"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "baldacci|the 6 20 man": {
+    "canonical_author": "baldacci",
+    "canonical_series": "the 6 20 man",
+    "display_author": "BALDACCI,DAVID",
+    "display_series": "The 6:20 Man",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781538719848": {
+        "volume": null,
+        "title": "The 6:20 Man: A Thriller (6:20 Man, 1)"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "susan isaacs|shining through": {
+    "canonical_author": "susan isaacs",
+    "canonical_series": "shining through",
+    "display_author": "Susan Isaacs",
+    "display_series": "Shining through",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780061030154": {
+        "volume": null,
+        "title": "Shining Through"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "harry farrell|shallow grave in trinity county": {
+    "canonical_author": "harry farrell",
+    "canonical_series": "shallow grave in trinity county",
+    "display_author": "Harry Farrell",
+    "display_series": "Shallow grave in Trinity County",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780312170097": {
+        "volume": null,
+        "title": "Shallow grave in Trinity County"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "eric van lustbader|a new jason bourne novel": {
+    "canonical_author": "eric van lustbader",
+    "canonical_series": "a new jason bourne novel",
+    "display_author": "Eric Van Lustbader",
+    "display_series": "A new Jason Bourne novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781455597949": {
+        "volume": null,
+        "title": "Robert Ludlum's (TM) The Bourne Enigma"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "christine feehan|sea haven": {
+    "canonical_author": "christine feehan",
+    "canonical_series": "sea haven",
+    "display_author": "Christine Feehan",
+    "display_series": "Sea Haven",
+    "expected_vols": {
+      "1": "Water Bound"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "christine feehan|power game": {
+    "canonical_author": "christine feehan",
+    "canonical_series": "power game",
+    "display_author": "Christine Feehan",
+    "display_series": "Power Game",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780399583919": {
+        "volume": null,
+        "title": "Power Game"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "april smith|north of montana": {
+    "canonical_author": "april smith",
+    "canonical_series": "north of montana",
+    "display_author": "April Smith",
+    "display_series": "North of Montana",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780679431978": {
+        "volume": null,
+        "title": "North of Montana"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "anne tyler|noah s compass": {
+    "canonical_author": "anne tyler",
+    "canonical_series": "noah s compass",
+    "display_author": "Anne Tyler",
+    "display_series": "Noah's compass",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780307272409": {
+        "volume": null,
+        "title": "Noah's compass"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "elmore leonard|maximum bob": {
+    "canonical_author": "elmore leonard",
+    "canonical_series": "maximum bob",
+    "display_author": "Elmore Leonard",
+    "display_series": "Maximum Bob",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385301428": {
+        "volume": null,
+        "title": "Maximum Bob"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "gabriel garc a m rquez|living to tell the tale": {
+    "canonical_author": "gabriel garc a m rquez",
+    "canonical_series": "living to tell the tale",
+    "display_author": "Gabriel García Márquez",
+    "display_series": "Living to tell the tale",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781400041343": {
+        "volume": null,
+        "title": "Living to Tell the Tale"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "maria dong|liar dreamer thief": {
+    "canonical_author": "maria dong",
+    "canonical_series": "liar dreamer thief",
+    "display_author": "Maria Dong",
+    "display_series": "Liar, Dreamer, Thief",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781538723562": {
+        "volume": null,
+        "title": "Liar, Dreamer, Thief"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "pamela robinson|if i don t do it now career makeovers for the working woman": {
+    "canonical_author": "pamela robinson",
+    "canonical_series": "if i don t do it now career makeovers for the working woman",
+    "display_author": "Pamela Robinson",
+    "display_series": "If I Don't Do It Now...Career Makeovers for the Working Woman",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780743407830": {
+        "volume": null,
+        "title": "If I Don't Do It Now...Career Makeovers for the Working Woman"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|horsewoman": {
+    "canonical_author": "james patterson",
+    "canonical_series": "horsewoman",
+    "display_author": "James Patterson",
+    "display_series": "Horsewoman",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316499774": {
+        "volume": null,
+        "title": "Horsewoman"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "bernard cornwell|fools and mortals": {
+    "canonical_author": "bernard cornwell",
+    "canonical_series": "fools and mortals",
+    "display_author": "Bernard Cornwell",
+    "display_series": "Fools and mortals",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062250872": {
+        "volume": null,
+        "title": "Fools and mortals"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "doerr|cloud cuckoo land": {
+    "canonical_author": "doerr",
+    "canonical_series": "cloud cuckoo land",
+    "display_author": "DOERR, ANTHONY",
+    "display_series": "Cloud Cuckoo Land",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781982168438": {
+        "volume": null,
+        "title": "Cloud Cuckoo Land: A Novel"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "jeffrey lewis|adam the king": {
+    "canonical_author": "jeffrey lewis",
+    "canonical_series": "adam the king",
+    "display_author": "Jeffrey Lewis",
+    "display_series": "Adam the king",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781590512845": {
+        "volume": null,
+        "title": "Adam the king"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "a s byatt|a whistling woman": {
+    "canonical_author": "a s byatt",
+    "canonical_series": "a whistling woman",
+    "display_author": "A. S. Byatt",
+    "display_series": "A whistling woman",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780375415340": {
+        "volume": null,
+        "title": "A whistling woman"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "matthew dunn|will cochrane novel": {
+    "canonical_author": "matthew dunn",
+    "canonical_series": "will cochrane novel",
+    "display_author": "Matthew Dunn",
+    "display_series": "Will Cochrane novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062427199": {
+        "volume": null,
+        "title": "A soldier's revenge"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "dave wolverton|star wars jedi apprentice": {
+    "canonical_author": "dave wolverton",
+    "canonical_series": "star wars jedi apprentice",
+    "display_author": "Dave Wolverton",
+    "display_series": "Star Wars, Jedi apprentice ;",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780590519229": {
+        "volume": null,
+        "title": "The rising force."
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brad thor|rising tiger": {
+    "canonical_author": "brad thor",
+    "canonical_series": "rising tiger",
+    "display_author": "Brad Thor",
+    "display_series": "Rising Tiger",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781982182151": {
+        "volume": null,
+        "title": "Rising Tiger"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "hisham matar|my friends a novel": {
+    "canonical_author": "hisham matar",
+    "canonical_series": "my friends a novel",
+    "display_author": "Hisham Matar",
+    "display_series": "My Friends: a Novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780812994841": {
+        "volume": null,
+        "title": "My Friends"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "j d robb|encore in death": {
+    "canonical_author": "j d robb",
+    "canonical_series": "encore in death",
+    "display_author": "J. D. Robb",
+    "display_series": "Encore in Death",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781250284082": {
+        "volume": null,
+        "title": "Encore in Death"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brian herbert|graphic": {
+    "canonical_author": "brian herbert",
+    "canonical_series": "graphic",
+    "display_author": "Brian Herbert",
+    "display_series": "Graphic",
+    "expected_vols": {
+      "1": "DUNE"
+    },
+    "known_isbns": {
+      "9780553110616": {
+        "volume": 1,
+        "title": "Dune"
+      }
+    },
+    "last_enriched": 1761191538,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "brian herbert|dune house trilogy 1": {
+    "canonical_author": "brian herbert",
+    "canonical_series": "dune house trilogy 1",
+    "display_author": "Brian Herbert",
+    "display_series": "Dune: House Trilogy (1)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780553110616": {
+        "volume": null,
+        "title": "Dune"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "dave eggers|the circle": {
+    "canonical_author": "dave eggers",
+    "canonical_series": "the circle",
+    "display_author": "Dave Eggers",
+    "display_series": "The Circle",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385351393": {
+        "volume": null,
+        "title": "The Circle"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|women s murder club 6": {
+    "canonical_author": "james patterson",
+    "canonical_series": "women s murder club 6",
+    "display_author": "James Patterson",
+    "display_series": "Women's Murder Club (6)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316014793": {
+        "volume": null,
+        "title": "The 6th target"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "clive cussler|numa novel 16": {
+    "canonical_author": "clive cussler",
+    "canonical_series": "numa novel 16",
+    "display_author": "Clive Cussler",
+    "display_series": "NUMA Novel, 16",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593327869": {
+        "volume": null,
+        "title": "Fast Ice"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "kylie foxx mcdonald|dare ya": {
+    "canonical_author": "kylie foxx mcdonald",
+    "canonical_series": "dare ya",
+    "display_author": "Kylie Foxx McDonald",
+    "display_series": "Dare Ya!",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781523504763": {
+        "volume": null,
+        "title": "Dare Ya!"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|cross justice": {
+    "canonical_author": "james patterson",
+    "canonical_series": "cross justice",
+    "display_author": "James Patterson",
+    "display_series": "Cross Justice",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316407045": {
+        "volume": null,
+        "title": "Cross Justice"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "walter mosley|charcoal joe": {
+    "canonical_author": "walter mosley",
+    "canonical_series": "charcoal joe",
+    "display_author": "Walter Mosley",
+    "display_series": "Charcoal Joe",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385539203": {
+        "volume": null,
+        "title": "Charcoal Joe"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|the women s murder club 14": {
+    "canonical_author": "james patterson",
+    "canonical_series": "the women s murder club 14",
+    "display_author": "James Patterson",
+    "display_series": "The Women's Murder Club -- 14",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316407021": {
+        "volume": null,
+        "title": "14th deadly sin"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "alan dean foster|pip and flinx": {
+    "canonical_author": "alan dean foster",
+    "canonical_series": "pip and flinx",
+    "display_author": "Alan Dean Foster",
+    "display_series": "Pip And Flinx",
+    "expected_vols": {
+      "1": "Reunion"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "alan dean foster|pip flinx": {
+    "canonical_author": "alan dean foster",
+    "canonical_series": "pip flinx",
+    "display_author": "Alan Dean Foster",
+    "display_series": "Pip Flinx",
+    "expected_vols": {
+      "1": "Sliding Scales",
+      "2": "Flinx's Folly"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "alan dean foster|official movie": {
+    "canonical_author": "alan dean foster",
+    "canonical_series": "official movie",
+    "display_author": "Alan Dean Foster",
+    "display_series": "Official Movie",
+    "expected_vols": {
+      "1": "Terminator Salvation"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "alan dean foster|star wars": {
+    "canonical_author": "alan dean foster",
+    "canonical_series": "star wars",
+    "display_author": "Alan Dean Foster",
+    "display_series": "Star Wars",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780345275660": {
+        "volume": null,
+        "title": "Splinter of the Mind's Eye"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brad taylor|pike logan": {
+    "canonical_author": "brad taylor",
+    "canonical_series": "pike logan",
+    "display_author": "Brad Taylor",
+    "display_series": "Pike Logan",
+    "expected_vols": {
+      "1": "American Traitor"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "brad taylor|a pike logan thriller": {
+    "canonical_author": "brad taylor",
+    "canonical_series": "a pike logan thriller",
+    "display_author": "Brad Taylor",
+    "display_series": "A Pike Logan thriller",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780525953999": {
+        "volume": null,
+        "title": "No fortunate son"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "lan samantha chang|family chao": {
+    "canonical_author": "lan samantha chang",
+    "canonical_series": "family chao",
+    "display_author": "Lan Samantha Chang",
+    "display_series": "Family Chao",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780393868074": {
+        "volume": null,
+        "title": "Family Chao"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james albert michener|alaska": {
+    "canonical_author": "james albert michener",
+    "canonical_series": "alaska",
+    "display_author": "James Albert Michener",
+    "display_series": "Alaska",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780394551548": {
+        "volume": null,
+        "title": "Alaska"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "steve berry|the venetian betrayal": {
+    "canonical_author": "steve berry",
+    "canonical_series": "the venetian betrayal",
+    "display_author": "Steve Berry",
+    "display_series": "The Venetian Betrayal",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780345485779": {
+        "volume": null,
+        "title": "The Venetian Betrayal"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "steve hamilton|the second life of nick mason": {
+    "canonical_author": "steve hamilton",
+    "canonical_series": "the second life of nick mason",
+    "display_author": "Steve Hamilton",
+    "display_series": "The second life of Nick Mason",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780399574320": {
+        "volume": null,
+        "title": "The Second Life of Nick Mason"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "nelson de mille|the gate house": {
+    "canonical_author": "nelson de mille",
+    "canonical_series": "the gate house",
+    "display_author": "Nelson De Mille",
+    "display_series": "The gate house",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780446533423": {
+        "volume": null,
+        "title": "The gate house"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "bernard cornwell|the burning land": {
+    "canonical_author": "bernard cornwell",
+    "canonical_series": "the burning land",
+    "display_author": "Bernard Cornwell",
+    "display_series": "The Burning Land",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780060888749": {
+        "volume": null,
+        "title": "The Burning Land"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "margaret atwood|the blind assassin": {
+    "canonical_author": "margaret atwood",
+    "canonical_series": "the blind assassin",
+    "display_author": "Margaret Atwood",
+    "display_series": "The blind assassin",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385475723": {
+        "volume": null,
+        "title": "The Blind Assassin"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "steve berry|cotton malone bk 11": {
+    "canonical_author": "steve berry",
+    "canonical_series": "cotton malone bk 11",
+    "display_author": "Steve Berry",
+    "display_series": "Cotton Malone -- bk. 11",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781250056245": {
+        "volume": null,
+        "title": "The 14th colony"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brad taylor|pike logan thriller": {
+    "canonical_author": "brad taylor",
+    "canonical_series": "pike logan thriller",
+    "display_author": "Brad Taylor",
+    "display_series": "Pike Logan thriller",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781101984819": {
+        "volume": null,
+        "title": "Operator down"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "redmond o hanlon|vintage departures": {
+    "canonical_author": "redmond o hanlon",
+    "canonical_series": "vintage departures",
+    "display_author": "Redmond O'Hanlon",
+    "display_series": "Vintage departures",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780679727149": {
+        "volume": null,
+        "title": "In trouble again"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "mary higgins clark|i ll be seeing you": {
+    "canonical_author": "mary higgins clark",
+    "canonical_series": "i ll be seeing you",
+    "display_author": "Mary Higgins Clark",
+    "display_series": "I'll be seeing you",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780671673666": {
+        "volume": null,
+        "title": "I'll Be Seeing You"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john sandford|a prey novel book 25": {
+    "canonical_author": "john sandford",
+    "canonical_series": "a prey novel book 25",
+    "display_author": "John Sandford",
+    "display_series": "A prey novel -- book 25",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780399168796": {
+        "volume": null,
+        "title": "Gathering prey"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael capuzzo|close to shore": {
+    "canonical_author": "michael capuzzo",
+    "canonical_series": "close to shore",
+    "display_author": "Michael Capuzzo",
+    "display_series": "Close to shore",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780767904131": {
+        "volume": null,
+        "title": "Close to shore"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|a detective michael bennett thriller 9": {
+    "canonical_author": "james patterson",
+    "canonical_series": "a detective michael bennett thriller 9",
+    "display_author": "James Patterson",
+    "display_series": "A Detective Michael Bennett thriller -- [9]",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316407083": {
+        "volume": null,
+        "title": "Bullseye"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "robert crais|elvis cole and joe pike novel": {
+    "canonical_author": "robert crais",
+    "canonical_series": "elvis cole and joe pike novel",
+    "display_author": "Robert Crais",
+    "display_series": "Elvis Cole and Joe Pike Novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780525535683": {
+        "volume": null,
+        "title": "A Dangerous Man"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|james patterson s women s murder club": {
+    "canonical_author": "james patterson",
+    "canonical_series": "james patterson s women s murder club",
+    "display_author": "James Patterson",
+    "display_series": "James Patterson's Women's murder club series",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316017701": {
+        "volume": null,
+        "title": "7th heaven"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "tui sutherland|wings of fire book eleven": {
+    "canonical_author": "tui sutherland",
+    "canonical_series": "wings of fire book eleven",
+    "display_author": "Tui Sutherland",
+    "display_series": "Wings of Fire -- Book eleven",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781338214437": {
+        "volume": null,
+        "title": "The Lost Continent"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|house of wolves": {
+    "canonical_author": "james patterson",
+    "canonical_series": "house of wolves",
+    "display_author": "James Patterson",
+    "display_series": "House of Wolves",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316404297": {
+        "volume": null,
+        "title": "The House of Wolves"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|shattered": {
+    "canonical_author": "james patterson",
+    "canonical_series": "shattered",
+    "display_author": "James Patterson",
+    "display_series": "Shattered",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316499484": {
+        "volume": null,
+        "title": "Shattered"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "daniel silva|unti silva novel 2022": {
+    "canonical_author": "daniel silva",
+    "canonical_series": "unti silva novel 2022",
+    "display_author": "Daniel Silva",
+    "display_series": "Unti Silva Novel 2022",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062834850": {
+        "volume": null,
+        "title": "Portrait of an Unknown Woman"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|escape": {
+    "canonical_author": "james patterson",
+    "canonical_series": "escape",
+    "display_author": "James Patterson",
+    "display_series": "Escape",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316499446": {
+        "volume": null,
+        "title": "Escape"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "j d robb|desperation in death": {
+    "canonical_author": "j d robb",
+    "canonical_series": "desperation in death",
+    "display_author": "J. D. Robb",
+    "display_series": "Desperation in Death",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781250278234": {
+        "volume": null,
+        "title": "Desperation in Death"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "graham brown|clive cussler s numa 19": {
+    "canonical_author": "graham brown",
+    "canonical_series": "clive cussler s numa 19",
+    "display_author": "Graham Brown",
+    "display_series": "Clive Cussler's NUMA 19",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593419670": {
+        "volume": null,
+        "title": "Clive Cussler's NUMA 19"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "marc cameron|tom clancy chain of command": {
+    "canonical_author": "marc cameron",
+    "canonical_series": "tom clancy chain of command",
+    "display_author": "Marc Cameron",
+    "display_series": "Tom Clancy Chain of Command",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593188163": {
+        "volume": null,
+        "title": "Tom Clancy Chain of Command"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "chris bohjalian|the red lotus a novel": {
+    "canonical_author": "chris bohjalian",
+    "canonical_series": "the red lotus a novel",
+    "display_author": "Chris Bohjalian",
+    "display_series": "The red lotus : a novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385544801": {
+        "volume": null,
+        "title": "The Red Lotus"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "elena ferrante|graphic": {
+    "canonical_author": "elena ferrante",
+    "canonical_series": "graphic",
+    "display_author": "Elena Ferrante",
+    "display_series": "Graphic",
+    "expected_vols": {
+      "1": "My Brilliant Friend"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "elena ferrante|the lying life of adults": {
+    "canonical_author": "elena ferrante",
+    "canonical_series": "the lying life of adults",
+    "display_author": "Elena Ferrante",
+    "display_series": "The Lying Life of Adults",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781609455910": {
+        "volume": null,
+        "title": "The Lying Life of Adults"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "steve berry|the kaiser s web": {
+    "canonical_author": "steve berry",
+    "canonical_series": "the kaiser s web",
+    "display_author": "Steve Berry",
+    "display_series": "The Kaiser's Web",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781250140340": {
+        "volume": null,
+        "title": "The Kaiser's Web"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brian freeman|robert ludlum s the bourne treachery": {
+    "canonical_author": "brian freeman",
+    "canonical_series": "robert ludlum s the bourne treachery",
+    "display_author": "Brian Freeman",
+    "display_series": "Robert Ludlum's The Bourne Treachery",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780525542650": {
+        "volume": null,
+        "title": "Robert Ludlum's The Bourne Treachery"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "eric van lustbader|jason bourne": {
+    "canonical_author": "eric van lustbader",
+    "canonical_series": "jason bourne",
+    "display_author": "Eric Van Lustbader",
+    "display_series": "Jason Bourne Series",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780446539821": {
+        "volume": null,
+        "title": "Robert Ludlum's the Bourne Deception"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "j d robb|forgotten in death": {
+    "canonical_author": "j d robb",
+    "canonical_series": "forgotten in death",
+    "display_author": "J. D. Robb",
+    "display_series": "Forgotten in Death",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781250272812": {
+        "volume": null,
+        "title": "Forgotten in Death"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "stuart woods|a stone barrington novel": {
+    "canonical_author": "stuart woods",
+    "canonical_series": "a stone barrington novel",
+    "display_author": "Stuart Woods",
+    "display_series": "A Stone Barrington novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780735219229": {
+        "volume": null,
+        "title": "Desperate measures"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|ali cross": {
+    "canonical_author": "james patterson",
+    "canonical_series": "ali cross",
+    "display_author": "James Patterson",
+    "display_series": "Ali Cross",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316500135": {
+        "volume": null,
+        "title": "Ali Cross"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael connelly|a harry bosch novel 19": {
+    "canonical_author": "michael connelly",
+    "canonical_series": "a harry bosch novel 19",
+    "display_author": "Michael Connelly",
+    "display_series": "A Harry Bosch novel -- 19",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316225946": {
+        "volume": null,
+        "title": "The wrong side of goodbye"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "charles osborne|the unexpected guest": {
+    "canonical_author": "charles osborne",
+    "canonical_series": "the unexpected guest",
+    "display_author": "Charles Osborne",
+    "display_series": "The unexpected guest",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780312242626": {
+        "volume": null,
+        "title": "The unexpected guest"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john grisham|the chamber": {
+    "canonical_author": "john grisham",
+    "canonical_series": "the chamber",
+    "display_author": "John Grisham",
+    "display_series": "The Chamber",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385424721": {
+        "volume": null,
+        "title": "The Chamber"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|the big bad wolf": {
+    "canonical_author": "james patterson",
+    "canonical_series": "the big bad wolf",
+    "display_author": "James Patterson",
+    "display_series": "The Big Bad Wolf",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316602907": {
+        "volume": null,
+        "title": "The Big Bad Wolf"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "louise erdrich|the beet queen": {
+    "canonical_author": "louise erdrich",
+    "canonical_series": "the beet queen",
+    "display_author": "Louise Erdrich",
+    "display_series": "The Beet Queen",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780060835279": {
+        "volume": null,
+        "title": "The Beet Queen"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john sandford|storm prey": {
+    "canonical_author": "john sandford",
+    "canonical_series": "storm prey",
+    "display_author": "John Sandford",
+    "display_series": "Storm prey",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780399156496": {
+        "volume": null,
+        "title": "Storm Prey"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael crichton|rising sun": {
+    "canonical_author": "michael crichton",
+    "canonical_series": "rising sun",
+    "display_author": "Michael Crichton",
+    "display_series": "Rising sun",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780394589428": {
+        "volume": null,
+        "title": "Rising Sun"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "scott turow|reversible errors": {
+    "canonical_author": "scott turow",
+    "canonical_series": "reversible errors",
+    "display_author": "Scott Turow",
+    "display_series": "Reversible errors",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780374281601": {
+        "volume": null,
+        "title": "Reversible errors"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael connelly|harry bosch": {
+    "canonical_author": "michael connelly",
+    "canonical_series": "harry bosch",
+    "display_author": "Michael Connelly",
+    "display_series": "Harry Bosch Series",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316154604": {
+        "volume": null,
+        "title": "Lost Light"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james lee burke|dave robicheaux": {
+    "canonical_author": "james lee burke",
+    "canonical_series": "dave robicheaux",
+    "display_author": "James Lee Burke",
+    "display_series": "Dave Robicheaux",
+    "expected_vols": {
+      "1": "The neon rain",
+      "2": "Burning Angel",
+      "3": "The Tin Roof Blowdown",
+      "4": "Pegasus Descending",
+      "5": "The glass rainbow",
+      "6": "Swan Peak"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "james lee burke|hackberry holland": {
+    "canonical_author": "james lee burke",
+    "canonical_series": "hackberry holland",
+    "display_author": "James Lee Burke",
+    "display_series": "Hackberry Holland novels",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781501107108": {
+        "volume": null,
+        "title": "House of the rising sun"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "inc scholastic|harry potter": {
+    "canonical_author": "inc scholastic",
+    "canonical_series": "harry potter",
+    "display_author": "Inc. Scholastic",
+    "display_series": "Harry Potter",
+    "expected_vols": {
+      "3": "Harry Potter and the Prisoner of Azkaban"
+    },
+    "known_isbns": {
+      "9780545582933": {
+        "volume": 3,
+        "title": "Harry Potter and the Prisoner of Azkaban"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "vicki croke|elephant company": {
+    "canonical_author": "vicki croke",
+    "canonical_series": "elephant company",
+    "display_author": "Vicki Croke",
+    "display_series": "Elephant Company",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781400069330": {
+        "volume": null,
+        "title": "Elephant Company"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "isabel allende|oprah s book club 31": {
+    "canonical_author": "isabel allende",
+    "canonical_series": "oprah s book club 31",
+    "display_author": "Isabel Allende",
+    "display_series": "Oprah's Book Club (31)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780060194918": {
+        "volume": null,
+        "title": "Daughter of fortune"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john grisham|the judge s list": {
+    "canonical_author": "john grisham",
+    "canonical_series": "the judge s list",
+    "display_author": "John Grisham",
+    "display_series": "The Judge's List",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385546027": {
+        "volume": null,
+        "title": "The Judge's List"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|steal": {
+    "canonical_author": "james patterson",
+    "canonical_series": "steal",
+    "display_author": "James Patterson",
+    "display_series": "Steal",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781538703540": {
+        "volume": null,
+        "title": "Steal"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "carly anne west|hello neighbor": {
+    "canonical_author": "carly anne west",
+    "canonical_series": "hello neighbor",
+    "display_author": "Carly Anne West",
+    "display_series": "Hello Neighbor Collection",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781338600858": {
+        "volume": null,
+        "title": "Hello Neighbor Collection"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "stuart woods|black dog": {
+    "canonical_author": "stuart woods",
+    "canonical_series": "black dog",
+    "display_author": "Stuart Woods",
+    "display_series": "Black Dog",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593540008": {
+        "volume": null,
+        "title": "Black Dog"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael lewis|the undoing project": {
+    "canonical_author": "michael lewis",
+    "canonical_series": "the undoing project",
+    "display_author": "Michael Lewis",
+    "display_series": "The undoing project",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780393254594": {
+        "volume": null,
+        "title": "The Undoing Project"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "j d salinger|the catcher in the rye": {
+    "canonical_author": "j d salinger",
+    "canonical_series": "the catcher in the rye",
+    "display_author": "J.D.Salinger",
+    "display_series": "The catcher in the rye",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316769174": {
+        "volume": null,
+        "title": "The Catcher in the Rye"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "douglas preston|gideon crew book 5": {
+    "canonical_author": "douglas preston",
+    "canonical_series": "gideon crew book 5",
+    "display_author": "Douglas Preston",
+    "display_series": "Gideon Crew novels -- book 5",
+    "expected_vols": {
+      "5": "The pharaoh key"
+    },
+    "known_isbns": {
+      "9781455525829": {
+        "volume": 5,
+        "title": "The pharaoh key"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "daniel silva|the other woman": {
+    "canonical_author": "daniel silva",
+    "canonical_series": "the other woman",
+    "display_author": "Daniel Silva",
+    "display_series": "The Other Woman",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062834829": {
+        "volume": null,
+        "title": "The Other Woman"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brad thor|near dark": {
+    "canonical_author": "brad thor",
+    "canonical_series": "near dark",
+    "display_author": "Brad Thor",
+    "display_series": "Near Dark",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781982104061": {
+        "volume": null,
+        "title": "Near Dark"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "clive cussler|marauder": {
+    "canonical_author": "clive cussler",
+    "canonical_series": "marauder",
+    "display_author": "Clive Cussler",
+    "display_series": "Marauder",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593087916": {
+        "volume": null,
+        "title": "Marauder"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john sandford|a virgil flowers novel bk 11": {
+    "canonical_author": "john sandford",
+    "canonical_series": "a virgil flowers novel bk 11",
+    "display_author": "John Sandford",
+    "display_series": "A Virgil Flowers novel -- bk. 11",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780735217324": {
+        "volume": null,
+        "title": "Holy Ghost"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|fear no evil": {
+    "canonical_author": "james patterson",
+    "canonical_series": "fear no evil",
+    "display_author": "James Patterson",
+    "display_series": "Fear No Evil",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316499149": {
+        "volume": null,
+        "title": "Fear No Evil"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "cixin liu|the dark forest": {
+    "canonical_author": "cixin liu",
+    "canonical_series": "the dark forest",
+    "display_author": "Cixin Liu",
+    "display_series": "The Dark Forest",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780765386694": {
+        "volume": null,
+        "title": "The Dark Forest"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "min jin lee|pachinko": {
+    "canonical_author": "min jin lee",
+    "canonical_series": "pachinko",
+    "display_author": "Min Jin Lee",
+    "display_series": "Pachinko",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781455563937": {
+        "volume": null,
+        "title": "Pachinko (National Book Award Finalist)"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "nayantara roy|magnificent ruins": {
+    "canonical_author": "nayantara roy",
+    "canonical_series": "magnificent ruins",
+    "display_author": "Nayantara Roy",
+    "display_series": "Magnificent Ruins",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781643755847": {
+        "volume": null,
+        "title": "Magnificent Ruins"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "lee child|echo burning": {
+    "canonical_author": "lee child",
+    "canonical_series": "echo burning",
+    "display_author": "Lee Child",
+    "display_series": "Echo Burning",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780515143829": {
+        "volume": null,
+        "title": "Echo Burning"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "cixin liu|remembrance of earth s past": {
+    "canonical_author": "cixin liu",
+    "canonical_series": "remembrance of earth s past",
+    "display_author": "Cixin Liu",
+    "display_series": "Remembrance of Earth's Past",
+    "expected_vols": {
+      "3": "Death's End"
+    },
+    "known_isbns": {
+      "9780765386632": {
+        "volume": 3,
+        "title": "Death's End"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "laura spence ash|beyond that the sea": {
+    "canonical_author": "laura spence ash",
+    "canonical_series": "beyond that the sea",
+    "display_author": "Laura Spence-Ash",
+    "display_series": "Beyond That, the Sea",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781250854377": {
+        "volume": null,
+        "title": "Beyond That, the Sea"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "vince flynn|american assassin": {
+    "canonical_author": "vince flynn",
+    "canonical_series": "american assassin",
+    "display_author": "Vince Flynn",
+    "display_series": "American Assassin",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781416595182": {
+        "volume": null,
+        "title": "American Assassin"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|22 seconds": {
+    "canonical_author": "james patterson",
+    "canonical_series": "22 seconds",
+    "display_author": "James Patterson",
+    "display_series": "22 Seconds",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316499378": {
+        "volume": null,
+        "title": "22 Seconds"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "mark greaney|sierra six": {
+    "canonical_author": "mark greaney",
+    "canonical_series": "sierra six",
+    "display_author": "Mark Greaney",
+    "display_series": "Sierra Six",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593098998": {
+        "volume": null,
+        "title": "Sierra Six"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "mike lupica|comeback kids": {
+    "canonical_author": "mike lupica",
+    "canonical_series": "comeback kids",
+    "display_author": "Mike Lupica",
+    "display_series": "Comeback Kids",
+    "expected_vols": {
+      "1": "Safe at home",
+      "2": "Penalty kick"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "mike lupica|robert b parker s fallout": {
+    "canonical_author": "mike lupica",
+    "canonical_series": "robert b parker s fallout",
+    "display_author": "Mike Lupica",
+    "display_series": "Robert B. Parker's Fallout",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593540275": {
+        "volume": null,
+        "title": "Robert B. Parker's Fallout"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "mary higgins clark|under suspicion novel 1": {
+    "canonical_author": "mary higgins clark",
+    "canonical_series": "under suspicion novel 1",
+    "display_author": "Mary Higgins Clark",
+    "display_series": "Under suspicion novel -- 1",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781476763125": {
+        "volume": null,
+        "title": "The Cinderella murder"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "ari shavit|my promised land": {
+    "canonical_author": "ari shavit",
+    "canonical_series": "my promised land",
+    "display_author": "Ari Shavit",
+    "display_series": "My Promised Land",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385521703": {
+        "volume": null,
+        "title": "My Promised Land"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "don bentley|tom clancy zero hour": {
+    "canonical_author": "don bentley",
+    "canonical_series": "tom clancy zero hour",
+    "display_author": "Don Bentley",
+    "display_series": "Tom Clancy Zero Hour",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593422724": {
+        "volume": null,
+        "title": "Tom Clancy Zero Hour"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "goldberg|mr monk goes to the firehouse mr monk 1": {
+    "canonical_author": "goldberg",
+    "canonical_series": "mr monk goes to the firehouse mr monk 1",
+    "display_author": "Goldberg, Lee",
+    "display_series": "Mr. Monk Goes to the Firehouse (Mr Monk 1)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780451217295": {
+        "volume": null,
+        "title": "Mr.  Monk goes to the firehouse"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "anne tyler|french braid": {
+    "canonical_author": "anne tyler",
+    "canonical_series": "french braid",
+    "display_author": "Anne Tyler",
+    "display_series": "French Braid",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593321096": {
+        "volume": null,
+        "title": "French Braid"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "david baldacci|dream town": {
+    "canonical_author": "david baldacci",
+    "canonical_series": "dream town",
+    "display_author": "David Baldacci",
+    "display_series": "Dream Town",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781538719770": {
+        "volume": null,
+        "title": "Dream Town"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "mike maden|the oregon files": {
+    "canonical_author": "mike maden",
+    "canonical_series": "the oregon files",
+    "display_author": "Mike Maden",
+    "display_series": "The Oregon Files",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593540640": {
+        "volume": null,
+        "title": "Clive Cussler's Hellburner"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "mark greaney|armored": {
+    "canonical_author": "mark greaney",
+    "canonical_series": "armored",
+    "display_author": "Mark Greaney",
+    "display_series": "Armored",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593436875": {
+        "volume": null,
+        "title": "Armored"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "stuart woods|safe house": {
+    "canonical_author": "stuart woods",
+    "canonical_series": "safe house",
+    "display_author": "Stuart Woods",
+    "display_series": "Safe House",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593331750": {
+        "volume": null,
+        "title": "A Safe House"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john grisham|camino winds": {
+    "canonical_author": "john grisham",
+    "canonical_series": "camino winds",
+    "display_author": "John Grisham",
+    "display_series": "Camino Winds",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385545938": {
+        "volume": null,
+        "title": "Camino Winds"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brad thor|use of force": {
+    "canonical_author": "brad thor",
+    "canonical_series": "use of force",
+    "display_author": "Brad Thor",
+    "display_series": "Use of force",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781476789385": {
+        "volume": null,
+        "title": "Use of force"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "steve berry|cotton malone 10": {
+    "canonical_author": "steve berry",
+    "canonical_series": "cotton malone 10",
+    "display_author": "Steve Berry",
+    "display_series": "Cotton Malone series -- [10]",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781250056238": {
+        "volume": null,
+        "title": "The patriot threat"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "herman wouk|the hope": {
+    "canonical_author": "herman wouk",
+    "canonical_series": "the hope",
+    "display_author": "Herman Wouk",
+    "display_series": "The hope",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316955195": {
+        "volume": null,
+        "title": "The hope"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "tui sutherland|wings of fire 3": {
+    "canonical_author": "tui sutherland",
+    "canonical_series": "wings of fire 3",
+    "display_author": "Tui Sutherland",
+    "display_series": "Wings of Fire (3)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780545349253": {
+        "volume": null,
+        "title": "The Hidden Kingdom"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "david baldacci|the camel club": {
+    "canonical_author": "david baldacci",
+    "canonical_series": "the camel club",
+    "display_author": "David Baldacci",
+    "display_series": "The Camel Club",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780446577380": {
+        "volume": null,
+        "title": "The Camel Club"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "daniel silva|gabriel allon bk 16": {
+    "canonical_author": "daniel silva",
+    "canonical_series": "gabriel allon bk 16",
+    "display_author": "Daniel Silva",
+    "display_series": "Gabriel Allon -- bk. 16",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780062320223": {
+        "volume": null,
+        "title": "The Black Widow"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael crichton|prey": {
+    "canonical_author": "michael crichton",
+    "canonical_series": "prey",
+    "display_author": "Michael Crichton",
+    "display_series": "Prey",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780066214122": {
+        "volume": null,
+        "title": "Prey"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "paul tough|how children succeed": {
+    "canonical_author": "paul tough",
+    "canonical_series": "how children succeed",
+    "display_author": "Paul Tough",
+    "display_series": "How children succeed",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780547564654": {
+        "volume": null,
+        "title": "How children succeed"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "harlan coben|myron bolitar": {
+    "canonical_author": "harlan coben",
+    "canonical_series": "myron bolitar",
+    "display_author": "Harlan Coben",
+    "display_series": "Myron Bolitar",
+    "expected_vols": {
+      "1": "Promise Me"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "harlan coben|myron bolitar novel": {
+    "canonical_author": "harlan coben",
+    "canonical_series": "myron bolitar novel",
+    "display_author": "Harlan Coben",
+    "display_series": "Myron Bolitar novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780525955108": {
+        "volume": null,
+        "title": "Home"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|featuring alex cross": {
+    "canonical_author": "james patterson",
+    "canonical_series": "featuring alex cross",
+    "display_author": "James Patterson",
+    "display_series": "Featuring Alex Cross",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316407090": {
+        "volume": null,
+        "title": "Cross the line"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "J. K. Rowling|a cormoran strike novel": {
+    "canonical_author": "J. K. Rowling",
+    "canonical_series": "a cormoran strike novel",
+    "display_author": "Robert Galbraith",
+    "display_series": "A Cormoran Strike novel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316349932": {
+        "volume": null,
+        "title": "Career of Evil"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "ian mcewan|atonement": {
+    "canonical_author": "ian mcewan",
+    "canonical_series": "atonement",
+    "display_author": "Ian McEwan",
+    "display_series": "Atonement",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385503952": {
+        "volume": null,
+        "title": "Atonement"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "carol matthau|among the porcupines": {
+    "canonical_author": "carol matthau",
+    "canonical_series": "among the porcupines",
+    "display_author": "Carol Matthau",
+    "display_series": "Among the porcupines",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780394582665": {
+        "volume": null,
+        "title": "Among the porcupines"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "roberto bolan o|2666": {
+    "canonical_author": "roberto bolan o",
+    "canonical_series": "2666",
+    "display_author": "Roberto Bolaño",
+    "display_series": "2666",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780374100148": {
+        "volume": null,
+        "title": "2666"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|the jailhouse lawyer": {
+    "canonical_author": "james patterson",
+    "canonical_series": "the jailhouse lawyer",
+    "display_author": "James Patterson",
+    "display_series": "The Jailhouse Lawyer",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316276627": {
+        "volume": null,
+        "title": "The Jailhouse Lawyer"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael crichton|timeline": {
+    "canonical_author": "michael crichton",
+    "canonical_series": "timeline",
+    "display_author": "Michael Crichton",
+    "display_series": "Timeline",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780679444817": {
+        "volume": null,
+        "title": "Timeline"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "david grann|wager": {
+    "canonical_author": "david grann",
+    "canonical_series": "wager",
+    "display_author": "David Grann",
+    "display_series": "Wager",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385534260": {
+        "volume": null,
+        "title": "Wager"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "louise erdrich|mighty red": {
+    "canonical_author": "louise erdrich",
+    "canonical_series": "mighty red",
+    "display_author": "Louise Erdrich",
+    "display_series": "Mighty Red",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780063277052": {
+        "volume": null,
+        "title": "The Mighty Red"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brandon sanderson|the mistborn": {
+    "canonical_author": "brandon sanderson",
+    "canonical_series": "the mistborn",
+    "display_author": "Brandon Sanderson",
+    "display_series": "The Mistborn Saga",
+    "expected_vols": {
+      "7": "The Lost Metal"
+    },
+    "known_isbns": {
+      "9780765391193": {
+        "volume": 7,
+        "title": "The Lost Metal"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "paul murray|bee sting": {
+    "canonical_author": "paul murray",
+    "canonical_series": "bee sting",
+    "display_author": "Paul Murray",
+    "display_series": "Bee Sting",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780374600303": {
+        "volume": null,
+        "title": "The Bee Sting"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "percival everett|james": {
+    "canonical_author": "percival everett",
+    "canonical_series": "james",
+    "display_author": "Percival Everett",
+    "display_series": "James",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385550369": {
+        "volume": null,
+        "title": "James"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james mcbride|heaven and earth grocery store": {
+    "canonical_author": "james mcbride",
+    "canonical_series": "heaven and earth grocery store",
+    "display_author": "James McBride",
+    "display_series": "Heaven and Earth Grocery Store",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593422946": {
+        "volume": null,
+        "title": "Heaven and Earth Grocery Store"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "griffin dunne|friday afternoon club": {
+    "canonical_author": "griffin dunne",
+    "canonical_series": "friday afternoon club",
+    "display_author": "Griffin Dunne",
+    "display_series": "Friday Afternoon Club",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593652824": {
+        "volume": null,
+        "title": "Friday Afternoon Club"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "chris whitaker|all the colors of the dark": {
+    "canonical_author": "chris whitaker",
+    "canonical_series": "all the colors of the dark",
+    "display_author": "Chris Whitaker",
+    "display_series": "All the Colors of the Dark",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593798874": {
+        "volume": null,
+        "title": "All the Colors of the Dark"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "donna leon|transient desires": {
+    "canonical_author": "donna leon",
+    "canonical_series": "transient desires",
+    "display_author": "Donna Leon",
+    "display_series": "Transient Desires",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780802158178": {
+        "volume": null,
+        "title": "Transient Desires"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "lee child|the sentinel": {
+    "canonical_author": "lee child",
+    "canonical_series": "the sentinel",
+    "display_author": "Lee Child",
+    "display_series": "The Sentinel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781984818461": {
+        "volume": null,
+        "title": "The Sentinel"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john lescroart|the missing piece": {
+    "canonical_author": "john lescroart",
+    "canonical_series": "the missing piece",
+    "display_author": "John Lescroart",
+    "display_series": "The Missing Piece",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781982170493": {
+        "volume": null,
+        "title": "The Missing Piece"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "nelson de mille|the maze": {
+    "canonical_author": "nelson de mille",
+    "canonical_series": "the maze",
+    "display_author": "Nelson De Mille",
+    "display_series": "The Maze",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781501101786": {
+        "volume": null,
+        "title": "The Maze"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brad thor|the scot harvath 18": {
+    "canonical_author": "brad thor",
+    "canonical_series": "the scot harvath 18",
+    "display_author": "Brad Thor",
+    "display_series": "The Scot Harvath series -- 18",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781476789415": {
+        "volume": null,
+        "title": "Spymaster"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "ace atkins|robert b parker s bye bye baby": {
+    "canonical_author": "ace atkins",
+    "canonical_series": "robert b parker s bye bye baby",
+    "display_author": "Ace Atkins",
+    "display_series": "Robert B. Parker's Bye Bye Baby",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593328514": {
+        "volume": null,
+        "title": "Robert B. Parker's Bye Bye Baby"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "david baldacci|mercy": {
+    "canonical_author": "david baldacci",
+    "canonical_series": "mercy",
+    "display_author": "David Baldacci",
+    "display_series": "Mercy",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781538719725": {
+        "volume": null,
+        "title": "Mercy"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "david baldacci|first family": {
+    "canonical_author": "david baldacci",
+    "canonical_series": "first family",
+    "display_author": "David Baldacci",
+    "display_series": "First family",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780446539753": {
+        "volume": null,
+        "title": "First Family"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "vince flynn|enemy at the gates": {
+    "canonical_author": "vince flynn",
+    "canonical_series": "enemy at the gates",
+    "display_author": "Vince Flynn",
+    "display_series": "Enemy at the Gates",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781982164881": {
+        "volume": null,
+        "title": "Enemy at the Gates"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael connelly|dark sacred night a ballard and bosch novel": {
+    "canonical_author": "michael connelly",
+    "canonical_series": "dark sacred night a ballard and bosch novel",
+    "display_author": "Michael Connelly",
+    "display_series": "Dark Sacred Night (A Ballard and Bosch Novel)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316484800": {
+        "volume": null,
+        "title": "Dark Sacred Night (A Ballard and Bosch Novel)"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "dirk cussler|the devil s sea": {
+    "canonical_author": "dirk cussler",
+    "canonical_series": "the devil s sea",
+    "display_author": "Dirk Cussler",
+    "display_series": "The Devil's Sea",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593419649": {
+        "volume": null,
+        "title": "Clive Cussler's The Devil's Sea"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "douglas preston|bloodless": {
+    "canonical_author": "douglas preston",
+    "canonical_series": "bloodless",
+    "display_author": "Douglas Preston",
+    "display_series": "Bloodless",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781538736708": {
+        "volume": null,
+        "title": "Bloodless"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "isabel allende|a long petal of the sea": {
+    "canonical_author": "isabel allende",
+    "canonical_series": "a long petal of the sea",
+    "display_author": "Isabel Allende",
+    "display_series": "A Long Petal of the Sea",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781984820150": {
+        "volume": null,
+        "title": "A Long Petal of the Sea"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john grisham|the boys from biloxi": {
+    "canonical_author": "john grisham",
+    "canonical_series": "the boys from biloxi",
+    "display_author": "John Grisham",
+    "display_series": "The Boys from Biloxi",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385548922": {
+        "volume": null,
+        "title": "The Boys from Biloxi"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "brendan slocumb|violin conspiracy": {
+    "canonical_author": "brendan slocumb",
+    "canonical_series": "violin conspiracy",
+    "display_author": "Brendan Slocumb",
+    "display_series": "Violin Conspiracy",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593315415": {
+        "volume": null,
+        "title": "Violin Conspiracy"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "douglas preston|cabinet of dr leng": {
+    "canonical_author": "douglas preston",
+    "canonical_series": "cabinet of dr leng",
+    "display_author": "Douglas Preston",
+    "display_series": "Cabinet of Dr. Leng",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781538736777": {
+        "volume": null,
+        "title": "The Cabinet of Dr. Leng"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john grisham|sparring partners": {
+    "canonical_author": "john grisham",
+    "canonical_series": "sparring partners",
+    "display_author": "John Grisham",
+    "display_series": "Sparring Partners",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385549325": {
+        "volume": null,
+        "title": "Sparring Partners"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "patterson|pop goes the weasel": {
+    "canonical_author": "patterson",
+    "canonical_series": "pop goes the weasel",
+    "display_author": "PATTERSON,JAMES",
+    "display_series": "Pop goes the weasel",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316693288": {
+        "volume": null,
+        "title": "Pop Goes the Weasel (Alex Cross, 5)"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "lee child|no plan b": {
+    "canonical_author": "lee child",
+    "canonical_series": "no plan b",
+    "display_author": "Lee Child",
+    "display_series": "No Plan B",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781984818546": {
+        "volume": null,
+        "title": "No Plan B"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "zadie smith|fraud": {
+    "canonical_author": "zadie smith",
+    "canonical_series": "fraud",
+    "display_author": "Zadie Smith",
+    "display_series": "Fraud",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780525558965": {
+        "volume": null,
+        "title": "Fraud"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "margaret atwood|fourteen days": {
+    "canonical_author": "margaret atwood",
+    "canonical_series": "fourteen days",
+    "display_author": "Margaret Atwood",
+    "display_series": "Fourteen Days",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780358616382": {
+        "volume": null,
+        "title": "Fourteen Days"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael connelly|desert star": {
+    "canonical_author": "michael connelly",
+    "canonical_series": "desert star",
+    "display_author": "Michael Connelly",
+    "display_series": "Desert Star",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316485654": {
+        "volume": null,
+        "title": "Desert Star"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "j k rowling|cormoran strike": {
+    "canonical_author": "j k rowling",
+    "canonical_series": "cormoran strike",
+    "display_author": "J. K. Rowling",
+    "display_series": "Cormoran Strike",
+    "expected_vols": {
+      "1": "The Cuckoo's Calling"
+    },
+    "known_isbns": {
+      "9780316206846": {
+        "volume": 1,
+        "title": "The Cuckoo's Calling"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "adrian tchaikovsky|shards of earth": {
+    "canonical_author": "adrian tchaikovsky",
+    "canonical_series": "shards of earth",
+    "display_author": "Adrian Tchaikovsky",
+    "display_series": "Shards of Earth",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316705851": {
+        "volume": null,
+        "title": "Shards of Earth"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "hilary mantel|wolf hall": {
+    "canonical_author": "hilary mantel",
+    "canonical_series": "wolf hall",
+    "display_author": "Hilary Mantel",
+    "display_series": "Wolf Hall",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780805080681": {
+        "volume": null,
+        "title": "Wolf Hall"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "harlan coben|harlan coben spring 2022": {
+    "canonical_author": "harlan coben",
+    "canonical_series": "harlan coben spring 2022",
+    "display_author": "Harlan Coben",
+    "display_series": "Harlan Coben Spring 2022",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781538748282": {
+        "volume": null,
+        "title": "Harlan Coben Spring 2022"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "stuart woods|distant thunder": {
+    "canonical_author": "stuart woods",
+    "canonical_series": "distant thunder",
+    "display_author": "Stuart Woods",
+    "display_series": "Distant Thunder",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593540039": {
+        "volume": null,
+        "title": "Distant Thunder"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "mark greaney|burner": {
+    "canonical_author": "mark greaney",
+    "canonical_series": "burner",
+    "display_author": "Mark Greaney",
+    "display_series": "Burner",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593548103": {
+        "volume": null,
+        "title": "Burner"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael connelly|the dark hours": {
+    "canonical_author": "michael connelly",
+    "canonical_series": "the dark hours",
+    "display_author": "Michael Connelly",
+    "display_series": "The Dark Hours",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316485647": {
+        "volume": null,
+        "title": "The Dark Hours"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "terry hayes|i am pilgrim": {
+    "canonical_author": "terry hayes",
+    "canonical_series": "i am pilgrim",
+    "display_author": "Terry Hayes",
+    "display_series": "I am Pilgrim",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781439177723": {
+        "volume": null,
+        "title": "I Am Pilgrim"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john grisham|a time for mercy": {
+    "canonical_author": "john grisham",
+    "canonical_series": "a time for mercy",
+    "display_author": "John Grisham",
+    "display_series": "A Time for Mercy",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385545969": {
+        "volume": null,
+        "title": "A Time for Mercy"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "J. K. Rowling|the strike": {
+    "canonical_author": "J. K. Rowling",
+    "canonical_series": "the strike",
+    "display_author": "Robert Galbraith",
+    "display_series": "The Strike Series",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316206891": {
+        "volume": null,
+        "title": "The Silkworm"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "sandford|the investigator": {
+    "canonical_author": "sandford",
+    "canonical_series": "the investigator",
+    "display_author": "Sandford, John.",
+    "display_series": "The Investigator",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593328682": {
+        "volume": null,
+        "title": "The Investigator (A Letty Davenport Novel)"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "lee child|jack reacher 4": {
+    "canonical_author": "lee child",
+    "canonical_series": "jack reacher 4",
+    "display_author": "Lee Child",
+    "display_series": "Jack Reacher (4)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780515143508": {
+        "volume": null,
+        "title": "Running blind"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|run rose run": {
+    "canonical_author": "james patterson",
+    "canonical_series": "run rose run",
+    "display_author": "James Patterson",
+    "display_series": "Run, Rose, Run",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780759554344": {
+        "volume": null,
+        "title": "Run, Rose, Run"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john sandford|righteous prey": {
+    "canonical_author": "john sandford",
+    "canonical_series": "righteous prey",
+    "display_author": "John Sandford",
+    "display_series": "Righteous Prey",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593422472": {
+        "volume": null,
+        "title": "Righteous Prey"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "robert crais|racing the light": {
+    "canonical_author": "robert crais",
+    "canonical_series": "racing the light",
+    "display_author": "Robert Crais",
+    "display_series": "Racing the Light",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780525535720": {
+        "volume": null,
+        "title": "Racing the Light"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "elizabeth strout|random house reader s circle": {
+    "canonical_author": "elizabeth strout",
+    "canonical_series": "random house reader s circle",
+    "display_author": "Elizabeth Strout",
+    "display_series": "Random House reader's circle",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780812971835": {
+        "volume": null,
+        "title": "Olive Kitteridge"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "vince flynn|oath of loyalty": {
+    "canonical_author": "vince flynn",
+    "canonical_series": "oath of loyalty",
+    "display_author": "Vince Flynn",
+    "display_series": "Oath of Loyalty",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781982164911": {
+        "volume": null,
+        "title": "Oath of Loyalty"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "c j box|joe pickett": {
+    "canonical_author": "c j box",
+    "canonical_series": "joe pickett",
+    "display_author": "C. J. Box",
+    "display_series": "Joe Pickett",
+    "expected_vols": {
+      "1": "Trophy hunt",
+      "2": "In plain sight"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "c j box|free fire": {
+    "canonical_author": "c j box",
+    "canonical_series": "free fire",
+    "display_author": "C. J. Box",
+    "display_series": "Free Fire",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780735211940": {
+        "volume": null,
+        "title": "Free Fire"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "lee child|jack reacher 2": {
+    "canonical_author": "lee child",
+    "canonical_series": "jack reacher 2",
+    "display_author": "Lee Child",
+    "display_series": "Jack Reacher (2)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780515142242": {
+        "volume": null,
+        "title": "Die Trying"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "david baldacci|simply lies": {
+    "canonical_author": "david baldacci",
+    "canonical_series": "simply lies",
+    "display_author": "David Baldacci",
+    "display_series": "Simply Lies",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781538750636": {
+        "volume": null,
+        "title": "David Baldacci Spring 2023"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "michael lewis|the premonition": {
+    "canonical_author": "michael lewis",
+    "canonical_series": "the premonition",
+    "display_author": "Michael Lewis",
+    "display_series": "The Premonition",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780393881554": {
+        "volume": null,
+        "title": "The Premonition"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "f scott fitzgerald|the great gatsby": {
+    "canonical_author": "f scott fitzgerald",
+    "canonical_series": "the great gatsby",
+    "display_author": "F. Scott Fitzgerald",
+    "display_series": "The Great Gatsby",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780743273565": {
+        "volume": null,
+        "title": "The Great Gatsby"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "david kessler|finding meaning": {
+    "canonical_author": "david kessler",
+    "canonical_series": "finding meaning",
+    "display_author": "David Kessler",
+    "display_series": "Finding Meaning",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781501192746": {
+        "volume": null,
+        "title": "Finding Meaning"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "chris whitaker|we begin at the end": {
+    "canonical_author": "chris whitaker",
+    "canonical_series": "we begin at the end",
+    "display_author": "Chris Whitaker",
+    "display_series": "We Begin at the End",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781250759665": {
+        "volume": null,
+        "title": "We Begin at the End"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john r bolton|the room where it happened": {
+    "canonical_author": "john r bolton",
+    "canonical_series": "the room where it happened",
+    "display_author": "John R. Bolton",
+    "display_series": "The Room Where It Happened",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781982148034": {
+        "volume": null,
+        "title": "The Room Where It Happened"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "wendy mass|the candymakers": {
+    "canonical_author": "wendy mass",
+    "canonical_series": "the candymakers",
+    "display_author": "Wendy Mass",
+    "display_series": "The Candymakers",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316002592": {
+        "volume": null,
+        "title": "The Candymakers"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "sarah j maas|throne of glass": {
+    "canonical_author": "sarah j maas",
+    "canonical_series": "throne of glass",
+    "display_author": "Sarah J. Maas",
+    "display_series": "Throne Of Glass",
+    "expected_vols": {
+      "1": "The Assassin’s Blade"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "sarah j maas|a court of thorns and roses book 5": {
+    "canonical_author": "sarah j maas",
+    "canonical_series": "a court of thorns and roses book 5",
+    "display_author": "Sarah J. Maas",
+    "display_series": "A Court of Thorns and Roses, Book 5",
+    "expected_vols": {
+      "5": "A Court of Silver Flames"
+    },
+    "known_isbns": {
+      "9781681196282": {
+        "volume": 5,
+        "title": "A Court of Silver Flames"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "cixin liu|remembrance of earth s past book 1": {
+    "canonical_author": "cixin liu",
+    "canonical_series": "remembrance of earth s past book 1",
+    "display_author": "Cixin Liu",
+    "display_series": "Remembrance of Earth's Past, Book 1",
+    "expected_vols": {
+      "1": "The Three-Body Problem"
+    },
+    "known_isbns": {
+      "9780765382030": {
+        "volume": 1,
+        "title": "The Three-Body Problem"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "tui sutherland|wings of fire 5": {
+    "canonical_author": "tui sutherland",
+    "canonical_series": "wings of fire 5",
+    "display_author": "Tui Sutherland",
+    "display_series": "Wings of Fire (5)",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780545349277": {
+        "volume": null,
+        "title": "The Brightest Night"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "john grisham|rogue lawyer": {
+    "canonical_author": "john grisham",
+    "canonical_series": "rogue lawyer",
+    "display_author": "John Grisham",
+    "display_series": "Rogue lawyer",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780385539432": {
+        "volume": null,
+        "title": "Rogue lawyer"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "pierce brown|red rising book 5": {
+    "canonical_author": "pierce brown",
+    "canonical_series": "red rising book 5",
+    "display_author": "Pierce Brown",
+    "display_series": "Red Rising Series, Book 5",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780425285947": {
+        "volume": null,
+        "title": "Dark Age"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "emma donoghue|the paris express": {
+    "canonical_author": "emma donoghue",
+    "canonical_series": "the paris express",
+    "display_author": "Emma Donoghue",
+    "display_series": "The Paris Express",
+    "expected_vols": {},
+    "known_isbns": {
+      "9781668082799": {
+        "volume": null,
+        "title": "The Paris Express"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "ocean vuong|the emperor of gladness": {
+    "canonical_author": "ocean vuong",
+    "canonical_series": "the emperor of gladness",
+    "display_author": "Ocean Vuong",
+    "display_series": "The Emperor of Gladness",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593831878": {
+        "volume": null,
+        "title": "The Emperor of Gladness"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "amor towles|table for two": {
+    "canonical_author": "amor towles",
+    "canonical_series": "table for two",
+    "display_author": "Amor Towles",
+    "display_series": "Table for Two",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593296370": {
+        "volume": null,
+        "title": "Table for Two"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "david b ellis|look closer": {
+    "canonical_author": "david b ellis",
+    "canonical_series": "look closer",
+    "display_author": "David B. Ellis",
+    "display_series": "Look Closer",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780399170928": {
+        "volume": null,
+        "title": "Look Closer"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "james patterson|blowback": {
+    "canonical_author": "james patterson",
+    "canonical_series": "blowback",
+    "display_author": "James Patterson",
+    "display_series": "Blowback",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780316499637": {
+        "volume": null,
+        "title": "Blowback"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "ann napolitano|hello beautiful": {
+    "canonical_author": "ann napolitano",
+    "canonical_series": "hello beautiful",
+    "display_author": "Ann Napolitano",
+    "display_series": "Hello Beautiful",
+    "expected_vols": {},
+    "known_isbns": {
+      "9780593243732": {
+        "volume": null,
+        "title": "Hello Beautiful (Oprah's Book Club)"
+      }
+    },
+    "last_enriched": 1761190868
+  },
+  "henry roth|rude stream volume iv a": {
+    "canonical_author": "henry roth",
+    "canonical_series": "rude stream volume iv a",
+    "display_author": "Henry Roth",
+    "display_series": "Rude Stream Volume Iv A",
+    "expected_vols": {
+      "1": "Requiem for Harlem"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "nicholas meyer|new": {
+    "canonical_author": "nicholas meyer",
+    "canonical_series": "new",
+    "display_author": "Nicholas Meyer",
+    "display_series": "New",
+    "expected_vols": {
+      "1": "Target practice"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "paul auster|graphic": {
+    "canonical_author": "paul auster",
+    "canonical_series": "graphic",
+    "display_author": "Paul Auster",
+    "display_series": "Graphic",
+    "expected_vols": {
+      "1": "City of glass"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "william f buckley|blackford oakes": {
+    "canonical_author": "william f buckley",
+    "canonical_series": "blackford oakes",
+    "display_author": "William F. Buckley",
+    "display_series": "Blackford Oakes",
+    "expected_vols": {
+      "1": "Mongoose, R.I.P",
+      "2": "A very private plot"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "michael collins|dan fortune detective": {
+    "canonical_author": "michael collins",
+    "canonical_series": "dan fortune detective",
+    "display_author": "Michael Collins",
+    "display_series": "Dan Fortune Detective",
+    "expected_vols": {
+      "1": "Walk a Black Wind"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "dana stabenow|kate shugak": {
+    "canonical_author": "dana stabenow",
+    "canonical_series": "kate shugak",
+    "display_author": "Dana Stabenow",
+    "display_series": "Kate Shugak",
+    "expected_vols": {
+      "1": "A taint in the blood",
+      "2": "A Deeper Sleep",
+      "3": "Whisper to the blood",
+      "4": "A night too dark",
+      "5": "A fine and bitter snow",
+      "6": "Though not dead"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "frederik pohl|novel of gateway gateway": {
+    "canonical_author": "frederik pohl",
+    "canonical_series": "novel of gateway gateway",
+    "display_author": "Frederik Pohl",
+    "display_series": "Novel Of Gateway Gateway",
+    "expected_vols": {
+      "1": "The boy who would live forever"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "janet evanovich|stephanie plum": {
+    "canonical_author": "janet evanovich",
+    "canonical_series": "stephanie plum",
+    "display_author": "Janet Evanovich",
+    "display_series": "Stephanie Plum",
+    "expected_vols": {
+      "1": "Two for the dough",
+      "2": "Ten big ones",
+      "3": "Fearless Fourteen",
+      "4": "Top Secret Twenty-One",
+      "5": "To the nines",
+      "6": "Explosive eighteen"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "janet evanovich|barnaby": {
+    "canonical_author": "janet evanovich",
+    "canonical_series": "barnaby",
+    "display_author": "Janet Evanovich",
+    "display_series": "Barnaby",
+    "expected_vols": {
+      "1": "Motor Mouth"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "janet evanovich|stephanie plum between the numbers": {
+    "canonical_author": "janet evanovich",
+    "canonical_series": "stephanie plum between the numbers",
+    "display_author": "Janet Evanovich",
+    "display_series": "Stephanie Plum Between The Numbers",
+    "expected_vols": {
+      "1": "Plum Lovin'"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "janet evanovich|stephanie plum holiday": {
+    "canonical_author": "janet evanovich",
+    "canonical_series": "stephanie plum holiday",
+    "display_author": "Janet Evanovich",
+    "display_series": "Stephanie Plum Holiday",
+    "expected_vols": {
+      "1": "Visions of sugar plums"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "james rollins|sigma force": {
+    "canonical_author": "james rollins",
+    "canonical_series": "sigma force",
+    "display_author": "James Rollins",
+    "display_series": "Sigma Force",
+    "expected_vols": {
+      "1": "Map of bones"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "james rollins|upper case greek letter sigma sigma force": {
+    "canonical_author": "james rollins",
+    "canonical_series": "upper case greek letter sigma sigma force",
+    "display_author": "James Rollins",
+    "display_series": "Upper Case Greek Letter Sigma Sigma Force",
+    "expected_vols": {
+      "1": "The doomsday key"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "james rollins|sigma": {
+    "canonical_author": "james rollins",
+    "canonical_series": "sigma",
+    "display_author": "James Rollins",
+    "display_series": "Sigma",
+    "expected_vols": {
+      "1": "Black Order CD"
+    },
+    "known_isbns": {},
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  },
+  "joshua hood|treadstone": {
+    "canonical_author": "joshua hood",
+    "canonical_series": "treadstone",
+    "display_author": "Joshua Hood",
+    "display_series": "treadstone",
+    "expected_vols": {
+      "1": "Robert Ludlum's The Treadstone Resurrection",
+      "2": "Robert Ludlum's The Treadstone Exile",
+      "3": "Robert Ludlum's The Treadstone Transgression",
+      "4": "Robert Ludlum's The Treadstone Rendition"
+    },
+    "known_isbns": {
+      "9780525542629": {
+        "volume": 2,
+        "title": "Robert Ludlum's The Treadstone Exile"
+      }
+    },
+    "last_enriched": 1761190868,
+    "last_catalog_bootstrap": 1761190868
+  }
+}

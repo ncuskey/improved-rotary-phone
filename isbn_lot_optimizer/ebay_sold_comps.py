@@ -81,14 +81,16 @@ class EbaySoldComps:
         gtin: str,
         fallback_to_estimate: bool = True,
         max_samples: int = 3,
+        include_signed: bool = False,
     ) -> Optional[SoldCompsResult]:
         """
-        Get sold comps for ISBN/GTIN.
+        Get sold comps for ISBN/GTIN with smart filtering.
 
         Args:
             gtin: ISBN or GTIN to lookup
             fallback_to_estimate: If True, use Track B estimate when Track A unavailable
             max_samples: Number of sample listings to return
+            include_signed: If True, include signed/autographed copies (default: False)
 
         Returns:
             SoldCompsResult or None if no data available
@@ -108,7 +110,7 @@ class EbaySoldComps:
 
         # Fall back to Track B (estimate from active)
         if fallback_to_estimate:
-            return self._get_estimated_sold_comps(gtin, max_samples)
+            return self._get_estimated_sold_comps(gtin, max_samples, include_signed=include_signed)
 
         return None
 
@@ -153,18 +155,24 @@ class EbaySoldComps:
             "last_sold_date": data.get("lastSoldDate"),  # ISO 8601 date from MI API
         }
 
-    def _get_estimated_sold_comps(self, gtin: str, max_samples: int) -> Optional[SoldCompsResult]:
+    def _get_estimated_sold_comps(self, gtin: str, max_samples: int, include_signed: bool = False) -> Optional[SoldCompsResult]:
         """
         Track B: Estimate sold prices from active listings using conservative heuristic.
 
         Uses:
         - 25th percentile for Used condition (tracks actual sale behavior)
         - Median for New condition (standardized pricing)
+        - Filters out multi-book lots and (optionally) signed copies
+
+        Args:
+            gtin: ISBN/GTIN to search
+            max_samples: Number of sample listings to return
+            include_signed: If True, include signed/autographed copies in results
         """
         from .market import browse_active_by_isbn
 
         try:
-            data = browse_active_by_isbn(gtin, limit=50)
+            data = browse_active_by_isbn(gtin, limit=50, include_signed=include_signed)
         except Exception:
             return None
 

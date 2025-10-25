@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 import time
 from dataclasses import asdict, fields
@@ -60,6 +61,7 @@ from .market import fetch_single_market_stat, fetch_market_stats_v2
 from .lot_market import market_snapshot_for_lot
 from .lot_scoring import score_lot
 from shared.utils import normalise_isbn, read_isbn_csv
+from shared.timing import timer, get_stats
 from .book_routing import route_book, route_books, RoutingDecision
 
 # Re-export for backward compatibility (gui.py imports this)
@@ -1683,18 +1685,22 @@ class BookService:
         return self.list_lots()
 
     def build_lot_candidates(self) -> List[LotCandidate]:
-        books = self.list_books()
+        with timer("List books from database", log=True, record=True):
+            books = self.list_books()
         if not books:
             return []
 
-        self._sync_series_index_books(books)
+        with timer("Sync series index", log=True, record=True):
+            self._sync_series_index_books(books)
         isbn_map = {book.isbn: book for book in books}
 
         if hasattr(self, "lot_strategies") and getattr(self, "lot_strategies"):
-            suggestions = build_lots_with_strategies(books, set(self.lot_strategies))
+            with timer("Build lots with strategies", log=True, record=True):
+                suggestions = build_lots_with_strategies(books, set(self.lot_strategies))
         else:
             # Pass db_path for enhanced series lots
-            suggestions = generate_lot_suggestions(books, db_path=Path(self.db.db_path))
+            with timer("Generate lot suggestions", log=True, record=True):
+                suggestions = generate_lot_suggestions(books, db_path=Path(self.db.db_path))
 
         author_groups: Dict[str, List[BookEvaluation]] = defaultdict(list)
        
@@ -2290,9 +2296,21 @@ class BookService:
         return self.recalculate_lots()
 
     def recalculate_lots(self) -> List[LotSuggestion]:
-        candidates = self.build_lot_candidates()
-        self.save_lots(candidates)
-        return [self._candidate_to_suggestion(lot) for lot in candidates]
+        # Reset timing stats and start timing
+        stats = get_stats()
+        stats.start()
+
+        with timer("TOTAL: Lot regeneration", log=True, record=True):
+            with timer("Build lot candidates", log=True, record=True):
+                candidates = self.build_lot_candidates()
+            with timer("Save lots to database", log=True, record=True):
+                self.save_lots(candidates)
+            with timer("Convert to suggestions", log=True, record=True):
+                result = [self._candidate_to_suggestion(lot) for lot in candidates]
+
+        # Print timing report
+        print("\n" + stats.report() + "\n")
+        return result
 
     # ------------------------------------------------------------------
     # Internal helpers

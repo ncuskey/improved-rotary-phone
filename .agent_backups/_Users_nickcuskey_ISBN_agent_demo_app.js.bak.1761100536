@@ -1,0 +1,8 @@
+function isPalindrome(s){ return s === s.split('').reverse().join(''); } // BUG
+function assert(c){ if(!c) process.exit(1); }
+assert(isPalindrome("racecar"));
+assert(isPalindrome("RaceCar"));
+assert(isPalindrome("A man, a plan, a canal: Panama!"));
+assert(!isPalindrome("hello"));
+assert(isPalindrome("No 'x' in Nixon"));
+console.log("ALL_PASS");

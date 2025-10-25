@@ -377,7 +377,8 @@ private extension BookEvaluationRecord {
             score: resolvedScore,
             profitPotential: profitPotential,
             soldCompsMedian: market?.soldCompsMedian,
-            bestVendorPrice: bookscouter?.bestPrice
+            bestVendorPrice: bookscouter?.bestPrice,
+            amazonLowestPrice: bookscouter?.amazonLowestPrice
         )
     }
 

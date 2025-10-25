@@ -10,6 +10,7 @@ struct BookCardView: View {
         let profitPotential: String?
         let soldCompsMedian: Double?
         let bestVendorPrice: Double?
+        let amazonLowestPrice: Double?
 
         var coverURL: URL? { URL(string: thumbnail) }
         var coverRequest: URLRequest? {
@@ -29,7 +30,7 @@ struct BookCardView: View {
             return (margin / vendor) * 100
         }
 
-        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, soldCompsMedian: nil, bestVendorPrice: nil)
+        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, soldCompsMedian: nil, bestVendorPrice: nil, amazonLowestPrice: nil)
     }
 
     let book: Book
@@ -43,6 +44,7 @@ struct BookCardView: View {
                 case .success(let image):
                     image
                         .resizable()
+                        .interpolation(.high)
                         .scaledToFill()
                 case .failure:
                     Rectangle().fill(DS.Color.cardBg)
@@ -122,6 +124,17 @@ struct BookCardView: View {
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.green)
+                    }
+                }
+                if let amazonPrice = book.amazonLowestPrice, amazonPrice > 0 {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Amazon")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text("$\(String(format: "%.2f", amazonPrice))")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.orange)
                     }
                 }
             }

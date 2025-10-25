@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [2025-10-24] - Performance & Caching Optimization
 
 ### Added
+- **Books Tab Sorting Options**:
+  - Added sort by vendor price (high/low)
+  - Added sort by Amazon price (high/low)
+  - Renamed existing eBay sort to "Highest/Lowest eBay Price" for clarity
+  - Books without pricing data appear at end of sorted lists
+  - Six new sort options total alongside existing title, recency, and profit sorts
 - **Persistent Storage & Smart Caching**:
   - iOS app now uses persistent SwiftData storage (was in-memory)
   - Smart cache with 5-minute window to avoid unnecessary network calls

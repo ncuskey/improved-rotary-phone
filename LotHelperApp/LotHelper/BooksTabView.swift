@@ -20,8 +20,12 @@ struct BooksTabView: View {
         case titleDescending = "Title (Z-A)"
         case profitDescending = "Highest Profit"
         case profitAscending = "Lowest Profit"
-        case priceDescending = "Highest Price"
-        case priceAscending = "Lowest Price"
+        case priceDescending = "Highest eBay Price"
+        case priceAscending = "Lowest eBay Price"
+        case vendorDescending = "Highest Vendor Price"
+        case vendorAscending = "Lowest Vendor Price"
+        case amazonDescending = "Highest Amazon Price"
+        case amazonAscending = "Lowest Amazon Price"
 
         var id: String { rawValue }
     }
@@ -85,14 +89,58 @@ struct BooksTabView: View {
                 if profit1 != profit2 { return profit1 < profit2 }
                 return index1 < index2
             case .priceDescending:
-                let price1 = book1.market?.soldCompsMedian ?? 0
-                let price2 = book2.market?.soldCompsMedian ?? 0
-                if price1 != price2 { return price1 > price2 }
+                let price1 = book1.market?.soldCompsMedian
+                let price2 = book2.market?.soldCompsMedian
+                // Nil values go to end
+                if price1 == nil && price2 == nil { return index1 < index2 }
+                if price1 == nil { return false }
+                if price2 == nil { return true }
+                if price1 != price2 { return price1! > price2! }
                 return index1 < index2
             case .priceAscending:
-                let price1 = book1.market?.soldCompsMedian ?? 0
-                let price2 = book2.market?.soldCompsMedian ?? 0
-                if price1 != price2 { return price1 < price2 }
+                let price1 = book1.market?.soldCompsMedian
+                let price2 = book2.market?.soldCompsMedian
+                // Nil values go to end
+                if price1 == nil && price2 == nil { return index1 < index2 }
+                if price1 == nil { return false }
+                if price2 == nil { return true }
+                if price1 != price2 { return price1! < price2! }
+                return index1 < index2
+            case .vendorDescending:
+                let price1 = book1.bookscouter?.bestPrice
+                let price2 = book2.bookscouter?.bestPrice
+                // Nil values go to end
+                if price1 == nil && price2 == nil { return index1 < index2 }
+                if price1 == nil { return false }
+                if price2 == nil { return true }
+                if price1 != price2 { return price1! > price2! }
+                return index1 < index2
+            case .vendorAscending:
+                let price1 = book1.bookscouter?.bestPrice
+                let price2 = book2.bookscouter?.bestPrice
+                // Nil values go to end
+                if price1 == nil && price2 == nil { return index1 < index2 }
+                if price1 == nil { return false }
+                if price2 == nil { return true }
+                if price1 != price2 { return price1! < price2! }
+                return index1 < index2
+            case .amazonDescending:
+                let price1 = book1.bookscouter?.amazonLowestPrice
+                let price2 = book2.bookscouter?.amazonLowestPrice
+                // Nil values go to end
+                if price1 == nil && price2 == nil { return index1 < index2 }
+                if price1 == nil { return false }
+                if price2 == nil { return true }
+                if price1 != price2 { return price1! > price2! }
+                return index1 < index2
+            case .amazonAscending:
+                let price1 = book1.bookscouter?.amazonLowestPrice
+                let price2 = book2.bookscouter?.amazonLowestPrice
+                // Nil values go to end
+                if price1 == nil && price2 == nil { return index1 < index2 }
+                if price1 == nil { return false }
+                if price2 == nil { return true }
+                if price1 != price2 { return price1! < price2! }
                 return index1 < index2
             }
         }

@@ -269,11 +269,15 @@ class BookService:
                 metadata = existing.metadata
 
         market_stats: Optional[EbayMarketStats] = None
+        v2_stats_result: Optional[Dict[str, Any]] = None
         if include_market and self.ebay_app_id:
             # Use v2 API which includes Browse API + sold comps (Track B)
             try:
                 stats_dict = fetch_market_stats_v2(normalized, include_sold_comps=True)
                 if stats_dict and "error" not in stats_dict:
+                    # Store for later use (estimated_price override and persistence)
+                    v2_stats_result = stats_dict
+
                     # Convert dict to EbayMarketStats
                     market_stats = EbayMarketStats(
                         isbn=normalized,
@@ -293,6 +297,11 @@ class BookService:
                         sold_comps_is_estimate=stats_dict.get("sold_comps_is_estimate", True),
                         sold_comps_source=stats_dict.get("sold_comps_source", "estimate"),
                         sold_comps_last_sold_date=stats_dict.get("sold_comps_last_sold_date"),
+                        # Smart filtering metadata
+                        signed_listings_detected=stats_dict.get("signed_listings_detected"),
+                        lot_listings_detected=stats_dict.get("lot_listings_detected"),
+                        filtered_count=stats_dict.get("filtered_count"),
+                        total_listings=stats_dict.get("total_listings"),
                     )
             except Exception as e:
                 print(f"⚠️  eBay market data fetch failed: {e}")
@@ -331,10 +340,9 @@ class BookService:
         self._enhance_evaluation_with_series_context(evaluation)
         # Now track this scan for future series-aware recommendations
         self._track_recent_scan(evaluation)
-        v2_stats_result = None
-        try:
-            v2_stats_result = fetch_market_stats_v2(normalized)
 
+        # Use existing v2_stats_result to set estimated_price (already fetched above)
+        if v2_stats_result:
             # Prioritize sold comps median over active listings median
             # Sold comps: Use actual market data without enforcing minimum
             # Active listings: Apply $10 minimum (seller asking prices are less reliable)
@@ -342,8 +350,6 @@ class BookService:
                 evaluation.estimated_price = float(v2_stats_result["sold_comps_median"])
             elif v2_stats_result.get("median_price") is not None:
                 evaluation.estimated_price = max(10.0, float(v2_stats_result["median_price"]))
-        except Exception:
-            pass
 
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)
         self._apply_bookscouter_to_evaluation(evaluation, bookscouter_result)
@@ -1841,6 +1847,11 @@ class BookService:
                 probability_label=suggestion.probability_label,
                 sell_through=suggestion.sell_through,
                 justification=list(suggestion.justification),
+                lot_market_value=suggestion.lot_market_value,
+                lot_optimal_size=suggestion.lot_optimal_size,
+                lot_per_book_price=suggestion.lot_per_book_price,
+                lot_comps_count=suggestion.lot_comps_count,
+                use_lot_pricing=suggestion.use_lot_pricing,
             )
             candidate.display_author_label = display_author_label
             candidate.canonical_author = canonical_author_value or candidate.canonical_author
@@ -1939,6 +1950,11 @@ class BookService:
                     "probability_score": float(lot.probability_score or 0.0),
                     "sell_through": lot.sell_through,
                     "justification": "\n".join(justification_lines),
+                    "lot_market_value": lot.lot_market_value,
+                    "lot_optimal_size": lot.lot_optimal_size,
+                    "lot_per_book_price": lot.lot_per_book_price,
+                    "lot_comps_count": lot.lot_comps_count,
+                    "use_lot_pricing": 1 if lot.use_lot_pricing else 0,
                 }
             )
 

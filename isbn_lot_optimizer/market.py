@@ -24,6 +24,72 @@ class _TokenCache(TypedDict):
 
 _token_cache: _TokenCache = {"access_token": None, "expires_at": 0.0}
 
+# Cache for Browse API results (1-hour TTL to reduce redundant API calls)
+_browse_cache: Dict[str, Tuple[Dict[str, Any], float]] = {}
+_BROWSE_CACHE_TTL = 3600  # 1 hour in seconds
+
+
+def _retry_with_exponential_backoff(
+    func: Any,
+    max_retries: int = 3,
+    initial_delay: float = 1.0,
+    max_delay: float = 10.0,
+    backoff_factor: float = 2.0
+) -> Any:
+    """
+    Retry a function with exponential backoff on rate limiting.
+
+    Args:
+        func: Function to retry (should return a requests.Response)
+        max_retries: Maximum number of retry attempts
+        initial_delay: Initial delay in seconds
+        max_delay: Maximum delay between retries
+        backoff_factor: Multiplier for delay on each retry
+
+    Returns:
+        The successful response from func()
+
+    Raises:
+        The last exception if all retries fail
+    """
+    delay = initial_delay
+    last_exception = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            response = func()
+
+            # Check for rate limiting responses
+            if response.status_code in (429, 503):
+                if attempt < max_retries:
+                    # Rate limited - wait and retry
+                    wait_time = min(delay, max_delay)
+                    print(f"⚠️  Rate limited (HTTP {response.status_code}), retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries + 1})")
+                    time.sleep(wait_time)
+                    delay *= backoff_factor
+                    continue
+                else:
+                    # Max retries reached
+                    return response
+
+            # Success or non-retryable error
+            return response
+
+        except Exception as e:
+            last_exception = e
+            if attempt < max_retries:
+                wait_time = min(delay, max_delay)
+                print(f"⚠️  API call failed: {e}, retrying in {wait_time:.1f}s (attempt {attempt + 1}/{max_retries + 1})")
+                time.sleep(wait_time)
+                delay *= backoff_factor
+            else:
+                raise
+
+    # Should never reach here, but just in case
+    if last_exception:
+        raise last_exception
+    return None
+
 
 def get_app_token() -> str:
     now = time.time()
@@ -65,13 +131,28 @@ def browse_active_by_isbn(
     Returns:
         Dict with pricing stats and filtering metadata
     """
+    # Check cache first (1-hour TTL)
+    cache_key = f"{isbn}:{limit}:{marketplace}:{include_signed}"
+    now = time.time()
+    if cache_key in _browse_cache:
+        cached_result, expires_at = _browse_cache[cache_key]
+        if expires_at > now:
+            # Cache hit - return cached result
+            return cached_result
+
+    # Cache miss - make API call with exponential backoff for rate limiting
     tok = get_app_token()
-    r = requests.get(
-        BROWSE_URL,
-        params={"gtin": isbn, "limit": str(limit)},
-        headers={"Authorization": f"Bearer {tok}", "X-EBAY-C-MARKETPLACE-ID": marketplace},
-        timeout=30,
+
+    # Wrap the API call in a lambda for retry logic
+    r = _retry_with_exponential_backoff(
+        lambda: requests.get(
+            BROWSE_URL,
+            params={"gtin": isbn, "limit": str(limit)},
+            headers={"Authorization": f"Bearer {tok}", "X-EBAY-C-MARKETPLACE-ID": marketplace},
+            timeout=30,
+        )
     )
+
     if r.status_code != 200:
         return {"error": f"http_{r.status_code}", "body": r.text[:400], "source": "browse"}
     js: Dict[str, Any] = r.json()
@@ -142,6 +223,10 @@ def browse_active_by_isbn(
         "lot_listings_detected": lot_count,
         "include_signed": include_signed,
     }
+
+    # Store in cache before returning
+    _browse_cache[cache_key] = (stats, now + _BROWSE_CACHE_TTL)
+
     return stats
 
 

@@ -123,6 +123,7 @@ class KeywordAnalyzer:
         marketplace_id: str = "EBAY_US",
         min_word_length: int = 3,
         max_keywords: int = 50,
+        db_path: Optional[Any] = None,
     ):
         """
         Initialize the keyword analyzer.
@@ -132,10 +133,22 @@ class KeywordAnalyzer:
             marketplace_id: eBay marketplace ID
             min_word_length: Minimum length for keywords (default: 3)
             max_keywords: Maximum number of keywords to return (default: 50)
+            db_path: Path to catalog database for ePID caching (optional)
         """
         self.marketplace_id = marketplace_id
         self.min_word_length = min_word_length
         self.max_keywords = max_keywords
+
+        # Initialize ePID cache if db_path provided
+        self.epid_cache = None
+        if db_path:
+            try:
+                from isbn_lot_optimizer.ebay_product_cache import EbayProductCache
+                from pathlib import Path
+                self.epid_cache = EbayProductCache(Path(db_path))
+            except Exception as e:
+                logger.warning(f"Could not initialize ePID cache: {e}")
+                self.epid_cache = None
 
     def analyze_keywords_for_isbn(
         self,
@@ -230,6 +243,11 @@ class KeywordAnalyzer:
         data = response.json()
         items = data.get("itemSummaries", [])
 
+        # Try to extract ePID from any listing with product data
+        epid_found = None
+        product_title = None
+        category_id = None
+
         listings: List[ListingData] = []
         for item in items:
             if not isinstance(item, dict):
@@ -239,6 +257,19 @@ class KeywordAnalyzer:
             price_info = item.get("price", {})
             price = price_info.get("value")
             item_id = item.get("itemId", "")
+
+            # Extract ePID from item if present (top-level field in Browse API)
+            if not epid_found and "epid" in item:
+                epid_found = item["epid"]
+                product_title = title  # Use listing title as product title
+                logger.info(f"Found ePID {epid_found} for ISBN {isbn}")
+
+            # Extract category ID if available
+            if not category_id and "categories" in item:
+                categories = item.get("categories", [])
+                if categories and len(categories) > 0:
+                    # Use the leaf category (last in the list)
+                    category_id = categories[-1].get("categoryId")
 
             if not title or not price:
                 continue
@@ -256,6 +287,20 @@ class KeywordAnalyzer:
                     is_sold=False,  # Browse API only returns active listings
                 )
             )
+
+        # Cache ePID if found
+        if epid_found and self.epid_cache:
+            try:
+                product_url = f"https://www.ebay.com/p/{epid_found}"
+                self.epid_cache.store_epid(
+                    isbn=isbn,
+                    epid=epid_found,
+                    product_title=product_title,
+                    product_url=product_url,
+                    category_id=category_id,
+                )
+            except Exception as e:
+                logger.warning(f"Failed to cache ePID: {e}")
 
         return listings
 
@@ -383,6 +428,27 @@ class KeywordAnalyzer:
         """Clear the keyword analysis cache."""
         _keyword_cache.clear()
         logger.info("Cleared keyword analysis cache")
+
+    def get_epid(self, isbn: str) -> Optional[str]:
+        """
+        Get cached ePID for an ISBN.
+
+        This is a convenience method that wraps the ePID cache.
+
+        Args:
+            isbn: ISBN-13 to look up
+
+        Returns:
+            ePID string if found, None otherwise
+        """
+        if not self.epid_cache:
+            return None
+
+        try:
+            return self.epid_cache.get_epid(isbn)
+        except Exception as e:
+            logger.warning(f"Failed to get ePID from cache: {e}")
+            return None
 
 
 # ============================================================================

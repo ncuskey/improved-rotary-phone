@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-25] - Architecture Refactoring & Code Review
+
+### Changed
+- **Core Business Logic Migration**:
+  - Moved 5 core business logic modules from `isbn_lot_optimizer/` to `shared/`:
+    - `metadata.py` (790 lines) - Metadata fetching
+    - `probability.py` (20KB) - Book evaluation & probability calculations
+    - `market.py` (27KB) - eBay market data & pricing
+    - `ebay_sold_comps.py` (9KB) - eBay sold comparables analysis
+    - `ebay_auth.py` (1.8KB) - eBay API authentication
+  - Updated 13 import statements across 13 files
+  - Fixed architectural violation where web app imported business logic from desktop app
+  - All three apps (desktop, web, iOS) now properly utilize common pathways via `shared/` package
+
+### Architecture
+- **Before**: Web app → Desktop app (business logic) ❌ Violation
+- **After**: Web app + Desktop app → Shared (business logic) ✅ Proper separation
+- BookService remains in `isbn_lot_optimizer/` as service orchestration layer (acceptable)
+- Web app uses BookService through dependency injection (17 methods)
+
+### Code Quality
+- Identified 3 deprecated series modules still in use (migration opportunity to Hardcover API)
+- Found minimal technical debt (4 TODO/FIXME items)
+- No duplicate business logic detected
+- Clean module organization with clear separation of concerns
+
+### Documentation
+- Added `docs/development/ARCHITECTURE_REVIEW_2025.md` with comprehensive analysis
+- Documented current architecture state and module distribution
+- Created recommendations for future work (series migration, integration testing)
+
+### Testing
+- All desktop app tests passed ✅
+- All web app tests passed ✅
+- Verified import structure across all modules ✅
+
 ## [2025-10-25] - Incremental Lot Update Optimization
 
 ### Changed

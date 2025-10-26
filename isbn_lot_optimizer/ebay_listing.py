@@ -109,6 +109,7 @@ class EbayListingService:
         condition: str = "Good",
         quantity: int = 1,
         use_ai: bool = True,
+        use_seo_optimization: bool = False,
         custom_title: Optional[str] = None,
         custom_description: Optional[str] = None,
         photos: Optional[List[str]] = None,
@@ -122,12 +123,13 @@ class EbayListingService:
             condition: Book condition
             quantity: Available quantity
             use_ai: Whether to use AI for title/description generation
+            use_seo_optimization: Whether to use keyword-ranked SEO title optimization
             custom_title: Custom title (overrides AI)
             custom_description: Custom description (overrides AI)
             photos: Photo URLs/paths
 
         Returns:
-            Dict with listing details
+            Dict with listing details (includes title_score and keyword_scores if SEO optimization used)
 
         Raises:
             EbaySellError: If eBay API call fails
@@ -136,19 +138,27 @@ class EbayListingService:
         listing_price = price or book.estimated_price
 
         # Generate listing content
+        title_score = None
+        keyword_scores = None
+
         if use_ai and not (custom_title and custom_description):
-            logger.info(f"Generating AI listing content for {book.metadata.title}")
+            logger.info(f"Generating AI listing content for {book.metadata.title}" +
+                       (" with SEO optimization" if use_seo_optimization else ""))
             try:
                 ai_content = self.ai_generator.generate_book_listing(
                     book=book,
                     condition=condition,
                     price=listing_price,
+                    use_seo_optimization=use_seo_optimization,
+                    isbn=book.metadata.isbn,
                 )
                 title = custom_title or ai_content.title
                 description = custom_description or ai_content.description
                 ai_generated = True
                 ai_model = ai_content.model_used
                 user_edited = bool(custom_title or custom_description)
+                title_score = ai_content.title_score
+                keyword_scores = ai_content.keyword_scores
             except GenerationError as e:
                 logger.warning(f"AI generation failed, using fallback: {e}")
                 title = custom_title or book.metadata.title
@@ -218,11 +228,14 @@ class EbayListingService:
             ai_generated=ai_generated,
             ai_model=ai_model,
             user_edited=user_edited,
+            title_score=title_score,
+            keyword_scores=keyword_scores,
         )
 
-        logger.info(f"✓ Listing saved to database: ID={listing_id_db}")
+        logger.info(f"✓ Listing saved to database: ID={listing_id_db}" +
+                   (f" (SEO score: {title_score:.1f})" if title_score else ""))
 
-        return {
+        result = {
             "id": listing_id_db,
             "sku": sku,
             "offer_id": offer_id,
@@ -232,6 +245,14 @@ class EbayListingService:
             "price": listing_price,
             "status": "active",
         }
+
+        # Include SEO data if available
+        if title_score is not None:
+            result["title_score"] = title_score
+        if keyword_scores is not None:
+            result["keyword_scores"] = keyword_scores
+
+        return result
 
     def _save_listing(
         self,
@@ -249,27 +270,58 @@ class EbayListingService:
         ai_generated: bool,
         ai_model: Optional[str],
         user_edited: bool,
+        title_score: Optional[float] = None,
+        keyword_scores: Optional[List[Dict[str, Any]]] = None,
     ) -> int:
         """Save listing to database."""
         with self._get_connection() as conn:
-            cursor = conn.execute(
-                """
-                INSERT INTO ebay_listings (
-                    isbn, sku, ebay_offer_id, ebay_listing_id,
-                    title, description, photos,
-                    listing_price, estimated_price, condition, quantity,
-                    status, listed_at,
-                    ai_generated, ai_model, user_edited
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    isbn, sku, ebay_offer_id, ebay_listing_id,
-                    title, description, json.dumps(photos),
-                    listing_price, estimated_price, condition, quantity,
-                    "active", datetime.now().isoformat(),
-                    1 if ai_generated else 0, ai_model, 1 if user_edited else 0,
-                ),
-            )
+            # First, check if columns exist (for backwards compatibility)
+            cursor = conn.execute("PRAGMA table_info(ebay_listings)")
+            columns = {row[1] for row in cursor.fetchall()}
+            has_seo_columns = 'title_score' in columns and 'keyword_scores' in columns
+
+            if has_seo_columns:
+                # New schema with SEO columns
+                cursor = conn.execute(
+                    """
+                    INSERT INTO ebay_listings (
+                        isbn, sku, ebay_offer_id, ebay_listing_id,
+                        title, description, photos,
+                        listing_price, estimated_price, condition, quantity,
+                        status, listed_at,
+                        ai_generated, ai_model, user_edited,
+                        title_score, keyword_scores
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        isbn, sku, ebay_offer_id, ebay_listing_id,
+                        title, description, json.dumps(photos),
+                        listing_price, estimated_price, condition, quantity,
+                        "active", datetime.now().isoformat(),
+                        1 if ai_generated else 0, ai_model, 1 if user_edited else 0,
+                        title_score, json.dumps(keyword_scores) if keyword_scores else None,
+                    ),
+                )
+            else:
+                # Old schema without SEO columns
+                cursor = conn.execute(
+                    """
+                    INSERT INTO ebay_listings (
+                        isbn, sku, ebay_offer_id, ebay_listing_id,
+                        title, description, photos,
+                        listing_price, estimated_price, condition, quantity,
+                        status, listed_at,
+                        ai_generated, ai_model, user_edited
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        isbn, sku, ebay_offer_id, ebay_listing_id,
+                        title, description, json.dumps(photos),
+                        listing_price, estimated_price, condition, quantity,
+                        "active", datetime.now().isoformat(),
+                        1 if ai_generated else 0, ai_model, 1 if user_edited else 0,
+                    ),
+                )
             conn.commit()
             return cursor.lastrowid
 

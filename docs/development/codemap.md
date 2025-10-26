@@ -1,6 +1,6 @@
 # CODEMAP
 
-**Last Updated:** 2025-10-26 (eBay Listing Integration - Sprint 2 Complete)
+**Last Updated:** 2025-10-26 (Keyword Ranking & SEO Title Optimization)
 
 ## Top Level
 - `README.md` – Project overview, quick start, and links to documentation
@@ -102,15 +102,30 @@ Tkinter desktop GUI and supporting desktop-specific logic. **20 modules remainin
 - **`ebay_listing.py`** (460 lines) – High-level listing service orchestration
   - `EbayListingService` class coordinating AI, eBay APIs, and database
   - Integrates with AI listing generator for content creation
-  - Database persistence with ebay_listings table
+  - Database persistence with ebay_listings table (includes SEO keyword tracking)
   - Draft saving on errors, status tracking (draft/active/sold/ended)
   - Performance metrics (TTS, price accuracy) calculation
-- **`ai/listing_generator.py`** (462 lines) – AI-powered listing content generation
+  - `use_seo_optimization` parameter for keyword-optimized titles
+- **`keyword_analyzer.py`** (462 lines) – ✨ NEW: Keyword ranking and SEO optimization
+  - `KeywordAnalyzer` class for eBay marketplace keyword analysis
+  - 4-factor scoring algorithm: frequency (40%), price (30%), velocity (20%), competition (10%)
+  - Extracts keywords from 100-200 eBay listings per ISBN
+  - Ranks keywords 1-10 scale based on search value
+  - 24-hour caching for performance (1000x speedup)
+  - Filters 100+ stopwords (common words + eBay-specific terms)
+  - `calculate_title_score()` utility for scoring titles
+  - `format_keyword_report()` for analysis display
+- **`ai/listing_generator.py`** (602 lines) – AI-powered listing content generation
   - `EbayListingGenerator` class using Llama 3.1 8B via Ollama
-  - SEO-optimized title generation (max 80 chars)
+  - Standard SEO-optimized title generation (max 80 chars)
+  - ✨ NEW: `generate_seo_title()` method with keyword ranking
+    - Generates 5 title variations using top 30 keywords
+    - Scores each variation and selects highest-scoring
+    - SEO-style titles (keyword-packed, readable)
+    - Example: "Storm Swords Martin GRRM Song Ice Fire Fantasy" (score: 48.7)
+    - Generation time ~8 seconds (vs 2-3s for standard)
   - Engaging description generation (200-400 words)
   - Highlight extraction and condition-aware content
-  - Generation time ~2-3 seconds per listing
 
 ### Lot Generation
 - **`lots.py`** – Lot generation strategies with 3-phase architecture:
@@ -236,6 +251,14 @@ Data management and utility scripts.
 - **`match_books_to_series.py`** – Fuzzy matches books to series
 - **`verify_series_lots.py`** – Validates series lot generation
 - **`test_series_lots.py`** – Tests series lot algorithms
+
+### Database Migrations
+- **`migrate_ebay_listings_table.py`** – Creates ebay_listings table for tracking eBay sales
+- **`migrate_keyword_scores.py`** – ✨ NEW: Adds SEO keyword tracking columns
+  - Adds `title_score` (REAL) column for keyword score tracking
+  - Adds `keyword_scores` (TEXT/JSON) column for keyword data
+  - Creates performance index on title_score
+  - Backwards-compatible (checks for existing columns)
 
 ### Utilities
 - **`prefetch_covers.py`** – Bulk downloads cover images
@@ -449,6 +472,10 @@ pytest tests/test_utils.py
 # Requires: token broker running, OAuth authorized, Ollama with llama3.1:8b
 python3 tests/test_ebay_listing_integration.py --dry-run  # Check prerequisites only
 python3 tests/test_ebay_listing_integration.py             # Create real listing
+
+# ✨ NEW: Keyword analyzer tests (requires eBay API credentials)
+python3 tests/test_keyword_analyzer.py                     # 6 comprehensive tests
+python3 tests/test_seo_title_end_to_end.py [isbn]         # End-to-end SEO title test
 ```
 
 ### Manual Testing

@@ -53,6 +53,8 @@ class ListingContent:
     condition_notes: Optional[str] = None
     model_used: str = "llama3.1:8b"
     generation_time_ms: Optional[int] = None
+    title_score: Optional[float] = None  # SEO score if using keyword optimization
+    keyword_scores: Optional[List[Dict[str, Any]]] = None  # Keyword rankings if using SEO
 
 
 class EbayListingGenerator:
@@ -121,6 +123,8 @@ class EbayListingGenerator:
         condition: str = "Good",
         price: Optional[float] = None,
         custom_notes: Optional[str] = None,
+        use_seo_optimization: bool = False,
+        isbn: Optional[str] = None,
     ) -> ListingContent:
         """
         Generate eBay listing content for a single book.
@@ -130,6 +134,8 @@ class EbayListingGenerator:
             condition: Book condition (Good, Very Good, Like New, etc.)
             price: Listing price (if None, uses estimated_price)
             custom_notes: Additional notes to include in description
+            use_seo_optimization: If True, use keyword-ranked SEO title generation
+            isbn: ISBN for keyword analysis (if use_seo_optimization=True)
 
         Returns:
             ListingContent with title, description, and highlights
@@ -165,8 +171,21 @@ class EbayListingGenerator:
                 "median_price": market.sold_comps_median or market.sold_median_price,
             }
 
-        # Generate title
-        title = self._generate_title(book_info)
+        # Generate title (use SEO optimization if requested)
+        if use_seo_optimization:
+            title_isbn = isbn or metadata.isbn
+            if title_isbn:
+                title, title_score, keyword_scores = self.generate_seo_title(
+                    book_info, title_isbn
+                )
+                # Store keyword scores for later use
+                book_info["keyword_scores"] = keyword_scores
+                book_info["title_score"] = title_score
+            else:
+                logger.warning("SEO optimization requested but no ISBN provided, using standard title")
+                title = self._generate_title(book_info)
+        else:
+            title = self._generate_title(book_info)
 
         # Generate description
         description = self._generate_description(book_info, custom_notes)
@@ -179,6 +198,8 @@ class EbayListingGenerator:
             description=description,
             highlights=highlights,
             model_used=self.model,
+            title_score=book_info.get("title_score"),
+            keyword_scores=book_info.get("keyword_scores"),
         )
 
     def generate_lot_listing(
@@ -244,6 +265,131 @@ class EbayListingGenerator:
             highlights=highlights,
             model_used=self.model,
         )
+
+    def generate_seo_title(
+        self,
+        book_info: Dict[str, Any],
+        isbn: str,
+        num_variations: int = 5,
+    ) -> tuple[str, float, List[Dict[str, Any]]]:
+        """
+        Generate SEO-optimized title using keyword ranking analysis.
+
+        This method generates multiple title variations and selects the one with
+        the highest combined keyword score while maintaining readability.
+
+        Args:
+            book_info: Book information dict
+            isbn: ISBN for keyword analysis
+            num_variations: Number of title variations to generate (default: 5)
+
+        Returns:
+            Tuple of (best_title, title_score, keyword_scores)
+
+        Raises:
+            GenerationError: If generation fails
+        """
+        from isbn_lot_optimizer.keyword_analyzer import KeywordAnalyzer, calculate_title_score
+
+        # Step 1: Analyze keywords for this ISBN
+        logger.info(f"Analyzing keywords for ISBN {isbn}")
+        analyzer = KeywordAnalyzer()
+        keyword_scores = analyzer.analyze_keywords_for_isbn(isbn)
+
+        if not keyword_scores:
+            logger.warning(f"No keywords found for ISBN {isbn}, falling back to standard title")
+            return self._generate_title(book_info), 0.0, []
+
+        # Get top 30 keywords for prompt
+        top_keywords = keyword_scores[:30]
+        keywords_str = ", ".join([f"{kw.word} ({kw.score:.1f})" for kw in top_keywords[:15]])
+
+        logger.info(f"Top keywords: {keywords_str}")
+
+        # Step 2: Generate multiple title variations
+        system_prompt = """You are an expert eBay SEO specialist creating keyword-optimized titles.
+
+Your goal is to create titles that pack in high-scoring keywords while remaining readable.
+These are SEO-style titles similar to what power sellers use on eBay.
+
+Guidelines:
+- Maximum 80 characters (strict eBay limit)
+- Pack in as many high-scoring keywords as possible
+- Keywords with higher scores are more valuable
+- Maintain basic readability (can sacrifice perfect grammar)
+- Front-load most important keywords
+- Use title case for proper nouns
+- No stop words (a, the, an) unless needed for clarity
+- No punctuation except hyphens and pipes (|)
+- Focus on search terms buyers actually use
+
+Examples of good SEO titles:
+- "Harry Potter Complete Set Hardcover Books Collection Fantasy Magic Series JK Rowling"
+- "Game Thrones GRRM Martin Fantasy Epic Series Hardcover Books Collection Complete Set"
+- "Storm Swords Martin Song Ice Fire Fantasy Epic Series Book Hardcover"""
+
+        authors_str = ", ".join(book_info["authors"][:2])
+        title = book_info["title"]
+        series = book_info.get("series")
+        series_index = book_info.get("series_index")
+
+        prompt = f"""Generate {num_variations} different SEO-optimized eBay titles for this book.
+
+Book Information:
+- Title: {title}
+- Authors: {authors_str}
+{f"- Series: {series} #{series_index}" if series else ""}
+- ISBN: {isbn}
+
+Top Keywords (ranked by search value 1-10):
+{keywords_str}
+
+Instructions:
+1. Create {num_variations} variations that use different combinations of keywords
+2. Prioritize HIGH-SCORING keywords (scores above 7.0)
+3. Each title must be under 80 characters
+4. Make them readable but keyword-dense (SEO style)
+5. Use different approaches (some with series focus, some with genre focus, etc.)
+
+Return ONLY the {num_variations} titles, one per line, no numbering or quotes."""
+
+        response = self._call_ollama(prompt, system_prompt)
+
+        # Parse variations
+        variations = [line.strip().strip('"').strip("'") for line in response.split("\n") if line.strip()]
+        variations = [v for v in variations if len(v) <= 80 and len(v) > 10]
+
+        if not variations:
+            logger.warning("No valid title variations generated, falling back to standard title")
+            return self._generate_title(book_info), 0.0, []
+
+        logger.info(f"Generated {len(variations)} title variations")
+
+        # Step 3: Score each variation
+        scored_variations = []
+        for variation in variations:
+            score = calculate_title_score(variation, keyword_scores)
+            scored_variations.append((variation, score))
+            logger.debug(f"  {variation} -> Score: {score:.1f}")
+
+        # Step 4: Select best title
+        scored_variations.sort(key=lambda x: x[1], reverse=True)
+        best_title, best_score = scored_variations[0]
+
+        logger.info(f"Selected best title (score: {best_score:.1f}): {best_title}")
+
+        # Convert keyword scores to serializable format
+        keyword_data = [
+            {
+                "word": kw.word,
+                "score": round(kw.score, 2),
+                "frequency": kw.frequency,
+                "avg_price": round(kw.avg_price, 2),
+            }
+            for kw in keyword_scores[:50]  # Store top 50
+        ]
+
+        return best_title, best_score, keyword_data
 
     def _generate_title(self, book_info: Dict[str, Any]) -> str:
         """Generate an SEO-friendly eBay listing title (max 80 characters)."""

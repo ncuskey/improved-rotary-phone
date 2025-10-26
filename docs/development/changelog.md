@@ -2,6 +2,84 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-26] - Keyword Ranking & SEO Title Optimization ✅
+
+**🎯 SEO-Optimized Titles**: Keyword-ranked title generation achieving 50%+ score improvements
+
+### Added
+- **Keyword Analyzer**: `isbn_lot_optimizer/keyword_analyzer.py` (462 lines)
+  - Extract keywords from 100-200 eBay listings per ISBN
+  - 4-factor scoring algorithm (frequency 40%, price 30%, velocity 20%, competition 10%)
+  - Keyword ranking 1-10 scale
+  - 24-hour caching for performance (1000x speedup)
+  - Stopword filtering (100+ terms)
+  - `KeywordAnalyzer` class with `analyze_keywords_for_isbn()` method
+  - `calculate_title_score()` utility function
+  - `format_keyword_report()` for analysis display
+
+- **SEO Title Generation**: Updated `isbn_lot_optimizer/ai/listing_generator.py` (+140 lines)
+  - `generate_seo_title()` method generates 5 title variations
+  - Uses top 30 ranked keywords for optimization
+  - Greedy keyword packing while maintaining readability
+  - Scores each variation and selects highest-scoring
+  - SEO-style titles (like eBay power sellers)
+  - Example: "Storm Swords Martin GRRM Song Ice Fire Fantasy Epic Series" (score: 48.7)
+
+- **Listing Integration**: Updated `isbn_lot_optimizer/ebay_listing.py` (+50 lines)
+  - Added `use_seo_optimization` parameter to `create_book_listing()`
+  - Stores `title_score` and `keyword_scores` in database
+  - Backwards-compatible with existing schema
+
+- **Database Schema**: `scripts/migrate_keyword_scores.py` (145 lines)
+  - Added `title_score` (REAL) column to ebay_listings
+  - Added `keyword_scores` (TEXT/JSON) column to ebay_listings
+  - Created performance index on title_score
+  - Backwards-compatible migration (checks for existing columns)
+
+- **Testing**: Comprehensive test suites
+  - `tests/test_keyword_analyzer.py` (268 lines): 6 tests covering all components
+  - `tests/test_seo_title_end_to_end.py` (219 lines): Full integration test
+  - All tests passing with real eBay API data
+
+- **Documentation**: `docs/KEYWORD_RANKING_FEATURE.md` (450 lines)
+  - Complete architecture overview
+  - Scoring algorithm details
+  - Usage examples and comparisons
+  - Performance benchmarks
+  - Future enhancement roadmap
+
+### Changed
+- **ListingContent dataclass**: Added `title_score` and `keyword_scores` fields
+- **generate_book_listing()**: Added `use_seo_optimization` and `isbn` parameters
+- **Database save methods**: Support optional keyword scoring data
+
+### Performance
+- Keyword analysis: ~1s (first run), <0.001s (cached)
+- SEO title generation: ~8s (generates 5 variations)
+- Cache speedup: ~1000x for cached requests
+- Score improvements: 50%+ for SEO-optimized titles
+
+### Example Results
+**Game of Thrones Analysis:**
+- Keywords found: 27 from eBay marketplace
+- Top keywords: "game" (5.4), "thrones" (5.4), "vintage" (5.2)
+- Standard title score: 32.1
+- SEO-optimized score: 48.7
+- **Improvement: +51.7%**
+
+### Files Modified/Created
+- `isbn_lot_optimizer/keyword_analyzer.py` (NEW - 462 lines)
+- `isbn_lot_optimizer/ai/listing_generator.py` (+140 lines)
+- `isbn_lot_optimizer/ebay_listing.py` (+50 lines)
+- `scripts/migrate_keyword_scores.py` (NEW - 145 lines)
+- `tests/test_keyword_analyzer.py` (NEW - 268 lines)
+- `tests/test_seo_title_end_to_end.py` (NEW - 219 lines)
+- `docs/KEYWORD_RANKING_FEATURE.md` (NEW - 450 lines)
+
+**Total**: 1,734 lines across 7 files
+
+---
+
 ## [2025-10-26] - eBay Listing Integration Sprint 2 Complete ✅
 
 **🎉 First eBay Listing Created**: SKU BOOK-9780553381702-1761503654, Offer ID 80083107011

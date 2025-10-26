@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-25] - Comprehensive Test Suite Creation
+
+### Added
+- **Test Infrastructure**:
+  - Created `tests/conftest.py` with shared fixtures and pytest configuration
+  - Added 37 new tests across 3 test files:
+    - `test_metadata.py` (15 tests) - Metadata fetching and normalization
+    - `test_database.py` (11 tests) - Database operations and status filtering
+    - `test_book_service.py` (11 tests) - BookService core methods
+  - Configured pytest with markers: unit, integration, slow, network, database
+  - Created `run_tests.py` - Comprehensive test runner with multiple modes
+  - Added `pytest.ini` with project-wide pytest configuration
+
+### Testing Features
+- **Fast Mode**: Run only unit tests (`python run_tests.py`)
+- **Full Mode**: Run all tests including integration and slow tests
+- **Coverage Mode**: Generate code coverage reports
+- **Selective Execution**: Run specific files or tests
+- **Test Markers**: Categorize tests for CI/CD optimization
+
+### Documentation
+- Created `docs/development/TESTING_GUIDE.md` with comprehensive testing documentation:
+  - Test suite structure and organization
+  - Running tests (quick start and advanced usage)
+  - Writing new tests with examples
+  - Best practices and troubleshooting
+  - Coverage goals and next steps
+
+### Test Coverage
+- **Before**: ~10 existing tests in 6 files
+- **After**: 90+ total tests (53 existing + 37 new)
+- **Critical modules now tested**:
+  - shared/metadata.py (15 tests)
+  - shared/database.py (11 tests)
+  - BookService core methods (11 tests)
+
+### Status
+- ✅ Test infrastructure complete
+- ✅ Core modules covered with unit and integration tests
+- 🟡 Some tests need refinement (schema compatibility, API mocking)
+- 📋 TODOs: test_probability.py, test_market.py, web API integration tests
+
 ## [2025-10-25] - Architecture Refactoring & Code Review
 
 ### Changed

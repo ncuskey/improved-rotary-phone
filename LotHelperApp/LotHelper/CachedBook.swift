@@ -73,6 +73,7 @@ final class CachedBook {
     var rarity: Double?
     var remoteUpdatedAt: String?
     var remoteCreatedAt: String?
+    var timeToSellDays: Int?
 
     var lastUpdated: Date
 
@@ -143,6 +144,7 @@ final class CachedBook {
         self.bookscouterValueLabel = record.bookscouterValueLabel
         self.bookscouterValueRatio = record.bookscouterValueRatio
         self.rarity = record.rarity
+        self.timeToSellDays = record.timeToSellDays
         let now = Date()
         if let updated = record.updatedAt {
             self.remoteUpdatedAt = updated
@@ -252,7 +254,8 @@ final class CachedBook {
             bookscouterValueRatio: bookscouterValueRatio,
             rarity: rarity,
             updatedAt: remoteUpdatedAt ?? cachedBookISOFormatter.string(from: lastUpdated),
-            createdAt: remoteCreatedAt
+            createdAt: remoteCreatedAt,
+            timeToSellDays: timeToSellDays
         )
     }
 }

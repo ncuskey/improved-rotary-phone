@@ -196,10 +196,10 @@ struct EbayMarketData: Codable, Hashable {
     let totalListings: Int?
 
     enum CodingKeys: String, CodingKey {
-        case activeCount = "ebay_active_count"
-        case soldCount = "ebay_sold_count"
-        case sellThroughRate = "sell_through"
-        case currency = "ebay_currency"
+        case activeCount = "active_count"
+        case soldCount = "sold_count"
+        case sellThroughRate = "sell_through_rate"
+        case currency = "currency"
         case soldCompsCount = "sold_comps_count"
         case soldCompsMin = "sold_comps_min"
         case soldCompsMedian = "sold_comps_median"
@@ -242,6 +242,7 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let rarity: Double?
     let updatedAt: String?
     let createdAt: String?
+    let timeToSellDays: Int?
 
     var id: String { isbn }
 
@@ -266,6 +267,7 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
         case rarity
         case updatedAt = "updated_at"
         case createdAt = "created_at"
+        case timeToSellDays = "time_to_sell_days"
     }
 }
 

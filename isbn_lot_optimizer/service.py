@@ -274,8 +274,9 @@ class BookService:
 
         market_stats: Optional[EbayMarketStats] = None
         v2_stats_result: Optional[Dict[str, Any]] = None
-        if include_market and self.ebay_app_id:
+        if include_market:
             # Use v2 API which includes Browse API + sold comps (Track B)
+            # Track B only needs EBAY_CLIENT_ID/EBAY_CLIENT_SECRET (no app_id required)
             try:
                 with timer(f"eBay market stats v2: {normalized}", log=True, record=False):
                     stats_dict = fetch_market_stats_v2(normalized, include_sold_comps=True)
@@ -3604,6 +3605,7 @@ class BookService:
             "ebay_active_count": evaluation.market.active_count if evaluation.market else None,
             "ebay_sold_count": evaluation.market.sold_count if evaluation.market else None,
             "ebay_currency": evaluation.market.currency if evaluation.market else None,
+            "time_to_sell_days": evaluation.time_to_sell_days,
             "metadata_json": metadata_dict,
             "market_json": market_dict,
             "booksrun_json": booksrun_dict,
@@ -3816,8 +3818,18 @@ class BookService:
                 sold_comps_is_estimate=bool(payload.get("sold_comps_is_estimate", True)),
                 sold_comps_source=payload.get("sold_comps_source"),
                 sold_comps_last_sold_date=payload.get("sold_comps_last_sold_date"),
+                time_to_sell_days=_to_int(payload.get("time_to_sell_days")) if payload.get("time_to_sell_days") is not None else None,
             )
         justification_lines = (row["probability_reasons"] or "").split("\n") if row["probability_reasons"] else []
+
+        # Handle time_to_sell_days - may not exist in older database rows
+        time_to_sell_days = None
+        try:
+            if "time_to_sell_days" in row.keys():
+                time_to_sell_days = row["time_to_sell_days"]
+        except Exception:
+            pass
+
         evaluation = BookEvaluation(
             isbn=row["isbn"],
             original_isbn=row["isbn"],
@@ -3832,6 +3844,7 @@ class BookService:
             justification=justification_lines,
             suppress_single=(row["estimated_price"] or 0.0) < 10,
             quantity=quantity,
+            time_to_sell_days=time_to_sell_days,
         )
         booksrun_offer = self._booksrun_from_blob(row["isbn"], booksrun_blob)
         self._apply_booksrun_to_evaluation(evaluation, booksrun_offer)

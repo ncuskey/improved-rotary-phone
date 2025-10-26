@@ -8,6 +8,92 @@ enum ScannerInputMode: String, CaseIterable {
     case text = "Text Entry"
 }
 
+enum PurchaseDecision {
+    case buy(reason: String)
+    case skip(reason: String)
+    case needsReview(reason: String, concerns: [String])
+
+    var shouldBuy: Bool {
+        if case .buy = self { return true }
+        return false
+    }
+
+    var isReview: Bool {
+        if case .needsReview = self { return true }
+        return false
+    }
+
+    var reason: String {
+        switch self {
+        case .buy(let r), .skip(let r):
+            return r
+        case .needsReview(let r, _):
+            return r
+        }
+    }
+}
+
+/// Configurable thresholds for purchase decision logic
+struct DecisionThresholds: Codable {
+    // Profit thresholds
+    var minProfitAutoBuy: Double = 5.0           // Minimum profit to auto-buy
+    var minProfitSlowMoving: Double = 8.0        // Minimum profit for slow-moving items
+    var minProfitUncertainty: Double = 3.0       // Minimum profit when confidence is low
+
+    // Confidence thresholds
+    var minConfidenceAutoBuy: Double = 50.0      // Minimum probability score to auto-buy
+    var lowConfidenceThreshold: Double = 30.0    // Score below this triggers uncertainty review
+
+    // Market data thresholds
+    var minCompsRequired: Int = 3                // Minimum total comps (active + sold)
+    var maxSlowMovingTTS: Int = 180              // Max TTS before flagging as slow-moving
+
+    // Risk tolerance
+    var requireProfitData: Bool = true           // Flag for review if no profit data exists
+
+    // Default preset for conservative buying
+    static let conservative = DecisionThresholds(
+        minProfitAutoBuy: 8.0,
+        minProfitSlowMoving: 10.0,
+        minProfitUncertainty: 5.0,
+        minConfidenceAutoBuy: 60.0,
+        lowConfidenceThreshold: 40.0,
+        minCompsRequired: 5,
+        maxSlowMovingTTS: 120
+    )
+
+    // Preset for aggressive buying
+    static let aggressive = DecisionThresholds(
+        minProfitAutoBuy: 3.0,
+        minProfitSlowMoving: 5.0,
+        minProfitUncertainty: 2.0,
+        minConfidenceAutoBuy: 40.0,
+        lowConfidenceThreshold: 20.0,
+        minCompsRequired: 2,
+        maxSlowMovingTTS: 240
+    )
+
+    // Preset for balanced buying (default)
+    static let balanced = DecisionThresholds()
+
+    // Persistence helpers
+    static let userDefaultsKey = "decisionThresholds"
+
+    static func load() -> DecisionThresholds {
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey),
+              let thresholds = try? JSONDecoder().decode(DecisionThresholds.self, from: data) else {
+            return .balanced  // Return default if not found
+        }
+        return thresholds
+    }
+
+    func save() {
+        if let encoded = try? JSONEncoder().encode(self) {
+            UserDefaults.standard.set(encoded, forKey: DecisionThresholds.userDefaultsKey)
+        }
+    }
+}
+
 struct ScannerReviewView: View {
     @AppStorage("scanner.hapticsEnabled") private var hapticsEnabled = true
     @AppStorage("scanner.inputMode") private var inputMode: ScannerInputMode = .camera
@@ -31,6 +117,10 @@ struct ScannerReviewView: View {
     // Duplicate detection
     @State private var isDuplicate = false
     @State private var existingBookDate: Date?
+
+    // Decision thresholds
+    @State private var thresholds = DecisionThresholds.load()
+    @State private var showThresholdsSettings = false
 
     // eBay pricing integration
     // Token broker accessible via Cloudflare tunnel for remote access
@@ -80,48 +170,51 @@ struct ScannerReviewView: View {
 
                 // Analysis area - uses full screen when evaluation is ready
                 VStack(spacing: 0) {
-                    // Top section: Accept/Reject buttons + Buy Recommendation (no scroll needed)
-                    if let evaluation {
-                        VStack(spacing: DS.Spacing.md) {
-                            // Accept/Reject buttons at very top
-                            HStack(spacing: DS.Spacing.md) {
-                                Button(action: reject) {
-                                    Label("Reject", systemImage: "xmark")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .tint(.red)
-                                .frame(minHeight: 44)
-
-                                Button(action: acceptAndContinue) {
-                                    Label("Accept", systemImage: "checkmark")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .frame(minHeight: 44)
+                    // Top section: ONLY Accept/Reject buttons (fixed, no scroll)
+                    if evaluation != nil {
+                        HStack(spacing: DS.Spacing.md) {
+                            Button(action: reject) {
+                                Label("Reject", systemImage: "xmark")
+                                    .frame(maxWidth: .infinity)
                             }
+                            .buttonStyle(.bordered)
+                            .tint(.red)
+                            .frame(minHeight: 44)
 
-                            // Duplicate warning
-                            if isDuplicate {
-                                duplicateWarningBanner
+                            Button(action: acceptAndContinue) {
+                                Label("Accept", systemImage: "checkmark")
+                                    .frame(maxWidth: .infinity)
                             }
-
-                            // Buy recommendation immediately below buttons
-                            buyRecommendation(for: evaluation)
+                            .buttonStyle(.borderedProminent)
+                            .frame(minHeight: 44)
                         }
                         .padding(.horizontal)
                         .padding(.top, DS.Spacing.md)
+                        .padding(.bottom, DS.Spacing.sm)
                         .background(DS.Color.background)
                     }
 
                     // Bottom section: Scrollable detailed analysis
                     ScrollView {
                         VStack(spacing: DS.Spacing.md) {
+                            // Duplicate warning (now scrollable)
+                            if evaluation != nil, isDuplicate {
+                                duplicateWarningBanner
+                                    .padding(.horizontal)
+                            }
+
+                            // Buy recommendation (now scrollable)
+                            if let evaluation {
+                                buyRecommendation(for: evaluation)
+                                    .padding(.horizontal)
+                            }
+
                             // Series context (if applicable)
                             if let evaluation {
                                 let seriesInfo = checkSeriesCompletion(evaluation)
                                 if seriesInfo.isPartOfSeries {
                                     seriesContextCard(seriesInfo: seriesInfo)
+                                        .padding(.horizontal)
                                 }
                             }
 
@@ -209,14 +302,22 @@ struct ScannerReviewView: View {
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showPricePickerSheet = true }) {
-                        HStack(spacing: 4) {
-                            Text("Set Price")
-                                .font(.subheadline)
-                            if persistentPurchasePrice > 0 {
-                                Text("(\(formatUSD(persistentPurchasePrice)))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                    HStack(spacing: 12) {
+                        // Decision Settings Button
+                        Button(action: { showThresholdsSettings = true }) {
+                            Image(systemName: "slider.horizontal.3")
+                        }
+
+                        // Price Picker Button
+                        Button(action: { showPricePickerSheet = true }) {
+                            HStack(spacing: 4) {
+                                Text("Set Price")
+                                    .font(.subheadline)
+                                if persistentPurchasePrice > 0 {
+                                    Text("(\(formatUSD(persistentPurchasePrice)))")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
@@ -264,6 +365,9 @@ struct ScannerReviewView: View {
             }
             .sheet(isPresented: $showPricePickerSheet) {
                 PricePickerSheet(selectedPrice: $persistentPurchasePrice)
+            }
+            .sheet(isPresented: $showThresholdsSettings) {
+                DecisionThresholdsSettingsView(thresholds: $thresholds)
             }
             .onChange(of: persistentPurchasePrice) { oldValue, newValue in
                 bookAttributes.purchasePrice = newValue
@@ -975,7 +1079,7 @@ struct ScannerReviewView: View {
 
     @ViewBuilder
     private func decisionFactorsSection(_ eval: BookEvaluationRecord) -> some View {
-        let decision = makeBuyDecision(eval)
+        let decision = makeBuyDecision(eval, using: thresholds)
 
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -1189,29 +1293,99 @@ struct ScannerReviewView: View {
 
     @ViewBuilder
     private func buyRecommendation(for eval: BookEvaluationRecord) -> some View {
-        let decision = makeBuyDecision(eval)
+        let decision = makeBuyDecision(eval, using: thresholds)
         let profit = calculateProfit(eval)
 
         VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                // Icon
-                Image(systemName: decision.shouldBuy ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(decision.shouldBuy ? .green : .red)
+            // Decision header - varies by state
+            switch decision {
+            case .buy(let reason):
+                HStack(spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.green)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(decision.shouldBuy ? "BUY" : "DON'T BUY")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundStyle(decision.shouldBuy ? .green : .red)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("BUY")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.green)
 
-                    Text(decision.reason)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                        Text(reason)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer()
                 }
 
-                Spacer()
+            case .skip(let reason):
+                HStack(spacing: 12) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.red)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("DON'T BUY")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.red)
+
+                        Text(reason)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer()
+                }
+
+            case .needsReview(let reason, let concerns):
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.orange)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("NEEDS REVIEW")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.orange)
+
+                            Text(reason)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+
+                        Spacer()
+                    }
+
+                    // Show concerns list
+                    if !concerns.isEmpty {
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Concerns:")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.secondary)
+
+                            ForEach(concerns, id: \.self) { concern in
+                                HStack(alignment: .top, spacing: 6) {
+                                    Text("•")
+                                        .font(.caption)
+                                        .foregroundStyle(.orange)
+                                    Text(concern)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // Profit display (always show if we have profit data)
@@ -1359,14 +1533,26 @@ struct ScannerReviewView: View {
         }
         .padding()
         .background(
-            (decision.shouldBuy ? Color.green : Color.red)
+            decisionColor(decision)
                 .opacity(0.1),
             in: RoundedRectangle(cornerRadius: 12)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(decision.shouldBuy ? Color.green : Color.red, lineWidth: 2)
+                .stroke(decisionColor(decision), lineWidth: 2)
         )
+    }
+
+    // Helper to get color for decision state
+    private func decisionColor(_ decision: PurchaseDecision) -> Color {
+        switch decision {
+        case .buy:
+            return .green
+        case .skip:
+            return .red
+        case .needsReview:
+            return .orange
+        }
     }
 
     @ViewBuilder
@@ -1562,7 +1748,7 @@ struct ScannerReviewView: View {
         // BookAPI.getScanHistory() filtered by series_name
     }
 
-    private func makeBuyDecision(_ eval: BookEvaluationRecord) -> (shouldBuy: Bool, reason: String) {
+    private func makeBuyDecision(_ eval: BookEvaluationRecord, using thresholds: DecisionThresholds = .balanced) -> PurchaseDecision {
         let score = eval.probabilityScore ?? 0
         let label = eval.probabilityLabel?.lowercased() ?? ""
         let amazonRank = eval.bookscouter?.amazonSalesRank
@@ -1579,6 +1765,54 @@ struct ScannerReviewView: View {
         // Check if this is part of an ongoing series
         let seriesCheck = checkSeriesCompletion(eval)
 
+        // ====================================================================
+        // NEEDS REVIEW CHECKS - Evaluate FIRST before making buy/skip decision
+        // ====================================================================
+        var concerns: [String] = []
+
+        // CHECK 1: Insufficient market data
+        let totalComps = (eval.market?.soldCount ?? 0) + (eval.market?.activeCount ?? 0)
+        if totalComps < thresholds.minCompsRequired {
+            if totalComps == 0 {
+                concerns.append("No market data found")
+            } else {
+                concerns.append("Only \(totalComps) comparable listing\(totalComps == 1 ? "" : "s") found")
+            }
+        }
+
+        // CHECK 2: Conflicting signals (buyback profitable but eBay shows loss)
+        if let buybackNet = buybackNetProfit, buybackNet > thresholds.minProfitAutoBuy,
+           let ebayNet = ebayNetProfit, ebayNet < 0 {
+            concerns.append("Conflicting: Buyback shows \(formatUSD(buybackNet)) profit but eBay predicts \(formatUSD(abs(ebayNet))) loss")
+        }
+
+        // CHECK 3: Very slow moving with thin margin
+        if let tts = eval.timeToSellDays, tts > thresholds.maxSlowMovingTTS,
+           let netProfit = bestProfit, netProfit < thresholds.minProfitSlowMoving {
+            concerns.append("Slow velocity (~\(tts) days) + thin margin (\(formatUSD(netProfit)))")
+        }
+
+        // CHECK 4: High uncertainty (low confidence + minimal profit)
+        if score < thresholds.lowConfidenceThreshold, let netProfit = bestProfit, netProfit < thresholds.minProfitUncertainty {
+            concerns.append("Low confidence (score \(Int(score))) + minimal profit (\(formatUSD(netProfit)))")
+        }
+
+        // CHECK 5: No profit data available at all
+        if thresholds.requireProfitData && bestProfit == nil && score < thresholds.minConfidenceAutoBuy {
+            concerns.append("No pricing data + moderate confidence")
+        }
+
+        // If we have concerns, return needsReview
+        if !concerns.isEmpty {
+            let summary: String
+            if concerns.count == 1 {
+                summary = concerns[0]
+            } else {
+                summary = "\(concerns.count) concerns flagged for review"
+            }
+            return .needsReview(reason: summary, concerns: concerns)
+        }
+
         // RULE 1: Buyback offer > purchase price = instant buy (guaranteed profit, no risk)
         // Check this FIRST before anything else
         if let buybackNet = buybackNetProfit, buybackNet > 0 {
@@ -1586,10 +1820,10 @@ struct ScannerReviewView: View {
 
             // Add series context if applicable
             if seriesCheck.isPartOfSeries, let series = seriesCheck.seriesName {
-                return (true, "Guaranteed \(formatUSD(buybackNet)) via \(vendorName) + Completes \(series) series")
+                return .buy(reason: "Guaranteed \(formatUSD(buybackNet)) via \(vendorName) + Completes \(series) series")
             }
 
-            return (true, "Guaranteed \(formatUSD(buybackNet)) profit via \(vendorName)")
+            return .buy(reason: "Guaranteed \(formatUSD(buybackNet)) profit via \(vendorName)")
         }
 
         // RULE 1.5: Series Completion - Buy if part of ongoing series AND profit is reasonable
@@ -1603,22 +1837,23 @@ struct ScannerReviewView: View {
             // - Not a loss (profit > 0)
             // - Confidence score is decent (≥50)
             if let netProfit = bestProfit, netProfit >= 3.0 && score >= 50 {
-                return (true, "Series: \(series) (\(booksWeHave) books) + \(formatUSD(netProfit)) profit")
+                return .buy(reason: "Series: \(series) (\(booksWeHave) books) + \(formatUSD(netProfit)) profit")
             }
 
             // Even more lenient: If we have 3+ books in the series and it's break-even or small profit
             if booksWeHave >= 3, let netProfit = bestProfit, netProfit >= 1.0 {
-                return (true, "Near-complete series: \(series) (\(booksWeHave) books) + \(formatUSD(netProfit))")
+                return .buy(reason: "Near-complete series: \(series) (\(booksWeHave) books) + \(formatUSD(netProfit))")
             }
 
             // If series has high value, accept even small losses (up to $2) to complete
             if booksWeHave >= 3, let netProfit = bestProfit, netProfit >= -2.0 && score >= 60 {
-                return (true, "Complete series: \(series) (\(booksWeHave) books) - strategic buy")
+                return .buy(reason: "Complete series: \(series) (\(booksWeHave) books) - strategic buy")
             }
         }
 
-        // RULE 2: Net profit $10+ on any platform = strong buy
-        if let maxProfit = bestProfit, maxProfit >= 10 {
+        // RULE 2: Strong profit (2x threshold) = strong buy
+        let strongProfitThreshold = thresholds.minProfitAutoBuy * 2
+        if let maxProfit = bestProfit, maxProfit >= strongProfitThreshold {
             // Determine which platform offers best profit
             var platform = "eBay"
             if let amz = amazonNetProfit, amz == maxProfit {
@@ -1628,13 +1863,13 @@ struct ScannerReviewView: View {
             }
 
             if label.contains("high") || score >= 60 {
-                return (true, "Strong: \(formatUSD(maxProfit)) net via \(platform)")
+                return .buy(reason: "Strong: \(formatUSD(maxProfit)) net via \(platform)")
             }
-            return (true, "Net profit \(formatUSD(maxProfit)) via \(platform)")
+            return .buy(reason: "Net profit \(formatUSD(maxProfit)) via \(platform)")
         }
 
-        // RULE 3: Net profit $5-10 = conditional buy
-        if let maxProfit = bestProfit, maxProfit >= 5 {
+        // RULE 3: Meets minimum profit threshold = conditional buy
+        if let maxProfit = bestProfit, maxProfit >= thresholds.minProfitAutoBuy {
             var platform = "eBay"
             if let amz = amazonNetProfit, amz == maxProfit {
                 platform = "Amazon"
@@ -1643,33 +1878,34 @@ struct ScannerReviewView: View {
             }
 
             if label.contains("high") || score >= 70 {
-                return (true, "Good confidence + \(formatUSD(maxProfit)) via \(platform)")
+                return .buy(reason: "Good confidence + \(formatUSD(maxProfit)) via \(platform)")
             }
             if let rank = amazonRank, rank < 100000 {
-                return (true, "Fast-moving + \(formatUSD(maxProfit)) via \(platform)")
+                return .buy(reason: "Fast-moving + \(formatUSD(maxProfit)) via \(platform)")
             }
-            return (false, "Only \(formatUSD(maxProfit)) profit - needs higher confidence")
+            return .skip(reason: "Only \(formatUSD(maxProfit)) profit - needs higher confidence")
         }
 
         // RULE 4: Positive but small profit ($1-5)
         if let maxProfit = bestProfit, maxProfit > 0 {
             if label.contains("high") && score >= 80 {
-                return (true, "Very high confidence offsets low margin")
+                return .buy(reason: "Very high confidence offsets low margin")
             }
-            return (false, "Net profit only \(formatUSD(maxProfit)) - too thin")
+            return .skip(reason: "Net profit only \(formatUSD(maxProfit)) - too thin")
         }
 
         // RULE 5: No profit or loss on best channel
         if let maxProfit = bestProfit, maxProfit <= 0 {
-            return (false, "Would lose \(formatUSD(abs(maxProfit))) after fees")
+            return .skip(reason: "Would lose \(formatUSD(abs(maxProfit))) after fees")
         }
 
         // RULE 6: No pricing data - use confidence only
-        if label.contains("high") && score >= 80 {
-            return (true, "Very high confidence but verify pricing")
+        let veryHighConfidenceThreshold = thresholds.minConfidenceAutoBuy + 30
+        if label.contains("high") && score >= veryHighConfidenceThreshold {
+            return .buy(reason: "Very high confidence but verify pricing")
         }
 
-        return (false, "Insufficient profit margin or confidence")
+        return .skip(reason: "Insufficient profit margin or confidence")
     }
 
     private func probabilityColor(for label: String) -> Color {
@@ -1792,7 +2028,7 @@ struct ScannerReviewView: View {
         // For DON'T BUY: auto-reject and log
         if let existingEval = evaluation, let isbn = scannedCode {
             Task {
-                let decision = makeBuyDecision(existingEval)
+                let decision = makeBuyDecision(existingEval, using: thresholds)
                 let location = locationManager.locationData
 
                 if decision.shouldBuy {
@@ -2126,7 +2362,7 @@ struct ScannerReviewView: View {
                     errorMessage = nil  // Clear any previous errors
 
                     // Play sound based on buy recommendation
-                    let decision = makeBuyDecision(eval)
+                    let decision = makeBuyDecision(eval, using: thresholds)
                     if decision.shouldBuy {
                         SoundFeedback.buyRecommendation() // Cha-ching!
                         provideHaptic(.success)
@@ -2371,7 +2607,7 @@ struct ForceKeyboardTextField: UIViewRepresentable {
         let toolbar = UIToolbar()
         toolbar.sizeToFit()
         let flexSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        let doneButton = UIBarButtonItem(title: "Done", style: .done, target: context.coordinator, action: #selector(Coordinator.doneButtonTapped))
+        let doneButton = UIBarButtonItem(title: "Done", style: .prominent, target: context.coordinator, action: #selector(Coordinator.doneButtonTapped))
         toolbar.items = [flexSpace, doneButton]
         textField.inputAccessoryView = toolbar
 

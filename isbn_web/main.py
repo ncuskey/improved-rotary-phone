@@ -162,6 +162,16 @@ async def isbn_lookup(
                 status_code=502,
                 detail=f"Failed to fetch metadata for ISBN {data.isbn.strip() or data.isbn}",
             ) from exc
+    else:
+        # Book exists - check if it has market data, if not refetch it
+        if book.market is None or (book.market.active_count == 0 and book.market.sold_count == 0):
+            try:
+                # Refresh market data for books that were scanned before Track B was fixed
+                refreshed_book = service.refresh_book_market(data.isbn, recalc_lots=False)
+                if refreshed_book:
+                    book = refreshed_book
+            except Exception:
+                pass  # Don't fail if market refresh fails, return cached data
 
     # Update attributes if provided (even if book already exists)
     if data.cover_type or data.printing or data.signed is not None:

@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-26] - Fix eBay Track B Market Data Integration
+
+### Fixed
+- **Critical Bug**: Fixed backend Track B (active listings estimate) integration that was preventing market data from being fetched
+  - Root cause #1: `service.py:277` was checking for `ebay_app_id` which blocked Track B from working
+  - Root cause #2: `/isbn` endpoint returned cached data for existing books without refetching missing market data
+  - Root cause #3: iOS model expected different field names (`ebay_active_count` vs `active_count`)
+
+### Changed
+- **Backend (`isbn_lot_optimizer/service.py`)**:
+  - Removed `ebay_app_id` check from Track B code path (line 277)
+  - Track B now works with only `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` (no app_id required)
+  - Track B uses Browse API which only needs OAuth client credentials, not Finding API
+
+- **API (`isbn_web/main.py`)**:
+  - Added auto-refresh logic for books with missing market data (lines 165-174)
+  - Books scanned before the fix now automatically get market data refreshed when scanned again
+  - Prevents "Needs Review" status for popular books
+
+- **iOS App (`LotHelperApp/LotHelper/BookAPI.swift`)**:
+  - Updated `EbayMarketData` CodingKeys to match API field names
+  - Changed: `ebay_active_count` → `active_count`
+  - Changed: `ebay_sold_count` → `sold_count`
+  - Changed: `ebay_currency` → `currency`
+  - Changed: `sell_through` → `sell_through_rate`
+
+### Impact
+- **Market data now displays correctly** in iOS app purchase decision box
+- **"Needs Review" errors eliminated** for books with available eBay listings
+- **Track B working without eBay Finding API credentials** (only needs Browse API OAuth)
+- Tested with "A Storm of Swords": 9 active listings, $13.13 median estimate, Track B source confirmed
+
+### Environment Variables
+- **EBAY_APP_ID**: Now optional for Track B (still recommended for full Finding API access)
+- Track B requires: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` (already in .env)
+
+### Testing
+- Verified Track B estimates: "The Brightest Night" - 15 active listings, $10.49 median
+- Confirmed auto-refresh: Books without market data automatically refreshed on re-scan
+- iOS model decoding: activeCount and soldCount now properly parsed from API response
+
+### Technical Details
+Track B uses a dual-track approach:
+- **Track A** (future): Real sold data from Marketplace Insights API (requires eBay approval)
+- **Track B** (active now): Conservative estimate from active listings (25th percentile for used, median for new)
+
+Track B implementation path:
+1. `evaluate_isbn()` calls `fetch_market_stats_v2()`
+2. `fetch_market_stats_v2()` calls `browse_active_by_isbn()` (Browse API)
+3. `browse_active_by_isbn()` calls `get_app_token()` (OAuth client credentials)
+4. Results processed through `get_sold_comps()` to generate conservative estimates
+
 ## [2025-10-25] - Simplify Series Categories & Enhanced Lot Sorting
 
 ### Changed

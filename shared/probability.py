@@ -272,6 +272,45 @@ def compute_rarity(market: Optional[EbayMarketStats]) -> Optional[float]:
     return round(rarity, 3)
 
 
+def compute_time_to_sell(market: Optional[EbayMarketStats]) -> Optional[int]:
+    """
+    Calculate expected time to sell based on 90-day sold count.
+
+    Formula: TTS = 90 / max(sold_count, 1)
+
+    This estimates how many days it takes for one unit to sell based on
+    historical velocity over the past 90 days. Capped between 7 days
+    (very fast-moving) and 365 days (very slow/niche).
+
+    Examples:
+        - 30 sold in 90 days → TTS = 3 days (very fast)
+        - 9 sold in 90 days → TTS = 10 days (fast)
+        - 3 sold in 90 days → TTS = 30 days (moderate)
+        - 1 sold in 90 days → TTS = 90 days (slow)
+        - 0 sold in 90 days → TTS = 365 days (very slow, capped)
+
+    Args:
+        market: eBay market stats with sold_count from last 90 days
+
+    Returns:
+        Expected days to sell (7-365) or None if no market data
+    """
+    if not market or market.sold_count is None or market.sold_count < 0:
+        return None
+
+    # Avoid division by zero - if nothing sold, cap at maximum
+    if market.sold_count == 0:
+        return 365
+
+    # Calculate raw TTS
+    raw_tts = 90.0 / market.sold_count
+
+    # Cap between 7 and 365 days
+    tts = int(max(7, min(365, raw_tts)))
+
+    return tts
+
+
 def _calculate_fallback_score(
     amazon_rank: int,
     metadata: BookMetadata,
@@ -535,6 +574,8 @@ def build_book_evaluation(
     # Pass condition, edition, and bookscouter to get attribute-specific price estimate
     estimated_price = estimate_price(metadata, market, condition, edition, bookscouter)
     rarity = compute_rarity(market)
+    tts = compute_time_to_sell(market)
+
     score, label, reasons, suppress_single = score_probability(
         metadata=metadata,
         market=market,
@@ -544,6 +585,20 @@ def build_book_evaluation(
         amazon_rank=amazon_rank,
         bookscouter=bookscouter,
     )
+
+    # Add TTS to justification reasons with velocity context
+    if tts is not None:
+        if tts <= 14:
+            reasons.append(f"Very fast-moving: Expected to sell in ~{tts} days")
+        elif tts <= 45:
+            reasons.append(f"Fast-moving: Expected to sell in ~{tts} days")
+        elif tts <= 90:
+            reasons.append(f"Moderate velocity: Expected to sell in ~{tts} days")
+        elif tts <= 180:
+            reasons.append(f"Slow-moving: May take ~{tts} days to sell")
+        else:
+            reasons.append(f"Very slow: May take {tts}+ days to sell (niche market)")
+
     return BookEvaluation(
         isbn=isbn,
         original_isbn=original_isbn,
@@ -557,4 +612,5 @@ def build_book_evaluation(
         probability_label=label,
         justification=reasons,
         suppress_single=suppress_single,
+        time_to_sell_days=tts,
     )

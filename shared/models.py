@@ -71,6 +71,8 @@ class EbayMarketStats:
     lot_listings_detected: Optional[int] = None  # Count of multi-book lot listings found
     filtered_count: Optional[int] = None  # Total number of listings filtered out
     total_listings: Optional[int] = None  # Total listings before filtering
+    # Time-to-sell estimate
+    time_to_sell_days: Optional[int] = None  # Expected days to sell (7-365), based on 90-day velocity
 
 
 @dataclass
@@ -132,6 +134,8 @@ class BookEvaluation:
     bookscouter: Optional[BookScouterResult] = None
     bookscouter_value_label: Optional[str] = None
     bookscouter_value_ratio: Optional[float] = None
+    # Time-to-sell estimate
+    time_to_sell_days: Optional[int] = None  # Expected days to sell (7-365), based on 90-day velocity
 
 
 @dataclass

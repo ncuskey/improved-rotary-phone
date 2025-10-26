@@ -1041,7 +1041,8 @@ struct BookDetailView: View {
                 bookscouterValueRatio: 0.93,
                 rarity: nil,
                 updatedAt: "2025-01-15T12:00:00Z",
-                createdAt: "2025-01-10T12:00:00Z"
+                createdAt: "2025-01-10T12:00:00Z",
+                timeToSellDays: nil
             )
         )
     }

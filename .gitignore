@@ -49,3 +49,7 @@ tmp.*
 *.tmp
 tmp.jpg
 tmp.png
+
+# AI agent artifacts
+.agent_backups/
+.continue/

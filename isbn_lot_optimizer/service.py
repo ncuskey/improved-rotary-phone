@@ -36,7 +36,7 @@ from shared.constants import (
     TITLE_NORMALIZER,
 )
 from shared.database import DatabaseManager
-from .metadata import create_http_session, enrich_authorship, fetch_metadata
+from shared.metadata import create_http_session, enrich_authorship, fetch_metadata
 from shared.series_index import (
     SeriesIndex,
     canonical_series,

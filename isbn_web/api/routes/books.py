@@ -13,7 +13,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from isbn_lot_optimizer.service import BookService
-from isbn_lot_optimizer.metadata import fetch_metadata, create_http_session
+from shared.metadata import fetch_metadata, create_http_session
 from shared.utils import normalise_isbn
 from shared.series_integration import enrich_evaluation_with_series, match_and_attach_series
 

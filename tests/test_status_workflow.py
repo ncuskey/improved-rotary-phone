@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from isbn_lot_optimizer.service import BookService
-from isbn_lot_optimizer.metadata import _fetch_google_books_raw, _normalize_from_gbooks
+from shared.metadata import _fetch_google_books_raw, _normalize_from_gbooks
 from shared.database import DatabaseManager
 
 

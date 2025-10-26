@@ -34,7 +34,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from shared.database import DatabaseManager
 from shared.utils import normalise_isbn
-from isbn_lot_optimizer.metadata import OPENLIB_COVER_TMPL, OPENLIB_COVER_BY_ID
+from shared.metadata import OPENLIB_COVER_TMPL, OPENLIB_COVER_BY_ID
 
 
 # Cover URL templates from various sources

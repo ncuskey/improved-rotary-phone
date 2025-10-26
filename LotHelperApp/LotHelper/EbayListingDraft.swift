@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// Represents an in-progress eBay listing being created through the wizard.
 /// This is a transient model (not persisted to SwiftData) that holds the user's

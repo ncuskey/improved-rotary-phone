@@ -9,6 +9,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from shared.author_aliases import canonical_author
 from shared.series_database import SeriesDatabaseManager
 
 
@@ -79,7 +80,13 @@ class SeriesMatcher:
 
         # Strategy 1: Author + Title exact/fuzzy matching
         for author in book_authors:
-            author_series = self.series_db.get_author_series(author)
+            # Normalize author name to handle different formats (e.g., "Martin,George R.R." -> "george r r martin")
+            author_normalized = canonical_author(author)
+            if not author_normalized:
+                continue
+
+            # Try to find series by normalized author name
+            author_series = self.series_db.get_author_series_by_normalized_name(author_normalized)
 
             for series_info in author_series:
                 series_id = series_info['series_id']

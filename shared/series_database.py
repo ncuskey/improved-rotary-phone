@@ -377,6 +377,34 @@ class SeriesDatabaseManager:
 
             return [dict(row) for row in cursor.fetchall()]
 
+    def get_author_series_by_normalized_name(self, author_name_normalized: str) -> List[Dict[str, Any]]:
+        """
+        Get all series for an author using normalized name matching.
+
+        This allows matching authors even when the name format differs
+        (e.g., "Martin,George R.R." vs "George R R Martin").
+
+        Args:
+            author_name_normalized: Normalized author name (lowercase, no punctuation)
+
+        Returns:
+            List of series dicts
+        """
+        with self._get_connection() as conn:
+            cursor = conn.execute("""
+                SELECT
+                    s.id as series_id,
+                    s.title as series_title,
+                    s.book_count,
+                    a.name as author_name
+                FROM series s
+                JOIN authors a ON s.author_id = a.id
+                WHERE a.name_normalized = ?
+                ORDER BY s.title
+            """, (author_name_normalized,))
+
+            return [dict(row) for row in cursor.fetchall()]
+
     def get_stats(self) -> Dict[str, int]:
         """Get database statistics."""
         with self._get_connection() as conn:

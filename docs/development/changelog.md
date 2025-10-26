@@ -2,6 +2,63 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-26] - eBay Listing Integration Sprint 1 Complete
+
+### Added
+- **eBay Listing Database Schema**: Created `ebay_listings` table with 31 columns
+  - Tracks listings for individual books and lots
+  - Stores listing content (title, description, photos)
+  - Records status transitions (draft → active → sold → ended)
+  - Captures learning metrics (actual_tts_days, final_sale_price, price_accuracy)
+  - AI generation metadata (ai_model, user_edited flags)
+  - 7 indexes for efficient querying
+
+- **AI Listing Generator Service**: `isbn_lot_optimizer/ai/listing_generator.py`
+  - `EbayListingGenerator` class for AI-powered listing content generation
+  - Supports both individual books and lots
+  - SEO-optimized titles (max 80 characters)
+  - Engaging descriptions (200-400 words)
+  - Key highlights extraction
+  - Uses local Llama 3.1 8B model via Ollama
+
+- **Database Migration**: `scripts/migrate_ebay_listings_table.py`
+  - Creates ebay_listings table with proper constraints
+  - Validates foreign keys to books and lots tables
+  - Ensures one of isbn or lot_id is set (not both)
+
+- **Test Suite**: `tests/test_listing_generator.py`
+  - Tests book listing generation
+  - Tests lot listing generation
+  - 2/2 tests passed (100% success rate)
+
+### Changed
+- **AI Model**: Installed Llama 3.1 8B (4.9GB) for natural language generation
+  - Optimized for marketing copy (not code generation)
+  - ~20-30 second generation time per listing
+  - Runs locally via Ollama (http://localhost:11434)
+
+### Performance
+- **Book Listing Generation**: 19-29 seconds
+- **Lot Listing Generation**: ~24 seconds
+- **Content Quality**: Professional, SEO-optimized, eBay-ready
+
+### Testing
+Example outputs:
+- **Book**: "A Storm of Swords" - Generated 62-char title and engaging 350-word description
+- **Lot**: "Kristin Hannah Collection (4 books)" - Generated 80-char title with value proposition
+
+### Documentation
+- Created comprehensive Sprint 1 summary: `docs/EBAY_LISTING_SPRINT1_COMPLETE.md`
+- Documented database schema, API usage, and testing instructions
+
+### Next Steps
+- **Sprint 2**: Implement OAuth and eBay Sell APIs (Inventory, Offer, Fulfillment)
+- **Sprint 3**: Build iOS listing creation UI
+- **Sprint 4**: Add sales tracking and sync
+- **Sprint 5**: Build analytics dashboard
+
+---
+
 ## [2025-10-26] - Fix eBay Track B Market Data Integration
 
 ### Fixed

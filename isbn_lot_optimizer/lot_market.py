@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Tuple
 
 import requests
 
-from .ebay_auth import get_bearer_token
+from shared.ebay_auth import get_bearer_token
 
 EBAY_FINDING_URL = "https://svcs.ebay.com/services/search/FindingService/v1"
 BROWSE_URL = "https://api.ebay.com/buy/browse/v1/item_summary/search"

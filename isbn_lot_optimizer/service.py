@@ -57,7 +57,7 @@ from shared.probability import build_book_evaluation
 from .lots import build_lots_with_strategies, generate_lot_suggestions
 from shared.series_catalog import get_or_fetch_series_for_authors
 from shared.series_finder import attach_series
-from .market import fetch_single_market_stat, fetch_market_stats_v2
+from shared.market import fetch_single_market_stat, fetch_market_stats_v2
 from .lot_market import market_snapshot_for_lot
 from .lot_scoring import score_lot
 from shared.utils import normalise_isbn, read_isbn_csv

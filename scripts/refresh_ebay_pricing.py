@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-from isbn_lot_optimizer.market import fetch_market_stats_v2
+from shared.market import fetch_market_stats_v2
 
 
 def refresh_ebay_pricing(

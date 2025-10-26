@@ -140,7 +140,7 @@ def enrich_lot_with_pricing(skeleton: LotSkeleton) -> EnrichedLot:
         try:
             print(f"    🔍 Fetching eBay pricing for: {skeleton.search_term}")
 
-            from isbn_lot_optimizer.market import search_ebay_lot_comps
+            from shared.market import search_ebay_lot_comps
             lot_pricing = search_ebay_lot_comps(skeleton.search_term, limit=50)
 
             if lot_pricing and lot_pricing.get("total_comps", 0) > 0:

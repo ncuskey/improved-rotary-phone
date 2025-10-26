@@ -9,7 +9,7 @@ from shared.models import BookEvaluation, LotSuggestion
 
 # Import lot pricing functions
 try:
-    from isbn_lot_optimizer.market import get_lot_pricing_for_series
+    from shared.market import get_lot_pricing_for_series
     LOT_PRICING_AVAILABLE = True
 except Exception:
     LOT_PRICING_AVAILABLE = False
@@ -305,7 +305,7 @@ def _enrich_lot_with_pricing(
         # For author lots, use author name
         elif lot.strategy == "author" and search_author:
             # Search for "Author Name Lot" to find author collections
-            from isbn_lot_optimizer.market import search_ebay_lot_comps
+            from shared.market import search_ebay_lot_comps
             lot_pricing = search_ebay_lot_comps(f"{search_author} lot", limit=50)
         else:
             return lot

@@ -169,7 +169,7 @@ class EbaySoldComps:
             max_samples: Number of sample listings to return
             include_signed: If True, include signed/autographed copies in results
         """
-        from .market import browse_active_by_isbn
+        from shared.market import browse_active_by_isbn
 
         try:
             data = browse_active_by_isbn(gtin, limit=50, include_signed=include_signed)

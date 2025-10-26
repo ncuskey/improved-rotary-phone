@@ -2,6 +2,77 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-26] - eBay Listing Integration Sprint 2 Complete
+
+### Added
+- **User OAuth Flow**: Enhanced token broker with User OAuth support
+  - Authorization URL generation with CSRF protection
+  - OAuth callback handler for code exchange
+  - Automatic token refresh when expired
+  - Multi-scope support (sell.inventory, sell.fulfillment, sell.marketing)
+  - In-memory token storage with refresh capability
+
+- **eBay Sell API Client**: `isbn_lot_optimizer/ebay_sell.py`
+  - `EbaySellClient` class for Inventory and Offer APIs
+  - Create/update/delete inventory items
+  - Create/publish/delete offers
+  - High-level `create_and_publish_book_listing()` method
+  - Error handling with detailed messages
+  - Rate limit awareness
+
+- **Listing Service**: `isbn_lot_optimizer/ebay_listing.py`
+  - `EbayListingService` orchestrates full workflow
+  - Integrates AI generation + eBay APIs + database
+  - Status management (draft → active → sold)
+  - Learning metrics calculation (actual TTS, price accuracy)
+  - Error handling with draft saving
+
+- **Integration Test**: `tests/test_ebay_listing_integration.py`
+  - End-to-end workflow testing
+  - Prerequisites checking (OAuth, Ollama, token broker)
+  - Dry-run mode for validation
+  - Detailed error messages
+
+### Changed
+- **Token Broker** (`token-broker/server.js`): Enhanced to 457 lines
+  - Added User OAuth endpoints
+  - Token storage and refresh logic
+  - HTML responses for OAuth flow
+  - Status checking endpoint
+
+### New Endpoints
+- `GET /oauth/authorize` - Generate authorization URL
+- `GET /oauth/callback` - Handle OAuth callback
+- `GET /token/ebay-user` - Get user access token
+- `GET /oauth/status` - Check authorization status
+
+### Architecture
+Complete integration pipeline:
+1. AI generates listing content (Sprint 1)
+2. Token broker handles OAuth (Sprint 2)
+3. eBay client creates inventory + offer (Sprint 2)
+4. Database tracks listing lifecycle (Sprint 2)
+5. Learning metrics improve model (Sprint 2)
+
+### Documentation
+- Created comprehensive Sprint 2 summary: `docs/EBAY_LISTING_SPRINT2_COMPLETE.md`
+- OAuth authorization guide
+- API reference documentation
+- Testing instructions
+
+### Testing
+Ready for manual testing:
+- Dry-run test validates prerequisites
+- Full test creates real eBay listing
+- Requires one-time OAuth authorization
+
+### Next Steps
+- **Sprint 3**: Build iOS listing creation UI
+- **Sprint 4**: Add sales tracking and sync
+- **Sprint 5**: Build analytics dashboard
+
+---
+
 ## [2025-10-26] - eBay Listing Integration Sprint 1 Complete
 
 ### Added

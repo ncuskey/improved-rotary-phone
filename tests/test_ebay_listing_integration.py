@@ -179,7 +179,7 @@ def test_listing_creation(isbn: str, dry_run: bool = False):
         listing = listing_service.create_book_listing(
             book=book,
             price=book.estimated_price,
-            condition="Good",
+            condition="GOOD",
             quantity=1,
             use_ai=True,
         )

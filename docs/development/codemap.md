@@ -1,6 +1,6 @@
 # CODEMAP
 
-**Last Updated:** 2025-10-25 (Incremental lot update optimization)
+**Last Updated:** 2025-10-26 (eBay Listing Integration - Sprint 2 Complete)
 
 ## Top Level
 - `README.md` – Project overview, quick start, and links to documentation
@@ -90,6 +90,27 @@ Tkinter desktop GUI and supporting desktop-specific logic. **20 modules remainin
 - **`ebay_sold_comps.py`** – eBay sold comparisons
 - **`ebay_auth.py`** – Client credentials OAuth for eBay Browse API
 - **`lot_market.py`** – Lot-level market snapshots with caching
+
+### eBay Listing Integration (✅ Sprint 2 Complete)
+- **`ebay_sell.py`** (600+ lines) – eBay Sell API client for Inventory and Offer management
+  - `EbaySellClient` class with Inventory and Offer API methods
+  - Inventory location management (auto-creates default location)
+  - Create/update/delete inventory items with condition and weight
+  - Create/publish/delete offers with business policies
+  - High-level `create_and_publish_book_listing()` method
+  - Condition format handling (text for inventory, numeric for offers)
+- **`ebay_listing.py`** (460 lines) – High-level listing service orchestration
+  - `EbayListingService` class coordinating AI, eBay APIs, and database
+  - Integrates with AI listing generator for content creation
+  - Database persistence with ebay_listings table
+  - Draft saving on errors, status tracking (draft/active/sold/ended)
+  - Performance metrics (TTS, price accuracy) calculation
+- **`ai/listing_generator.py`** (462 lines) – AI-powered listing content generation
+  - `EbayListingGenerator` class using Llama 3.1 8B via Ollama
+  - SEO-optimized title generation (max 80 chars)
+  - Engaging description generation (200-400 words)
+  - Highlight extraction and condition-aware content
+  - Generation time ~2-3 seconds per listing
 
 ### Lot Generation
 - **`lots.py`** – Lot generation strategies with 3-phase architecture:
@@ -225,12 +246,20 @@ See: `scripts/README.md` for detailed documentation
 
 ## Token Broker (`token-broker/`)
 
-Node.js OAuth service providing eBay tokens to iOS app.
+Node.js OAuth service providing eBay tokens to iOS app and Python backend. **Enhanced for Sprint 2 with User OAuth support.**
 
-- **`server.js`** – Express server on port 8787
+- **`server.js`** (500+ lines) – Express server on port 8787
+  - **App OAuth**: Client credentials for Browse API (iOS app)
+  - **User OAuth**: Authorization code grant for Sell APIs (listing automation)
+    - Authorization URL generation with CSRF protection
+    - OAuth callback handler for code exchange
+    - Automatic token refresh (2-hour access tokens, 18-month refresh tokens)
+    - Multi-scope support: `sell.inventory`, `sell.fulfillment`, `sell.marketing`, `sell.account`
+    - In-memory token storage with refresh capability
+  - Endpoints: `/token/ebay-browse`, `/token/ebay-user`, `/oauth/authorize`, `/oauth/callback`, `/oauth/status`
 - **`package.json`** – Node dependencies
-- Handles OAuth flow for eBay Browse API
 - Auto-starts with `isbn-web` command
+- Cloudflare tunnel support: `tokens.lothelper.clevergirl.app`
 
 ## Data & Persistence
 
@@ -243,6 +272,12 @@ Node.js OAuth service providing eBay tokens to iOS app.
   - BookScouter: `bookscouter_json` (full JSON with all vendor offers)
 - `scan_history` – Complete audit trail of all scans (ACCEPT, REJECT, SKIP)
   - 17 fields: ISBN, decision, book details, location data (name, address, GPS coordinates)
+- `ebay_listings` – eBay listing tracking (Sprint 2)
+  - Core fields: `isbn`, `sku`, `offer_id`, `ebay_listing_id`, `title`, `description`, `price`, `condition`, `quantity`
+  - AI metadata: `ai_generated`, `ai_model`, `generation_time_seconds`
+  - Status tracking: `status` (draft/active/sold/ended), `listed_at`, `sold_at`, `ended_at`
+  - Performance: `estimated_price`, `actual_sale_price`, `time_to_sell_days`, `price_accuracy_percent`
+  - Error handling: `error_message` for failed listings
   - 4 indexes: isbn, scanned_at DESC, decision, location_name
   - Supports location-based analytics and "previously scanned" warnings
 - `lots` – Generated lot suggestions with scoring
@@ -409,6 +444,11 @@ pytest tests/test_utils.py
 
 # Web scanning test
 ./tests/integration/test_web_scan.sh
+
+# eBay listing integration test (Sprint 2)
+# Requires: token broker running, OAuth authorized, Ollama with llama3.1:8b
+python3 tests/test_ebay_listing_integration.py --dry-run  # Check prerequisites only
+python3 tests/test_ebay_listing_integration.py             # Create real listing
 ```
 
 ### Manual Testing

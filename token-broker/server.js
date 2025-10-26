@@ -2,7 +2,7 @@ import express from "express";
 import fetch from "node-fetch";
 import crypto from "crypto";
 
-const { EBAY_APP_ID, EBAY_APP_SECRET, PORT = 8787, REDIRECT_URI = "http://localhost:8787/oauth/callback" } = process.env;
+const { EBAY_APP_ID, EBAY_APP_SECRET, PORT = 8787, REDIRECT_URI = "Clever_Girl_LLC-NickCusk-LotHel-hbazcvu" } = process.env;
 
 // App token cache (for Browse API, etc.)
 let appCache = { token: null, expiresAt: 0 };
@@ -175,7 +175,7 @@ router.get("/token/ebay-browse", async (_req, res) => {
 router.get("/oauth/authorize", (req, res) => {
   try {
     // Parse requested scopes
-    const scopesParam = req.query.scopes || "sell.inventory,sell.fulfillment,sell.marketing";
+    const scopesParam = req.query.scopes || "sell.inventory,sell.fulfillment,sell.marketing,sell.account";
     const requestedScopes = scopesParam.split(",").map(s => s.trim());
 
     // Map shorthand to full eBay scope URLs
@@ -301,7 +301,7 @@ router.get("/oauth/callback", async (req, res) => {
  */
 router.get("/token/ebay-user", async (req, res) => {
   try {
-    const scopesParam = req.query.scopes || "sell.inventory,sell.fulfillment,sell.marketing";
+    const scopesParam = req.query.scopes || "sell.inventory,sell.fulfillment,sell.marketing,sell.account";
     const requestedScopes = scopesParam.split(",").map(s => {
       const scopeMap = {
         "sell.inventory": "https://api.ebay.com/oauth/api_scope/sell.inventory",

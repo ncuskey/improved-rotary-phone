@@ -96,10 +96,17 @@ class EbaySellClient:
         self.inventory_api_url = "https://api.ebay.com/sell/inventory/v1"
         self.offer_api_url = "https://api.ebay.com/sell/inventory/v1"
 
+        # Default business policy IDs (fetched from Account API)
+        self.default_policies = {
+            "returnPolicyId": "243149035016",  # No Returns
+            "paymentPolicyId": "243149034016",  # Require immediate payment
+            "fulfillmentPolicyId": "248460452016",  # Single Books
+        }
+
     def _get_user_token(self) -> str:
         """Get user OAuth token from token broker."""
         url = f"{self.token_broker_url}/token/ebay-user"
-        params = {"scopes": "sell.inventory,sell.fulfillment,sell.marketing"}
+        params = {"scopes": "sell.inventory,sell.fulfillment,sell.marketing,sell.account"}
 
         try:
             response = requests.get(url, params=params, timeout=self.timeout)
@@ -137,6 +144,7 @@ class EbaySellClient:
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
+            "Content-Language": "en-US",
             "Accept": "application/json",
         }
 
@@ -177,6 +185,85 @@ class EbaySellClient:
             raise EbaySellError(f"Request failed: {e}") from e
 
     # ========================================================================
+    # Location API Methods
+    # ========================================================================
+
+    def create_inventory_location(
+        self,
+        merchant_location_key: str,
+        name: str,
+        address: Dict[str, str],
+        location_types: list = None,
+    ) -> None:
+        """
+        Create an inventory location (fulfillment location).
+
+        Args:
+            merchant_location_key: Unique key for the location
+            name: Location name
+            address: Address dict with addressLine1, city, stateOrProvince, postalCode, country
+            location_types: Location types (e.g., ["WAREHOUSE", "STORE"])
+
+        Raises:
+            EbaySellError: If creation fails
+        """
+        endpoint = f"/location/{merchant_location_key}"
+
+        payload = {
+            "name": name,
+            "location": {
+                "address": address,
+            },
+            "locationTypes": location_types or ["WAREHOUSE"],
+            "merchantLocationStatus": "ENABLED",
+        }
+
+        logger.info(f"Creating inventory location: {merchant_location_key}")
+        self._make_request("POST", endpoint, data=payload)
+        logger.info(f"✓ Created inventory location: {merchant_location_key}")
+
+    def get_inventory_locations(self) -> Dict[str, Any]:
+        """Get all inventory locations."""
+        endpoint = "/location"
+        return self._make_request("GET", endpoint)
+
+    def ensure_default_location(self) -> str:
+        """
+        Ensure a default inventory location exists. Create if it doesn't.
+
+        Returns:
+            The merchant location key
+        """
+        try:
+            # Try to get existing locations
+            locations = self.get_inventory_locations()
+            if locations.get("locations"):
+                # Use first location
+                first_location = locations["locations"][0]
+                key = first_location["merchantLocationKey"]
+                logger.info(f"Using existing location: {key}")
+                return key
+        except EbaySellError:
+            # No locations exist yet
+            pass
+
+        # Create default location
+        merchant_location_key = "default_location"
+        self.create_inventory_location(
+            merchant_location_key=merchant_location_key,
+            name="Clever Girl LLC",
+            address={
+                "addressLine1": "212 N 2nd St",
+                "city": "Bellevue",
+                "stateOrProvince": "ID",
+                "postalCode": "83313",
+                "country": "US",
+            },
+            location_types=["WAREHOUSE"],
+        )
+        return merchant_location_key
+
+    # ========================================================================
     # Inventory API Methods
     # ========================================================================
 
@@ -205,6 +292,12 @@ class EbaySellClient:
             "product": product,
             "condition": condition,
             "availability": availability,
+            "packageWeightAndSize": {
+                "weight": {
+                    "value": 1.0,  # Default 1 lb for books
+                    "unit": "POUND"
+                }
+            }
         }
 
         logger.info(f"Creating inventory item: {sku}")
@@ -231,6 +324,9 @@ class EbaySellClient:
         Raises:
             EbaySellError: If creation fails
         """
+        # Ensure inventory location exists
+        self.merchant_location_key = self.ensure_default_location()
+
         # Generate SKU (use ISBN as basis)
         sku = f"BOOK-{book.metadata.isbn}-{int(time.time())}"
 
@@ -247,9 +343,9 @@ class EbaySellClient:
             "imageUrls": [book.metadata.thumbnail] if book.metadata.thumbnail else [],
         }
 
-        # Add ISBN if available
+        # Add ISBN as EAN (ISBN-13 is EAN-13 format)
         if book.metadata.isbn:
-            product["isbn"] = [book.metadata.isbn]
+            product["ean"] = [book.metadata.isbn]
 
         # Availability
         availability = {
@@ -258,15 +354,15 @@ class EbaySellClient:
             }
         }
 
-        # Map condition
+        # Map condition for inventory item (text format with USED_ prefix)
         condition_map = {
             "New": "NEW",
-            "Like New": "LIKE_NEW",
-            "Very Good": "VERY_GOOD",
-            "Good": "GOOD",
-            "Acceptable": "ACCEPTABLE",
+            "Like New": "USED_LIKE_NEW",
+            "Very Good": "USED_VERY_GOOD",
+            "Good": "USED_GOOD",
+            "Acceptable": "USED_ACCEPTABLE",
         }
-        ebay_condition = condition_map.get(condition, "GOOD")
+        ebay_condition = condition_map.get(condition, "USED_GOOD")
 
         self.create_inventory_item(sku, product, ebay_condition, availability)
 
@@ -315,6 +411,7 @@ class EbaySellClient:
         quantity: int,
         category_id: str,
         listing_description: str,
+        condition: str = "USED_GOOD",
         listing_policies: Optional[Dict[str, str]] = None,
     ) -> str:
         """
@@ -328,6 +425,7 @@ class EbaySellClient:
             quantity: Available quantity
             category_id: eBay category ID
             listing_description: Listing description
+            condition: Item condition (e.g., "NEW", "USED_LIKE_NEW", "USED_GOOD")
             listing_policies: Policy IDs (fulfillment, payment, return)
 
         Returns:
@@ -345,7 +443,8 @@ class EbaySellClient:
             "availableQuantity": quantity,
             "categoryId": category_id,
             "listingDescription": listing_description,
-            "listingPolicies": listing_policies or {},
+            "condition": condition,
+            "listingPolicies": listing_policies or self.default_policies,
             "pricingSummary": {
                 "price": {
                     "value": str(price),
@@ -453,6 +552,17 @@ class EbaySellClient:
         # Step 2: Create offer
         description = listing_description or book.metadata.description or book.metadata.title
 
+        # Map condition to eBay condition IDs (numeric) for Books category
+        # According to eBay: 1000=Brand New, 3000=Used, 4000=Very Good, 5000=Good, 6000=Acceptable
+        offer_condition_map = {
+            "NEW": "1000",
+            "LIKE_NEW": "3000",  # Used
+            "VERY_GOOD": "4000",
+            "GOOD": "5000",
+            "ACCEPTABLE": "6000",
+        }
+        ebay_offer_condition = offer_condition_map.get(condition.upper().replace(" ", "_"), "5000")
+
         offer_id = self.create_offer(
             sku=sku,
             marketplace_id=self.marketplace_id,
@@ -461,6 +571,7 @@ class EbaySellClient:
             quantity=quantity,
             category_id=category_id,
             listing_description=description,
+            condition=ebay_offer_condition,
         )
 
         # Step 3: Publish offer

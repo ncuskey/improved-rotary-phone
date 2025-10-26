@@ -17,9 +17,14 @@ lot recommendations in real time.
 - Barcode-friendly GUI for scanning ISBNs with condition and edition tracking.
 - Background refresh jobs with unified progress feedback for cover prefetching,
   metadata/market updates, and BooksRun offer refresh.
-- eBay market intelligence:
-  - Finding API (sold/unsold history and prices) when `EBAY_APP_ID` is configured.
-  - Browse API (active comps and median pricing) when `EBAY_CLIENT_ID` and `EBAY_CLIENT_SECRET` are configured. Marketplace selectable via `EBAY_MARKETPLACE` (default `EBAY_US`).
+- **eBay Integration**:
+  - **Market Intelligence**: Finding API (sold/unsold history) and Browse API (active comps and median pricing)
+  - **✅ Listing Automation**: AI-powered listing creation with OAuth 2.0 User authentication
+    - Generate SEO-optimized titles and descriptions using local Llama 3.1 8B
+    - Automatic inventory item and offer creation via eBay Sell APIs
+    - Business policy management (return, payment, fulfillment)
+    - Real-time publishing to eBay marketplace
+  - See [eBay Listing Sprint 2 Status](docs/EBAY_LISTING_SPRINT2_STATUS.md) for full details
 - Interactive Author Cleanup reviewer with per-cluster approvals and optional book thumbnails (Pillow/requests-backed).
 - Monte Carlo based lot optimiser that favours cohesive sets and recency; also supports series/theme/author-based lot market snapshots.
 - Persistent SQLite catalogue stored under `~/.isbn_lot_optimizer/` with optional

@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote_plus
 
-from fastapi import APIRouter, Depends, Form, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -334,6 +334,7 @@ async def get_book_evaluation_json(
 @router.post("/{isbn}/accept")
 async def accept_book(
     isbn: str,
+    background_tasks: BackgroundTasks,
     condition: Optional[str] = None,
     edition: Optional[str] = None,
     service: BookService = Depends(get_book_service),
@@ -344,6 +345,8 @@ async def accept_book(
     This endpoint explicitly adds the book to the database inventory.
     Books should only be added when the user accepts them (taps "Accept" button),
     not automatically when scanned.
+
+    Lot regeneration runs in the background to avoid blocking other requests.
 
     Args:
         isbn: The ISBN to accept
@@ -362,13 +365,17 @@ async def accept_book(
         )
 
     try:
-        # Use accept_book which will persist to database and log ACCEPT
+        # Accept book WITHOUT lot regeneration (returns immediately)
         book = service.accept_book(
             normalized_isbn,
             condition=condition or "Good",
             edition=edition,
-            recalc_lots=True,
+            recalc_lots=False,  # Don't block - regenerate in background
         )
+
+        # Schedule INCREMENTAL lot update in background (only updates affected lots)
+        # This is much faster than full regeneration: 1-3 eBay calls instead of 122
+        background_tasks.add_task(service.update_lots_for_isbn, normalized_isbn)
 
         result_dict = _book_evaluation_to_dict(book)
         return JSONResponse(

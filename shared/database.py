@@ -628,6 +628,15 @@ class DatabaseManager:
                 lot_payloads,
             )
 
+    def delete_lot_by_name_and_strategy(self, name: str, strategy: str) -> None:
+        """Delete a specific lot by its name and strategy."""
+        _log("delete_lot", name=name, strategy=strategy)
+        with self._get_connection() as conn:
+            conn.execute(
+                "DELETE FROM lots WHERE name = ? AND strategy = ?",
+                (name, strategy)
+            )
+
     def fetch_lots(self) -> List[sqlite3.Row]:
         with self._get_connection() as conn:
             cursor = conn.execute(

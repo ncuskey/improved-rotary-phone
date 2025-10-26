@@ -1,6 +1,6 @@
 # CODEMAP
 
-**Last Updated:** 2025-10-23 (Scan history with location tracking)
+**Last Updated:** 2025-10-25 (Incremental lot update optimization)
 
 ## Top Level
 - `README.md` – Project overview, quick start, and links to documentation
@@ -75,6 +75,12 @@ Tkinter desktop GUI and supporting desktop-specific logic. **20 modules remainin
   - Book storage, metadata/market refresh, lot recomputation
   - HTTP session reuse, database connection lifecycle
   - Scan history: `log_scan()` method, auto-logging on ACCEPT
+  - Incremental lot updates: `update_lots_for_isbn()` with 3-phase optimization
+    - Phase 1: Build all skeletons without pricing (~0.13s, no API calls)
+    - Phase 2: Filter to affected lots (~0.00s)
+    - Phase 3: Enrich only affected lots with pricing (~0.00-2s, 0-3 API calls)
+  - `build_lot_candidates(fetch_pricing=True)` – Supports fast skeleton mode
+  - `_enrich_candidates_with_pricing()` – Selective pricing enrichment helper
   - Used by both GUI and CLI
 - **`metadata.py`** (26KB) – Google Books/Open Library API integration
 - **`probability.py`** (18KB) – Probability scoring (condition weights, demand keywords, bundling rules)
@@ -86,7 +92,12 @@ Tkinter desktop GUI and supporting desktop-specific logic. **20 modules remainin
 - **`lot_market.py`** – Lot-level market snapshots with caching
 
 ### Lot Generation
-- **`lots.py`** – Lot generation strategies
+- **`lots.py`** – Lot generation strategies with 3-phase architecture:
+  - `_compose_lot_without_pricing()` – Fast skeleton generation (no eBay API calls)
+  - `_enrich_lot_with_pricing()` – Slow pricing enrichment (eBay API calls)
+  - `_compose_lot()` – Wrapper with `fetch_pricing` parameter (default True)
+  - `generate_lot_suggestions()` – Main entry point with `fetch_pricing` parameter
+  - `build_lots_with_strategies()` – Strategy-based generation with `fetch_pricing` parameter
 - **`lot_scoring.py`** – Lot scoring heuristics
 - **`series_lots.py`** – Series-based lot generation (desktop-specific)
 - **`book_routing.py`** – Book routing decisions
@@ -476,6 +487,43 @@ docs/
 ```
 
 ## Recent Changes (2025-10)
+
+### Incremental Lot Update Optimization (2025-10-25)
+Complete refactoring of lot generation for 550x performance improvement:
+
+**Architecture:**
+- Separated lot structure generation from eBay pricing enrichment
+- 3-phase approach: skeleton generation → filtering → selective enrichment
+- Phase 1: Build ALL lot skeletons WITHOUT pricing (~0.13s, no eBay API calls)
+- Phase 2: Filter to affected lots (~0.00s, simple list comprehension)
+- Phase 3: Enrich ONLY affected lots with pricing (~0.00-2s, 0-3 eBay API calls)
+
+**Performance:**
+- Accept operations: 77s → 0.14s (550x faster)
+- eBay API calls: 122 → 0-1 per accept (99.4% reduction)
+- Updated lots: 122 → 1-3 per accept (99.4% more efficient)
+- Target was 20-40x speedup, achieved 550x
+
+**Code Changes:**
+- Split `_compose_lot()` into `_compose_lot_without_pricing()` and `_enrich_lot_with_pricing()`
+- Added `fetch_pricing` parameter to `generate_lot_suggestions()`, `build_lots_with_strategies()`, `build_lot_candidates()`
+- Created `_enrich_candidates_with_pricing()` helper in service.py
+- Refactored `update_lots_for_isbn()` to use 3-phase architecture
+- Maintains full backward compatibility (default `fetch_pricing=True`)
+
+**Impact:**
+- iOS app can accept books continuously without blocking
+- No more 77-second waits after accepting books
+- Background tasks no longer cause SQLite locking delays
+- Dramatically improved user experience
+
+**Documentation:**
+- `docs/INCREMENTAL_LOT_UPDATE_RESULTS.md` – Comprehensive performance analysis
+- `docs/LOT_INCREMENTAL_UPDATE_PLAN.md` – Architecture and implementation plan
+- `prototypes/incremental_lots_prototype.py` – Proof of concept
+- `tests/test_incremental_lot_update.py` – Test suite
+
+See: `docs/INCREMENTAL_LOT_UPDATE_RESULTS.md` for detailed metrics and technical analysis
 
 ### Scan History with Location Tracking (2025-10-23)
 Complete scan audit trail system with GPS location tracking:

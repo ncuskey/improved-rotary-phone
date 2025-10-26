@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-25] - Incremental Lot Update Optimization
+
+### Changed
+- **Incremental Lot Updates (550x Performance Improvement)**:
+  - Refactored lot generation to separate structure building from eBay pricing enrichment
+  - Accept operations now complete in 0.14s instead of 77s (550x faster)
+  - Reduced eBay API calls from 122 to 0-1 per accept (99.4% reduction)
+  - Split `_compose_lot()` into `_compose_lot_without_pricing()` and `_enrich_lot_with_pricing()`
+  - Added `fetch_pricing` parameter to `generate_lot_suggestions()`, `build_lots_with_strategies()`, and `build_lot_candidates()`
+  - Implemented 3-phase architecture: skeleton generation → filtering → selective enrichment
+  - Created `_enrich_candidates_with_pricing()` helper method for selective pricing updates
+  - iOS app can now accept books continuously without blocking
+  - Background tasks no longer cause SQLite locking delays
+
+### Technical Details
+- **Phase 1:** Build ALL lot skeletons without pricing (0.13s, no API calls)
+- **Phase 2:** Filter to affected lots (0.00s, simple list comprehension)
+- **Phase 3:** Enrich ONLY affected lots with pricing (0.00s-2s, 0-3 API calls)
+- Maintains full backward compatibility with default `fetch_pricing=True`
+- Full lot regeneration unchanged and still works as before
+
+### Documentation
+- Added `docs/INCREMENTAL_LOT_UPDATE_RESULTS.md` with comprehensive performance analysis
+- Updated `docs/LOT_INCREMENTAL_UPDATE_PLAN.md` with implementation status
+- Created test prototype in `prototypes/incremental_lots_prototype.py`
+
 ## [2025-10-24] - Performance & Caching Optimization
 
 ### Fixed

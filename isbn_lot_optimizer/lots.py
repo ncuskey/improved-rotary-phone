@@ -83,13 +83,19 @@ def _first_genre(book: BookEvaluation) -> str | None:
     return None
 
 
-def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[Path] = None) -> List[LotSuggestion]:
+def generate_lot_suggestions(
+    books: Sequence[BookEvaluation],
+    db_path: Optional[Path] = None,
+    fetch_pricing: bool = True
+) -> List[LotSuggestion]:
     """
     Generate lot suggestions using multiple strategies.
 
     Args:
         books: List of book evaluations
         db_path: Optional path to books.db for enhanced series matching
+        fetch_pricing: If True (default), fetches eBay pricing (slow).
+                      If False, uses only individual book pricing (fast).
 
     Returns:
         List of lot suggestions
@@ -135,6 +141,7 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[
                 _probability_summary(author_books),
             ],
             author_name=canonical_name,
+            fetch_pricing=fetch_pricing,
         )
         if suggestion:
             suggestion.canonical_author = canonical_name
@@ -186,6 +193,7 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[
                 justification=justification,
                 series_name=series_name,
                 author_name=canonical_name,
+                fetch_pricing=fetch_pricing,
             )
             if suggestion:
                 suggestion.series_name = series_name
@@ -206,6 +214,7 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[
                 f"Aggregate estimated value ${_sum_price(low_value):.2f}",
                 _probability_summary(low_value),
             ],
+            fetch_pricing=fetch_pricing,
         )
         if suggestion:
             suggestions.append(suggestion)
@@ -215,7 +224,7 @@ def generate_lot_suggestions(books: Sequence[BookEvaluation], db_path: Optional[
     return suggestions
 
 
-def _compose_lot(
+def _compose_lot_without_pricing(
     name: str,
     strategy: str,
     books: Sequence[BookEvaluation],
@@ -224,12 +233,14 @@ def _compose_lot(
     author_name: Optional[str] = None
 ) -> LotSuggestion | None:
     """
-    Compose a lot suggestion with market-based pricing when available.
+    Compose a lot suggestion WITHOUT fetching market pricing (fast).
 
-    For series and author lots, attempts to fetch eBay lot comp pricing
-    and compares it to individual book pricing.
+    This builds the lot structure using only individual book prices from the database.
+    Use _enrich_lot_with_pricing() to add market pricing later.
+
+    This is the FAST path for incremental updates.
     """
-    # Calculate individual book pricing
+    # Calculate individual book pricing (already in database, no API calls)
     individual_value = _sum_price(books)
     if individual_value < 10:
         return None
@@ -241,86 +252,148 @@ def _compose_lot(
     sell_through = sum(sell_through_values) / len(sell_through_values) if sell_through_values else None
     label = _classify(probability_score)
 
-    # Initialize lot pricing fields
-    lot_market_value = None
-    lot_optimal_size = None
-    lot_per_book_price = None
-    lot_comps_count = None
-    use_lot_pricing = False
-    final_value = individual_value
-    updated_justification = list(justification)
-
-    # Fetch lot market pricing for series and author lots
-    if LOT_PRICING_AVAILABLE and strategy in ("series", "author") and len(books) >= 2:
-        try:
-            # Determine search term
-            search_series = series_name
-            search_author = author_name
-
-            # For series lots, prefer series name
-            if strategy == "series" and search_series:
-                lot_pricing = get_lot_pricing_for_series(search_series, search_author)
-            # For author lots, use author name
-            elif strategy == "author" and search_author:
-                # Search for "Author Name Lot" to find author collections
-                from isbn_lot_optimizer.market import search_ebay_lot_comps
-                lot_pricing = search_ebay_lot_comps(f"{search_author} lot", limit=50)
-            else:
-                lot_pricing = None
-
-            # If we found lot comps, calculate market-based value
-            if lot_pricing and lot_pricing.get("total_comps", 0) > 0:
-                lot_comps_count = lot_pricing["total_comps"]
-                lot_optimal_size = lot_pricing.get("optimal_lot_size")
-                lot_per_book_price = lot_pricing.get("optimal_per_book_price")
-
-                if lot_per_book_price:
-                    # Calculate market value for our lot size
-                    lot_market_value = round(lot_per_book_price * len(books), 2)
-
-                    # Always prefer lot comp pricing as more direct comparable
-                    use_lot_pricing = True
-                    final_value = lot_market_value
-
-                    # Update justification with pricing comparison
-                    pricing_comparison = (
-                        f"Market lot pricing: ${lot_market_value:.2f} "
-                        f"(${lot_per_book_price:.2f}/book based on {lot_comps_count} eBay comps)"
-                    )
-                    updated_justification.insert(0, pricing_comparison)
-
-                    # Show comparison to individual pricing
-                    if lot_market_value > individual_value:
-                        benefit = lot_market_value - individual_value
-                        benefit_pct = (benefit / individual_value) * 100
-                        updated_justification.insert(1, f"+${benefit:.2f} ({benefit_pct:.0f}%) vs individual pricing (${individual_value:.2f})")
-                    else:
-                        diff = individual_value - lot_market_value
-                        diff_pct = (diff / individual_value) * 100
-                        updated_justification.insert(1, f"Individual pricing higher: ${individual_value:.2f} (+${diff:.2f}/+{diff_pct:.0f}%)")
-        except Exception as e:
-            # Log error but continue - lot pricing is optional enhancement
-            import traceback
-            print(f"⚠️ Lot pricing search failed for '{search_series or search_author}': {e}")
-            print(traceback.format_exc())
-            pass
-
+    # No pricing fetch - use individual value as default
     return LotSuggestion(
         name=name,
         strategy=strategy,
         book_isbns=[book.isbn for book in books],
-        estimated_value=round(final_value, 2),
+        estimated_value=round(individual_value, 2),
         probability_score=round(probability_score, 1),
         probability_label=label,
         sell_through=sell_through,
-        justification=updated_justification,
-        lot_market_value=lot_market_value,
-        lot_optimal_size=lot_optimal_size,
-        lot_per_book_price=lot_per_book_price,
-        lot_comps_count=lot_comps_count,
-        use_lot_pricing=use_lot_pricing,
-        individual_value=round(individual_value, 2) if individual_value else None,
+        justification=list(justification),
+        lot_market_value=None,
+        lot_optimal_size=None,
+        lot_per_book_price=None,
+        lot_comps_count=None,
+        use_lot_pricing=False,
+        individual_value=round(individual_value, 2),
     )
+
+
+def _enrich_lot_with_pricing(
+    lot: LotSuggestion,
+    books: Sequence[BookEvaluation],
+    series_name: Optional[str] = None,
+    author_name: Optional[str] = None
+) -> LotSuggestion:
+    """
+    Enrich an existing lot with eBay market pricing (slow - API calls).
+
+    Takes a lot created by _compose_lot_without_pricing() and adds market pricing.
+    Only call this for lots that need pricing updates (incremental updates).
+
+    This is the SLOW path that makes eBay API calls.
+    """
+    if not LOT_PRICING_AVAILABLE:
+        return lot
+
+    if lot.strategy not in ("series", "author") or len(books) < 2:
+        return lot
+
+    # Get individual value for comparison
+    individual_value = lot.individual_value or lot.estimated_value
+
+    try:
+        # Determine search term
+        search_series = series_name
+        search_author = author_name
+
+        # For series lots, prefer series name
+        if lot.strategy == "series" and search_series:
+            lot_pricing = get_lot_pricing_for_series(search_series, search_author)
+        # For author lots, use author name
+        elif lot.strategy == "author" and search_author:
+            # Search for "Author Name Lot" to find author collections
+            from isbn_lot_optimizer.market import search_ebay_lot_comps
+            lot_pricing = search_ebay_lot_comps(f"{search_author} lot", limit=50)
+        else:
+            return lot
+
+        # If we found lot comps, update with market-based value
+        if lot_pricing and lot_pricing.get("total_comps", 0) > 0:
+            lot_comps_count = lot_pricing["total_comps"]
+            lot_optimal_size = lot_pricing.get("optimal_lot_size")
+            lot_per_book_price = lot_pricing.get("optimal_per_book_price")
+
+            if lot_per_book_price:
+                # Calculate market value for our lot size
+                lot_market_value = round(lot_per_book_price * len(books), 2)
+
+                # Update justification with pricing comparison
+                updated_justification = list(lot.justification)
+                pricing_comparison = (
+                    f"Market lot pricing: ${lot_market_value:.2f} "
+                    f"(${lot_per_book_price:.2f}/book based on {lot_comps_count} eBay comps)"
+                )
+                updated_justification.insert(0, pricing_comparison)
+
+                # Show comparison to individual pricing
+                if lot_market_value > individual_value:
+                    benefit = lot_market_value - individual_value
+                    benefit_pct = (benefit / individual_value) * 100
+                    updated_justification.insert(1, f"+${benefit:.2f} ({benefit_pct:.0f}%) vs individual pricing (${individual_value:.2f})")
+                else:
+                    diff = individual_value - lot_market_value
+                    diff_pct = (diff / individual_value) * 100
+                    updated_justification.insert(1, f"Individual pricing higher: ${individual_value:.2f} (+${diff:.2f}/+{diff_pct:.0f}%)")
+
+                # Return enriched lot
+                return LotSuggestion(
+                    name=lot.name,
+                    strategy=lot.strategy,
+                    book_isbns=lot.book_isbns,
+                    estimated_value=round(lot_market_value, 2),
+                    probability_score=lot.probability_score,
+                    probability_label=lot.probability_label,
+                    sell_through=lot.sell_through,
+                    justification=updated_justification,
+                    lot_market_value=lot_market_value,
+                    lot_optimal_size=lot_optimal_size,
+                    lot_per_book_price=lot_per_book_price,
+                    lot_comps_count=lot_comps_count,
+                    use_lot_pricing=True,
+                    individual_value=individual_value,
+                )
+    except Exception as e:
+        # Log error but continue - lot pricing is optional enhancement
+        import traceback
+        print(f"⚠️ Lot pricing search failed for '{search_series or search_author}': {e}")
+        print(traceback.format_exc())
+
+    return lot
+
+
+def _compose_lot(
+    name: str,
+    strategy: str,
+    books: Sequence[BookEvaluation],
+    justification: Sequence[str],
+    series_name: Optional[str] = None,
+    author_name: Optional[str] = None,
+    fetch_pricing: bool = True
+) -> LotSuggestion | None:
+    """
+    Compose a lot suggestion, optionally with market-based pricing.
+
+    Args:
+        fetch_pricing: If True (default), fetches eBay pricing (slow).
+                      If False, uses only individual book pricing (fast).
+
+    For incremental updates, use fetch_pricing=False to build structures quickly,
+    then call _enrich_lot_with_pricing() only on affected lots.
+    """
+    # Build lot structure without pricing (always fast)
+    lot = _compose_lot_without_pricing(name, strategy, books, justification, series_name, author_name)
+
+    if lot is None:
+        return None
+
+    # Optionally enrich with market pricing (slow - eBay API calls)
+    if fetch_pricing:
+        lot = _enrich_lot_with_pricing(lot, books, series_name, author_name)
+
+    return lot
 
 
 def _sum_price(books: Sequence[BookEvaluation]) -> float:
@@ -356,10 +429,20 @@ def _infer_series_name(book: BookEvaluation) -> str | None:
     return None
 
 
-def build_lots_with_strategies(books: Sequence[BookEvaluation], strategies: set[str]) -> List[LotSuggestion]:
+def build_lots_with_strategies(
+    books: Sequence[BookEvaluation],
+    strategies: set[str],
+    fetch_pricing: bool = True
+) -> List[LotSuggestion]:
     """
     Build lots using only the selected strategies from {'author','series','genre'}.
     Falls back gracefully if metadata is missing.
+
+    Args:
+        books: List of book evaluations
+        strategies: Set of strategies to use ('author', 'series', 'genre')
+        fetch_pricing: If True (default), fetches eBay pricing (slow).
+                      If False, uses only individual book pricing (fast).
     """
     selected = set(strategies or ()) & {"author", "series", "genre"}
     if not selected:
@@ -390,6 +473,7 @@ def build_lots_with_strategies(books: Sequence[BookEvaluation], strategies: set[
                     _probability_summary(author_books),
                 ],
                 author_name=author,
+                fetch_pricing=fetch_pricing,
             )
             if suggestion:
                 suggestions.append(suggestion)
@@ -433,6 +517,7 @@ def build_lots_with_strategies(books: Sequence[BookEvaluation], strategies: set[
                 books=series_books,
                 justification=justification,
                 series_name=series_name,
+                fetch_pricing=fetch_pricing,
             )
             if suggestion:
                 suggestion.series_name = series_name
@@ -458,6 +543,7 @@ def build_lots_with_strategies(books: Sequence[BookEvaluation], strategies: set[
                     f"Aggregate estimated value ${_sum_price(genre_books):.2f}",
                     _probability_summary(genre_books),
                 ],
+                fetch_pricing=fetch_pricing,
             )
             if suggestion:
                 suggestions.append(suggestion)

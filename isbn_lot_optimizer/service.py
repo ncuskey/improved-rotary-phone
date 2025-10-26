@@ -225,13 +225,14 @@ class BookService:
 
         if include_market and self.bookscouter_api_key:
             try:
-                bookscouter_metadata_raw = fetch_bookscouter_metadata(
-                    normalized,
-                    api_key=self.bookscouter_api_key,
-                    base_url=self.bookscouter_base_url,
-                    timeout=int(self.bookscouter_timeout),
-                    session=self._bookscouter_session,
-                )
+                with timer(f"BookScouter metadata: {normalized}", log=True, record=False):
+                    bookscouter_metadata_raw = fetch_bookscouter_metadata(
+                        normalized,
+                        api_key=self.bookscouter_api_key,
+                        base_url=self.bookscouter_base_url,
+                        timeout=int(self.bookscouter_timeout),
+                        session=self._bookscouter_session,
+                    )
                 if bookscouter_metadata_raw:
                     # Extract Amazon rank
                     rank_value = bookscouter_metadata_raw.get("AmazonSalesRank")
@@ -248,8 +249,9 @@ class BookService:
 
         # Fallback to Google Books if BookScouter didn't provide metadata
         if metadata is None:
-            metadata_payload = fetch_metadata(self.metadata_session, normalized, delay=self.metadata_delay)
-            metadata = self._build_metadata_from_payload(normalized, metadata_payload)
+            with timer(f"Google Books metadata: {normalized}", log=True, record=False):
+                metadata_payload = fetch_metadata(self.metadata_session, normalized, delay=self.metadata_delay)
+                metadata = self._build_metadata_from_payload(normalized, metadata_payload)
 
         existing_row = self.db.fetch_book(normalized)
         existing_quantity = 1
@@ -275,7 +277,8 @@ class BookService:
         if include_market and self.ebay_app_id:
             # Use v2 API which includes Browse API + sold comps (Track B)
             try:
-                stats_dict = fetch_market_stats_v2(normalized, include_sold_comps=True)
+                with timer(f"eBay market stats v2: {normalized}", log=True, record=False):
+                    stats_dict = fetch_market_stats_v2(normalized, include_sold_comps=True)
                 if stats_dict and "error" not in stats_dict:
                     # Store for later use (estimated_price override and persistence)
                     v2_stats_result = stats_dict
@@ -312,14 +315,16 @@ class BookService:
         booksrun_offer: Optional[BooksRunOffer] = None
         bookscouter_result: Optional[BookScouterResult] = None
         if include_market:
-            booksrun_offer = self._fetch_booksrun_offer(normalized, condition=condition)
+            with timer(f"BooksRun offer: {normalized}", log=True, record=False):
+                booksrun_offer = self._fetch_booksrun_offer(normalized, condition=condition)
 
             # Always fetch Amazon data (includes price, rank, count)
             # Even if we got rank from metadata fetch, we need price and count
-            bookscouter_result = self._fetch_bookscouter_offers_internal(
-                normalized,
-                fetch_amazon_rank=True  # Always True to get full Amazon data
-            )
+            with timer(f"BookScouter offers (+ Amazon): {normalized}", log=True, record=False):
+                bookscouter_result = self._fetch_bookscouter_offers_internal(
+                    normalized,
+                    fetch_amazon_rank=True  # Always True to get full Amazon data
+                )
 
             # Use Amazon rank from BookScouter result if we didn't get it from metadata
             if amazon_rank is None and bookscouter_result:
@@ -337,11 +342,14 @@ class BookService:
         )
         evaluation.quantity = max(1, existing_quantity)
 
-        self._register_book_in_series_index(evaluation)
+        with timer(f"Series registration: {normalized}", log=True, record=False):
+            self._register_book_in_series_index(evaluation)
         # Check for series matches BEFORE tracking this scan
-        self._enhance_evaluation_with_series_context(evaluation)
+        with timer(f"Series context enhancement: {normalized}", log=True, record=False):
+            self._enhance_evaluation_with_series_context(evaluation)
         # Now track this scan for future series-aware recommendations
-        self._track_recent_scan(evaluation)
+        with timer(f"Track recent scan: {normalized}", log=True, record=False):
+            self._track_recent_scan(evaluation)
 
         # Use existing v2_stats_result to set estimated_price (already fetched above)
         if v2_stats_result:
@@ -1254,7 +1262,8 @@ class BookService:
         changed = self._update_book_fields_single(isbn, fields, raise_if_missing=True)
         if changed:
             self.series_index.save_if_dirty()
-            self.recalculate_lots()
+            # Don't recalculate lots - updating book attributes doesn't change lot composition
+            # Lots are only recalculated when books are accepted/rejected
 
     def update_books_fields(self, isbns: Iterable[str], fields: Dict[str, Any]) -> int:
         updated_count = 0
@@ -1267,7 +1276,8 @@ class BookService:
                 updated_count += 1
         if updated_count:
             self.series_index.save_if_dirty()
-            self.recalculate_lots()
+            # Don't recalculate lots - updating book attributes doesn't change lot composition
+            # Lots are only recalculated when books are accepted/rejected
         return updated_count
 
     def delete_books(self, isbns: Iterable[str]) -> int:
@@ -1684,7 +1694,14 @@ class BookService:
         """
         return self.list_lots()
 
-    def build_lot_candidates(self) -> List[LotCandidate]:
+    def build_lot_candidates(self, fetch_pricing: bool = True) -> List[LotCandidate]:
+        """
+        Build lot candidates from accepted books.
+
+        Args:
+            fetch_pricing: If True (default), fetches eBay pricing (slow).
+                          If False, uses only individual book pricing (fast).
+        """
         with timer("List books from database", log=True, record=True):
             books = self.list_books()
         if not books:
@@ -1696,11 +1713,11 @@ class BookService:
 
         if hasattr(self, "lot_strategies") and getattr(self, "lot_strategies"):
             with timer("Build lots with strategies", log=True, record=True):
-                suggestions = build_lots_with_strategies(books, set(self.lot_strategies))
+                suggestions = build_lots_with_strategies(books, set(self.lot_strategies), fetch_pricing=fetch_pricing)
         else:
             # Pass db_path for enhanced series lots
             with timer("Generate lot suggestions", log=True, record=True):
-                suggestions = generate_lot_suggestions(books, db_path=Path(self.db.db_path))
+                suggestions = generate_lot_suggestions(books, db_path=Path(self.db.db_path), fetch_pricing=fetch_pricing)
 
         author_groups: Dict[str, List[BookEvaluation]] = defaultdict(list)
        
@@ -2307,6 +2324,138 @@ class BookService:
                 self.save_lots(candidates)
             with timer("Convert to suggestions", log=True, record=True):
                 result = [self._candidate_to_suggestion(lot) for lot in candidates]
+
+        # Print timing report
+        print("\n" + stats.report() + "\n")
+        return result
+
+    def _enrich_candidates_with_pricing(self, candidates: List[LotCandidate]) -> List[LotCandidate]:
+        """
+        Enrich lot candidates with eBay market pricing.
+
+        This is the SLOW operation that makes eBay API calls. Only call this for
+        candidates that need pricing updates (e.g., affected lots in incremental update).
+
+        Args:
+            candidates: List of lot candidates to enrich
+
+        Returns:
+            List of enriched lot candidates with market pricing
+        """
+        from isbn_lot_optimizer.lots import _enrich_lot_with_pricing
+        from shared.models import LotSuggestion
+
+        enriched = []
+        for candidate in candidates:
+            # Get the books for this lot
+            books = candidate.books if hasattr(candidate, 'books') and candidate.books else []
+
+            # Convert candidate to LotSuggestion for enrichment
+            suggestion = LotSuggestion(
+                name=candidate.name,
+                strategy=candidate.strategy,
+                book_isbns=list(candidate.book_isbns),
+                estimated_value=candidate.estimated_value,
+                probability_score=candidate.probability_score,
+                probability_label=candidate.probability_label,
+                sell_through=candidate.sell_through,
+                justification=list(candidate.justification),
+                lot_market_value=candidate.lot_market_value,
+                lot_optimal_size=candidate.lot_optimal_size,
+                lot_per_book_price=candidate.lot_per_book_price,
+                lot_comps_count=candidate.lot_comps_count,
+                use_lot_pricing=candidate.use_lot_pricing,
+                individual_value=candidate.estimated_value,  # Use estimated_value as individual_value
+            )
+
+            # Enrich the lot suggestion with pricing
+            enriched_suggestion = _enrich_lot_with_pricing(
+                suggestion,
+                books=books,
+                series_name=getattr(candidate, 'series_name', None),
+                author_name=getattr(candidate, 'canonical_author', None)
+            )
+
+            # Update candidate with enriched pricing data
+            candidate.estimated_value = enriched_suggestion.estimated_value
+            candidate.lot_market_value = enriched_suggestion.lot_market_value
+            candidate.lot_optimal_size = enriched_suggestion.lot_optimal_size
+            candidate.lot_per_book_price = enriched_suggestion.lot_per_book_price
+            candidate.lot_comps_count = enriched_suggestion.lot_comps_count
+            candidate.use_lot_pricing = enriched_suggestion.use_lot_pricing
+            candidate.justification = list(enriched_suggestion.justification)
+
+            enriched.append(candidate)
+
+        return enriched
+
+    def update_lots_for_isbn(self, isbn: str) -> List[LotSuggestion]:
+        """
+        Incrementally update only the lots that contain the specified ISBN.
+
+        This uses the optimized incremental update architecture:
+        1. Build ALL lot skeletons WITHOUT pricing (fast, ~1s for 175 lots)
+        2. Filter to only lots containing the ISBN
+        3. Enrich ONLY affected lots with eBay pricing (1-3 API calls instead of 122)
+
+        This achieves 20-40x speedup compared to full regeneration.
+
+        Args:
+            isbn: The ISBN of the book to update lots for
+
+        Returns:
+            List of updated lot suggestions (only the affected ones)
+        """
+        from shared.utils import normalise_isbn
+
+        normalized_isbn = normalise_isbn(isbn)
+        if not normalized_isbn:
+            return []
+
+        # Get the book to check it exists
+        book = self.get_book(normalized_isbn)
+        if not book:
+            return []
+
+        print(f"\n⚡ Incremental lot update for ISBN {normalized_isbn}")
+        stats = get_stats()
+        stats.start()
+
+        with timer("TOTAL: Incremental lot update", log=True, record=True):
+            # Phase 1: Build ALL lot skeletons WITHOUT pricing (fast - no eBay API calls)
+            with timer("Phase 1: Build lot skeletons (no pricing)", log=True, record=True):
+                all_skeleton_candidates = self.build_lot_candidates(fetch_pricing=False)
+
+            # Phase 2: Filter to only lots containing the new ISBN
+            with timer("Phase 2: Filter to affected lots", log=True, record=True):
+                affected_skeletons = [
+                    lot for lot in all_skeleton_candidates
+                    if normalized_isbn in lot.book_isbns
+                ]
+
+            if not affected_skeletons:
+                print(f"  No lots contain ISBN {normalized_isbn}, skipping update")
+                return []
+
+            print(f"  Found {len(affected_skeletons)} affected lots (out of {len(all_skeleton_candidates)} total)")
+            print(f"  Savings: {((len(all_skeleton_candidates) - len(affected_skeletons)) / len(all_skeleton_candidates) * 100):.1f}% fewer eBay calls")
+
+            # Phase 3: Enrich ONLY affected lots with eBay pricing (1-3 API calls)
+            with timer("Phase 3: Enrich affected lots with pricing", log=True, record=True):
+                enriched_candidates = self._enrich_candidates_with_pricing(affected_skeletons)
+
+            # Delete old versions of affected lots from database
+            with timer("Delete old affected lots", log=True, record=True):
+                affected_names = [(lot.name, lot.strategy) for lot in enriched_candidates]
+                for name, strategy in affected_names:
+                    self.db.delete_lot_by_name_and_strategy(name, strategy)
+
+            # Save enriched lots to database
+            with timer("Save updated lots", log=True, record=True):
+                self.save_lots(enriched_candidates)
+
+            with timer("Convert to suggestions", log=True, record=True):
+                result = [self._candidate_to_suggestion(lot) for lot in enriched_candidates]
 
         # Print timing report
         print("\n" + stats.report() + "\n")

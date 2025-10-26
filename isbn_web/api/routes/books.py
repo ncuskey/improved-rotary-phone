@@ -289,7 +289,7 @@ async def get_book_evaluation_json(
 
     # If condition or edition are provided, rebuild evaluation with new attributes
     if condition is not None or edition is not None:
-        from isbn_lot_optimizer.probability import build_book_evaluation
+        from shared.probability import build_book_evaluation
         import logging
         logger = logging.getLogger(__name__)
 

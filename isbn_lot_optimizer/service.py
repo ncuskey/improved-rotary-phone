@@ -53,7 +53,7 @@ from shared.models import (
     LotSuggestion,
     VendorOffer,
 )
-from .probability import build_book_evaluation
+from shared.probability import build_book_evaluation
 from .lots import build_lots_with_strategies, generate_lot_suggestions
 from shared.series_catalog import get_or_fetch_series_for_authors
 from shared.series_finder import attach_series

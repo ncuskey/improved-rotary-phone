@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-25] - Fix Author Lot Generation (canonical_author)
+
+### Fixed
+- **Critical Bug**: Fixed `canonical_author()` function in `shared/author_aliases.py` to correctly handle "Last, First" formatted author names
+  - Previously: `"Martin,George R.R."` → `"martin"` (just last name)
+  - Now: `"Martin,George R.R."` → `"george r r martin"` (full name reversed)
+  - Root cause: Function was splitting on comma and taking only first part, which was the last name in "Last, First" format
+
+### Impact
+- **Fixed 114 books** with incorrectly calculated canonical_author values
+- **Author lots now work correctly** for books with "Last, First" name format
+- **George R. R. Martin books** now correctly group into an author lot:
+  - "A Storm of Swords" + "A Dance with Dragons"
+  - Combined value: $21.83
+  - Previously these books were not forming a lot due to too-generic canonical_author ("martin")
+- **Other affected authors fixed**: Stephen King, Louise Erdrich, C.J. Box, Kristin Hannah, and many more
+
+### Technical Details
+The fix detects "Last, First" format (presence of comma) and reverses it to "First Last" format before applying standard canonicalization logic. This ensures that:
+1. Authors with same name in different formats group together correctly
+2. Canonical names are specific enough to distinguish different authors with same last name
+3. Lot generation can properly identify author collections
+
+### Database Migration
+- Ran migration script to update `canonical_author` in `metadata_json` for all affected books
+- Migration updated 114 out of 759 books with metadata
+- No schema changes required (canonical_author stored in metadata_json)
+
 ## [2025-10-25] - Comprehensive Test Suite Creation
 
 ### Added

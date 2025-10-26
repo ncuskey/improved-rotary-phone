@@ -1115,3 +1115,50 @@ struct ScanStatistics: Codable {
         case uniqueLocations = "unique_locations"
     }
 }
+
+// MARK: - eBay Listing Extension
+
+extension BookAPI {
+    /// Create an eBay listing from a draft
+    static func createEbayListing(draft: EbayListingDraft) async throws -> EbayListingResponse {
+        guard let url = URL(string: "\(baseURLString)/api/ebay/create-listing") else {
+            throw URLError(.badURL)
+        }
+
+        let payload = draft.toAPIPayload()
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+
+        print("📡 Creating eBay listing for ISBN: \(draft.isbn)")
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ POST /api/ebay/create-listing failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        let listingResponse = try await decodeOnWorker(EbayListingResponse.self, from: data)
+        print("✓ eBay listing created: \(listingResponse.title)")
+
+        return listingResponse
+    }
+
+    /// Shared singleton for SwiftUI views
+    static let shared = BookAPIShared()
+}
+
+/// Wrapper to provide instance-based access for SwiftUI views
+class BookAPIShared {
+    func createEbayListing(draft: EbayListingDraft) async throws -> EbayListingResponse {
+        try await BookAPI.createEbayListing(draft: draft)
+    }
+}

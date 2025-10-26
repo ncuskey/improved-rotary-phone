@@ -7,6 +7,7 @@ struct BookDetailViewRedesigned: View {
     let record: BookEvaluationRecord
     @State private var lots: [LotSuggestionDTO] = []
     @State private var isLoadingLots = false
+    @State private var showingEbayWizard = false
     @Environment(\.dismiss) private var dismiss
 
     var lotsContainingBook: [LotSuggestionDTO] {
@@ -20,6 +21,9 @@ struct BookDetailViewRedesigned: View {
             VStack(spacing: 16) {
                 // Hero section with cover and title
                 heroSection
+
+                // List to eBay button
+                ebayListingButton
 
                 // Price comparison panel
                 priceComparisonPanel
@@ -63,6 +67,13 @@ struct BookDetailViewRedesigned: View {
         .navigationTitle(record.metadata?.title ?? "Book Details")
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadLots() }
+        .sheet(isPresented: $showingEbayWizard) {
+            if let book = CachedBook(from: record) {
+                EbayListingWizardView(book: book) { response in
+                    print("✓ Listing created: \(response.title)")
+                }
+            }
+        }
     }
 
     // MARK: - Hero Section
@@ -130,6 +141,35 @@ struct BookDetailViewRedesigned: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - eBay Listing Button
+    @ViewBuilder
+    private var ebayListingButton: some View {
+        Button {
+            showingEbayWizard = true
+        } label: {
+            HStack {
+                Image(systemName: "tag.fill")
+                    .font(.headline)
+                Text("List to eBay")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                LinearGradient(
+                    colors: [.blue, .blue.opacity(0.8)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .foregroundColor(.white)
+            .cornerRadius(12)
+            .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
+        }
+        .padding(.horizontal)
     }
 
     // MARK: - Price Comparison Panel

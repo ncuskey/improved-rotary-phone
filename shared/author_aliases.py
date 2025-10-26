@@ -40,6 +40,14 @@ def canonical_author(credited: Optional[str], *, apply_aliases: bool = True) -> 
     if not lowered:
         return None
 
+    # Detect and reverse "Last, First" format (e.g., "Martin,George R.R." -> "george r r martin")
+    # This handles database entries stored in reversed format
+    if ',' in lowered:
+        parts_comma = [p.strip() for p in lowered.split(',', 1)]
+        if len(parts_comma) == 2 and parts_comma[0] and parts_comma[1]:
+            # Reverse to "First Last" format before further processing
+            lowered = f"{parts_comma[1]} {parts_comma[0]}"
+
     # Split on common delimiters and take first part
     parts = AUTHOR_SPLIT_RE.split(lowered)
     primary = parts[0] if parts else lowered

@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-25] - Simplify Series Categories & Enhanced Lot Sorting
+
+### Changed
+- **Simplified Series Lot Categories**: Reduced from 4 categories to 2 for better clarity
+  - Removed: `series_partial` (50-99% complete) and legacy `series` categories
+  - Kept: `series_complete` (100%) and `series_incomplete` (<100%)
+  - **Standardized Naming**: All series lots now use "Series Name (X/Y Books)" format
+  - Updated across all platforms: iOS app, web interface, and backend
+
+### Added
+- **iOS App - Enhanced Sorting**: Expanded from 2 to 7 sort options in Lots tab:
+  - Name (A-Z) - Sort by lot name alphabetically
+  - **Author (A-Z)** - NEW: Browse series lots by author
+  - Value (High-Low) - Sort by total estimated value
+  - **Value/Book (High-Low)** - NEW: Find best per-book value
+  - **Probability (High-Low)** - NEW: Sort by probability score
+  - **Books (Most-Least)** - NEW: Sort by lot size
+  - **Completion % (High-Low)** - NEW: Find most complete series
+- **iOS App - Improved Filter UX**: Filter menu now stays open for multi-selection
+  - Changed from dropdown Menu to persistent Popover
+  - Select/deselect multiple filters without menu closing
+  - Closes only when tapping outside the popover
+
+### Technical Details
+- **Files Updated**:
+  - `isbn_lot_optimizer/series_lots.py`: Simplified completion logic to 2 categories
+  - `isbn_lot_optimizer/service.py`: Removed series_partial from all checks (3 locations)
+  - `LotHelperApp/LotHelper/LotRecommendationsView.swift`: Added 5 new sort options, popover filter UI
+  - `isbn_web/templates/index.html`: Removed "Partial Series" filter checkbox
+  - `isbn_web/templates/components/lots_table.html`: Updated filter state initialization
+  - `isbn_web/templates/components/lot_detail.html`: Updated series strategy check
+  - `README.md`: Updated documentation to reflect 2 categories
+
+### Benefits
+- **Simpler Mental Model**: Only two clear states - Complete or Incomplete
+- **Better Browsing**: Sort series by author name alphabetically to see all series from a specific author
+- **Value Analysis**: Sort by Value/Book to identify best deals
+- **Progress Tracking**: Sort by Completion % to see which series you're closest to completing
+- **Improved UX**: Multi-select filters without constant reopening
+
 ## [2025-10-25] - Fix Author Lot Generation (canonical_author)
 
 ### Fixed

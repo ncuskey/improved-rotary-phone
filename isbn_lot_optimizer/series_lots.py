@@ -151,18 +151,14 @@ def build_series_lots_enhanced(
             justification.append(f"Estimated value: ${estimated_value:.2f}")
 
             # Determine strategy and name based on completion
+            # Simplified to just two categories: complete (100%) or incomplete (<100%)
             if completion_pct >= 100:
                 strategy = "series_complete"
-                completion_label = "Complete"
-            elif completion_pct >= 50:
-                strategy = "series_partial"
-                completion_label = f"{completion_pct:.0f}% Complete"
             else:
                 strategy = "series_incomplete"
-                completion_label = f"{len(have_positions)}/{book_count} Books"
 
-            # Create informative lot name
-            lot_name = f"{series_title} ({completion_label})"
+            # Standardized naming convention: "Series Name (X/Y Books)"
+            lot_name = f"{series_title} ({len(have_positions)}/{book_count} Books)"
 
             # Create lot suggestion
             lot = LotSuggestion(

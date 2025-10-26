@@ -1879,7 +1879,7 @@ class BookService:
             candidate.display_author_label = display_author_label
             candidate.canonical_author = canonical_author_value or candidate.canonical_author
             # Don't overwrite names for enhanced series lots (they already have completion info)
-            if suggestion.strategy not in ['series_complete', 'series_partial', 'series_incomplete']:
+            if suggestion.strategy not in ['series_complete', 'series_incomplete']:
                 if candidate.series_name:
                     label_tail = f" — {display_author_label}" if display_author_label else ""
                     candidate.name = f"{candidate.series_name}{label_tail}"
@@ -2527,14 +2527,14 @@ class BookService:
         existing_series = {
             cand.canonical_series
             for cand in existing
-            if cand.canonical_series and cand.strategy in ["series", "series_complete", "series_partial", "series_incomplete"]
+            if cand.canonical_series and cand.strategy in ["series", "series_complete", "series_incomplete"]
         }
 
         # Also track ISBN sets from enhanced series lots to detect overlap
         existing_isbn_sets = [
             set(cand.book_isbns)
             for cand in existing
-            if cand.strategy in ["series_complete", "series_partial", "series_incomplete"]
+            if cand.strategy in ["series_complete", "series_incomplete"]
         ]
 
         try:

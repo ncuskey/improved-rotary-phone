@@ -338,13 +338,13 @@ Enhanced series lots using comprehensive data from bookseries.org:
   - Removes subtitles, articles, and punctuation for better matching
 - **Series Lot Generation**:
   - Automatically creates lots grouped by series with completion tracking
-  - Three strategy types:
-    - `series_complete`: 100% complete series (e.g., "Pearl Saga Series (Complete)")
-    - `series_partial`: 50-99% complete series (e.g., "Alex Cross Series (67% Complete)")
-    - `series_incomplete`: <50% complete series (e.g., "Alex Cross Series (12/32 Books)")
+  - Two strategy types:
+    - `series_complete`: 100% complete series (e.g., "A Song Of Ice and Fire Series (5/5 Books)")
+    - `series_incomplete`: <100% complete series (e.g., "Alex Cross Series (12/32 Books)")
+  - Standardized naming convention: "Series Name (X/Y Books)" format
   - Shows which books you have vs. missing in lot justification
 - **Web Interface**:
-  - Filter checkboxes for Complete Series, Partial Series, Incomplete Series
+  - Filter checkboxes for Complete Series and Incomplete Series
   - Beautiful lot detail pages showing series completion with have/missing book lists
   - Purple-highlighted series information with position numbers
 - **Scripts**:

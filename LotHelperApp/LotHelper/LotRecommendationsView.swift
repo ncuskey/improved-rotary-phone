@@ -14,11 +14,17 @@ struct LotRecommendationsView: View {
     @State private var searchText = ""
     @State private var selectedStrategies: Set<LotStrategy> = Set(LotStrategy.allCases)
     @State private var sortOption: SortOption = .value
+    @State private var showingFilterPopover = false
     private var cacheManager: CacheManager { CacheManager(modelContext: modelContext) }
 
     enum SortOption: String, CaseIterable, Identifiable {
         case name = "Name (A-Z)"
+        case author = "Author (A-Z)"
         case value = "Value (High-Low)"
+        case valuePerBook = "Value/Book (High-Low)"
+        case probability = "Probability (High-Low)"
+        case books = "Books (Most-Least)"
+        case completion = "Completion % (High-Low)"
 
         var id: String { rawValue }
     }
@@ -26,9 +32,7 @@ struct LotRecommendationsView: View {
     enum LotStrategy: String, CaseIterable, Identifiable {
         case author = "Author"
         case seriesComplete = "Series (Complete)"
-        case seriesPartial = "Series (Partial)"
         case seriesIncomplete = "Series (Incomplete)"
-        case series = "Series"
         case value = "Value Bundle"
 
         var id: String { rawValue }
@@ -39,15 +43,8 @@ struct LotRecommendationsView: View {
                 return strategy.contains("author")
             case .seriesComplete:
                 return strategy.contains("series_complete")
-            case .seriesPartial:
-                return strategy.contains("series_partial")
             case .seriesIncomplete:
                 return strategy.contains("series_incomplete")
-            case .series:
-                return strategy.contains("series") &&
-                       !strategy.contains("series_complete") &&
-                       !strategy.contains("series_partial") &&
-                       !strategy.contains("series_incomplete")
             case .value:
                 return strategy.contains("value")
             }
@@ -95,8 +92,30 @@ struct LotRecommendationsView: View {
         switch sortOption {
         case .name:
             sorted = filtered.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        case .author:
+            sorted = filtered.sorted { lot1, lot2 in
+                let author1 = lot1.displayAuthorLabel ?? lot1.canonicalAuthor ?? ""
+                let author2 = lot2.displayAuthorLabel ?? lot2.canonicalAuthor ?? ""
+                return author1.localizedCaseInsensitiveCompare(author2) == .orderedAscending
+            }
         case .value:
             sorted = filtered.sorted { $0.estimatedValue > $1.estimatedValue }
+        case .valuePerBook:
+            sorted = filtered.sorted { lot1, lot2 in
+                let perBook1 = lot1.bookIsbns.isEmpty ? 0 : lot1.estimatedValue / Double(lot1.bookIsbns.count)
+                let perBook2 = lot2.bookIsbns.isEmpty ? 0 : lot2.estimatedValue / Double(lot2.bookIsbns.count)
+                return perBook1 > perBook2
+            }
+        case .probability:
+            sorted = filtered.sorted { $0.probabilityScore > $1.probabilityScore }
+        case .books:
+            sorted = filtered.sorted { $0.bookIsbns.count > $1.bookIsbns.count }
+        case .completion:
+            sorted = filtered.sorted { lot1, lot2 in
+                let completion1 = extractCompletionPercentage(from: lot1)
+                let completion2 = extractCompletionPercentage(from: lot2)
+                return completion1 > completion2
+            }
         }
 
         // Debug logging
@@ -119,6 +138,35 @@ struct LotRecommendationsView: View {
         print("")
 
         return sorted
+    }
+
+    /// Extract completion percentage from a series lot name
+    /// Format: "Series Name (X/Y Books)" -> returns (X/Y * 100)
+    /// Returns 0 for non-series lots
+    private func extractCompletionPercentage(from lot: LotSuggestionDTO) -> Double {
+        // Only relevant for series lots
+        guard lot.strategy.contains("series") else { return 0 }
+
+        // Parse from name format: "Series Name (X/Y Books)"
+        let name = lot.name
+        guard let openParen = name.lastIndex(of: "("),
+              let closeParen = name.lastIndex(of: ")") else {
+            return 0
+        }
+
+        let content = name[name.index(after: openParen)..<closeParen]
+        let parts = content.split(separator: "/")
+
+        guard parts.count == 2,
+              let currentStr = parts[0].split(separator: " ").first,
+              let totalStr = parts[1].split(separator: " ").first,
+              let current = Double(currentStr),
+              let total = Double(totalStr),
+              total > 0 else {
+            return 0
+        }
+
+        return (current / total) * 100.0
     }
 
     var body: some View {
@@ -200,20 +248,36 @@ struct LotRecommendationsView: View {
                             Label("Sort", systemImage: "arrow.up.arrow.down.circle")
                         }
 
-                        // Filter menu
-                        Menu {
-                            ForEach(LotStrategy.allCases) { strategy in
-                                Button {
-                                    toggleStrategy(strategy)
-                                } label: {
-                                    Label(
-                                        strategy.rawValue,
-                                        systemImage: selectedStrategies.contains(strategy) ? "checkmark.circle.fill" : "circle"
-                                    )
-                                }
-                            }
+                        // Filter button with popover
+                        Button {
+                            showingFilterPopover = true
                         } label: {
                             Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+                        }
+                        .popover(isPresented: $showingFilterPopover) {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Filter Lots")
+                                    .font(.headline)
+                                    .padding(.bottom, 4)
+
+                                ForEach(LotStrategy.allCases) { strategy in
+                                    Button {
+                                        toggleStrategy(strategy)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: selectedStrategies.contains(strategy) ? "checkmark.circle.fill" : "circle")
+                                                .foregroundStyle(selectedStrategies.contains(strategy) ? .blue : .gray)
+                                            Text(strategy.rawValue)
+                                                .foregroundStyle(DS.Color.textPrimary)
+                                            Spacer()
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding()
+                            .frame(minWidth: 220)
+                            .presentationCompactAdaptation(.popover)
                         }
                     }
                 }
@@ -336,12 +400,8 @@ private struct LotSummaryRow: View {
         let strategy = lot.strategy
         if strategy.contains("series_complete") {
             return ("Complete", .green)
-        } else if strategy.contains("series_partial") {
-            return ("Partial", .orange)
         } else if strategy.contains("series_incomplete") {
-            return ("Incomplete", .red)
-        } else if strategy.contains("series") {
-            return ("Series", .blue)
+            return ("Incomplete", .orange)
         } else if strategy.contains("author") {
             return ("Author", .purple)
         } else if strategy.contains("value") {
@@ -476,12 +536,8 @@ struct LotDetailView: View {
                     Spacer()
                     if lot.strategy.contains("series_complete") {
                         Text("Series (Complete)").fontWeight(.medium).foregroundStyle(.green)
-                    } else if lot.strategy.contains("series_partial") {
-                        Text("Series (Partial)").fontWeight(.medium).foregroundStyle(.orange)
                     } else if lot.strategy.contains("series_incomplete") {
-                        Text("Series (Incomplete)").fontWeight(.medium).foregroundStyle(.red)
-                    } else if lot.strategy.contains("series") {
-                        Text("Series").fontWeight(.medium).foregroundStyle(.blue)
+                        Text("Series (Incomplete)").fontWeight(.medium).foregroundStyle(.orange)
                     } else if lot.strategy.contains("author") {
                         Text("Author").fontWeight(.medium).foregroundStyle(.purple)
                     } else if lot.strategy.contains("value") {

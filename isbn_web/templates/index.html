@@ -439,7 +439,6 @@
                                Alpine.store('lotFilters', {
                                  author: true,
                                  series_complete: true,
-                                 series_partial: true,
                                  series_incomplete: true,
                                  series: true,  // Legacy series
                                  genre: false,
@@ -464,10 +463,6 @@
                                         <label class="flex items-center text-[11px] cursor-pointer hover:text-green-600 transition-colors">
                                             <input type="checkbox" x-model="$store.lotFilters.series_complete" class="mr-1 rounded cursor-pointer">
                                             <span>Complete Series</span>
-                                        </label>
-                                        <label class="flex items-center text-[11px] cursor-pointer hover:text-yellow-600 transition-colors">
-                                            <input type="checkbox" x-model="$store.lotFilters.series_partial" class="mr-1 rounded cursor-pointer">
-                                            <span>Partial Series</span>
                                         </label>
                                         <label class="flex items-center text-[11px] cursor-pointer hover:text-orange-600 transition-colors">
                                             <input type="checkbox" x-model="$store.lotFilters.series_incomplete" class="mr-1 rounded cursor-pointer">

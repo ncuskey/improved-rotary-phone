@@ -8,6 +8,9 @@ struct BookDetailViewRedesigned: View {
     @State private var lots: [LotSuggestionDTO] = []
     @State private var isLoadingLots = false
     @State private var showingEbayWizard = false
+    @State private var priceVariants: PriceVariantsResponse?
+    @State private var isLoadingVariants = false
+    @State private var showVariantsExpanded = false
     @Environment(\.dismiss) private var dismiss
 
     var lotsContainingBook: [LotSuggestionDTO] {
@@ -27,6 +30,13 @@ struct BookDetailViewRedesigned: View {
 
                 // Price comparison panel
                 priceComparisonPanel
+
+                // Price variants panel (condition and feature adjustments)
+                if let variants = priceVariants {
+                    priceVariantsPanel(variants)
+                } else if isLoadingVariants {
+                    loadingVariantsPanel
+                }
 
                 // Profit analysis (if available)
                 if shouldShowProfitAnalysis {
@@ -67,11 +77,11 @@ struct BookDetailViewRedesigned: View {
         .navigationTitle(record.metadata?.title ?? "Book Details")
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadLots() }
+        .task { await loadPriceVariants() }
         .sheet(isPresented: $showingEbayWizard) {
-            if let book = CachedBook(from: record) {
-                EbayListingWizardView(book: book) { response in
-                    print("✓ Listing created: \(response.title)")
-                }
+            let book = CachedBook(from: record)
+            EbayListingWizardView(book: book) { response in
+                print("✓ Listing created: \(response.title)")
             }
         }
     }
@@ -128,8 +138,8 @@ struct BookDetailViewRedesigned: View {
 
             // Quick stats
             HStack(spacing: 20) {
-                if let label = record.probabilityLabel {
-                    statBadge(label.uppercased(), color: probabilityColor(for: label))
+                if let tts = ttsCategory(from: record.timeToSellDays) {
+                    statBadge(tts.uppercased(), color: ttsColor(for: tts))
                 }
                 if let condition = record.condition {
                     statBadge(condition, color: .blue)
@@ -183,22 +193,10 @@ struct BookDetailViewRedesigned: View {
                     .font(.headline)
             }
 
-            // Price grid
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                if let ebayPrice = record.market?.soldCompsMedian {
-                    priceCard("eBay Median", ebayPrice, icon: "bag.fill", color: .primary)
-                }
-
-                if let vendorPrice = record.bookscouter?.bestPrice, vendorPrice > 0 {
-                    priceCard("Vendor Best", vendorPrice, icon: "arrow.2.circlepath", color: .green)
-                }
-
-                if let amazonPrice = record.bookscouter?.amazonLowestPrice, amazonPrice > 0 {
-                    priceCard("Amazon Low", amazonPrice, icon: "cart.fill", color: .orange)
-                }
-
-                if let estimated = record.estimatedPrice, estimated > 0 {
-                    priceCard("Estimated", estimated, icon: "chart.bar.fill", color: .blue)
+            // Price list sorted by price (highest to lowest)
+            VStack(spacing: 8) {
+                ForEach(sortedPrices, id: \.label) { priceItem in
+                    priceListRow(priceItem)
                 }
             }
 
@@ -218,26 +216,80 @@ struct BookDetailViewRedesigned: View {
         .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
     }
 
-    // MARK: - Price Card Component
+    private struct PriceItem {
+        let label: String
+        let price: Double?
+        let icon: String
+        let color: Color
+    }
+
+    private var sortedPrices: [PriceItem] {
+        let items = [
+            PriceItem(
+                label: "eBay Median",
+                price: record.market?.soldCompsMedian,
+                icon: "bag.fill",
+                color: .primary
+            ),
+            PriceItem(
+                label: "Vendor Best",
+                price: record.bookscouter?.bestPrice,
+                icon: "arrow.2.circlepath",
+                color: .green
+            ),
+            PriceItem(
+                label: "Amazon Low",
+                price: record.bookscouter?.amazonLowestPrice,
+                icon: "cart.fill",
+                color: .orange
+            ),
+            PriceItem(
+                label: "Estimated",
+                price: record.estimatedPrice,
+                icon: "chart.bar.fill",
+                color: .blue
+            )
+        ]
+
+        // Sort by price descending, nil values at the end
+        return items.sorted { a, b in
+            switch (a.price, b.price) {
+            case (nil, nil): return false
+            case (nil, _): return false
+            case (_, nil): return true
+            case (let priceA?, let priceB?): return priceA > priceB
+            }
+        }
+    }
+
     @ViewBuilder
-    private func priceCard(_ label: String, _ price: Double, icon: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.caption2)
-                    .foregroundStyle(color)
-                Text(label)
-                    .font(.caption)
+    private func priceListRow(_ item: PriceItem) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: item.icon)
+                .font(.body)
+                .foregroundStyle(item.color)
+                .frame(width: 24)
+
+            Text(item.label)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+
+            Spacer()
+
+            if let price = item.price {
+                Text(formattedCurrency(price))
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(item.color)
+            } else {
+                Text("N/A")
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            Text(formattedCurrency(price))
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundStyle(color)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(item.color.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: - Profit Analysis Panel
@@ -710,6 +762,34 @@ struct BookDetailViewRedesigned: View {
         }
     }
 
+    private func ttsCategory(from days: Int?) -> String? {
+        guard let days = days else { return nil }
+        if days <= 30 {
+            return "Fast"
+        } else if days <= 90 {
+            return "Medium"
+        } else if days <= 180 {
+            return "Slow"
+        } else {
+            return "Very Slow"
+        }
+    }
+
+    private func ttsColor(for category: String) -> Color {
+        switch category.lowercased() {
+        case "fast":
+            return .green
+        case "medium":
+            return .blue
+        case "slow":
+            return .orange
+        case "very slow":
+            return .red
+        default:
+            return .gray
+        }
+    }
+
     @MainActor
     private func loadLots() async {
         isLoadingLots = true
@@ -720,5 +800,224 @@ struct BookDetailViewRedesigned: View {
             lots = []
         }
         isLoadingLots = false
+    }
+
+    @MainActor
+    private func loadPriceVariants() async {
+        isLoadingVariants = true
+        defer { isLoadingVariants = false }
+
+        do {
+            let condition = record.condition ?? "Good"
+            priceVariants = try await BookAPI.fetchPriceVariants(record.isbn, condition: condition)
+        } catch {
+            print("Failed to load price variants: \(error.localizedDescription)")
+            priceVariants = nil
+        }
+    }
+
+    // MARK: - Price Variants Panel
+
+    @ViewBuilder
+    private var loadingVariantsPanel: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Image(systemName: "slider.horizontal.3")
+                    .foregroundStyle(.purple)
+                Text("Price Adjustments")
+                    .font(.headline)
+                Spacer()
+            }
+
+            ProgressView()
+                .frame(maxWidth: .infinity)
+                .padding()
+        }
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private func priceVariantsPanel(_ variants: PriceVariantsResponse) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header with toggle
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    showVariantsExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "slider.horizontal.3")
+                        .foregroundStyle(.purple)
+                    Text("Price Adjustments")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: showVariantsExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Summary (always visible)
+            HStack {
+                Text("Current")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("$\(String(format: "%.2f", variants.currentPrice))")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text("(\(variants.currentCondition))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+
+            if showVariantsExpanded {
+                Divider()
+
+                // Condition Variants Section
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Text("By Condition")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                    }
+
+                    VStack(spacing: 6) {
+                        ForEach(variants.conditionVariants.prefix(5)) { variant in
+                            if let condition = variant.condition {
+                                priceVariantRow(
+                                    label: condition,
+                                    price: variant.price,
+                                    difference: variant.priceDifference,
+                                    percentage: variant.percentageChange,
+                                    sampleSize: variant.sampleSize,
+                                    dataSource: variant.dataSource,
+                                    isCurrent: condition == variants.currentCondition
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Divider()
+
+                // Feature Variants Section
+                if !variants.featureVariants.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                                .foregroundStyle(.yellow)
+                            Text("With Special Features")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                        }
+
+                        VStack(spacing: 6) {
+                            ForEach(variants.featureVariants.prefix(6)) { variant in
+                                if let description = variant.description {
+                                    priceVariantRow(
+                                        label: description,
+                                        price: variant.price,
+                                        difference: variant.priceDifference,
+                                        percentage: variant.percentageChange,
+                                        sampleSize: variant.sampleSize,
+                                        dataSource: variant.dataSource,
+                                        isCurrent: false
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private func priceVariantRow(
+        label: String,
+        price: Double,
+        difference: Double,
+        percentage: Double,
+        sampleSize: Int,
+        dataSource: String,
+        isCurrent: Bool
+    ) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            // Label
+            HStack(spacing: 4) {
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(isCurrent ? .primary : .secondary)
+                    .lineLimit(1)
+
+                // Data source badge
+                if dataSource == "comps" && sampleSize > 0 {
+                    HStack(spacing: 2) {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.system(size: 8))
+                        Text("\(sampleSize)")
+                            .font(.system(size: 9))
+                    }
+                    .foregroundStyle(.blue)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.1), in: Capsule())
+                } else if dataSource == "estimated" {
+                    Image(systemName: "wand.and.stars")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.purple.opacity(0.6))
+                }
+            }
+
+            Spacer()
+
+            // Price
+            Text("$\(String(format: "%.2f", price))")
+                .font(.caption)
+                .fontWeight(isCurrent ? .semibold : .regular)
+                .foregroundStyle(.primary)
+
+            // Change indicator
+            if !isCurrent {
+                HStack(spacing: 2) {
+                    Image(systemName: difference > 0 ? "arrow.up" : "arrow.down")
+                        .font(.system(size: 8))
+                    Text(String(format: "%+.0f%%", percentage))
+                        .font(.system(size: 10))
+                }
+                .foregroundStyle(difference > 0 ? .green : .red)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(
+                    (difference > 0 ? Color.green : Color.red).opacity(0.1),
+                    in: Capsule()
+                )
+            } else {
+                Text("Current")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.blue)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.1), in: Capsule())
+            }
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(
+            isCurrent ? Color.blue.opacity(0.05) : Color.clear,
+            in: RoundedRectangle(cornerRadius: 6)
+        )
     }
 }

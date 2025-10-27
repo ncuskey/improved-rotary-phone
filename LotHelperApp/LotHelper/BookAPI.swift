@@ -221,6 +221,56 @@ struct EbayMarketData: Codable, Hashable {
     }
 }
 
+// MARK: - Price Variants Response Types
+
+struct PriceVariant: Codable, Identifiable, Hashable {
+    let condition: String?
+    let features: [String]?
+    let description: String?
+    let price: Double
+    let priceDifference: Double
+    let percentageChange: Double
+    let sampleSize: Int
+    let dataSource: String
+
+    var id: String {
+        if let features = features, !features.isEmpty {
+            return features.joined(separator: ",")
+        } else if let condition = condition {
+            return condition
+        } else {
+            return description ?? UUID().uuidString
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case condition
+        case features
+        case description
+        case price
+        case priceDifference = "price_difference"
+        case percentageChange = "percentage_change"
+        case sampleSize = "sample_size"
+        case dataSource = "data_source"
+    }
+}
+
+struct PriceVariantsResponse: Codable {
+    let basePrice: Double
+    let currentCondition: String
+    let currentPrice: Double
+    let conditionVariants: [PriceVariant]
+    let featureVariants: [PriceVariant]
+
+    enum CodingKeys: String, CodingKey {
+        case basePrice = "base_price"
+        case currentCondition = "current_condition"
+        case currentPrice = "current_price"
+        case conditionVariants = "condition_variants"
+        case featureVariants = "feature_variants"
+    }
+}
+
 struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let isbn: String
     let originalIsbn: String?
@@ -542,6 +592,46 @@ enum BookAPI {
                 await MainActor.run { completion(evaluation) }
             } catch {
                 print("Fetch evaluation error: \(error)")
+                await MainActor.run { completion(nil) }
+            }
+        }
+    }
+
+    /// Fetch price variants for a book showing how price changes with different conditions and features
+    static func fetchPriceVariants(_ isbn: String, condition: String? = nil) async throws -> PriceVariantsResponse {
+        var urlComponents = URLComponents(string: "\(baseURLString)/api/books/\(isbn)/price-variants")!
+
+        if let condition = condition {
+            urlComponents.queryItems = [URLQueryItem(name: "condition", value: condition)]
+        }
+
+        guard let url = urlComponents.url else {
+            throw URLError(.badURL)
+        }
+
+        let (data, response) = try await session.data(from: url)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ GET /api/books/\(isbn)/price-variants failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        return try await decodeOnWorker(PriceVariantsResponse.self, from: data)
+    }
+
+    /// Completion-based wrapper for fetchPriceVariants
+    static func fetchPriceVariants(_ isbn: String, condition: String? = nil, completion: @escaping (PriceVariantsResponse?) -> Void) {
+        Task {
+            do {
+                let variants = try await fetchPriceVariants(isbn, condition: condition)
+                await MainActor.run { completion(variants) }
+            } catch {
+                print("Fetch price variants error: \(error)")
                 await MainActor.run { completion(nil) }
             }
         }

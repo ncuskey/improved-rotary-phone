@@ -115,6 +115,12 @@ struct EbayListingWizardView: View {
             PriceStepView(draft: draft)
         case 3:
             ReviewConfirmStepView(draft: draft)
+        case 4:
+            FinalReviewEditStepView(draft: draft, onNavigateToStep: { step in
+                withAnimation {
+                    currentStep = step
+                }
+            })
         default:
             Text("Unknown step")
         }
@@ -123,7 +129,7 @@ struct EbayListingWizardView: View {
     // MARK: - Computed Properties
 
     private var totalSteps: Int {
-        4  // Condition/Features, Format/Language, Price, Review
+        5  // Condition/Features, Format/Language, Price, Preview, Final Review & Edit
     }
 
     private var canProceed: Bool {
@@ -135,7 +141,9 @@ struct EbayListingWizardView: View {
         case 2:
             return draft.price > 0  // Price must be set
         case 3:
-            return draft.isValid
+            return true  // Review step, always can proceed
+        case 4:
+            return draft.isValid  // Final validation before submit
         default:
             return false
         }
@@ -175,7 +183,7 @@ struct ConditionFeaturesStepView: View {
             VStack(alignment: .leading, spacing: 24) {
                 // Header
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Step 1 of 4")
+                    Text("Step 1 of 5")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("Condition & Features")
@@ -394,7 +402,7 @@ struct FormatLanguageStepView: View {
             VStack(alignment: .leading, spacing: 24) {
                 // Header
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Step 2 of 4")
+                    Text("Step 2 of 5")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("Format & Language")
@@ -461,7 +469,7 @@ struct PriceStepView: View {
             VStack(alignment: .leading, spacing: 24) {
                 // Header
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Step 3 of 4")
+                    Text("Step 3 of 5")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text("Set Your Price")
@@ -657,13 +665,13 @@ struct ReviewConfirmStepView: View {
             VStack(alignment: .leading, spacing: 24) {
                 // Header
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Step 4 of 4")
+                    Text("Step 4 of 5")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text("Review & Confirm")
+                    Text("Preview")
                         .font(.title2)
                         .fontWeight(.bold)
-                    Text("Double-check your listing details before submitting")
+                    Text("Review the generated title and summary")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -945,6 +953,271 @@ struct DetailRow: View {
                 .font(.subheadline)
                 .fontWeight(.medium)
         }
+    }
+}
+
+// MARK: - Step 5: Final Review & Edit
+
+struct FinalReviewEditStepView: View {
+    @ObservedObject var draft: EbayListingDraft
+    let onNavigateToStep: (Int) -> Void
+
+    @State private var isLoadingContent = false
+    @State private var loadError: String?
+
+    private let conditions = ["Brand New", "Like New", "Very Good", "Good", "Acceptable"]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                // Header
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Step 5 of 5")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("Final Review & Edit")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text("Review and edit all listing details before submission")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                // Generated Title Section
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Label("eBay Title", systemImage: "textformat")
+                            .font(.headline)
+                        Spacer()
+                        Button {
+                            onNavigateToStep(2)
+                        } label: {
+                            Text("Edit Price")
+                                .font(.caption)
+                        }
+                    }
+
+                    if isLoadingContent {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                    } else if let error = loadError {
+                        Text(error)
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                    } else {
+                        TextField("Title", text: $draft.generatedTitle, axis: .vertical)
+                            .textFieldStyle(.roundedBorder)
+                            .lineLimit(2...4)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+
+                // Description Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Description", systemImage: "text.alignleft")
+                        .font(.headline)
+
+                    TextEditor(text: $draft.generatedDescription)
+                        .frame(minHeight: 150)
+                        .padding(8)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color(.systemGray4), lineWidth: 1)
+                        )
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+
+                // Price & Condition Section
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Label("Price & Condition", systemImage: "dollarsign.circle")
+                            .font(.headline)
+                        Spacer()
+                        Button {
+                            onNavigateToStep(0)
+                        } label: {
+                            Text("Edit Condition")
+                                .font(.caption)
+                        }
+                    }
+
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Price")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            TextField("Price", value: $draft.price, format: .currency(code: "USD"))
+                                .textFieldStyle(.roundedBorder)
+                                .keyboardType(.decimalPad)
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Condition")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Picker("Condition", selection: $draft.condition) {
+                                ForEach(conditions, id: \.self) { condition in
+                                    Text(condition).tag(condition)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .tint(.primary)
+                        }
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+
+                // Item Specifics Section
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        Label("Item Specifics", systemImage: "list.bullet.rectangle")
+                            .font(.headline)
+                        Spacer()
+                        Button {
+                            onNavigateToStep(1)
+                        } label: {
+                            Text("Edit Format")
+                                .font(.caption)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        itemSpecificRow("Format", value: draft.format)
+                        itemSpecificRow("Language", value: draft.language)
+                        itemSpecificRow("ISBN", value: draft.isbn)
+
+                        if draft.isFirstEdition {
+                            itemSpecificRow("Edition", value: "First Edition")
+                        }
+                        if draft.isSigned {
+                            itemSpecificRow("Special Attributes", value: "Signed")
+                        }
+                        if draft.hasDustJacket {
+                            itemSpecificRow("Features", value: "Dust Jacket")
+                        }
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+
+                // Photos Section
+                if let thumbnail = draft.thumbnail, let url = URL(string: thumbnail) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Photos", systemImage: "photo")
+                            .font(.headline)
+
+                        AsyncImage(url: url) { image in
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                        } placeholder: {
+                            Color.gray.opacity(0.2)
+                        }
+                        .frame(maxWidth: 200, maxHeight: 300)
+                        .cornerRadius(8)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                }
+
+                // Final notice
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Ready to submit?")
+                        .font(.headline)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        BulletPoint(text: "Your listing will be created on eBay")
+                        BulletPoint(text: "You'll receive confirmation with the listing URL")
+                        BulletPoint(text: "The listing will be active immediately")
+                    }
+                }
+                .padding()
+                .background(Color.green.opacity(0.1))
+                .cornerRadius(12)
+            }
+            .padding()
+        }
+        .onAppear {
+            // Generate title and description if not already loaded
+            if draft.generatedTitle.isEmpty {
+                Task {
+                    await loadGeneratedContent()
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func itemSpecificRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.caption)
+                .fontWeight(.medium)
+        }
+    }
+
+    private func loadGeneratedContent() async {
+        isLoadingContent = true
+        loadError = nil
+
+        do {
+            // Load title preview (this generates the title via AI)
+            let titlePreview = try await BookAPI.previewTitle(draft: draft)
+
+            await MainActor.run {
+                draft.generatedTitle = titlePreview.title
+                // Generate a basic description (you could call another API endpoint for this)
+                draft.generatedDescription = generateBasicDescription()
+                isLoadingContent = false
+            }
+        } catch {
+            await MainActor.run {
+                loadError = "Failed to generate content: \(error.localizedDescription)"
+                // Fallback to basic title
+                draft.generatedTitle = "\(draft.title) by \(draft.author ?? "Unknown")"
+                draft.generatedDescription = generateBasicDescription()
+                isLoadingContent = false
+            }
+        }
+    }
+
+    private func generateBasicDescription() -> String {
+        var desc = ""
+        desc += "\(draft.title)\n\n"
+        if let author = draft.author {
+            desc += "Author: \(author)\n"
+        }
+        desc += "Format: \(draft.format)\n"
+        desc += "Condition: \(draft.condition)\n"
+        desc += "Language: \(draft.language)\n\n"
+
+        if draft.isFirstEdition {
+            desc += "• First Edition\n"
+        }
+        if draft.isSigned {
+            desc += "• Signed by Author\n"
+        }
+        if draft.hasDustJacket {
+            desc += "• Includes Dust Jacket\n"
+        }
+
+        return desc
     }
 }
 

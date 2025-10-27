@@ -53,6 +53,48 @@ LotHelper helps book resellers make instant buy/reject decisions by:
 
 ## 📊 **Recent Updates (October 2025)**
 
+### **5 Major Feature Additions (October 26, 2025)**
+
+#### **1. Default Book Condition**
+- Set persistent default condition in Settings (Acceptable → New)
+- Default remembered across app restarts
+- Scanner initializes with your preferred condition
+- Saves time on every scan
+
+#### **2. Dynamic Price Adjustments**
+- Data-driven price variant analysis
+- See how condition affects value (New vs Good vs Acceptable)
+- Understand special feature premiums (Signed +20%, First Edition +15%)
+- Real eBay comp data when available (2+ comps)
+- Transparent data quality indicators showing comp count vs estimates
+- Collapsible "Price Adjustments" panel in book details
+
+#### **3. Time-To-Sell Display**
+- Replaced probability percentages with actionable TTS categories
+- Fast (≤30 days), Medium (31-90 days), Slow (91-180 days), Very Slow (>180 days)
+- Color-coded badges: green, blue, orange, red
+- Consistent display in list and detail views
+- More intuitive than probability scores
+
+#### **4. Sorted Price List**
+- Vertical price list sorted highest to lowest
+- Quick scanning for best value
+- N/A shown for missing data
+- All 4 sources visible: eBay Median, Best Vendor, Amazon Low, Estimated
+- Color-coded icons per source
+
+#### **5. Comprehensive Listing Preview**
+- Extended eBay wizard from 4 to 5 steps
+- New Step 5: Final Review & Edit
+- Edit title and description before creating listing
+- Jump back to any previous step with edit buttons
+- Photo preview section
+- Full control before finalizing
+
+**Implementation**: ~920 lines of production code + 419 lines of tests across 12 files
+**Testing**: 28 comprehensive unit tests covering all features
+**Documentation**: Complete code mapping and feature guides
+
 ### **Duplicate Detection**
 - Scanner now warns when scanning books already in database
 - Shows when book was previously added with relative time ("2 days ago")

@@ -427,7 +427,8 @@ private extension BookEvaluationRecord {
             estimatedPrice: estimatedPrice,
             soldCompsMedian: market?.soldCompsMedian,
             bestVendorPrice: bookscouter?.bestPrice,
-            amazonLowestPrice: bookscouter?.amazonLowestPrice
+            amazonLowestPrice: bookscouter?.amazonLowestPrice,
+            timeToSellDays: timeToSellDays
         )
     }
 

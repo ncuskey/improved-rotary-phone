@@ -28,14 +28,24 @@ class EbayListingDraft: ObservableObject {
 
     @Published var hasDustJacket: Bool = false
     @Published var isFirstEdition: Bool = false
+    @Published var isFirstPrinting: Bool = false
     @Published var isSigned: Bool = false
     @Published var isIllustrated: Bool = false
     @Published var isLargePrint: Bool = false
+    @Published var isExLibrary: Bool = false
+    @Published var isBookClubEdition: Bool = false
+    @Published var isLimitedEdition: Bool = false
+    @Published var customFeatures: String = ""
 
     // MARK: - Advanced Options (Step 4)
 
     @Published var useSEOOptimization: Bool = true
     @Published var customNotes: String = ""
+
+    // MARK: - Generated Content (for final review/edit)
+
+    @Published var generatedTitle: String = ""
+    @Published var generatedDescription: String = ""
 
     // MARK: - Derived State
 
@@ -98,8 +108,24 @@ class EbayListingDraft: ObservableObject {
         if isFirstEdition {
             features.append("First Edition")
         }
+        if isFirstPrinting {
+            features.append("First Printing")
+        }
         if isSigned {
             features.append("Signed")
+        }
+        if isExLibrary {
+            features.append("Ex-Library")
+        }
+        if isBookClubEdition {
+            features.append("Book Club Edition")
+        }
+        if isLimitedEdition {
+            features.append("Limited Edition")
+        }
+        // Add custom features if provided
+        if !customFeatures.isEmpty {
+            features.append(customFeatures)
         }
         if features.count > 0 {
             itemSpecifics["features"] = features
@@ -127,7 +153,7 @@ class EbayListingDraft: ObservableObject {
     // MARK: - Available Options
 
     static let conditions = [
-        "New",
+        "Brand New",
         "Like New",
         "Very Good",
         "Good",

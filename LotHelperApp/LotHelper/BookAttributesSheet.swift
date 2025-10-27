@@ -2,12 +2,16 @@ import SwiftUI
 
 /// Book attributes that can be selected during scanning
 struct BookAttributes {
-    var condition: String = "Good"
+    var condition: String
     var coverType: String = "Unknown"
     var signed: Bool = false
     var firstEdition: Bool = false
     var printing: String = ""
     var purchasePrice: Double = 0.0
+
+    init(defaultCondition: String = "Good") {
+        self.condition = defaultCondition
+    }
 
     /// Build edition notes string from attributes
     var editionNotes: String? {

@@ -561,6 +561,370 @@ def classify_probability(score: float) -> str:
     return "Low"
 
 
+# Feature price multipliers (used as fallback when insufficient comp data)
+FEATURE_MULTIPLIERS = {
+    "Signed": 1.20,  # Signed books command 20% premium
+    "First Edition": 1.15,  # First editions are collectible
+    "First Printing": 1.10,  # First printings add value
+    "Dust Jacket": 1.10,  # For hardcovers with DJ
+    "Limited Edition": 1.30,  # Limited editions are rare
+    "Illustrated": 1.08,  # Illustrated copies add value
+}
+
+
+def _extract_features_from_title(title: str) -> List[str]:
+    """
+    Extract special features from an eBay listing title.
+
+    Args:
+        title: eBay listing title
+
+    Returns:
+        List of detected features (e.g., ["Signed", "First Edition"])
+    """
+    features = []
+    title_lower = title.lower()
+
+    # Check for signed/autographed
+    if "signed" in title_lower or "autograph" in title_lower:
+        features.append("Signed")
+
+    # Check for first edition
+    if "first edition" in title_lower or "1st edition" in title_lower or " 1st " in title_lower:
+        features.append("First Edition")
+
+    # Check for first printing
+    if "first printing" in title_lower or "1st printing" in title_lower:
+        features.append("First Printing")
+
+    # Check for dust jacket
+    if "dust jacket" in title_lower or " dj" in title_lower or " d/j" in title_lower or "dustjacket" in title_lower:
+        features.append("Dust Jacket")
+
+    # Check for limited edition
+    if "limited edition" in title_lower or "ltd edition" in title_lower or "ltd ed" in title_lower:
+        features.append("Limited Edition")
+
+    # Check for illustrated
+    if "illustrated" in title_lower or "illust" in title_lower:
+        features.append("Illustrated")
+
+    return features
+
+
+def _parse_comps_with_features(market: Optional[EbayMarketStats]) -> List[Dict[str, Any]]:
+    """
+    Parse eBay sold comps and extract condition, features, and price for each.
+
+    Args:
+        market: eBay market stats with raw sold data
+
+    Returns:
+        List of comp dicts with structure:
+        {
+            "condition": str,
+            "features": [str],
+            "price": float,
+            "title": str,
+        }
+    """
+    if not market or not market.raw_sold:
+        return []
+
+    def _first_or_default(val):
+        return val[0] if isinstance(val, list) and val else val
+
+    # Extract items from eBay response
+    root_any = market.raw_sold.get("findCompletedItemsResponse")
+    if not root_any:
+        return []
+
+    root_obj = _first_or_default(root_any)
+    if not isinstance(root_obj, dict):
+        return []
+
+    search_result_any = root_obj.get("searchResult")
+    if not search_result_any:
+        return []
+
+    search_obj = _first_or_default(search_result_any)
+    if not isinstance(search_obj, dict):
+        return []
+
+    items_any = search_obj.get("item") or []
+    items = []
+    if isinstance(items_any, list):
+        items = [i for i in items_any if isinstance(i, dict)]
+    elif isinstance(items_any, dict):
+        items = [items_any]
+
+    comps = []
+
+    for item in items:
+        # Check if it sold
+        status = _first_or_default(item.get("sellingStatus")) or {}
+        state = _first_or_default(status.get("sellingState"))
+        if state != "EndedWithSales":
+            continue
+
+        # Extract price
+        price_info = _first_or_default(status.get("currentPrice"))
+        if not price_info:
+            price_info = _first_or_default(status.get("convertedCurrentPrice"))
+
+        if not isinstance(price_info, dict):
+            continue
+
+        value = price_info.get("__value__")
+        if value is None:
+            continue
+
+        try:
+            price = float(value)
+        except (ValueError, TypeError):
+            continue
+
+        # Extract condition
+        condition = None
+        condition_info = _first_or_default(item.get("condition"))
+        if condition_info and isinstance(condition_info, dict):
+            ebay_condition_id = _first_or_default(condition_info.get("conditionId"))
+            ebay_condition_name = _first_or_default(condition_info.get("conditionDisplayName"))
+            condition = _normalize_condition(
+                str(ebay_condition_id) if ebay_condition_id else ebay_condition_name
+            )
+
+        if not condition:
+            # Skip comps without condition info
+            continue
+
+        # Extract title and features
+        title = _first_or_default(item.get("title")) or ""
+        features = _extract_features_from_title(title)
+
+        comps.append({
+            "condition": condition,
+            "features": features,
+            "price": price,
+            "title": title,
+        })
+
+    return comps
+
+
+def calculate_price_variants(
+    metadata: BookMetadata,
+    market: Optional[EbayMarketStats],
+    current_condition: str,
+    current_price: float,
+    bookscouter: Optional[BookScouterResult] = None,
+) -> Dict[str, Any]:
+    """
+    Calculate price variants for different conditions and special features by analyzing
+    actual sold comps.
+
+    This shows users how their book's price would change with different conditions
+    or special features (signed, first edition, etc.), based on real market data when
+    available, falling back to estimated multipliers when data is sparse.
+
+    Args:
+        metadata: Book metadata
+        market: eBay market stats with raw sold comps
+        current_condition: The book's current condition
+        current_price: Current estimated price
+        bookscouter: BookScouter data for additional market signals
+
+    Returns:
+        Dict with structure:
+        {
+            "base_price": float,  # Normalized base price
+            "current_condition": str,
+            "current_price": float,
+            "condition_variants": [
+                {
+                    "condition": str,
+                    "price": float,
+                    "price_difference": float,  # vs current
+                    "percentage_change": float,  # vs current
+                    "sample_size": int,  # Number of comps found
+                    "data_source": "comps" | "estimated"
+                },
+                ...
+            ],
+            "feature_variants": [
+                {
+                    "features": [str],  # e.g., ["Signed", "First Edition"]
+                    "description": str,  # Human-readable
+                    "price": float,
+                    "price_difference": float,  # vs current
+                    "percentage_change": float,  # vs current
+                    "sample_size": int,  # Number of comps found
+                    "data_source": "comps" | "estimated"
+                },
+                ...
+            ]
+        }
+    """
+    # Parse all comps with their features and conditions
+    comps = _parse_comps_with_features(market)
+
+    # Group comps by condition
+    condition_groups: Dict[str, List[float]] = {}
+    for comp in comps:
+        # Only include comps without special features for condition baseline
+        if len(comp["features"]) == 0:
+            condition = comp["condition"]
+            if condition not in condition_groups:
+                condition_groups[condition] = []
+            condition_groups[condition].append(comp["price"])
+
+    # Group comps by feature combinations (for current condition only)
+    feature_groups: Dict[str, List[float]] = {}
+    for comp in comps:
+        if comp["condition"] == current_condition and len(comp["features"]) > 0:
+            # Sort features for consistent keys
+            feature_key = ", ".join(sorted(comp["features"]))
+            if feature_key not in feature_groups:
+                feature_groups[feature_key] = []
+            feature_groups[feature_key].append(comp["price"])
+
+    # Calculate base price from current condition
+    current_weight = CONDITION_WEIGHTS.get(current_condition, 0.95)
+    base_price = current_price / current_weight
+
+    # Generate condition variants
+    condition_variants = []
+    for condition, weight in CONDITION_WEIGHTS.items():
+        if condition in condition_groups and len(condition_groups[condition]) >= 2:
+            # Use real market data
+            prices = condition_groups[condition]
+            variant_price = round(statistics.median(prices), 2)
+            data_source = "comps"
+            sample_size = len(prices)
+        else:
+            # Fall back to estimated price
+            variant_price = round(base_price * weight, 2)
+            data_source = "estimated"
+            sample_size = len(condition_groups.get(condition, []))
+
+        price_diff = round(variant_price - current_price, 2)
+        pct_change = round(((variant_price / current_price) - 1) * 100, 1) if current_price > 0 else 0.0
+
+        condition_variants.append({
+            "condition": condition,
+            "price": variant_price,
+            "price_difference": price_diff,
+            "percentage_change": pct_change,
+            "sample_size": sample_size,
+            "data_source": data_source,
+        })
+
+    # Sort by price descending
+    condition_variants.sort(key=lambda x: x["price"], reverse=True)
+
+    # Generate feature variants
+    feature_variants = []
+
+    # Analyze each individual feature
+    for feature in ["Signed", "First Edition", "First Printing", "Dust Jacket", "Limited Edition", "Illustrated"]:
+        # Find comps with this feature (and possibly others)
+        matching_prices = [
+            comp["price"]
+            for comp in comps
+            if comp["condition"] == current_condition and feature in comp["features"]
+        ]
+
+        if len(matching_prices) >= 2:
+            # Use real market data
+            variant_price = round(statistics.median(matching_prices), 2)
+            data_source = "comps"
+            sample_size = len(matching_prices)
+        else:
+            # Fall back to multiplier-based estimate
+            multiplier = FEATURE_MULTIPLIERS.get(feature, 1.0)
+            variant_price = round(current_price * multiplier, 2)
+            data_source = "estimated"
+            sample_size = len(matching_prices)
+
+        price_diff = round(variant_price - current_price, 2)
+        pct_change = round(((variant_price / current_price) - 1) * 100, 1) if current_price > 0 else 0.0
+
+        # Only include if it adds value (positive price difference)
+        if price_diff > 0 or sample_size > 0:
+            feature_variants.append({
+                "features": [feature],
+                "description": feature,
+                "price": variant_price,
+                "price_difference": price_diff,
+                "percentage_change": pct_change,
+                "sample_size": sample_size,
+                "data_source": data_source,
+            })
+
+    # Analyze common feature combinations found in comps
+    for feature_key, prices in feature_groups.items():
+        if len(prices) >= 2:
+            features = feature_key.split(", ")
+            variant_price = round(statistics.median(prices), 2)
+            price_diff = round(variant_price - current_price, 2)
+            pct_change = round(((variant_price / current_price) - 1) * 100, 1) if current_price > 0 else 0.0
+
+            # Only include valuable combinations not already covered by single features
+            if len(features) >= 2 and price_diff > 0:
+                feature_variants.append({
+                    "features": features,
+                    "description": feature_key,
+                    "price": variant_price,
+                    "price_difference": price_diff,
+                    "percentage_change": pct_change,
+                    "sample_size": len(prices),
+                    "data_source": "comps",
+                })
+
+    # Add estimated combinations for valuable pairings if not found in comps
+    estimated_combos = [
+        (["Signed", "First Edition"], "Signed First Edition"),
+        (["Signed", "Limited Edition"], "Signed Limited Edition"),
+        (["First Edition", "Dust Jacket"], "First Edition with Dust Jacket"),
+    ]
+
+    for features, description in estimated_combos:
+        # Check if we already have this combo from real comps
+        if any(set(v["features"]) == set(features) for v in feature_variants):
+            continue
+
+        # Calculate estimated price using multipliers
+        combined_multiplier = 1.0
+        for feature in features:
+            combined_multiplier *= FEATURE_MULTIPLIERS.get(feature, 1.0)
+
+        variant_price = round(current_price * combined_multiplier, 2)
+        price_diff = round(variant_price - current_price, 2)
+        pct_change = round(((combined_multiplier - 1) * 100), 1)
+
+        if price_diff > 0:
+            feature_variants.append({
+                "features": features,
+                "description": description,
+                "price": variant_price,
+                "price_difference": price_diff,
+                "percentage_change": pct_change,
+                "sample_size": 0,
+                "data_source": "estimated",
+            })
+
+    # Sort by price difference descending (most valuable first)
+    feature_variants.sort(key=lambda x: x["price_difference"], reverse=True)
+
+    return {
+        "base_price": round(base_price, 2),
+        "current_condition": current_condition,
+        "current_price": current_price,
+        "condition_variants": condition_variants,
+        "feature_variants": feature_variants,
+    }
+
+
 def build_book_evaluation(
     isbn: str,
     original_isbn: str,

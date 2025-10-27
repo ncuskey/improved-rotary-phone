@@ -331,6 +331,64 @@ async def get_book_evaluation_json(
     return JSONResponse(content=result_dict)
 
 
+@router.get("/{isbn}/price-variants")
+async def get_price_variants(
+    isbn: str,
+    condition: Optional[str] = None,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Get price variants for different conditions and special features.
+
+    This endpoint analyzes sold comps to show how price varies based on:
+    - Different conditions (New, Like New, Very Good, Good, Acceptable)
+    - Special features (Signed, First Edition, Dust Jacket, etc.)
+
+    Uses real market data when available (sample_size >= 2), falls back to
+    estimated multipliers when data is sparse.
+
+    Returns:
+        {
+            "base_price": float,
+            "current_condition": str,
+            "current_price": float,
+            "condition_variants": [...],  # Sorted by price (highest first)
+            "feature_variants": [...]     # Sorted by value add (highest first)
+        }
+    """
+    from shared.probability import calculate_price_variants
+
+    normalized_isbn = normalise_isbn(isbn)
+
+    if not normalized_isbn:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid ISBN", "isbn": isbn}
+        )
+
+    book = service.get_book(normalized_isbn)
+
+    if not book:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Book not found", "isbn": normalized_isbn}
+        )
+
+    # Use provided condition or book's current condition
+    eval_condition = condition if condition is not None else book.condition
+
+    # Calculate price variants
+    variants = calculate_price_variants(
+        metadata=book.metadata,
+        market=book.market,
+        current_condition=eval_condition,
+        current_price=book.estimated_price,
+        bookscouter=book.bookscouter,
+    )
+
+    return JSONResponse(content=variants)
+
+
 @router.post("/{isbn}/accept")
 async def accept_book(
     isbn: str,

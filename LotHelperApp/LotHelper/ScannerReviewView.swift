@@ -97,6 +97,7 @@ struct DecisionThresholds: Codable {
 struct ScannerReviewView: View {
     @AppStorage("scanner.hapticsEnabled") private var hapticsEnabled = true
     @AppStorage("scanner.inputMode") private var inputMode: ScannerInputMode = .camera
+    @AppStorage("scanner.defaultCondition") private var defaultCondition = "Good"
 
     @State private var isScanning = true
     @State private var scannedCode: String?
@@ -107,7 +108,7 @@ struct ScannerReviewView: View {
     @State private var errorMessage: String?
     @State private var showAttributesSheet = false
     @State private var showPricePickerSheet = false
-    @State private var bookAttributes = BookAttributes()
+    @State private var bookAttributes = BookAttributes(defaultCondition: "Good")
     @State private var persistentPurchasePrice: Double = 0.0
     @State private var textInput: String = ""
     @State private var useHiddenScanner = false
@@ -2259,7 +2260,7 @@ struct ScannerReviewView: View {
 
                 await MainActor.run {
                     // Reset attributes but keep the persistent purchase price
-                    bookAttributes = BookAttributes()
+                    bookAttributes = BookAttributes(defaultCondition: defaultCondition)
                     bookAttributes.purchasePrice = persistentPurchasePrice
 
                     rescan()
@@ -2283,7 +2284,7 @@ struct ScannerReviewView: View {
         isTextFieldFocused = false
 
         // Immediately reset UI to prepare for next scan - don't wait for API
-        bookAttributes = BookAttributes()
+        bookAttributes = BookAttributes(defaultCondition: defaultCondition)
         bookAttributes.purchasePrice = persistentPurchasePrice
 
         // Reset state but don't force keyboard focus
@@ -2462,7 +2463,8 @@ private extension BookInfo {
             estimatedPrice: nil,
             soldCompsMedian: nil,
             bestVendorPrice: nil,
-            amazonLowestPrice: nil
+            amazonLowestPrice: nil,
+            timeToSellDays: nil
         )
     }
 }

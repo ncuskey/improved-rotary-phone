@@ -12,6 +12,7 @@ struct BookCardView: View {
         let soldCompsMedian: Double?
         let bestVendorPrice: Double?
         let amazonLowestPrice: Double?
+        let timeToSellDays: Int?
 
         var coverURL: URL? { URL(string: thumbnail) }
         var coverRequest: URLRequest? {
@@ -31,7 +32,20 @@ struct BookCardView: View {
             return (margin / vendor) * 100
         }
 
-        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, estimatedPrice: nil, soldCompsMedian: nil, bestVendorPrice: nil, amazonLowestPrice: nil)
+        var ttsCategory: String? {
+            guard let days = timeToSellDays else { return nil }
+            if days <= 30 {
+                return "Fast"
+            } else if days <= 90 {
+                return "Medium"
+            } else if days <= 180 {
+                return "Slow"
+            } else {
+                return "Very Slow"
+            }
+        }
+
+        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, estimatedPrice: nil, soldCompsMedian: nil, bestVendorPrice: nil, amazonLowestPrice: nil, timeToSellDays: nil)
     }
 
     let book: Book
@@ -78,14 +92,14 @@ struct BookCardView: View {
                     .foregroundStyle(DS.Color.textSecondary)
                     .lineLimit(1)
                 }
-                if let potential = book.profitPotential {
+                if let tts = book.ttsCategory {
                     HStack(spacing: 4) {
-                        Image(systemName: profitIcon(for: potential))
+                        Image(systemName: ttsIcon(for: tts))
                             .font(.caption2)
-                        Text("Profit: \(potential)")
+                        Text("TTS: \(tts)")
                             .font(.caption)
                     }
-                    .foregroundStyle(profitColor(for: potential))
+                    .foregroundStyle(ttsColor(for: tts))
                     .lineLimit(1)
                 }
                 if let margin = book.profitMargin, let percentage = book.profitMarginPercentage {
@@ -162,27 +176,31 @@ struct BookCardView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func profitColor(for potential: String) -> Color {
-        switch potential.lowercased() {
-        case "high":
+    private func ttsColor(for category: String) -> Color {
+        switch category.lowercased() {
+        case "fast":
             return .green
         case "medium":
+            return .blue
+        case "slow":
             return .orange
-        case "low":
+        case "very slow":
             return .red
         default:
             return .gray
         }
     }
 
-    private func profitIcon(for potential: String) -> String {
-        switch potential.lowercased() {
-        case "high":
-            return "arrow.up.circle.fill"
+    private func ttsIcon(for category: String) -> String {
+        switch category.lowercased() {
+        case "fast":
+            return "hare.fill"
         case "medium":
-            return "minus.circle.fill"
-        case "low":
-            return "arrow.down.circle.fill"
+            return "tortoise.fill"
+        case "slow":
+            return "clock.fill"
+        case "very slow":
+            return "hourglass.fill"
         default:
             return "questionmark.circle.fill"
         }
@@ -200,7 +218,8 @@ struct BookCardView: View {
         estimatedPrice: 22.50,
         soldCompsMedian: 24.99,
         bestVendorPrice: 8.50,
-        amazonLowestPrice: 28.99
+        amazonLowestPrice: 28.99,
+        timeToSellDays: 25
     ))
     .padding()
     .background(DS.Color.background)

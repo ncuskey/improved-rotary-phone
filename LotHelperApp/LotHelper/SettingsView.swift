@@ -3,10 +3,13 @@ import SwiftUI
 struct SettingsView: View {
     @AppStorage("scanner.autoSubmit") private var autoSubmit = true
     @AppStorage("scanner.hapticsEnabled") private var hapticsEnabled = true
+    @AppStorage("scanner.defaultCondition") private var defaultCondition = "Good"
     @AppStorage("data.useLocalServer") private var useLocalServer = true
     @AppStorage("data.useProductionAPI") private var useProductionAPI = false
 
     @Environment(\.openURL) private var openURL
+
+    private let conditions = ["Acceptable", "Good", "Very Good", "Like New", "New"]
 
     private let privacyURL = URL(string: "https://clevergirl.ai/privacy")!
     private let licensesURL = URL(string: "https://clevergirl.ai/licenses")!
@@ -44,6 +47,14 @@ struct SettingsView: View {
             }
             Toggle(isOn: $hapticsEnabled) {
                 Label("Vibration feedback", systemImage: "waveform.path")
+            }
+
+            Picker(selection: $defaultCondition) {
+                ForEach(conditions, id: \.self) { condition in
+                    Text(condition).tag(condition)
+                }
+            } label: {
+                Label("Default book condition", systemImage: "book.closed")
             }
         }
         .accessibilityElement(children: .contain)

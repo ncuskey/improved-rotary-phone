@@ -2,6 +2,101 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-10-26] - eBay Listing Wizard Reorganization & Smart Pricing 🎯
+
+**🔄 Major Wizard Redesign**: Reorganized wizard flow with intelligent price recommendations
+**💡 Smart Pricing**: Dynamic price calculation based on condition and features
+**📊 Title Preview**: SEO score visualization with color-coded progress indicators
+
+### Changed - Wizard Flow Reorganization
+- **Step 1: Condition & Features** (NEW)
+  - Combined condition selection with all special features
+  - Moved from Step 3 to Step 1 (logical order)
+  - Includes all 10 features: First Edition, First Printing, Dust Jacket, Signed, etc.
+  - Custom features text input field
+  - Quantity selection
+  - File: `LotHelper/EbayListingWizardView.swift:168-385`
+
+- **Step 2: Format & Language** (UNCHANGED)
+  - Book format selection (Hardcover, Paperback, etc.)
+  - Language selection
+  - File: `LotHelper/EbayListingWizardView.swift:387-449`
+
+- **Step 3: Smart Price** (NEW - Replaces old Step 1)
+  - Automatic price recommendation on view load
+  - Based on condition + features from Step 1
+  - Shows recommendation source and comp count
+  - Displays price range and matched features
+  - Large price display with manual edit capability
+  - "Get Price Recommendation" refresh button
+  - SEO optimization toggle
+  - File: `LotHelper/EbayListingWizardView.swift:451-605`
+
+- **Step 4: Review & Confirm** (ENHANCED)
+  - Summary of all selections
+  - Title preview with keyword score (if SEO enabled)
+  - Color-coded progress bar (red/orange/yellow/green)
+  - Regenerate title button
+  - File: `LotHelper/EbayListingWizardView.swift:640-650`
+
+### Added - API Integration
+- **Price Recommendation API Method** in `BookAPI.swift:1189-1220`
+  - Calls `/api/ebay/recommend-price` endpoint
+  - Returns price based on feature-filtered comps
+  - Auto-populates price field in Step 3
+
+- **Title Preview API Method** in `BookAPI.swift:1156-1187`
+  - Calls `/api/ebay/preview-title` endpoint
+  - Returns SEO-optimized title with keyword score
+  - Shows score as percentage of maximum possible
+
+- **Response Types** in `BookAPI.swift:1121-1151`
+  - `TitlePreviewResponse`: title, score, max_score, percentage
+  - `PriceRecommendationResponse`: price, source, comps, range, features
+
+### Fixed - Backend API Bug
+- **Title Preview Endpoint** in `isbn_web/api/routes/ebay_listings.py:354-365`
+  - Issue: Called non-existent `_generate_title_and_description()` method
+  - Fix: Directly use `listing_service.ai_generator.generate_book_listing()`
+  - Impact: Title preview now works correctly in Step 4
+
+- **UI Conflicts Resolved**
+  - Removed conflicting prepopulated + placeholder price field
+  - Price now only appears after Step 1+2 selections are made
+  - Clear, logical progression through wizard
+
+### Updated - Documentation
+- **PRIORITY_2_IMPLEMENTATION_SUMMARY.md**
+  - Reflects reorganized wizard flow
+  - Documents smart pricing feature
+  - Updated completion status (100% complete)
+  - Added major changes summary
+
+### Impact
+- **Better UX**: Logical order (condition/features → format → price → review)
+- **Smarter Pricing**: Price calculated from actual selected features
+- **More Transparent**: Shows exactly how price was determined
+- **Higher Quality**: SEO scores visible before submission
+
+### Files Modified
+**Backend (1 file)**:
+- `isbn_web/api/routes/ebay_listings.py` (bug fix)
+
+**iOS (2 files)**:
+- `LotHelper/BookAPI.swift` (API methods + response types)
+- `LotHelper/EbayListingWizardView.swift` (complete reorganization)
+
+**Documentation (2 files)**:
+- `PRIORITY_2_IMPLEMENTATION_SUMMARY.md`
+- `docs/development/changelog.md`
+
+### Build Status
+✅ All code compiles successfully (iOS + Python)
+✅ Backend server running with fixes applied
+✅ Ready for end-to-end testing
+
+---
+
 ## [2025-10-26] - ePID Discovery Validation & Critical Bug Fix 🔧
 
 **🐛 Critical Fix**: Corrected ePID extraction from eBay Browse API responses

@@ -1116,9 +1116,109 @@ struct ScanStatistics: Codable {
     }
 }
 
+// MARK: - eBay Listing Response Types
+
+struct TitlePreviewResponse: Codable {
+    let title: String
+    let titleScore: Float
+    let maxScore: Float
+    let scorePercentage: Float
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case titleScore = "title_score"
+        case maxScore = "max_score"
+        case scorePercentage = "score_percentage"
+    }
+}
+
+struct PriceRecommendationResponse: Codable {
+    let recommendedPrice: Float
+    let source: String
+    let compsCount: Int
+    let priceRangeMin: Float
+    let priceRangeMax: Float
+    let featuresMatched: [String]
+
+    enum CodingKeys: String, CodingKey {
+        case recommendedPrice = "recommended_price"
+        case source
+        case compsCount = "comps_count"
+        case priceRangeMin = "price_range_min"
+        case priceRangeMax = "price_range_max"
+        case featuresMatched = "features_matched"
+    }
+}
+
 // MARK: - eBay Listing Extension
 
 extension BookAPI {
+    /// Preview the generated eBay listing title with keyword score
+    static func previewTitle(draft: EbayListingDraft) async throws -> TitlePreviewResponse {
+        guard let url = URL(string: "\(baseURLString)/api/ebay/preview-title") else {
+            throw URLError(.badURL)
+        }
+
+        let payload = draft.toAPIPayload()
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+
+        print("📡 Previewing title for ISBN: \(draft.isbn)")
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ POST /api/ebay/preview-title failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        let titlePreview = try await decodeOnWorker(TitlePreviewResponse.self, from: data)
+        print("✓ Title preview generated: \(titlePreview.title)")
+
+        return titlePreview
+    }
+
+    /// Get price recommendation based on sold comps filtered by features
+    static func recommendPrice(draft: EbayListingDraft) async throws -> PriceRecommendationResponse {
+        guard let url = URL(string: "\(baseURLString)/api/ebay/recommend-price") else {
+            throw URLError(.badURL)
+        }
+
+        let payload = draft.toAPIPayload()
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = jsonData
+
+        print("📡 Requesting price recommendation for ISBN: \(draft.isbn)")
+        let (data, response) = try await session.data(for: request)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ POST /api/ebay/recommend-price failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        let priceRecommendation = try await decodeOnWorker(PriceRecommendationResponse.self, from: data)
+        print("✓ Price recommendation: $\(priceRecommendation.recommendedPrice) from \(priceRecommendation.compsCount) comps")
+
+        return priceRecommendation
+    }
+
     /// Create an eBay listing from a draft
     static func createEbayListing(draft: EbayListingDraft) async throws -> EbayListingResponse {
         guard let url = URL(string: "\(baseURLString)/api/ebay/create-listing") else {

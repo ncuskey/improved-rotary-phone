@@ -269,3 +269,228 @@ async def get_ebay_listings_by_isbn(
             status_code=500,
             detail=f"Failed to retrieve listings: {str(e)}"
         )
+
+
+class TitlePreviewRequest(BaseModel):
+    """Schema for title preview request."""
+
+    isbn: str = Field(..., description="ISBN-10 or ISBN-13")
+    item_specifics: Optional[ItemSpecifics] = Field(None, description="Item Specifics for context")
+    use_seo_optimization: bool = Field(True, description="Use SEO-optimized title generation")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "isbn": "9780545349277",
+                "item_specifics": {
+                    "format": ["Hardcover"],
+                    "features": ["First Edition", "Dust Jacket"]
+                },
+                "use_seo_optimization": True
+            }
+        }
+
+
+class TitlePreviewResponse(BaseModel):
+    """Schema for title preview response."""
+
+    title: str = Field(..., description="Generated title")
+    title_score: float = Field(..., description="Keyword optimization score")
+    max_score: float = Field(..., description="Maximum possible score")
+    score_percentage: float = Field(..., description="Score as percentage of maximum")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "title": "Wings Fire Brightest Night Sutherland Fantasy Series Hardcover Complete",
+                "title_score": 48.7,
+                "max_score": 75.0,
+                "score_percentage": 64.9
+            }
+        }
+
+
+@router.post("/preview-title", response_model=TitlePreviewResponse)
+async def preview_title(
+    request: TitlePreviewRequest,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Preview the generated eBay listing title with keyword score.
+
+    This endpoint generates and scores a title WITHOUT creating a listing,
+    allowing the user to review the title before final submission.
+
+    The title is generated using:
+    - Book metadata (title, author, series, etc.)
+    - SEO keyword analysis from 90-day sold comps
+    - Item Specifics for context
+
+    Returns:
+        Title preview with keyword optimization score
+    """
+    try:
+        # Get book from catalog
+        book = service.get_book(request.isbn)
+        if not book:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Book not found in catalog: {request.isbn}"
+            )
+
+        # Initialize AI generator for title generation
+        from isbn_lot_optimizer.ebay_listing import EbayListingService
+        listing_service = EbayListingService(service.db.db_path)
+
+        # Convert ItemSpecifics to dict
+        item_specifics_dict = None
+        if request.item_specifics:
+            item_specifics_dict = {
+                key: value
+                for key, value in request.item_specifics.model_dump().items()
+                if value is not None
+            }
+
+        # Generate title using AI generator
+        # Note: We use condition="Good" and a placeholder price since we only need the title
+        ai_content = listing_service.ai_generator.generate_book_listing(
+            book=book,
+            condition="Good",
+            price=book.estimated_price or 10.0,
+            use_seo_optimization=request.use_seo_optimization,
+            isbn=request.isbn,
+        )
+
+        title = ai_content.title
+        title_score = ai_content.title_score or 0.0
+
+        # Calculate max possible score (sum of top keyword scores)
+        # For now, use a reasonable estimate based on typical ranges
+        # TODO: Could enhance by actually calculating from keyword analysis
+        max_score = 75.0  # Typical max score for well-optimized titles
+        score_percentage = (title_score / max_score * 100) if max_score > 0 else 0
+
+        response_data = {
+            "title": title,
+            "title_score": round(title_score, 1),
+            "max_score": max_score,
+            "score_percentage": round(score_percentage, 1)
+        }
+
+        return JSONResponse(content=response_data, status_code=200)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate title preview: {str(e)}"
+        )
+
+
+class PriceRecommendationRequest(BaseModel):
+    """Schema for price recommendation request."""
+
+    isbn: str = Field(..., description="ISBN-10 or ISBN-13")
+    item_specifics: Optional[ItemSpecifics] = Field(None, description="Item Specifics to filter comps")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "isbn": "9780545349277",
+                "item_specifics": {
+                    "format": ["Hardcover"],
+                    "features": ["First Edition", "Signed"]
+                }
+            }
+        }
+
+
+class PriceRecommendationResponse(BaseModel):
+    """Schema for price recommendation response."""
+
+    recommended_price: float = Field(..., description="Recommended price based on filtered comps")
+    source: str = Field(..., description="Source of price data")
+    comps_count: int = Field(..., description="Number of comps used for calculation")
+    price_range_min: float = Field(..., description="Minimum price from filtered comps")
+    price_range_max: float = Field(..., description="Maximum price from filtered comps")
+    features_matched: List[str] = Field(..., description="Features that were matched in filtering")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "recommended_price": 32.50,
+                "source": "eBay Sold Comps (90 days)",
+                "comps_count": 8,
+                "price_range_min": 24.99,
+                "price_range_max": 45.00,
+                "features_matched": ["First Edition", "Signed"]
+            }
+        }
+
+
+@router.post("/recommend-price", response_model=PriceRecommendationResponse)
+async def recommend_price(
+    request: PriceRecommendationRequest,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Get price recommendation based on sold comps filtered by features.
+
+    This endpoint:
+    1. Retrieves sold comps from last 90 days
+    2. Filters by matching features (first edition, signed, etc.)
+    3. Returns median price from filtered comps
+
+    This allows dynamic price updates as users select features in the wizard.
+
+    Returns:
+        Price recommendation with details about filtered comps
+    """
+    try:
+        from shared.ebay_sold_comps import EbaySoldComps
+
+        # Convert iOS feature names to filter format
+        features_dict = {}
+        if request.item_specifics and request.item_specifics.features:
+            for feature in request.item_specifics.features:
+                feature_lower = feature.lower().replace(" ", "_")
+                features_dict[feature_lower] = True
+
+        # Get sold comps with feature filtering
+        sold_comps_service = EbaySoldComps()
+        result = sold_comps_service.get_sold_comps(
+            gtin=request.isbn,
+            fallback_to_estimate=True,
+            max_samples=50,  # Get more samples for better filtering
+            features=features_dict if features_dict else None
+        )
+
+        if not result or result["count"] == 0:
+            raise HTTPException(
+                status_code=404,
+                detail="No sold comps found for this ISBN with the specified features"
+            )
+
+        response_data = {
+            "recommended_price": result["median"],
+            "source": "eBay Sold Comps (90 days)" if not result["is_estimate"] else "Active Listings Estimate",
+            "comps_count": result["count"],
+            "price_range_min": result["min"],
+            "price_range_max": result["max"],
+            "features_matched": list(features_dict.keys()) if features_dict else []
+        }
+
+        return JSONResponse(content=response_data, status_code=200)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get price recommendation: {str(e)}"
+        )

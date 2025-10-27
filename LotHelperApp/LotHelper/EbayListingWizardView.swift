@@ -108,11 +108,11 @@ struct EbayListingWizardView: View {
     private func stepView(for step: Int) -> some View {
         switch step {
         case 0:
-            PriceConditionStepView(draft: draft)
+            ConditionFeaturesStepView(draft: draft)
         case 1:
             FormatLanguageStepView(draft: draft)
         case 2:
-            SpecialFeaturesStepView(draft: draft)
+            PriceStepView(draft: draft)
         case 3:
             ReviewConfirmStepView(draft: draft)
         default:
@@ -123,17 +123,17 @@ struct EbayListingWizardView: View {
     // MARK: - Computed Properties
 
     private var totalSteps: Int {
-        4  // Price/Condition, Format/Language, Features, Review
+        4  // Condition/Features, Format/Language, Price, Review
     }
 
     private var canProceed: Bool {
         switch currentStep {
         case 0:
-            return draft.price > 0 && !draft.condition.isEmpty
+            return !draft.condition.isEmpty  // Condition is required
         case 1:
             return !draft.format.isEmpty && !draft.language.isEmpty
         case 2:
-            return true  // Features are optional
+            return draft.price > 0  // Price must be set
         case 3:
             return draft.isValid
         default:
@@ -165,9 +165,9 @@ struct EbayListingWizardView: View {
     }
 }
 
-// MARK: - Step 1: Price & Condition
+// MARK: - Step 1: Condition & Features
 
-struct PriceConditionStepView: View {
+struct ConditionFeaturesStepView: View {
     @ObservedObject var draft: EbayListingDraft
 
     var body: some View {
@@ -178,9 +178,12 @@ struct PriceConditionStepView: View {
                     Text("Step 1 of 4")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text("Price & Condition")
+                    Text("Condition & Features")
                         .font(.title2)
                         .fontWeight(.bold)
+                    Text("Describe your book's condition and special features")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
 
                 // Book preview
@@ -214,18 +217,6 @@ struct PriceConditionStepView: View {
 
                 Divider()
 
-                // Price
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Listing Price")
-                        .font(.headline)
-                    TextField("Price", value: $draft.price, format: .currency(code: "USD"))
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.decimalPad)
-                    Text("Suggested: $\(String(format: "%.2f", draft.price))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
                 // Condition
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Condition")
@@ -243,6 +234,113 @@ struct PriceConditionStepView: View {
                         .padding(.top, 4)
                 }
 
+                Divider()
+
+                // Edition Features
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Edition Features")
+                        .font(.headline)
+
+                    FeatureToggle(
+                        title: "First Edition",
+                        description: "First published version of the book",
+                        icon: "1.circle.fill",
+                        isOn: $draft.isFirstEdition
+                    )
+
+                    FeatureToggle(
+                        title: "First Printing",
+                        description: "First print run of this edition",
+                        icon: "printer.fill",
+                        isOn: $draft.isFirstPrinting
+                    )
+
+                    FeatureToggle(
+                        title: "Limited Edition",
+                        description: "Limited release or special edition",
+                        icon: "star.circle.fill",
+                        isOn: $draft.isLimitedEdition
+                    )
+
+                    FeatureToggle(
+                        title: "Book Club Edition",
+                        description: "Book club release",
+                        icon: "person.3.fill",
+                        isOn: $draft.isBookClubEdition
+                    )
+                }
+
+                Divider()
+
+                // Condition Features
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Condition Features")
+                        .font(.headline)
+
+                    FeatureToggle(
+                        title: "Dust Jacket",
+                        description: "Book has original dust jacket",
+                        icon: "book.closed",
+                        isOn: $draft.hasDustJacket
+                    )
+
+                    FeatureToggle(
+                        title: "Signed",
+                        description: "Signed or autographed by author",
+                        icon: "signature",
+                        isOn: $draft.isSigned
+                    )
+
+                    FeatureToggle(
+                        title: "Ex-Library",
+                        description: "Former library book",
+                        icon: "building.columns",
+                        isOn: $draft.isExLibrary
+                    )
+                }
+
+                Divider()
+
+                // Content Features
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Content Features")
+                        .font(.headline)
+
+                    FeatureToggle(
+                        title: "Illustrated",
+                        description: "Contains illustrations",
+                        icon: "photo.fill",
+                        isOn: $draft.isIllustrated
+                    )
+
+                    FeatureToggle(
+                        title: "Large Print",
+                        description: "Large print edition",
+                        icon: "textformat.size",
+                        isOn: $draft.isLargePrint
+                    )
+                }
+
+                Divider()
+
+                // Custom Features
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Custom Features (Optional)")
+                        .font(.headline)
+                    Text("Add details buyers search for to improve discoverability")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    TextField("e.g., 'Autographed by Stephen King'", text: $draft.customFeatures)
+                        .textFieldStyle(.roundedBorder)
+
+                    Text("💡 Tip: Include author name, inscriptions, or special features")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
                 // Quantity
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Quantity")
@@ -258,20 +356,31 @@ struct PriceConditionStepView: View {
 
     @ViewBuilder
     private var conditionDescription: some View {
-        switch draft.condition {
-        case "New":
-            Text("Brand new, unread, perfect condition")
-        case "Like New":
-            Text("Appears unread, no visible wear")
-        case "Very Good":
-            Text("Minimal wear, pages clean, binding tight")
-        case "Good":
-            Text("Some wear, all pages intact, readable")
-        case "Acceptable":
-            Text("Heavily worn but complete and usable")
-        default:
-            Text("")
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .top, spacing: 4) {
+                Text("eBay:")
+                    .fontWeight(.semibold)
+                    .foregroundColor(.blue)
+
+                switch draft.condition {
+                case "Brand New":
+                    Text("A new, unread, unused book in perfect condition with no missing or damaged pages.")
+                case "Like New":
+                    Text("A book that looks new but has been read. Cover has no visible wear. No missing or damaged pages, no creases, tears, underlining, or writing.")
+                case "Very Good":
+                    Text("A book that does not look new but is in excellent condition. No obvious damage to cover. No missing or damaged pages, no creases, tears, underlining, or writing.")
+                case "Good":
+                    Text("The book has been read but is in good condition. Very minimal damage to cover. Minimal pencil underlining OK, but no highlighting or writing in margins. No missing pages.")
+                case "Acceptable":
+                    Text("A book with obvious wear. May have damage to cover or binding. Possible writing, underlining, and highlighting, but no missing pages.")
+                default:
+                    Text("")
+                }
+            }
         }
+        .padding(12)
+        .background(Color.blue.opacity(0.05))
+        .cornerRadius(8)
     }
 }
 
@@ -339,10 +448,13 @@ struct FormatLanguageStepView: View {
     }
 }
 
-// MARK: - Step 3: Special Features
+// MARK: - Step 3: Price
 
-struct SpecialFeaturesStepView: View {
+struct PriceStepView: View {
     @ObservedObject var draft: EbayListingDraft
+    @State private var isLoadingPrice = false
+    @State private var priceRecommendation: PriceRecommendationResponse?
+    @State private var showPriceInfo = false
 
     var body: some View {
         ScrollView {
@@ -352,52 +464,96 @@ struct SpecialFeaturesStepView: View {
                     Text("Step 3 of 4")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text("Special Features")
+                    Text("Set Your Price")
                         .font(.title2)
                         .fontWeight(.bold)
-                    Text("Select any special features that apply")
+                    Text("Based on your book's condition and features")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
                 Divider()
 
-                // Features
-                VStack(spacing: 16) {
-                    FeatureToggle(
-                        title: "Dust Jacket",
-                        description: "Book has original dust jacket",
-                        icon: "book.closed",
-                        isOn: $draft.hasDustJacket
-                    )
+                // Price Recommendation Card (if loaded)
+                if let recommendation = priceRecommendation {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .foregroundColor(.blue)
+                            Text("Price Recommendation")
+                                .font(.headline)
+                        }
 
-                    FeatureToggle(
-                        title: "First Edition",
-                        description: "First printing of the book",
-                        icon: "star.fill",
-                        isOn: $draft.isFirstEdition
-                    )
+                        Text("$\(String(format: "%.2f", recommendation.recommendedPrice))")
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(.blue)
 
-                    FeatureToggle(
-                        title: "Signed",
-                        description: "Signed by the author",
-                        icon: "signature",
-                        isOn: $draft.isSigned
-                    )
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(recommendation.source)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("Based on \(recommendation.compsCount) comparable listings")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
 
-                    FeatureToggle(
-                        title: "Illustrated",
-                        description: "Contains illustrations",
-                        icon: "photo",
-                        isOn: $draft.isIllustrated
-                    )
+                            if !recommendation.featuresMatched.isEmpty {
+                                Text("Features: \(recommendation.featuresMatched.joined(separator: ", "))")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
 
-                    FeatureToggle(
-                        title: "Large Print",
-                        description: "Large print edition",
-                        icon: "textformat.size",
-                        isOn: $draft.isLargePrint
+                            HStack(spacing: 4) {
+                                Text("Range: $\(String(format: "%.2f", recommendation.priceRangeMin)) - $\(String(format: "%.2f", recommendation.priceRangeMax))")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.blue.opacity(0.05))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.blue.opacity(0.3), lineWidth: 1)
                     )
+                }
+
+                // Price Input
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Listing Price")
+                            .font(.headline)
+                        Spacer()
+                        if isLoadingPrice {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .scaleEffect(0.8)
+                        }
+                    }
+
+                    TextField("Enter price", value: $draft.price, format: .currency(code: "USD"))
+                        .textFieldStyle(.roundedBorder)
+                        .keyboardType(.decimalPad)
+                        .font(.system(size: 24, weight: .medium, design: .rounded))
+                        .padding()
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.blue.opacity(0.5), lineWidth: 2)
+                        )
+
+                    Button {
+                        Task {
+                            await loadPriceRecommendation()
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Get Price Recommendation")
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                    }
+                    .disabled(isLoadingPrice)
                 }
 
                 Divider()
@@ -418,6 +574,33 @@ struct SpecialFeaturesStepView: View {
             }
             .padding()
         }
+        .onAppear {
+            // Load price recommendation when view appears
+            if draft.price == 0 && priceRecommendation == nil {
+                Task {
+                    await loadPriceRecommendation()
+                }
+            }
+        }
+    }
+
+    private func loadPriceRecommendation() async {
+        isLoadingPrice = true
+
+        do {
+            priceRecommendation = try await BookAPI.recommendPrice(draft: draft)
+
+            // Auto-populate price with recommendation
+            await MainActor.run {
+                if draft.price == 0, let rec = priceRecommendation {
+                    draft.price = Double(rec.recommendedPrice)
+                }
+            }
+        } catch {
+            print("❌ Failed to load price recommendation: \(error)")
+        }
+
+        isLoadingPrice = false
     }
 }
 
@@ -465,6 +648,9 @@ struct FeatureToggle: View {
 
 struct ReviewConfirmStepView: View {
     @ObservedObject var draft: EbayListingDraft
+    @State private var titlePreview: TitlePreviewResponse?
+    @State private var isLoadingPreview = false
+    @State private var previewError: String?
 
     var body: some View {
         ScrollView {
@@ -483,6 +669,20 @@ struct ReviewConfirmStepView: View {
                 }
 
                 Divider()
+
+                // Title Preview Card (if SEO enabled)
+                if draft.useSEOOptimization {
+                    TitlePreviewCard(
+                        titlePreview: titlePreview,
+                        isLoading: isLoadingPreview,
+                        error: previewError,
+                        onRegenerate: {
+                            Task {
+                                await loadTitlePreview()
+                            }
+                        }
+                    )
+                }
 
                 // Summary
                 VStack(alignment: .leading, spacing: 16) {
@@ -510,6 +710,167 @@ struct ReviewConfirmStepView: View {
                 .cornerRadius(12)
             }
             .padding()
+        }
+        .onAppear {
+            // Load title preview when view appears (if SEO enabled)
+            if draft.useSEOOptimization && titlePreview == nil {
+                Task {
+                    await loadTitlePreview()
+                }
+            }
+        }
+    }
+
+    private func loadTitlePreview() async {
+        isLoadingPreview = true
+        previewError = nil
+
+        do {
+            titlePreview = try await BookAPI.previewTitle(draft: draft)
+        } catch {
+            previewError = "Failed to generate title preview: \(error.localizedDescription)"
+            print("❌ Title preview error: \(error)")
+        }
+
+        isLoadingPreview = false
+    }
+}
+
+// MARK: - Title Preview Card
+
+struct TitlePreviewCard: View {
+    let titlePreview: TitlePreviewResponse?
+    let isLoading: Bool
+    let error: String?
+    let onRegenerate: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header
+            HStack {
+                Image(systemName: "doc.text.fill")
+                    .foregroundColor(.blue)
+                Text("Generated Title")
+                    .font(.headline)
+                Spacer()
+            }
+
+            if isLoading {
+                // Loading state
+                HStack {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                    Text("Generating optimized title...")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, 24)
+            } else if let error = error {
+                // Error state
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        Text("Could not generate preview")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                    }
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Button(action: onRegenerate) {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Try Again")
+                        }
+                        .font(.subheadline)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                    }
+                    .padding(.top, 4)
+                }
+            } else if let preview = titlePreview {
+                // Success state - show title and score
+                VStack(alignment: .leading, spacing: 12) {
+                    // Title display
+                    Text(preview.title)
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemGray5))
+                        .cornerRadius(8)
+
+                    Divider()
+
+                    // Keyword Score
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: "target")
+                                .foregroundColor(.blue)
+                            Text("Keyword Score: \(String(format: "%.1f", preview.titleScore)) / \(String(format: "%.0f", preview.maxScore))")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(String(format: "%.0f", preview.scorePercentage))%")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                                .foregroundColor(scoreColor(preview.scorePercentage))
+                        }
+
+                        // Progress bar
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                // Background
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color(.systemGray5))
+                                    .frame(height: 8)
+
+                                // Filled portion
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(scoreColor(preview.scorePercentage))
+                                    .frame(width: geometry.size.width * CGFloat(preview.scorePercentage / 100), height: 8)
+                            }
+                        }
+                        .frame(height: 8)
+
+                        Text("Based on 90-day sold listings")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    // Regenerate button
+                    Button(action: onRegenerate) {
+                        HStack {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Regenerate Title")
+                        }
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color.blue.opacity(0.05))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    private func scoreColor(_ percentage: Float) -> Color {
+        switch percentage {
+        case 0..<50: return .red
+        case 50..<70: return .orange
+        case 70..<85: return .yellow
+        default: return .green
         }
     }
 }
@@ -590,16 +951,46 @@ struct DetailRow: View {
 // MARK: - Preview
 
 #Preview {
-    let book = CachedBook(from: BookEvaluationRecord(
+    let metadata = BookMetadataDetails(
+        title: "The Brightest Night",
+        subtitle: nil,
+        authors: ["Tui T. Sutherland"],
+        creditedAuthors: nil,
+        canonicalAuthor: "Tui T. Sutherland",
+        publisher: "Scholastic",
+        publishedYear: 2015,
+        description: "The fifth book in the Wings of Fire series",
+        thumbnail: nil,
+        categories: ["Fantasy", "Children's Fiction"],
+        seriesName: "Wings of Fire",
+        seriesIndex: 5
+    )
+
+    let record = BookEvaluationRecord(
         isbn: "9780545349277",
-        status: "ACCEPT",
+        originalIsbn: nil,
         condition: "Good",
-        metadata: BookMetadata(
-            title: "The Brightest Night",
-            authors: ["Tui T. Sutherland"],
-            thumbnail: nil
-        )
-    ))
+        edition: nil,
+        quantity: 1,
+        estimatedPrice: 12.99,
+        probabilityScore: 0.75,
+        probabilityLabel: "PROFIT",
+        justification: ["Popular series", "High demand"],
+        metadata: metadata,
+        market: nil,
+        booksrun: nil,
+        booksrunValueLabel: nil,
+        booksrunValueRatio: nil,
+        bookscouter: nil,
+        bookscouterValueLabel: nil,
+        bookscouterValueRatio: nil,
+        rarity: nil,
+        updatedAt: nil,
+        createdAt: nil,
+        timeToSellDays: nil
+    )
+
+    let book = CachedBook(from: record)
 
     EbayListingWizardView(book: book) { response in
         print("Created listing: \(response.title)")

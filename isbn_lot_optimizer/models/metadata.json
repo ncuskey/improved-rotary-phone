@@ -1,0 +1,42 @@
+{
+  "version": "v1",
+  "model_type": "XGBRegressor",
+  "train_date": "2025-10-28T17:25:44.418785",
+  "train_samples": 41,
+  "test_samples": 11,
+  "train_mae": 0.09060720688424447,
+  "test_mae": 3.9326975257179955,
+  "train_rmse": 0.13365273022986823,
+  "test_rmse": 6.372645446177793,
+  "test_r2": -0.19011563557502265,
+  "feature_importance": {
+    "log_amazon_rank": 0.10278714448213577,
+    "amazon_count": 0.08313164114952087,
+    "ebay_sold_count": 0.0,
+    "ebay_active_count": 0.04530783370137215,
+    "ebay_active_median": 0.0001064931639120914,
+    "sell_through_rate": 0.0,
+    "page_count": 0.06796012818813324,
+    "age_years": 0.49850860238075256,
+    "log_ratings": 0.0,
+    "rating": 0.0,
+    "has_list_price": 0.0,
+    "list_price": 0.0,
+    "is_new": 0.0,
+    "is_like_new": 0.0,
+    "is_very_good": 0.19791840016841888,
+    "is_good": 0.0023676527198404074,
+    "is_acceptable": 0.0,
+    "is_poor": 0.0,
+    "is_textbook": 0.0,
+    "is_fiction": 0.0,
+    "demand_score": 0.0,
+    "competition_ratio": 0.0019121255027130246,
+    "price_velocity": 0.0
+  },
+  "hyperparameters": {
+    "n_estimators": 100,
+    "max_depth": 5,
+    "learning_rate": 0.1
+  }
+}

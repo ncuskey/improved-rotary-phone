@@ -42,6 +42,13 @@ FEATURE_NAMES = [
     "is_acceptable",
     "is_poor",
 
+    # Book attributes (physical characteristics)
+    "is_hardcover",
+    "is_paperback",
+    "is_mass_market",
+    "is_signed",
+    "is_first_edition",
+
     # Category flags
     "is_textbook",
     "is_fiction",
@@ -173,6 +180,29 @@ class FeatureExtractor:
         features["is_good"] = 1 if condition_lower == "good" else 0
         features["is_acceptable"] = 1 if "acceptable" in condition_lower else 0
         features["is_poor"] = 1 if "poor" in condition_lower else 0
+
+        # Book attributes (physical characteristics)
+        if metadata:
+            cover_type = getattr(metadata, 'cover_type', None)
+            features["is_hardcover"] = 1 if cover_type == "Hardcover" else 0
+            features["is_paperback"] = 1 if cover_type == "Paperback" else 0
+            features["is_mass_market"] = 1 if cover_type == "Mass Market" else 0
+            features["is_signed"] = 1 if getattr(metadata, 'signed', False) else 0
+            features["is_first_edition"] = 1 if getattr(metadata, 'printing', None) == "1st" else 0
+
+            if not cover_type:
+                missing.extend(["is_hardcover", "is_paperback", "is_mass_market"])
+            if not getattr(metadata, 'signed', False):
+                missing.append("is_signed")
+            if not getattr(metadata, 'printing', None):
+                missing.append("is_first_edition")
+        else:
+            features["is_hardcover"] = 0
+            features["is_paperback"] = 0
+            features["is_mass_market"] = 0
+            features["is_signed"] = 0
+            features["is_first_edition"] = 0
+            missing.extend(["is_hardcover", "is_paperback", "is_mass_market", "is_signed", "is_first_edition"])
 
         # Category flags
         if metadata and metadata.categories:

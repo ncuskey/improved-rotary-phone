@@ -48,7 +48,10 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
         condition,
         estimated_price,
         sold_comps_median,
-        json_extract(bookscouter_json, '$.amazon_lowest_price') as amazon_price
+        json_extract(bookscouter_json, '$.amazon_lowest_price') as amazon_price,
+        cover_type,
+        signed,
+        printing
     FROM books
     WHERE bookscouter_json IS NOT NULL
       AND json_extract(bookscouter_json, '$.amazon_lowest_price') IS NOT NULL
@@ -70,7 +73,7 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
     target_prices = []
 
     for row in rows:
-        isbn, metadata_json, market_json, bookscouter_json, condition, estimated_price, sold_comps_median, amazon_price = row
+        isbn, metadata_json, market_json, bookscouter_json, condition, estimated_price, sold_comps_median, amazon_price, cover_type, signed, printing = row
 
         # Parse JSON fields - just use dict form instead of instantiating models
         # This avoids type errors from extra fields in database
@@ -80,13 +83,17 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
 
         # Create simplified objects with only fields we need
         class SimpleMetadata:
-            def __init__(self, d):
+            def __init__(self, d, cover_type, signed, printing):
                 self.page_count = d.get('page_count')
                 self.published_year = d.get('published_year')
                 self.average_rating = d.get('average_rating')
                 self.ratings_count = d.get('ratings_count')
                 self.list_price = d.get('list_price')
                 self.categories = d.get('categories', [])
+                # Book attributes from database
+                self.cover_type = cover_type
+                self.signed = bool(signed)
+                self.printing = printing
 
         class SimpleMarket:
             def __init__(self, d):
@@ -102,7 +109,7 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
                 self.amazon_count = d.get('amazon_count')
                 self.amazon_lowest_price = d.get('amazon_lowest_price')
 
-        metadata = SimpleMetadata(metadata_dict) if metadata_dict else None
+        metadata = SimpleMetadata(metadata_dict, cover_type, signed, printing) if metadata_dict else None
         market = SimpleMarket(market_dict) if market_dict else None
         bookscouter = SimpleBookscouter(bookscouter_dict) if bookscouter_dict else None
 

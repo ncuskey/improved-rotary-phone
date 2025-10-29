@@ -21,10 +21,19 @@ from typing import Dict, List, Optional, Tuple
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Load environment variables from .env
+env_file = Path(__file__).parent.parent / '.env'
+if env_file.exists():
+    for line in env_file.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith('#') and '=' in line:
+            key, value = line.split('=', 1)
+            os.environ[key] = value.strip('"').strip("'")
+
 from isbn_lot_optimizer.collection_strategies import CollectionStrategyManager
 from isbn_lot_optimizer.training_db import TrainingDataManager
-from shared.amazon_parser import fetch_amazon_data_decodo
-from shared.ebay_sold_comps import fetch_sold_comps
+from shared.bookscouter import fetch_offers
+from shared.ebay_sold_comps import get_sold_comps
 from shared.metadata import fetch_metadata, create_http_session
 from shared.utils import normalise_isbn
 
@@ -138,23 +147,27 @@ class TrainingDataCollectorPOC:
         """
         try:
             # Fetch sold comps from eBay
-            market_stats = fetch_sold_comps(isbn, max_days=90, max_results=50)
+            # Returns dict with keys: count, median, min, max, samples, is_estimate, source
+            market_stats = get_sold_comps(isbn)
 
-            if not market_stats or not market_stats.sold_count:
+            if not market_stats or not market_stats.get('count'):
                 return False, None
 
-            meets_threshold = market_stats.sold_count >= self.target.min_comps
+            sold_count = market_stats['count']
+            meets_threshold = sold_count >= self.target.min_comps
 
-            # Convert to dict for storage
+            # Convert to dict for storage (normalize field names)
             market_dict = {
-                'sold_count': market_stats.sold_count,
-                'sold_avg_price': market_stats.sold_avg_price,
-                'sold_median_price': market_stats.sold_median_price,
-                'sold_min_price': market_stats.sold_min_price,
-                'sold_max_price': market_stats.sold_max_price,
-                'active_count': market_stats.active_count,
-                'active_median_price': market_stats.active_median_price,
-                'sell_through_rate': market_stats.sell_through_rate,
+                'sold_count': sold_count,
+                'sold_avg_price': market_stats.get('median', 0),  # Use median as avg
+                'sold_median_price': market_stats.get('median', 0),
+                'sold_min_price': market_stats.get('min', 0),
+                'sold_max_price': market_stats.get('max', 0),
+                'active_count': 0,  # Not available from get_sold_comps
+                'active_median_price': None,
+                'sell_through_rate': None,
+                'source': market_stats.get('source', 'unknown'),
+                'is_estimate': market_stats.get('is_estimate', True),
             }
 
             return meets_threshold, market_dict
@@ -191,21 +204,31 @@ class TrainingDataCollectorPOC:
             if not metadata:
                 logger.warning(f"  {isbn}: No metadata found")
 
-            # 3. Amazon/Decodo data (rank, offers)
-            amazon_data = None
+            # 3. BookScouter data (Amazon rank, offers) - optional
+            bookscouter_data = None
             try:
-                amazon_data = fetch_amazon_data_decodo(isbn)
-                if amazon_data:
-                    logger.info(f"  {isbn}: Amazon rank {amazon_data.get('amazon_sales_rank', 'N/A')}")
+                # Check if API key is available
+                api_key = os.environ.get('BOOKSCOUTER_API_KEY')
+                if api_key:
+                    bookscouter_result = fetch_offers(isbn, api_key=api_key)
+                    if bookscouter_result:
+                        bookscouter_data = {
+                            'amazon_sales_rank': bookscouter_result.amazon_sales_rank,
+                            'amazon_count': bookscouter_result.amazon_count,
+                            'amazon_lowest_price': bookscouter_result.amazon_lowest_price,
+                        }
+                        logger.info(f"  {isbn}: Amazon rank {bookscouter_result.amazon_sales_rank or 'N/A'}")
+                else:
+                    logger.debug(f"  {isbn}: Skipping BookScouter (no API key)")
             except Exception as e:
-                logger.warning(f"  {isbn}: Amazon data failed: {e}")
+                logger.warning(f"  {isbn}: BookScouter data failed: {e}")
 
             # Build complete record
             book_data = {
                 'isbn': isbn,
                 'metadata': metadata,
                 'market': market_data,
-                'amazon': amazon_data,
+                'bookscouter': bookscouter_data,
                 'sold_avg_price': market_data['sold_avg_price'],
                 'sold_count': market_data['sold_count'],
             }
@@ -216,6 +239,79 @@ class TrainingDataCollectorPOC:
             logger.error(f"  {isbn}: Data collection failed: {e}")
             self.stats['data_collection_failed'] += 1
             return None
+
+    def extract_physical_attributes(self, metadata: Optional[Dict]) -> tuple:
+        """
+        Extract physical attributes (cover_type, signed, printing) from metadata.
+
+        Uses multiple sources:
+        1. Collection category (primary)
+        2. Title parsing for keywords
+        3. Google Books binding field
+
+        Args:
+            metadata: Book metadata dict
+
+        Returns:
+            Tuple of (cover_type, signed, printing)
+        """
+        import re
+
+        # Start with category inference (most reliable)
+        cover_type = None
+        signed = 0
+        printing = None
+
+        category_lower = self.category.lower()
+
+        if 'hardcover' in category_lower:
+            cover_type = 'Hardcover'
+        elif 'mass_market' in category_lower:
+            cover_type = 'Mass Market'
+        elif 'paperback' in category_lower:
+            cover_type = 'Paperback'
+
+        if 'signed' in category_lower:
+            signed = 1
+
+        if 'first_edition' in category_lower:
+            printing = '1st'
+
+        # Parse metadata for additional hints
+        if metadata:
+            # Parse title for keywords
+            title = metadata.get('title', '').lower()
+            if title:
+                # Cover type hints
+                if not cover_type:
+                    if re.search(r'\b(hardcover|hardback|hc)\b', title):
+                        cover_type = 'Hardcover'
+                    elif re.search(r'\bmass market\b', title):
+                        cover_type = 'Mass Market'
+                    elif re.search(r'\b(paperback|pb)\b', title):
+                        cover_type = 'Paperback'
+
+                # Signed hints
+                if not signed and re.search(r'\b(signed|autographed)\b', title):
+                    signed = 1
+
+                # Edition hints
+                if not printing:
+                    if re.search(r'\b(first edition|1st edition|first printing)\b', title):
+                        printing = '1st'
+
+            # Check binding field (Google Books)
+            binding = metadata.get('binding') or metadata.get('format')
+            if not cover_type and binding:
+                binding_lower = binding.lower()
+                if 'hardcover' in binding_lower or 'hardback' in binding_lower:
+                    cover_type = 'Hardcover'
+                elif 'mass market' in binding_lower:
+                    cover_type = 'Mass Market'
+                elif 'paperback' in binding_lower:
+                    cover_type = 'Paperback'
+
+        return cover_type, signed, printing
 
     def store_book(self, book_data: Dict) -> bool:
         """
@@ -231,9 +327,12 @@ class TrainingDataCollectorPOC:
             isbn = book_data['isbn']
 
             # Serialize JSON blobs
-            metadata_json = json.dumps(book_data['metadata'].__dict__ if book_data['metadata'] else {})
+            metadata_json = json.dumps(book_data['metadata'] if book_data['metadata'] else {})
             market_json = json.dumps(book_data['market'])
-            bookscouter_json = json.dumps(book_data['amazon']) if book_data['amazon'] else None
+            bookscouter_json = json.dumps(book_data['bookscouter']) if book_data['bookscouter'] else None
+
+            # Extract physical attributes
+            cover_type, signed, printing = self.extract_physical_attributes(book_data['metadata'])
 
             # Add to training database
             self.db.add_training_book(
@@ -244,7 +343,10 @@ class TrainingDataCollectorPOC:
                 sold_median_price=book_data['market'].get('sold_median_price'),
                 metadata_json=metadata_json,
                 market_json=market_json,
-                bookscouter_json=bookscouter_json
+                bookscouter_json=bookscouter_json,
+                cover_type=cover_type,
+                signed=signed,
+                printing=printing
             )
 
             logger.info(f"  {isbn}: ✓ Stored in training database")

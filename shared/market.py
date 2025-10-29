@@ -11,6 +11,7 @@ from requests.auth import _basic_auth_str
 
 from shared.models import EbayMarketStats
 from shared.timing import timer
+from shared.lot_detector import is_lot as is_lot_listing
 
 EBAY_FINDING_URL = "https://svcs.ebay.com/services/search/FindingService/v1"
 
@@ -160,8 +161,7 @@ def browse_active_by_isbn(
     js: Dict[str, Any] = r.json()
     items = cast(List[Dict[str, Any]], js.get("itemSummaries", []) or [])
 
-    # Keywords to filter out (case-insensitive)
-    LOT_KEYWORDS = ["lot of", "set of", "bundle", "collection"]
+    # Keywords to filter signed copies (case-insensitive)
     SIGNED_KEYWORDS = ["signed", "autographed", "signature"]
 
     prices: List[float] = []
@@ -180,7 +180,8 @@ def browse_active_by_isbn(
         p = it.get("price", {}).get("value")
 
         # Check for problematic keywords
-        is_lot = any(keyword in title for keyword in LOT_KEYWORDS)
+        # Use centralized lot detector (30+ patterns, regex support)
+        is_lot = is_lot_listing(title)
         is_signed = any(keyword in title for keyword in SIGNED_KEYWORDS)
 
         # Track occurrences
@@ -312,8 +313,7 @@ def _browse_active_by_isbn(isbn: str, limit: int = 50, include_signed: bool = Fa
     Returns None if no prices found or on HTTP error.
     Filters out multi-book lots and (optionally) signed copies.
     """
-    # Keywords to filter out (case-insensitive)
-    LOT_KEYWORDS = ["lot of", "set of", "bundle", "collection"]
+    # Keywords to filter signed copies (case-insensitive)
     SIGNED_KEYWORDS = ["signed", "autographed", "signature"]
 
     tok = get_app_token()
@@ -337,7 +337,8 @@ def _browse_active_by_isbn(isbn: str, limit: int = 50, include_signed: bool = Fa
         title = (it.get("title") or "").lower()
 
         # Check for problematic keywords
-        is_lot = any(keyword in title for keyword in LOT_KEYWORDS)
+        # Use centralized lot detector (30+ patterns, regex support)
+        is_lot = is_lot_listing(title)
         is_signed = any(keyword in title for keyword in SIGNED_KEYWORDS)
 
         # Filter logic

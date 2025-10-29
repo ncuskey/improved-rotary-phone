@@ -49,7 +49,7 @@ COLLECTION_TARGETS = [
         category='signed_hardcover',
         description='Signed/autographed hardcover books',
         target_count=200,
-        min_comps=10,
+        min_comps=5,  # Lowered for Track B estimates
         priority=1,
         search_keywords=[
             'signed first edition hardcover',
@@ -66,7 +66,7 @@ COLLECTION_TARGETS = [
         category='first_edition_hardcover',
         description='First edition hardcover books (non-signed)',
         target_count=400,
-        min_comps=10,
+        min_comps=5,  # Lowered for Track B estimates
         priority=1,
         search_keywords=[
             'first edition hardcover',
@@ -83,7 +83,7 @@ COLLECTION_TARGETS = [
         category='mass_market_paperback',
         description='Mass market paperback editions',
         target_count=150,
-        min_comps=10,
+        min_comps=5,  # Lowered for Track B estimates
         priority=1,
         search_keywords=[
             'mass market paperback',

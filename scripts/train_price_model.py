@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from isbn_lot_optimizer.ml.feature_extractor import FeatureExtractor
 from shared.models import BookMetadata, EbayMarketStats, BookScouterResult
+from shared.lot_detector import is_lot
 
 
 def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List]:
@@ -63,10 +64,44 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
     rows = cursor.fetchall()
     conn.close()
 
+    print(f"Loaded {len(rows)} book records from catalog.db")
+
+    # ALSO load from training_data.db (strategic collection)
+    training_db_path = Path.home() / '.isbn_lot_optimizer' / 'training_data.db'
+    if training_db_path.exists():
+        conn_training = sqlite3.connect(training_db_path)
+        cursor_training = conn_training.cursor()
+
+        # Query training books - these have sold_avg_price as ground truth
+        training_query = """
+        SELECT
+            isbn,
+            metadata_json,
+            market_json,
+            bookscouter_json,
+            'Good' as condition,
+            sold_avg_price,
+            sold_median_price,
+            NULL as amazon_price,
+            cover_type,
+            signed,
+            printing
+        FROM training_books
+        WHERE sold_avg_price IS NOT NULL
+          AND sold_count >= 5
+        """
+
+        cursor_training.execute(training_query)
+        training_rows = cursor_training.fetchall()
+        conn_training.close()
+
+        print(f"Loaded {len(training_rows)} additional book records from training_data.db")
+        rows.extend(training_rows)
+
     if len(rows) < min_samples:
         raise ValueError(f"Insufficient training data: {len(rows)} samples (need at least {min_samples})")
 
-    print(f"Loaded {len(rows)} book records from database")
+    print(f"Total training samples: {len(rows)}")
 
     # Parse records and create target variable
     book_records = []
@@ -80,6 +115,14 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
         metadata_dict = json.loads(metadata_json) if metadata_json else None
         market_dict = json.loads(market_json) if market_json else None
         bookscouter_dict = json.loads(bookscouter_json) if bookscouter_json else None
+
+        # CRITICAL: Skip lot listings to prevent contaminating training data
+        # Check title in metadata_dict for lot patterns
+        if metadata_dict and 'title' in metadata_dict:
+            title = metadata_dict['title']
+            if is_lot(title):
+                # Skip this record - it's a lot listing
+                continue
 
         # Create simplified objects with only fields we need
         class SimpleMetadata:
@@ -118,9 +161,12 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
         if sold_comps_median and sold_comps_median > 0:
             # Prefer eBay sold comps (actual market price)
             target = sold_comps_median
-        else:
+        elif amazon_price and amazon_price > 0:
             # Fall back to Amazon with eBay discount
             target = amazon_price * 0.7
+        else:
+            # Skip books without valid pricing data
+            continue
 
         book_records.append({
             "isbn": isbn,

@@ -17,6 +17,8 @@ from dataclasses import dataclass
 
 import requests
 
+from shared.lot_detector import is_lot
+
 
 # Token broker configuration
 TOKEN_BROKER_BASE = os.getenv("TOKEN_BROKER_URL", "http://localhost:8787")
@@ -82,6 +84,7 @@ class EbaySoldComps:
         fallback_to_estimate: bool = True,
         max_samples: int = 3,
         include_signed: bool = False,
+        features: Optional[Dict[str, bool]] = None,
     ) -> Optional[SoldCompsResult]:
         """
         Get sold comps for ISBN/GTIN with smart filtering.
@@ -91,6 +94,7 @@ class EbaySoldComps:
             fallback_to_estimate: If True, use Track B estimate when Track A unavailable
             max_samples: Number of sample listings to return
             include_signed: If True, include signed/autographed copies (default: False)
+            features: Optional dict of features to filter by (e.g., {"first_edition": True, "dust_jacket": True})
 
         Returns:
             SoldCompsResult or None if no data available
@@ -100,7 +104,7 @@ class EbaySoldComps:
         """
         # Try Track A first (real sold data from MI)
         try:
-            result = self._get_mi_sold_comps(gtin, max_samples)
+            result = self._get_mi_sold_comps(gtin, max_samples, features=features)
             if result:
                 return result
         except requests.HTTPError as e:
@@ -110,11 +114,11 @@ class EbaySoldComps:
 
         # Fall back to Track B (estimate from active)
         if fallback_to_estimate:
-            return self._get_estimated_sold_comps(gtin, max_samples, include_signed=include_signed)
+            return self._get_estimated_sold_comps(gtin, max_samples, include_signed=include_signed, features=features)
 
         return None
 
-    def _get_mi_sold_comps(self, gtin: str, max_samples: int) -> Optional[SoldCompsResult]:
+    def _get_mi_sold_comps(self, gtin: str, max_samples: int, features: Optional[Dict[str, bool]] = None) -> Optional[SoldCompsResult]:
         """
         Track A: Get real sold data from Marketplace Insights API via token broker.
 
@@ -134,8 +138,15 @@ class EbaySoldComps:
         data = resp.json()
 
         # Normalize MI response to SoldCompsResult format
+        all_samples = data.get("samples", [])
+
+        # Filter by features if provided
+        if features:
+            all_samples = self._filter_by_features(all_samples, features)
+
+        # Take only requested number of samples
         samples: List[PriceSample] = []
-        for s in data.get("samples", [])[:max_samples]:
+        for s in all_samples[:max_samples]:
             samples.append({
                 "title": s.get("title", ""),
                 "condition": "",  # MI doesn't always include condition
@@ -143,6 +154,20 @@ class EbaySoldComps:
                 "ship_price": 0.0,  # MI sold prices typically include shipping
                 "delivered_price": float(s.get("price", 0)),
             })
+
+        # Recalculate stats from filtered samples
+        if samples:
+            prices = [s["delivered_price"] for s in samples]
+            return {
+                "count": len(samples),
+                "min": min(prices),
+                "median": sorted(prices)[len(prices) // 2],
+                "max": max(prices),
+                "samples": samples,
+                "is_estimate": False,
+                "source": "marketplace_insights",
+                "last_sold_date": data.get("lastSoldDate"),  # ISO 8601 date from MI API
+            }
 
         return {
             "count": data.get("count", 0),
@@ -152,10 +177,57 @@ class EbaySoldComps:
             "samples": samples,
             "is_estimate": False,
             "source": "marketplace_insights",
-            "last_sold_date": data.get("lastSoldDate"),  # ISO 8601 date from MI API
+            "last_sold_date": data.get("lastSoldDate"),
         }
 
-    def _get_estimated_sold_comps(self, gtin: str, max_samples: int, include_signed: bool = False) -> Optional[SoldCompsResult]:
+    def _filter_by_features(self, samples: List[Dict[str, Any]], features: Dict[str, bool]) -> List[Dict[str, Any]]:
+        """
+        Filter samples by checking if their titles contain feature keywords.
+
+        Args:
+            samples: List of listing samples with 'title' field
+            features: Dict of features to match (e.g., {"first_edition": True, "signed": True})
+
+        Returns:
+            Filtered list of samples matching the requested features
+        """
+        feature_keywords = {
+            "first_edition": ["first edition", "1st edition", "1st ed"],
+            "first_printing": ["first printing", "1st printing", "first print"],
+            "signed": ["signed", "autographed", "signature"],
+            "dust_jacket": ["dust jacket", "dj", "w/dj", "w/ dj"],
+            "illustrated": ["illustrated", "illustrations"],
+            "limited_edition": ["limited edition", "limited ed"],
+            "ex_library": ["ex-library", "ex library", "library"],
+        }
+
+        filtered = []
+        for sample in samples:
+            title = sample.get("title", "").lower()
+            matches = True
+
+            # Check if all requested features are present in title
+            for feature, required in features.items():
+                if not required:
+                    continue
+
+                keywords = feature_keywords.get(feature, [])
+                has_keyword = any(kw in title for kw in keywords)
+
+                if not has_keyword:
+                    matches = False
+                    break
+
+            if matches:
+                filtered.append(sample)
+
+        # CRITICAL: Filter out lot listings to prevent contaminating sold comps
+        # This applies when Marketplace Insights API becomes available (Track A)
+        filtered = [s for s in filtered if not is_lot(s.get("title", ""))]
+
+        return filtered
+
+    def _get_estimated_sold_comps(self, gtin: str, max_samples: int, include_signed: bool = False, features: Optional[Dict[str, bool]] = None) -> Optional[SoldCompsResult]:
         """
         Track B: Estimate sold prices from active listings using conservative heuristic.
 

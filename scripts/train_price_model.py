@@ -106,10 +106,11 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
         market = SimpleMarket(market_dict) if market_dict else None
         bookscouter = SimpleBookscouter(bookscouter_dict) if bookscouter_dict else None
 
-        # Create blended target: 60% eBay + 40% Amazon (with 70% discount)
+        # Use simpler target: eBay when available, Amazon * 0.7 otherwise
+        # This reduces noise from blending mismatched price sources
         if sold_comps_median and sold_comps_median > 0:
-            # Prefer eBay when available
-            target = sold_comps_median * 0.6 + amazon_price * 0.7 * 0.4
+            # Prefer eBay sold comps (actual market price)
+            target = sold_comps_median
         else:
             # Fall back to Amazon with eBay discount
             target = amazon_price * 0.7
@@ -190,13 +191,17 @@ def train_model(
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # Train model
+    # Train model with regularization to reduce overfitting
     model = xgb.XGBRegressor(
-        n_estimators=100,
-        max_depth=5,
-        learning_rate=0.1,
+        n_estimators=200,
+        max_depth=4,           # Reduced to prevent overfitting
+        learning_rate=0.05,     # Slower learning for better generalization
         subsample=0.8,
         colsample_bytree=0.8,
+        reg_alpha=1.0,          # L1 regularization
+        reg_lambda=1.0,         # L2 regularization
+        min_child_weight=3,     # Minimum samples per leaf
+        gamma=0.1,              # Minimum loss reduction for split
         random_state=42,
         objective='reg:squarederror'
     )
@@ -316,10 +321,24 @@ def main():
     avg_completeness = np.mean(completeness_scores)
     print(f"   Average feature completeness: {avg_completeness:.1%}")
 
+    # Remove outliers (IQR method)
+    q1, q3 = np.percentile(y, [25, 75])
+    iqr = q3 - q1
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+
+    outlier_mask = (y >= lower_bound) & (y <= upper_bound)
+    X_filtered = X[outlier_mask]
+    y_filtered = y[outlier_mask]
+
+    n_outliers = len(y) - len(y_filtered)
+    print(f"\n   Removed {n_outliers} outliers (${lower_bound:.2f} - ${upper_bound:.2f})")
+    print(f"   Training with {len(y_filtered)} samples")
+
     # Train/test split
     print(f"\n3. Splitting data ({100*(1-args.test_size):.0f}% train, {100*args.test_size:.0f}% test)...")
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=args.test_size, random_state=42
+        X_filtered, y_filtered, test_size=args.test_size, random_state=42
     )
     print(f"   Train: {len(X_train)} samples")
     print(f"   Test:  {len(X_test)} samples")

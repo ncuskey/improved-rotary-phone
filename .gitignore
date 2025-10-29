@@ -53,3 +53,10 @@ tmp.png
 # AI agent artifacts
 .agent_backups/
 .continue/
+
+# Documentation cleanup patterns
+*.bak
+*_failures.txt
+*_debug.txt
+SESSION_*.md
+CHANGELOG_*.md

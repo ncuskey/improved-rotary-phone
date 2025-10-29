@@ -19,6 +19,7 @@ lot recommendations in real time.
   metadata/market updates, and BooksRun offer refresh.
 - **eBay Integration**:
   - **Market Intelligence**: Finding API (sold/unsold history) and Browse API (active comps and median pricing)
+  - **🎯 Lot Detection System**: Comprehensive filtering of multi-book listings (30+ patterns) to ensure clean pricing data for ML training and analysis
   - **✅ Listing Automation**: AI-powered listing creation with OAuth 2.0 User authentication
     - Generate SEO-optimized titles and descriptions using local Llama 3.1 8B
     - Automatic inventory item and offer creation via eBay Sell APIs

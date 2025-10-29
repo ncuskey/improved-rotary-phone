@@ -1807,7 +1807,182 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: October 26, 2025
-**Status**: Production-Ready
+---
+
+## Lot Detection System (October 29, 2025)
+
+**Implementation Date**: October 29, 2025
+**Status**: Complete and Production-Ready
+**Total Changes**: ~1,066 lines across 9 files
+
+### Overview
+
+Implemented comprehensive lot detection system to prevent multi-book listings from contaminating price data and ML training. System uses centralized detection logic with expanded keyword matching and regex patterns.
+
+### Files Created
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `shared/lot_detector.py` | 243 | Core lot detection engine with 30+ keywords and 8 regex patterns |
+| `scripts/audit_training_data_lots.py` | 270 | Database auditing tool for contamination scanning |
+| `shared/watchcount_scraper.py` | 230 | WatchCount integration via Decodo API (blocked by reCAPTCHA) |
+| `shared/watchcount_parser.py` | 323 | HTML parsing with lot/individual sales separation |
+| `LOT_DETECTION_IMPROVEMENTS.md` | N/A | Complete documentation and usage guide |
+
+### Files Modified
+
+| File | Lines Changed | Purpose |
+|------|---------------|---------|
+| `shared/market.py` | Lines 14, 164-184, 316-341 | Replaced inline keywords with centralized detector (2 functions) |
+| `shared/ebay_sold_comps.py` | Lines 20, 224-227 | Added lot filtering to MI API handler |
+| `scripts/train_price_model.py` | Lines 25, 119-125 | Added lot filtering during training data load |
+| `shared/decodo.py` | Lines 98-173 | Added `scrape_url()` method for generic web scraping |
+
+### Detection Patterns
+
+**Keywords (30+)**:
+- Original: `"lot of"`, `"set of"`, `"bundle"`, `"collection"`
+- Added: `"complete set"`, `"book lot"`, `"qty"`, `"bulk"`, `"wholesale"`, etc.
+
+**Regex Patterns (8)**:
+- `r'\d+\s*(?:book|novel)s?\s*(?:lot)?'` - "5 books", "7 book lot"
+- `r'lot\s*[-:]?\s*(?:of\s*)?\d+'` - "lot 5", "lot of 5"
+- `r'set\s*[-:]?\s*(?:of\s*)?\d+'` - "set 5", "set of 5"
+- `r'(?:qty|quantity)\s*:?\s*\d+'` - "qty: 5"
+- And 4 more patterns...
+
+### Integration Points
+
+#### 1. eBay Browse API (`shared/market.py`)
+**Before**:
+```python
+LOT_KEYWORDS = ["lot of", "set of", "bundle", "collection"]
+is_lot = any(keyword in title for keyword in LOT_KEYWORDS)
+```
+
+**After**:
+```python
+from shared.lot_detector import is_lot as is_lot_listing
+is_lot = is_lot_listing(title)  # Uses 30+ keywords + 8 regex patterns
+```
+
+#### 2. Marketplace Insights API (`shared/ebay_sold_comps.py`)
+**Added protection** (critical for when Track A becomes available):
+```python
+from shared.lot_detector import is_lot
+
+def _filter_by_features(self, samples, features):
+    # ... existing filtering ...
+
+    # CRITICAL: Filter out lot listings
+    filtered = [s for s in filtered if not is_lot(s.get("title", ""))]
+    return filtered
+```
+
+#### 3. ML Training (`scripts/train_price_model.py`)
+**Added filtering during data load**:
+```python
+from shared.lot_detector import is_lot
+
+# In load_training_data():
+if metadata_dict and 'title' in metadata_dict:
+    title = metadata_dict['title']
+    if is_lot(title):
+        continue  # Skip lot listings
+```
+
+### Testing
+
+**Test Results**:
+```bash
+$ python3 shared/lot_detector.py
+
+✓ ✓ | Harry Potter and the Sorcerer's Stone (False, None)
+✓ ✓ | Lot of 5 Harry Potter Books (True, 5)
+✓ ✓ | Complete Set of 7 Books (True, 7)
+✓ ✓ | Bundle: 3 Novels (True, 3)
+✓ ✓ | Book Collection (True, None)
+✓ ✓ | 10 Book Lot (True, 10)
+✓ ✓ | Qty: 5 Books (True, 5)
+✓ ✓ | The Slot Machine Book (False, None)  # No false positive!
+✓ ✓ | Ballot Book (False, None)             # No false positive!
+✓ ✓ | First Edition (False, None)
+✓ ✓ | Series Complete Set (True, None)
+
+All 11 tests passed ✓
+```
+
+### Audit Tool Usage
+
+```bash
+$ python3 scripts/audit_training_data_lots.py
+
+LOT CONTAMINATION AUDIT REPORT
+================================================================================
+Database: /Users/nickcuskey/ISBN/catalog.db
+Total books scanned: 758
+
+⚠️  LOT CONTAMINATION DETECTED
+  Lot listings found: 23
+  Contamination rate: 3.03%
+
+Breakdown by detection reason:
+  keyword: lot of: 15 books
+  pattern: number + book/novel: 5 books
+  keyword: set of: 3 books
+
+RECOMMENDATIONS
+⚠️  Moderate contamination (1-5%) - consider cleaning
+```
+
+### Impact & Benefits
+
+1. **Cleaner eBay Active Data**: Browse API now filters 30+ patterns vs 4 (7.5x improvement)
+2. **Protected MI API**: Track A sold data filtered when API becomes available
+3. **Cleaner ML Training**: Lot listings excluded automatically
+4. **Audit Capability**: Can identify and quantify existing contamination
+5. **Centralized Logic**: Single source of truth across all code paths
+
+### Data Flow
+
+```
+eBay API Response
+       ↓
+Title: "Lot of 5 Harry Potter Books"
+       ↓
+is_lot(title) → True (keyword: "lot of")
+       ↓
+Filtered out ✓
+       ↓
+Clean price data for ML/display
+```
+
+### Future Work: WatchCount Integration
+
+**Status**: Implemented but blocked by reCAPTCHA
+
+**What's Ready**:
+- ✅ Decodo Core API integration (`scrape_url()` method)
+- ✅ HTML parser with lot detection
+- ✅ Separate individual/lot sales tracking
+- ✅ Lot size extraction for bulk pricing analysis
+
+**Blocker**: WatchCount requires human verification (reCAPTCHA)
+
+**Options to Unblock**:
+1. CAPTCHA solving service (~$1-3/1000 solves)
+2. Browser automation with manual solving
+3. Alternative data source
+4. Wait for eBay MI API approval
+
+**Value When Unblocked**:
+- Access to historical eBay sold data
+- Fills 99.3% gap in current sold comps
+- Individual AND lot sales (useful for bulk valuation)
+
+---
+
+**Document Version**: 2.0
+**Last Updated**: October 29, 2025
+**Status**: Production-Ready (5 Features + Lot Detection)
 **Next Steps**: Commit and deploy to production

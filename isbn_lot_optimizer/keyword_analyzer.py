@@ -211,24 +211,39 @@ class KeywordAnalyzer:
         limit: int,
     ) -> List[ListingData]:
         """
-        Fetch eBay listings for a given ISBN.
+        Fetch eBay sold listings for a given ISBN from the last 90 days.
 
         Args:
             isbn: ISBN to search
             limit: Maximum number of results
 
         Returns:
-            List of ListingData objects
+            List of ListingData objects from sold listings (last 90 days)
         """
         # Get OAuth token from existing market module
         from shared.market import get_app_token
+        import datetime
 
         token = get_app_token()
 
-        # Fetch from Browse API
+        # Calculate 90-day date range for sold listings
+        now = datetime.datetime.now(datetime.timezone.utc)
+        ninety_days_ago = now - datetime.timedelta(days=90)
+
+        # Format as ISO 8601 for eBay API
+        date_filter = f"[{ninety_days_ago.strftime('%Y-%m-%dT%H:%M:%S.000Z')}..{now.strftime('%Y-%m-%dT%H:%M:%S.000Z')}]"
+
+        # Fetch sold listings from Browse API with filters
+        # Filter: buyingOptions=SOLD and lastSoldDate within last 90 days
+        params = {
+            "gtin": isbn,
+            "limit": str(limit),
+            "filter": f"buyingOptions:{{SOLD}},lastSoldDate:{date_filter}"
+        }
+
         response = requests.get(
             BROWSE_URL,
-            params={"gtin": isbn, "limit": str(limit)},
+            params=params,
             headers={
                 "Authorization": f"Bearer {token}",
                 "X-EBAY-C-MARKETPLACE-ID": self.marketplace_id,

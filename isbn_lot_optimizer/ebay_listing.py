@@ -102,6 +102,24 @@ class EbayListingService:
         conn.row_factory = sqlite3.Row
         return conn
 
+    def _lookup_epid(self, isbn: str) -> Optional[str]:
+        """
+        Look up cached ePID for an ISBN.
+
+        Args:
+            isbn: ISBN-13 to look up
+
+        Returns:
+            ePID if found, None otherwise
+        """
+        try:
+            from isbn_lot_optimizer.ebay_product_cache import EbayProductCache
+            cache = EbayProductCache(self.db_path)
+            return cache.get_epid(isbn)
+        except Exception as e:
+            logger.warning(f"Failed to look up ePID: {e}")
+            return None
+
     def create_book_listing(
         self,
         book: BookEvaluation,
@@ -113,9 +131,15 @@ class EbayListingService:
         custom_title: Optional[str] = None,
         custom_description: Optional[str] = None,
         photos: Optional[List[str]] = None,
+        item_specifics: Optional[Dict[str, List[str]]] = None,
+        epid: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Create and publish an eBay listing for a book.
+
+        Supports two listing modes:
+        1. ePID-based (product-based): Auto-populated Item Specifics from eBay catalog
+        2. Aspect-based (manual): Comprehensive Item Specifics from metadata + user inputs
 
         Args:
             book: Book evaluation
@@ -127,6 +151,8 @@ class EbayListingService:
             custom_title: Custom title (overrides AI)
             custom_description: Custom description (overrides AI)
             photos: Photo URLs/paths
+            item_specifics: User-provided Item Specifics (format, language, features, etc.)
+            epid: eBay Product ID for auto-populated Item Specifics (optional, will look up if not provided)
 
         Returns:
             Dict with listing details (includes title_score and keyword_scores if SEO optimization used)
@@ -136,6 +162,14 @@ class EbayListingService:
             GenerationError: If AI generation fails
         """
         listing_price = price or book.estimated_price
+
+        # Look up ePID if not provided
+        if epid is None:
+            epid = self._lookup_epid(book.metadata.isbn)
+            if epid:
+                logger.info(f"Found cached ePID for {book.metadata.isbn}: {epid}")
+            else:
+                logger.info(f"No ePID found for {book.metadata.isbn}, will use manual Item Specifics")
 
         # Generate listing content
         title_score = None
@@ -177,7 +211,11 @@ class EbayListingService:
         photo_urls = photos or ([book.metadata.thumbnail] if book.metadata.thumbnail else [])
 
         # Create listing on eBay
-        logger.info(f"Creating eBay listing for {book.metadata.isbn}")
+        if epid:
+            logger.info(f"Creating eBay listing with ePID {epid} (auto-populated Item Specifics)")
+        else:
+            logger.info(f"Creating eBay listing with manual Item Specifics")
+
         try:
             ebay_result = self.ebay_client.create_and_publish_book_listing(
                 book=book,
@@ -185,6 +223,8 @@ class EbayListingService:
                 condition=condition,
                 quantity=quantity,
                 listing_description=description,
+                epid=epid,
+                item_specifics=item_specifics,
             )
 
             sku = ebay_result["sku"]

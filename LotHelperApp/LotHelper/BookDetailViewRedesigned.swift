@@ -13,6 +13,17 @@ struct BookDetailViewRedesigned: View {
     @State private var showVariantsExpanded = false
     @Environment(\.dismiss) private var dismiss
 
+    // Interactive attributes state
+    @State private var selectedCondition: String = "Good"
+    @State private var isHardcover: Bool = false
+    @State private var isPaperback: Bool = false
+    @State private var isMassMarket: Bool = false
+    @State private var isSigned: Bool = false
+    @State private var isFirstEdition: Bool = false
+    @State private var dynamicEstimate: Double? = nil
+    @State private var attributeDeltas: [AttributeDelta] = []
+    @State private var isUpdatingPrice: Bool = false
+
     var lotsContainingBook: [LotSuggestionDTO] {
         lots.filter { lot in
             lot.bookIsbns.contains(record.isbn)
@@ -37,6 +48,28 @@ struct BookDetailViewRedesigned: View {
                 } else if isLoadingVariants {
                     loadingVariantsPanel
                 }
+
+                // Interactive attributes panel
+                AttributesView(
+                    condition: $selectedCondition,
+                    isHardcover: $isHardcover,
+                    isPaperback: $isPaperback,
+                    isMassMarket: $isMassMarket,
+                    isSigned: $isSigned,
+                    isFirstEdition: $isFirstEdition,
+                    priceEstimate: dynamicEstimate ?? record.estimatedPrice ?? 0.0,
+                    deltas: attributeDeltas,
+                    onAttributeChanged: {
+                        Task {
+                            await updatePriceEstimate()
+                        }
+                    },
+                    onSave: {
+                        Task {
+                            await saveAttributes()
+                        }
+                    }
+                )
 
                 // Profit analysis (if available)
                 if shouldShowProfitAnalysis {
@@ -816,6 +849,58 @@ struct BookDetailViewRedesigned: View {
         }
     }
 
+    @MainActor
+    private func updatePriceEstimate() async {
+        isUpdatingPrice = true
+        defer { isUpdatingPrice = false }
+
+        do {
+            let response = try await BookAPI.estimatePrice(
+                isbn: record.isbn,
+                condition: selectedCondition,
+                isHardcover: isHardcover ? true : nil,
+                isPaperback: isPaperback ? true : nil,
+                isMassMarket: isMassMarket ? true : nil,
+                isSigned: isSigned ? true : nil,
+                isFirstEdition: isFirstEdition ? true : nil
+            )
+
+            dynamicEstimate = response.estimatedPrice
+            attributeDeltas = response.deltas
+        } catch {
+            print("Failed to update price estimate: \(error.localizedDescription)")
+        }
+    }
+
+    @MainActor
+    private func saveAttributes() async {
+        do {
+            var coverType: String? = nil
+            if isHardcover {
+                coverType = "Hardcover"
+            } else if isPaperback {
+                coverType = "Paperback"
+            } else if isMassMarket {
+                coverType = "Mass Market"
+            }
+
+            let printing = isFirstEdition ? "1st" : nil
+
+            try await BookAPI.updateAttributes(
+                isbn: record.isbn,
+                coverType: coverType,
+                signed: isSigned,
+                printing: printing
+            )
+
+            print("✓ Attributes saved successfully")
+            // TODO: Show success feedback to user
+        } catch {
+            print("Failed to save attributes: \(error.localizedDescription)")
+            // TODO: Show error alert to user
+        }
+    }
+
     // MARK: - Price Variants Panel
 
     @ViewBuilder
@@ -1019,5 +1104,195 @@ struct BookDetailViewRedesigned: View {
             isCurrent ? Color.blue.opacity(0.05) : Color.clear,
             in: RoundedRectangle(cornerRadius: 6)
         )
+    }
+}
+
+// MARK: - Interactive Attributes View
+
+struct AttributesView: View {
+    @Binding var condition: String
+    @Binding var isHardcover: Bool
+    @Binding var isPaperback: Bool
+    @Binding var isMassMarket: Bool
+    @Binding var isSigned: Bool
+    @Binding var isFirstEdition: Bool
+    let priceEstimate: Double
+
+    let deltas: [AttributeDelta]
+    let onAttributeChanged: () -> Void
+    let onSave: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Book Attributes")
+                .font(.headline)
+
+            // Condition Picker
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Condition")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
+                Picker("Condition", selection: $condition) {
+                    Text("New").tag("New")
+                    Text("Like New").tag("Like New")
+                    Text("Very Good").tag("Very Good")
+                    Text("Good").tag("Good")
+                    Text("Acceptable").tag("Acceptable")
+                    Text("Poor").tag("Poor")
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: condition) { _ in onAttributeChanged() }
+            }
+
+            // Format (mutually exclusive)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Format")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
+                HStack(spacing: 8) {
+                    FormatToggle(
+                        label: "Hardcover",
+                        isSelected: $isHardcover,
+                        delta: deltas.first { $0.attribute == "is_hardcover" }?.delta,
+                        onToggle: {
+                            if isHardcover {
+                                isPaperback = false
+                                isMassMarket = false
+                            }
+                            onAttributeChanged()
+                        }
+                    )
+
+                    FormatToggle(
+                        label: "Paperback",
+                        isSelected: $isPaperback,
+                        delta: deltas.first { $0.attribute == "is_paperback" }?.delta,
+                        onToggle: {
+                            if isPaperback {
+                                isHardcover = false
+                                isMassMarket = false
+                            }
+                            onAttributeChanged()
+                        }
+                    )
+
+                    FormatToggle(
+                        label: "Mass Market",
+                        isSelected: $isMassMarket,
+                        delta: deltas.first { $0.attribute == "is_mass_market" }?.delta,
+                        onToggle: {
+                            if isMassMarket {
+                                isHardcover = false
+                                isPaperback = false
+                            }
+                            onAttributeChanged()
+                        }
+                    )
+                }
+            }
+
+            // Special Attributes
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Special Attributes")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
+                AttributeToggle(
+                    label: "Signed/Autographed",
+                    isOn: $isSigned,
+                    delta: deltas.first { $0.attribute == "is_signed" }?.delta,
+                    onToggle: onAttributeChanged
+                )
+
+                AttributeToggle(
+                    label: "First Edition",
+                    isOn: $isFirstEdition,
+                    delta: deltas.first { $0.attribute == "is_first_edition" }?.delta,
+                    onToggle: onAttributeChanged
+                )
+            }
+
+            // Price Display
+            HStack {
+                Text("Estimated Price:")
+                    .font(.headline)
+                Spacer()
+                Text("$\(String(format: "%.2f", priceEstimate))")
+                    .font(.title2)
+                    .bold()
+                    .foregroundColor(.green)
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal)
+            .background(Color.green.opacity(0.1))
+            .cornerRadius(8)
+
+            // Save Button
+            Button(action: onSave) {
+                Text("Save Attributes")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(radius: 2)
+    }
+}
+
+struct AttributeToggle: View {
+    let label: String
+    @Binding var isOn: Bool
+    let delta: Double?
+    let onToggle: () -> Void
+
+    var body: some View {
+        HStack {
+            Toggle(label, isOn: $isOn)
+                .onChange(of: isOn) { _ in onToggle() }
+
+            if let delta = delta, delta != 0 {
+                Text(delta > 0 ? "+$\(String(format: "%.2f", delta))" : "$\(String(format: "%.2f", delta))")
+                    .font(.caption)
+                    .foregroundColor(delta > 0 ? .green : .red)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(delta > 0 ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+                    .cornerRadius(4)
+            }
+        }
+    }
+}
+
+struct FormatToggle: View {
+    let label: String
+    @Binding var isSelected: Bool
+    let delta: Double?
+    let onToggle: () -> Void
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Button(action: {
+                isSelected.toggle()
+                onToggle()
+            }) {
+                Text(label)
+                    .font(.caption)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(isSelected ? Color.blue : Color.gray.opacity(0.2))
+                    .foregroundColor(isSelected ? .white : .primary)
+                    .cornerRadius(8)
+            }
+
+            if let delta = delta, delta != 0 {
+                Text(delta > 0 ? "+$\(String(format: "%.2f", delta))" : "$\(String(format: "%.2f", delta))")
+                    .font(.caption2)
+                    .foregroundColor(delta > 0 ? .green : .red)
+            }
+        }
     }
 }

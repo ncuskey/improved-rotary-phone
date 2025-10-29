@@ -95,6 +95,87 @@ class DecodoClient:
 
         self._last_request_time = time.time()
 
+    def scrape_url(
+        self,
+        url: str,
+        render_js: bool = True,
+        max_retries: int = 3
+    ) -> DecodoResponse:
+        """
+        Scrape any URL using Decodo's Web target (bypasses bot protection).
+
+        Args:
+            url: Full URL to scrape
+            render_js: Whether to enable JavaScript rendering (default: True)
+            max_retries: Number of retry attempts on failure
+
+        Returns:
+            DecodoResponse with HTML body
+
+        Raises:
+            DecodoAPIError: If request fails after retries
+        """
+        endpoint = f"{self.base_url}/scrape"
+        payload = {
+            "target": "universal",  # Core API uses "universal" instead of "web"
+            "url": url,
+            "render_js": render_js
+        }
+
+        for attempt in range(max_retries):
+            try:
+                self._rate_limit()
+
+                response = self.session.post(
+                    endpoint,
+                    json=payload,
+                    timeout=self.timeout
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    # For universal target, response has "results" array with "content"
+                    html_body = ""
+                    if isinstance(data, dict) and "results" in data:
+                        results = data["results"]
+                        if results and len(results) > 0:
+                            html_body = results[0].get("content", "")
+                    return DecodoResponse(
+                        status_code=200,
+                        body=html_body
+                    )
+                elif response.status_code == 429:  # Rate limit
+                    if attempt < max_retries - 1:
+                        time.sleep(2 ** attempt)  # Exponential backoff
+                        continue
+                    raise DecodoAPIError(f"Rate limit exceeded after {max_retries} retries")
+                else:
+                    error_msg = f"HTTP {response.status_code}: {response.text}"
+                    if attempt < max_retries - 1:
+                        time.sleep(1)
+                        continue
+                    return DecodoResponse(
+                        status_code=response.status_code,
+                        body="",
+                        error=error_msg
+                    )
+
+            except requests.Timeout:
+                if attempt < max_retries - 1:
+                    continue
+                return DecodoResponse(
+                    status_code=408,
+                    body="",
+                    error="Request timeout"
+                )
+            except requests.RequestException as exc:
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                    continue
+                raise DecodoAPIError(f"Request failed: {exc}") from exc
+
+        raise DecodoAPIError(f"Failed after {max_retries} retries")
+
     def scrape_realtime(
         self,
         query: str,

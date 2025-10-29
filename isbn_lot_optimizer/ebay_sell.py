@@ -309,14 +309,22 @@ class EbaySellClient:
         book: BookEvaluation,
         condition: str = "GOOD",
         quantity: int = 1,
+        epid: Optional[str] = None,
+        item_specifics: Optional[Dict[str, List[str]]] = None,
     ) -> str:
         """
         Create an inventory item for a book.
+
+        Supports two modes:
+        1. ePID-based (product-based listing): Auto-populated by eBay
+        2. Aspect-based (manual Item Specifics): Comprehensive manual aspects
 
         Args:
             book: Book evaluation with metadata
             condition: Book condition
             quantity: Available quantity
+            epid: eBay Product ID for auto-population (optional)
+            item_specifics: User-provided Item Specifics from iOS wizard (optional)
 
         Returns:
             SKU of the created inventory item
@@ -330,22 +338,29 @@ class EbaySellClient:
         # Generate SKU (use ISBN as basis)
         sku = f"BOOK-{book.metadata.isbn}-{int(time.time())}"
 
-        # Build product payload
-        product = {
-            "title": book.metadata.title,
-            "description": book.metadata.description or "Book in good condition",
-            "aspects": {
-                "Author": [", ".join(book.metadata.authors)] if book.metadata.authors else ["Unknown"],
-                "Format": ["Paperback"],  # TODO: Get from metadata
-                "Language": ["English"],
-                "Publication Year": [str(book.metadata.published_year)] if book.metadata.published_year else [],
-            },
-            "imageUrls": [book.metadata.thumbnail] if book.metadata.thumbnail else [],
-        }
+        # Build product payload (ePID or manual aspects)
+        if epid:
+            # OPTION 1: Use ePID for auto-populated Item Specifics
+            product = {
+                "eBayProductID": epid,
+                "imageUrls": [book.metadata.thumbnail] if book.metadata.thumbnail else [],
+            }
+            logger.info(f"Using eBay Product ID {epid} (auto-populated Item Specifics)")
 
-        # Add ISBN as EAN (ISBN-13 is EAN-13 format)
-        if book.metadata.isbn:
-            product["ean"] = [book.metadata.isbn]
+        else:
+            # OPTION 2: Build comprehensive manual aspects
+            product = {
+                "title": book.metadata.title,
+                "description": book.metadata.description or book.metadata.title,
+                "aspects": self._build_comprehensive_aspects(book, item_specifics or {}),
+                "imageUrls": [book.metadata.thumbnail] if book.metadata.thumbnail else [],
+            }
+
+            # Add ISBN as EAN (ISBN-13 is EAN-13 format)
+            if book.metadata.isbn:
+                product["ean"] = [book.metadata.isbn]
+
+            logger.info(f"Using manual Item Specifics ({len(product['aspects'])} aspects)")
 
         # Availability
         availability = {
@@ -367,6 +382,182 @@ class EbaySellClient:
         self.create_inventory_item(sku, product, ebay_condition, availability)
 
         return sku
+
+    def _build_comprehensive_aspects(
+        self,
+        book: BookEvaluation,
+        user_specifics: Dict[str, List[str]],
+    ) -> Dict[str, List[str]]:
+        """
+        Build comprehensive Item Specifics from metadata and user inputs.
+
+        Combines:
+        - Existing metadata (author, publisher, year, pages, series)
+        - Derived data (genre, narrative type from categories)
+        - User-provided specifics (format, language, features)
+
+        Args:
+            book: Book evaluation with metadata
+            user_specifics: Item Specifics provided by user (iOS wizard)
+
+        Returns:
+            Dict mapping aspect names to value lists
+        """
+        aspects = {}
+
+        # ========================================================================
+        # From Metadata (Always Available)
+        # ========================================================================
+
+        # Author (required)
+        if book.metadata.authors:
+            aspects["Author"] = [", ".join(book.metadata.authors)]
+        else:
+            aspects["Author"] = ["Unknown"]
+
+        # Publication Year
+        if book.metadata.published_year:
+            aspects["Publication Year"] = [str(book.metadata.published_year)]
+
+        # Publisher (from raw metadata if available)
+        if book.metadata.raw and "Publisher" in book.metadata.raw:
+            publisher = book.metadata.raw["Publisher"]
+            if publisher:
+                aspects["Publisher"] = [publisher]
+
+        # Number of Pages
+        if book.metadata.page_count:
+            aspects["Number of Pages"] = [str(book.metadata.page_count)]
+
+        # Book Series
+        if book.metadata.series_name:
+            aspects["Book Series"] = [book.metadata.series_name]
+
+        # ========================================================================
+        # Derived from Categories
+        # ========================================================================
+
+        # Genre (extract from categories)
+        genre = self._derive_genre(book.metadata.categories)
+        if genre:
+            aspects["Genre"] = [genre]
+
+        # Narrative Type (Fiction vs Nonfiction)
+        narrative_type = self._derive_narrative_type(book.metadata.categories)
+        if narrative_type:
+            aspects["Narrative Type"] = [narrative_type]
+
+        # ========================================================================
+        # From User (iOS Wizard)
+        # ========================================================================
+
+        # Merge user-provided specifics (these override defaults)
+        for aspect_name, values in user_specifics.items():
+            if values:  # Only include non-empty values
+                aspects[aspect_name] = values
+
+        # ========================================================================
+        # Defaults (if not provided by user)
+        # ========================================================================
+
+        # Format (if not specified by user)
+        if "Format" not in aspects:
+            aspects["Format"] = ["Paperback"]  # Default assumption
+
+        # Language (if not specified by user)
+        if "Language" not in aspects:
+            aspects["Language"] = ["English"]  # Default assumption
+
+        return aspects
+
+    @staticmethod
+    def _derive_genre(categories: tuple) -> Optional[str]:
+        """
+        Derive book genre from metadata categories.
+
+        Args:
+            categories: Tuple of category strings
+
+        Returns:
+            Genre string or None
+        """
+        if not categories:
+            return None
+
+        # Common genre mappings
+        genre_keywords = {
+            "Fiction": "Fiction",
+            "Science Fiction": "Science Fiction & Fantasy",
+            "Fantasy": "Science Fiction & Fantasy",
+            "Mystery": "Mystery & Thrillers",
+            "Thriller": "Mystery & Thrillers",
+            "Romance": "Romance",
+            "Historical": "Historical Fiction",
+            "Horror": "Horror",
+            "Biography": "Biography & Autobiography",
+            "Autobiography": "Biography & Autobiography",
+            "History": "History",
+            "Science": "Science & Nature",
+            "Self-Help": "Self-Help",
+            "Business": "Business & Economics",
+            "Cooking": "Cooking",
+            "Travel": "Travel",
+            "Children": "Children's Books",
+            "Young Adult": "Young Adult Fiction",
+        }
+
+        # Check categories for genre keywords
+        categories_str = " ".join(categories).lower()
+        for keyword, genre in genre_keywords.items():
+            if keyword.lower() in categories_str:
+                return genre
+
+        # Default: use first category
+        if categories:
+            return categories[0]
+
+        return None
+
+    @staticmethod
+    def _derive_narrative_type(categories: tuple) -> Optional[str]:
+        """
+        Derive narrative type (Fiction vs Nonfiction) from categories.
+
+        Args:
+            categories: Tuple of category strings
+
+        Returns:
+            "Fiction" or "Nonfiction" or None
+        """
+        if not categories:
+            return None
+
+        categories_str = " ".join(categories).lower()
+
+        # Fiction indicators
+        fiction_keywords = [
+            "fiction", "novel", "fantasy", "science fiction",
+            "mystery", "thriller", "romance", "horror",
+        ]
+
+        # Nonfiction indicators
+        nonfiction_keywords = [
+            "nonfiction", "non-fiction", "biography", "autobiography",
+            "history", "science", "self-help", "business", "cooking",
+            "travel", "reference", "textbook", "guide",
+        ]
+
+        # Check for nonfiction first (more specific)
+        for keyword in nonfiction_keywords:
+            if keyword in categories_str:
+                return "Nonfiction"
+
+        # Check for fiction
+        for keyword in fiction_keywords:
+            if keyword in categories_str:
+                return "Fiction"
+
+        return None
 
     def get_inventory_item(self, sku: str) -> Dict[str, Any]:
         """
@@ -528,6 +719,8 @@ class EbaySellClient:
         quantity: int = 1,
         category_id: str = "377",  # Books category
         listing_description: Optional[str] = None,
+        epid: Optional[str] = None,
+        item_specifics: Optional[Dict[str, List[str]]] = None,
     ) -> Dict[str, str]:
         """
         Create inventory, create offer, and publish listing in one call.
@@ -539,6 +732,8 @@ class EbaySellClient:
             quantity: Available quantity
             category_id: eBay category ID (default: 377 for Books)
             listing_description: Optional custom description
+            epid: eBay Product ID for auto-populated Item Specifics (optional)
+            item_specifics: User-provided Item Specifics (optional)
 
         Returns:
             Dict with sku, offer_id, and listing_id
@@ -547,7 +742,13 @@ class EbaySellClient:
             EbaySellError: If any step fails
         """
         # Step 1: Create inventory
-        sku = self.create_book_inventory(book, condition, quantity)
+        sku = self.create_book_inventory(
+            book,
+            condition,
+            quantity,
+            epid=epid,
+            item_specifics=item_specifics,
+        )
 
         # Step 2: Create offer
         description = listing_description or book.metadata.description or book.metadata.title

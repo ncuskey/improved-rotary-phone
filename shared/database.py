@@ -321,6 +321,35 @@ class DatabaseManager:
                 (payload, isbn),
             )
 
+    def update_book_attributes(
+        self,
+        isbn: str,
+        *,
+        cover_type: Optional[str] = None,
+        signed: bool = False,
+        printing: Optional[str] = None
+    ) -> None:
+        """
+        Update user-selected book attributes (cover type, signed, first edition).
+
+        Args:
+            isbn: Book ISBN
+            cover_type: "Hardcover", "Paperback", "Mass Market", or None
+            signed: Whether book is signed/autographed
+            printing: "1st" for first edition, or None
+        """
+        _log("update_attributes", isbn=isbn, cover_type=cover_type, signed=signed, printing=printing)
+        with self._get_connection() as conn:
+            conn.execute(
+                """UPDATE books
+                   SET cover_type = ?,
+                       signed = ?,
+                       printing = ?,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE isbn = ?""",
+                (cover_type, 1 if signed else 0, printing, isbn),
+            )
+
     def update_book_record(
         self,
         isbn: str,

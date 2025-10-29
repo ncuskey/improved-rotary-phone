@@ -1240,6 +1240,62 @@ struct PriceRecommendationResponse: Codable {
     }
 }
 
+// MARK: - Interactive Attributes Response Types
+
+struct EstimatePriceRequest: Codable {
+    let condition: String
+    let isHardcover: Bool?
+    let isPaperback: Bool?
+    let isMassMarket: Bool?
+    let isSigned: Bool?
+    let isFirstEdition: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case condition
+        case isHardcover = "is_hardcover"
+        case isPaperback = "is_paperback"
+        case isMassMarket = "is_mass_market"
+        case isSigned = "is_signed"
+        case isFirstEdition = "is_first_edition"
+    }
+}
+
+struct AttributeDelta: Codable, Identifiable {
+    var id: String { attribute }
+    let attribute: String
+    let label: String
+    let delta: Double
+    let enabled: Bool
+}
+
+struct EstimatePriceResponse: Codable {
+    let estimatedPrice: Double
+    let baselinePrice: Double
+    let confidence: Double
+    let deltas: [AttributeDelta]
+    let modelVersion: String
+
+    enum CodingKeys: String, CodingKey {
+        case estimatedPrice = "estimated_price"
+        case baselinePrice = "baseline_price"
+        case confidence
+        case deltas
+        case modelVersion = "model_version"
+    }
+}
+
+struct UpdateAttributesRequest: Codable {
+    let coverType: String?
+    let signed: Bool
+    let printing: String?
+
+    enum CodingKeys: String, CodingKey {
+        case coverType = "cover_type"
+        case signed
+        case printing
+    }
+}
+
 // MARK: - eBay Listing Extension
 
 extension BookAPI {
@@ -1340,6 +1396,93 @@ extension BookAPI {
         print("✓ eBay listing created: \(listingResponse.title)")
 
         return listingResponse
+    }
+
+    /// Estimate price with user-selected attributes
+    static func estimatePrice(
+        isbn: String,
+        condition: String,
+        isHardcover: Bool?,
+        isPaperback: Bool?,
+        isMassMarket: Bool?,
+        isSigned: Bool?,
+        isFirstEdition: Bool?
+    ) async throws -> EstimatePriceResponse {
+        guard let url = URL(string: "\(baseURLString)/api/books/\(isbn)/estimate_price") else {
+            throw URLError(.badURL)
+        }
+
+        let request = EstimatePriceRequest(
+            condition: condition,
+            isHardcover: isHardcover,
+            isPaperback: isPaperback,
+            isMassMarket: isMassMarket,
+            isSigned: isSigned,
+            isFirstEdition: isFirstEdition
+        )
+
+        let jsonData = try JSONEncoder().encode(request)
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.httpBody = jsonData
+
+        print("📡 Estimating price for ISBN: \(isbn) with attributes")
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ POST /api/books/\(isbn)/estimate_price failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        let priceResponse = try await decodeOnWorker(EstimatePriceResponse.self, from: data)
+        print("✓ Price estimate: $\(priceResponse.estimatedPrice) (baseline: $\(priceResponse.baselinePrice))")
+
+        return priceResponse
+    }
+
+    /// Save user-selected book attributes to database
+    static func updateAttributes(
+        isbn: String,
+        coverType: String?,
+        signed: Bool,
+        printing: String?
+    ) async throws {
+        guard let url = URL(string: "\(baseURLString)/api/books/\(isbn)/attributes") else {
+            throw URLError(.badURL)
+        }
+
+        let request = UpdateAttributesRequest(
+            coverType: coverType,
+            signed: signed,
+            printing: printing
+        )
+
+        let jsonData = try JSONEncoder().encode(request)
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "PUT"
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.httpBody = jsonData
+
+        print("📡 Updating attributes for ISBN: \(isbn)")
+        let (data, response) = try await session.data(for: urlRequest)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ PUT /api/books/\(isbn)/attributes failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        print("✓ Attributes updated for ISBN: \(isbn)")
     }
 
     /// Shared singleton for SwiftUI views

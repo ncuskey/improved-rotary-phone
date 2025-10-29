@@ -980,3 +980,252 @@ async def get_scan_stats(
     stats = service.db.get_scan_stats()
 
     return JSONResponse(content=stats)
+
+
+class EstimatePriceRequest(BaseModel):
+    """Request body for dynamic price estimation."""
+    condition: str = "Good"
+    is_hardcover: Optional[bool] = None
+    is_paperback: Optional[bool] = None
+    is_mass_market: Optional[bool] = None
+    is_signed: Optional[bool] = None
+    is_first_edition: Optional[bool] = None
+
+
+class AttributeDelta(BaseModel):
+    """Price change for a single attribute."""
+    attribute: str
+    label: str
+    delta: float  # Price change (positive or negative)
+    enabled: bool  # Whether this attribute is currently enabled
+
+
+class EstimatePriceResponse(BaseModel):
+    """Response with dynamic price estimate and deltas."""
+    estimated_price: float
+    baseline_price: float  # Price with no attributes
+    confidence: float
+    deltas: List[AttributeDelta]
+    model_version: str
+
+
+@router.post("/{isbn}/estimate_price")
+async def estimate_price_with_attributes(
+    isbn: str,
+    request_body: EstimatePriceRequest,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Estimate book price with user-specified attributes.
+
+    Calculates baseline price (no attributes) and delta for each attribute
+    to show how each one affects the estimate.
+
+    Args:
+        isbn: Book ISBN
+        request_body: Condition and attribute flags
+
+    Returns:
+        EstimatePriceResponse with price estimate and attribute deltas
+    """
+    from isbn_lot_optimizer.ml import get_ml_estimator
+    from copy import deepcopy
+
+    normalized_isbn = normalise_isbn(isbn)
+    if not normalized_isbn:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid ISBN"}
+        )
+
+    # Get book from database (returns BookEvaluation with parsed objects)
+    book = service.get_book(normalized_isbn)
+    if not book:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Book not found"}
+        )
+
+    # Get ML estimator
+    estimator = get_ml_estimator()
+    if not estimator.is_ready():
+        return JSONResponse(
+            status_code=503,
+            content={"error": "ML model not available"}
+        )
+
+    # Use parsed objects from BookEvaluation
+    metadata = book.metadata
+    market = book.market
+    bookscouter = book.bookscouter
+
+    # Calculate baseline price (no attributes)
+    baseline_metadata = deepcopy(metadata) if metadata else None
+    if baseline_metadata:
+        baseline_metadata.cover_type = None
+        baseline_metadata.signed = False
+        baseline_metadata.printing = None
+
+    baseline_estimate = estimator.estimate_price(
+        baseline_metadata,
+        market,
+        bookscouter,
+        request_body.condition
+    )
+    baseline_price = baseline_estimate.price or 10.0
+
+    # Calculate price with user-selected attributes
+    final_metadata = deepcopy(metadata) if metadata else None
+    if final_metadata:
+        # Apply user selections
+        if request_body.is_hardcover:
+            final_metadata.cover_type = "Hardcover"
+        elif request_body.is_paperback:
+            final_metadata.cover_type = "Paperback"
+        elif request_body.is_mass_market:
+            final_metadata.cover_type = "Mass Market"
+        else:
+            final_metadata.cover_type = None
+
+        final_metadata.signed = request_body.is_signed or False
+        final_metadata.printing = "1st" if request_body.is_first_edition else None
+
+    final_estimate = estimator.estimate_price(
+        final_metadata,
+        market,
+        bookscouter,
+        request_body.condition
+    )
+    final_price = final_estimate.price or baseline_price
+
+    # Calculate deltas for each attribute
+    deltas = []
+
+    # Hardcover delta
+    if request_body.is_hardcover or request_body.is_paperback or request_body.is_mass_market:
+        # Calculate price without format
+        no_format_metadata = deepcopy(final_metadata) if final_metadata else None
+        if no_format_metadata:
+            no_format_metadata.cover_type = None
+        no_format_estimate = estimator.estimate_price(no_format_metadata, market, bookscouter, request_body.condition)
+        no_format_price = no_format_estimate.price or baseline_price
+
+        if request_body.is_hardcover:
+            deltas.append(AttributeDelta(
+                attribute="is_hardcover",
+                label="Hardcover",
+                delta=round(final_price - no_format_price, 2),
+                enabled=True
+            ))
+        elif request_body.is_paperback:
+            deltas.append(AttributeDelta(
+                attribute="is_paperback",
+                label="Paperback",
+                delta=round(final_price - no_format_price, 2),
+                enabled=True
+            ))
+        elif request_body.is_mass_market:
+            deltas.append(AttributeDelta(
+                attribute="is_mass_market",
+                label="Mass Market",
+                delta=round(final_price - no_format_price, 2),
+                enabled=True
+            ))
+
+    # Signed delta
+    if request_body.is_signed:
+        no_signed_metadata = deepcopy(final_metadata) if final_metadata else None
+        if no_signed_metadata:
+            no_signed_metadata.signed = False
+        no_signed_estimate = estimator.estimate_price(no_signed_metadata, market, bookscouter, request_body.condition)
+        no_signed_price = no_signed_estimate.price or baseline_price
+
+        deltas.append(AttributeDelta(
+            attribute="is_signed",
+            label="Signed/Autographed",
+            delta=round(final_price - no_signed_price, 2),
+            enabled=True
+        ))
+
+    # First edition delta
+    if request_body.is_first_edition:
+        no_first_metadata = deepcopy(final_metadata) if final_metadata else None
+        if no_first_metadata:
+            no_first_metadata.printing = None
+        no_first_estimate = estimator.estimate_price(no_first_metadata, market, bookscouter, request_body.condition)
+        no_first_price = no_first_estimate.price or baseline_price
+
+        deltas.append(AttributeDelta(
+            attribute="is_first_edition",
+            label="First Edition",
+            delta=round(final_price - no_first_price, 2),
+            enabled=True
+        ))
+
+    response = EstimatePriceResponse(
+        estimated_price=round(final_price, 2),
+        baseline_price=round(baseline_price, 2),
+        confidence=final_estimate.confidence,
+        deltas=deltas,
+        model_version=final_estimate.model_version
+    )
+
+    return JSONResponse(content=response.dict())
+
+
+class UpdateAttributesRequest(BaseModel):
+    """Request body for saving user-selected attributes."""
+    cover_type: Optional[str] = None  # "Hardcover", "Paperback", "Mass Market", or null
+    signed: bool = False
+    printing: Optional[str] = None  # "1st" for first edition, or null
+
+
+@router.put("/{isbn}/attributes")
+async def update_book_attributes(
+    isbn: str,
+    request_body: UpdateAttributesRequest,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Save user-selected book attributes to database.
+
+    Updates cover_type, signed, and printing fields based on user selections
+    from the book detail page.
+
+    Args:
+        isbn: Book ISBN
+        request_body: Attribute values to save
+
+    Returns:
+        Success message with updated attributes
+    """
+    normalized_isbn = normalise_isbn(isbn)
+    if not normalized_isbn:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid ISBN"}
+        )
+
+    # Update attributes in database
+    try:
+        service.db.update_book_attributes(
+            normalized_isbn,
+            cover_type=request_body.cover_type,
+            signed=request_body.signed,
+            printing=request_body.printing
+        )
+
+        return JSONResponse(content={
+            "success": True,
+            "isbn": normalized_isbn,
+            "attributes": {
+                "cover_type": request_body.cover_type,
+                "signed": request_body.signed,
+                "printing": request_body.printing
+            }
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to update attributes: {str(e)}"}
+        )

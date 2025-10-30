@@ -239,6 +239,96 @@ COLLECTION_TARGETS = [
         price_max=40.0,
         additional_filters={}
     ),
+
+    # ===================================================================
+    # PHASE 2: Strategic Expansion (80-110 books)
+    # Targeting specific deficiencies identified in training data analysis
+    # ===================================================================
+
+    CollectionTarget(
+        category='phase2_high_value',
+        description='Phase 2: High-value collectible books ($15-35)',
+        target_count=40,
+        min_comps=5,
+        priority=1,
+        search_keywords=[
+            'signed first edition',
+            'collectible hardcover',
+            'special edition book',
+            'illustrated edition'
+        ],
+        price_min=15.0,
+        price_max=35.0,
+        additional_filters={'itemFilter': [{'name': 'Condition', 'value': ['New', 'Like New', 'Very Good']}]}
+    ),
+
+    CollectionTarget(
+        category='phase2_trade_paperback',
+        description='Phase 2: Trade paperbacks (critical gap - currently 0)',
+        target_count=20,
+        min_comps=5,
+        priority=1,
+        search_keywords=[
+            'trade paperback fiction',
+            'trade paperback bestseller',
+            'paperback contemporary fiction',
+            'paperback literary fiction'
+        ],
+        price_min=8.0,
+        price_max=25.0,
+        additional_filters={}
+    ),
+
+    CollectionTarget(
+        category='phase2_business_self_help',
+        description='Phase 2: Business and self-help books (genre balance)',
+        target_count=15,
+        min_comps=5,
+        priority=2,
+        search_keywords=[
+            'business book hardcover',
+            'self help book',
+            'personal development book',
+            'leadership book'
+        ],
+        price_min=8.0,
+        price_max=30.0,
+        additional_filters={'categoryId': '378'}  # Nonfiction
+    ),
+
+    CollectionTarget(
+        category='phase2_biography_memoir',
+        description='Phase 2: Biography and memoir books (genre balance)',
+        target_count=10,
+        min_comps=5,
+        priority=2,
+        search_keywords=[
+            'biography hardcover',
+            'memoir hardcover',
+            'autobiography book',
+            'biography bestseller'
+        ],
+        price_min=8.0,
+        price_max=30.0,
+        additional_filters={'categoryId': '378'}  # Nonfiction
+    ),
+
+    CollectionTarget(
+        category='phase2_expanded_set',
+        description='Phase 2: Expanded training set (mixed categories)',
+        target_count=50,
+        min_comps=5,
+        priority=3,
+        search_keywords=[
+            'book hardcover',
+            'paperback book',
+            'bestseller book',
+            'popular book'
+        ],
+        price_min=5.0,
+        price_max=40.0,
+        additional_filters={}
+    ),
 ]
 
 

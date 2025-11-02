@@ -1,6 +1,6 @@
 # CODEMAP
 
-**Last Updated:** 2025-10-26 (Keyword Ranking & SEO Title Optimization)
+**Last Updated:** 2025-11-01 (BookFinder Integration & ML Feature Expansion)
 
 ## Top Level
 - `README.md` – Project overview, quick start, and links to documentation
@@ -252,6 +252,21 @@ Data management and utility scripts.
 - **`verify_series_lots.py`** – Validates series lot generation
 - **`test_series_lots.py`** – Tests series lot algorithms
 
+### ML Training Data Collection
+- **`collect_bookfinder_prices.py`** – ✨ NEW: BookFinder.com scraper using Playwright
+  - Scrapes 20+ vendor prices per ISBN (eBay, AbeBooks, Amazon, Alibris, Biblio, etc.)
+  - Anti-detection: user agent rotation, session rotation, hidden webdriver flags
+  - Rate limiting: 4 req/min (12-18 second delays)
+  - Comprehensive data: price, shipping, condition, binding, signed, first edition, publisher, authors
+  - Database: `bookfinder_offers` and `bookfinder_progress` tables in catalog.db
+  - Runtime: ~3 hours for 759 ISBNs (~115,000 total offers)
+  - Bypasses AWS WAF CAPTCHA with 100% success rate
+- **`train_price_model.py`** – Trains ML price estimation model with BookFinder features
+  - Integrates BookFinder aggregated pricing data
+  - Features: `bookfinder_lowest_price`, `bookfinder_source_count`, `bookfinder_new_vs_used_spread`
+  - XGBoost regression model with StandardScaler
+  - Saves model artifacts to `isbn_lot_optimizer/models/`
+
 ### Database Migrations
 - **`migrate_ebay_listings_table.py`** – Creates ebay_listings table for tracking eBay sales
 - **`migrate_keyword_scores.py`** – ✨ NEW: Adds SEO keyword tracking columns
@@ -303,6 +318,15 @@ Node.js OAuth service providing eBay tokens to iOS app and Python backend. **Enh
   - Error handling: `error_message` for failed listings
   - 4 indexes: isbn, scanned_at DESC, decision, location_name
   - Supports location-based analytics and "previously scanned" warnings
+- `bookfinder_offers` – ✨ NEW: BookFinder aggregated vendor prices (ML training data)
+  - Core fields: `isbn`, `vendor`, `seller`, `price`, `shipping`, `condition`, `binding`
+  - Metadata: `title`, `authors`, `publisher`, `is_signed`, `is_first_edition`, `is_oldworld`, `description`
+  - Captures 20+ vendors per ISBN: eBay, AbeBooks, Amazon, Alibris, Biblio, Zvab, Textbook Rush, etc.
+  - ~150 offers per ISBN average (~115,000 total for 759 ISBNs)
+  - 4 indexes: isbn, vendor, is_signed, is_first_edition
+- `bookfinder_progress` – ✨ NEW: BookFinder scraping progress tracking
+  - Fields: `isbn` (PK), `status`, `offer_count`, `error_message`, `scraped_at`
+  - Tracks completed/failed/skipped ISBNs for resumable scraping
 - `lots` – Generated lot suggestions with scoring
 - `series`, `authors`, `series_books` – BookSeries.org data
 - `book_series_matches` – Fuzzy matches between books and series

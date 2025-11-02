@@ -20,9 +20,49 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from isbn_lot_optimizer.ml.feature_extractor import FeatureExtractor
+from isbn_lot_optimizer.ml.feature_extractor import FeatureExtractor, get_bookfinder_features
 from shared.models import BookMetadata, EbayMarketStats, BookScouterResult
 from shared.lot_detector import is_lot
+
+
+def load_amazon_pricing_data(cache_db_path: Path) -> List:
+    """
+    Load training data from metadata_cache with amazon_pricing.
+
+    Args:
+        cache_db_path: Path to metadata_cache.db
+
+    Returns:
+        List of book records
+    """
+    conn = sqlite3.connect(cache_db_path)
+    cursor = conn.cursor()
+
+    # Query books from metadata cache with pricing
+    query = """
+    SELECT
+        c.isbn,
+        c.title,
+        c.authors,
+        c.publisher,
+        c.publication_year,
+        c.binding,
+        c.page_count,
+        p.median_used_good,
+        p.median_used_very_good,
+        p.offer_count
+    FROM cached_books c
+    JOIN amazon_pricing p ON c.isbn = p.isbn
+    WHERE p.median_used_good IS NOT NULL
+       OR p.median_used_very_good IS NOT NULL
+    """
+
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    conn.close()
+
+    print(f"Loaded {len(rows)} book records from metadata_cache.db")
+    return rows
 
 
 def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List]:
@@ -39,7 +79,7 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Query books with both Amazon and eBay data
+    # Query books with both Amazon and eBay data (including AbeBooks if available)
     query = """
     SELECT
         isbn,
@@ -52,7 +92,14 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
         json_extract(bookscouter_json, '$.amazon_lowest_price') as amazon_price,
         cover_type,
         signed,
-        printing
+        printing,
+        abebooks_min_price,
+        abebooks_avg_price,
+        abebooks_seller_count,
+        abebooks_condition_spread,
+        abebooks_has_new,
+        abebooks_has_used,
+        abebooks_hardcover_premium
     FROM books
     WHERE bookscouter_json IS NOT NULL
       AND json_extract(bookscouter_json, '$.amazon_lowest_price') IS NOT NULL
@@ -85,7 +132,14 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
             NULL as amazon_price,
             cover_type,
             signed,
-            printing
+            printing,
+            NULL as abebooks_min_price,
+            NULL as abebooks_avg_price,
+            NULL as abebooks_seller_count,
+            NULL as abebooks_condition_spread,
+            NULL as abebooks_has_new,
+            NULL as abebooks_has_used,
+            NULL as abebooks_hardcover_premium
         FROM training_books
         WHERE sold_avg_price IS NOT NULL
           AND sold_count >= 5
@@ -101,6 +155,50 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
     if len(rows) < min_samples:
         raise ValueError(f"Insufficient training data: {len(rows)} samples (need at least {min_samples})")
 
+    # ALSO load from metadata_cache.db (Amazon pricing data)
+    cache_db_path = Path.home() / '.isbn_lot_optimizer' / 'metadata_cache.db'
+    if cache_db_path.exists():
+        cache_rows = load_amazon_pricing_data(cache_db_path)
+        print(f"Loaded {len(cache_rows)} additional book records from metadata_cache.db")
+
+        # Convert metadata_cache format to match catalog.db format
+        # Format: (isbn, metadata_json, market_json, bookscouter_json, condition, estimated_price, sold_comps_median, amazon_price, cover_type, signed, printing)
+        for cache_row in cache_rows:
+            isbn_cache, title, authors, publisher, pub_year, binding, page_count, price_good, price_vg, offer_count = cache_row
+
+            # Create minimal metadata JSON
+            metadata_dict = {
+                'title': title,
+                'authors': authors,
+                'publisher': publisher,
+                'published_year': pub_year,
+                'page_count': page_count,
+            }
+
+            # Convert to format expected by training pipeline
+            # Use price_good as target (same as training approach)
+            if price_good and price_good > 0:
+                rows.append((
+                    isbn_cache,
+                    json.dumps(metadata_dict),
+                    None,  # No market_json
+                    None,  # No bookscouter_json
+                    'Good',  # Default condition
+                    None,  # No estimated_price
+                    None,  # No sold_comps_median
+                    price_good,  # Use as amazon_price for target
+                    binding,  # cover_type
+                    False,  # not signed
+                    None,  # no printing info
+                    None,  # abebooks_min_price
+                    None,  # abebooks_avg_price
+                    None,  # abebooks_seller_count
+                    None,  # abebooks_condition_spread
+                    None,  # abebooks_has_new
+                    None,  # abebooks_has_used
+                    None,  # abebooks_hardcover_premium
+                ))
+
     print(f"Total training samples: {len(rows)}")
 
     # Parse records and create target variable
@@ -108,13 +206,27 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
     target_prices = []
 
     for row in rows:
-        isbn, metadata_json, market_json, bookscouter_json, condition, estimated_price, sold_comps_median, amazon_price, cover_type, signed, printing = row
+        isbn, metadata_json, market_json, bookscouter_json, condition, estimated_price, sold_comps_median, amazon_price, cover_type, signed, printing, \
+        abebooks_min, abebooks_avg, abebooks_count, abebooks_spread, abebooks_has_new, abebooks_has_used, abebooks_hc_premium = row
 
         # Parse JSON fields - just use dict form instead of instantiating models
         # This avoids type errors from extra fields in database
         metadata_dict = json.loads(metadata_json) if metadata_json else None
         market_dict = json.loads(market_json) if market_json else None
         bookscouter_dict = json.loads(bookscouter_json) if bookscouter_json else None
+
+        # Build AbeBooks dict if data exists
+        abebooks_dict = None
+        if abebooks_min or abebooks_avg or abebooks_count:
+            abebooks_dict = {
+                'abebooks_min_price': abebooks_min,
+                'abebooks_avg_price': abebooks_avg,
+                'abebooks_seller_count': abebooks_count,
+                'abebooks_condition_spread': abebooks_spread,
+                'abebooks_has_new': abebooks_has_new,
+                'abebooks_has_used': abebooks_has_used,
+                'abebooks_hardcover_premium': abebooks_hc_premium,
+            }
 
         # CRITICAL: Skip lot listings to prevent contaminating training data
         # Check title in metadata_dict for lot patterns
@@ -174,6 +286,7 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
             "market": market,
             "bookscouter": bookscouter,
             "condition": condition or "Good",
+            "abebooks": abebooks_dict,
         })
         target_prices.append(target)
 
@@ -182,7 +295,8 @@ def load_training_data(db_path: Path, min_samples: int = 20) -> Tuple[List, List
 
 def extract_features_for_training(
     book_records: List[dict],
-    feature_extractor: FeatureExtractor
+    feature_extractor: FeatureExtractor,
+    catalog_db_path: Path
 ) -> Tuple[np.ndarray, List[float]]:
     """
     Extract features from book records.
@@ -190,6 +304,7 @@ def extract_features_for_training(
     Args:
         book_records: List of book record dicts
         feature_extractor: FeatureExtractor instance
+        catalog_db_path: Path to catalog.db for querying BookFinder data
 
     Returns:
         Tuple of (feature_matrix, completeness_scores)
@@ -198,11 +313,16 @@ def extract_features_for_training(
     completeness_scores = []
 
     for record in book_records:
+        # Query BookFinder aggregator data
+        bookfinder_data = get_bookfinder_features(record["isbn"], str(catalog_db_path))
+
         features = feature_extractor.extract(
             metadata=record["metadata"],
             market=record["market"],
             bookscouter=record["bookscouter"],
             condition=record["condition"],
+            abebooks=record.get("abebooks"),
+            bookfinder=bookfinder_data,
         )
 
         feature_matrix.append(features.values)
@@ -231,13 +351,9 @@ def train_model(
     Returns:
         Dict with training metrics
     """
-    try:
-        import xgboost as xgb
-    except ImportError:
-        print("Error: xgboost not installed. Install with: pip install xgboost")
-        sys.exit(1)
+    from sklearn.ensemble import GradientBoostingRegressor
 
-    print("\nTraining XGBoost model...")
+    print("\nTraining GradientBoosting model...")
 
     # Feature scaling
     scaler = StandardScaler()
@@ -245,18 +361,15 @@ def train_model(
     X_test_scaled = scaler.transform(X_test)
 
     # Train model with regularization to reduce overfitting
-    model = xgb.XGBRegressor(
+    model = GradientBoostingRegressor(
         n_estimators=200,
         max_depth=4,           # Reduced to prevent overfitting
         learning_rate=0.05,     # Slower learning for better generalization
         subsample=0.8,
-        colsample_bytree=0.8,
-        reg_alpha=1.0,          # L1 regularization
-        reg_lambda=1.0,         # L2 regularization
-        min_child_weight=3,     # Minimum samples per leaf
-        gamma=0.1,              # Minimum loss reduction for split
+        min_samples_split=6,     # Minimum samples per split
+        min_samples_leaf=3,      # Minimum samples per leaf
         random_state=42,
-        objective='reg:squarederror'
+        loss='squared_error'
     )
 
     model.fit(X_train_scaled, y_train)
@@ -294,8 +407,8 @@ def train_model(
     joblib.dump(scaler, model_dir / "scaler_v1.pkl")
 
     metadata = {
-        "version": "v1",
-        "model_type": "XGBRegressor",
+        "version": "v1_abebooks",
+        "model_type": "GradientBoostingRegressor",
         "train_date": datetime.now().isoformat(),
         "train_samples": len(X_train),
         "test_samples": len(X_test),
@@ -306,9 +419,9 @@ def train_model(
         "test_r2": float(test_r2),
         "feature_importance": {k: float(v) for k, v in feature_importance.items()},
         "hyperparameters": {
-            "n_estimators": 100,
-            "max_depth": 5,
-            "learning_rate": 0.1,
+            "n_estimators": 200,
+            "max_depth": 4,
+            "learning_rate": 0.05,
         }
     }
 
@@ -368,7 +481,7 @@ def main():
     # Extract features
     print("\n2. Extracting features...")
     feature_extractor = FeatureExtractor()
-    X, completeness_scores = extract_features_for_training(book_records, feature_extractor)
+    X, completeness_scores = extract_features_for_training(book_records, feature_extractor, db_path)
     y = np.array(target_prices)
 
     avg_completeness = np.mean(completeness_scores)

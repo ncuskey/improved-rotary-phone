@@ -1,0 +1,29 @@
+{
+  "model_type": "Ridge",
+  "alpha": 1000.0,
+  "n_features": 3,
+  "feature_names": [
+    "eBay",
+    "AbeBooks",
+    "Amazon"
+  ],
+  "coefficients": {
+    "eBay": 0.09457441991336098,
+    "AbeBooks": 0.5272369917124852,
+    "Amazon": -0.039721752097413535
+  },
+  "intercept": 8.159437633856136,
+  "training_samples": 580,
+  "test_samples": 146,
+  "train_mae": 6.551115060062621,
+  "test_mae": 4.978893200326305,
+  "train_rmse": 16.60089867819794,
+  "test_rmse": 7.0366863849208,
+  "train_r2": 0.12700456388725678,
+  "test_r2": 0.2587495886009651,
+  "ebay_test_mae": 6.785873820961546,
+  "abebooks_test_mae": 6.740759073754889,
+  "amazon_test_mae": 7.723106487756693,
+  "improvement_pct": 26.137499562748058,
+  "trained_at": "2025-11-01T14:01:34.726189"
+}

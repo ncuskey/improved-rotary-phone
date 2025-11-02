@@ -19,6 +19,7 @@ from shared.series_integration import enrich_evaluation_with_series, match_and_a
 
 from ..dependencies import get_book_service
 from ...config import settings
+from .sphere_viz import viz_broadcaster
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))
@@ -141,6 +142,12 @@ async def get_all_books_json(
         evaluations = service.get_books_updated_since(since)
     else:
         evaluations = service.get_all_books()
+
+    # Broadcast DB read event
+    try:
+        await viz_broadcaster.database_read("get_all_books", len(evaluations))
+    except Exception:
+        pass  # Don't fail request if broadcast fails
 
     payload = [_book_evaluation_to_dict(evaluation) for evaluation in evaluations]
     return payload
@@ -277,6 +284,12 @@ async def get_book_evaluation_json(
 
     book = service.get_book(normalized_isbn)
 
+    # Broadcast DB read event
+    try:
+        await viz_broadcaster.database_read("get_book_evaluation", 1)
+    except Exception:
+        pass
+
     if not book:
         return JSONResponse(
             status_code=404,
@@ -307,6 +320,12 @@ async def get_book_evaluation_json(
         # Preserve bookscouter and booksrun data before rebuilding
         bookscouter_data = book.bookscouter
         booksrun_data = book.booksrun
+
+        # Broadcast ML prediction event
+        try:
+            await viz_broadcaster.ml_prediction("re_evaluation", 1)
+        except Exception:
+            pass
 
         # Rebuild evaluation with new attributes
         book = build_book_evaluation(
@@ -430,6 +449,12 @@ async def accept_book(
             edition=edition,
             recalc_lots=False,  # Don't block - regenerate in background
         )
+
+        # Broadcast DB write event
+        try:
+            await viz_broadcaster.database_write("accept_book", 1)
+        except Exception:
+            pass  # Don't fail request if broadcast fails
 
         # Schedule INCREMENTAL lot update in background (only updates affected lots)
         # This is much faster than full regeneration: 1-3 eBay calls instead of 122

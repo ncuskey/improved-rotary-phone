@@ -6,12 +6,21 @@ Collects 150-160 offers per ISBN from BookFinder's meta-search aggregator,
 providing 3 new ML features: lowest_price, source_count, new_vs_used_spread.
 
 Features:
-- Scrapes all catalog ISBNs (760 total)
+- Scrapes from multiple sources:
+  * catalog: Physical inventory ISBNs (760 total)
+  * metadata_cache: ML training ISBNs (19,249 total)
+  * all: Both sources combined
 - Saves offers to catalog.db (bookfinder_offers table)
 - Progress tracking & resume capability
 - Robust error handling with retries
 - Respectful rate limiting (12-18 sec randomized delays)
 - Detailed logging
+
+Usage:
+  python scripts/collect_bookfinder_prices.py --source catalog          # Default, 760 ISBNs
+  python scripts/collect_bookfinder_prices.py --source metadata_cache   # 19,249 ISBNs
+  python scripts/collect_bookfinder_prices.py --source all              # Combined
+  python scripts/collect_bookfinder_prices.py --test                    # Test mode, 5 ISBNs
 
 Anti-Detection Measures:
 - User agent rotation (5 realistic browser fingerprints)
@@ -23,10 +32,13 @@ Anti-Detection Measures:
 
 robots.txt Compliance Note:
 BookFinder's robots.txt disallows /search/ paths. This scraper is for research
-and ML model training purposes only (760 ISBNs, one-time collection). Traffic
-is extremely light (~4 requests/minute) and runs during off-peak hours.
+and ML model training purposes only. Traffic is extremely light (~4 requests/minute)
+and runs during off-peak hours.
 
-Runtime: ~3.2 hours for 760 ISBNs
+Runtime:
+  - catalog: ~3.2 hours (760 ISBNs)
+  - metadata_cache: ~80 hours (19,249 ISBNs)
+  - all: ~83 hours (19,929 unique ISBNs)
 Cost: $0 (uses free Playwright, no proxies needed for this volume)
 """
 
@@ -209,6 +221,58 @@ def load_catalog_isbns() -> List[str]:
     return valid_isbns
 
 
+def load_metadata_cache_isbns() -> List[str]:
+    """
+    Load all valid ISBNs from metadata_cache that haven't been scraped yet.
+
+    Returns:
+        List of valid ISBNs to scrape
+    """
+    metadata_db_path = Path.home() / '.isbn_lot_optimizer' / 'metadata_cache.db'
+    catalog_db_path = get_catalog_db_path()
+
+    # Connect to metadata cache
+    metadata_conn = sqlite3.connect(metadata_db_path)
+    metadata_cursor = metadata_conn.cursor()
+
+    # Connect to catalog to check progress
+    catalog_conn = sqlite3.connect(catalog_db_path)
+    catalog_cursor = catalog_conn.cursor()
+
+    # Get all ISBNs from metadata cache
+    metadata_cursor.execute("""
+        SELECT DISTINCT isbn
+        FROM cached_books
+        WHERE isbn IS NOT NULL
+        ORDER BY isbn
+    """)
+
+    all_isbns = [row[0] for row in metadata_cursor.fetchall()]
+    metadata_conn.close()
+
+    # Filter out already completed ISBNs
+    remaining_isbns = []
+    for isbn in all_isbns:
+        catalog_cursor.execute(
+            "SELECT status FROM bookfinder_progress WHERE isbn = ? AND status = 'completed'",
+            (isbn,)
+        )
+        if not catalog_cursor.fetchone():
+            remaining_isbns.append(isbn)
+
+    catalog_conn.close()
+
+    # Filter to only valid ISBNs
+    valid_isbns = [isbn for isbn in remaining_isbns if is_valid_isbn(isbn)]
+    invalid_count = len(remaining_isbns) - len(valid_isbns)
+
+    if invalid_count > 0:
+        logger.info(f"Filtered out {invalid_count} invalid ISBNs")
+
+    logger.info(f"Loaded {len(valid_isbns)} valid ISBNs from metadata_cache to scrape")
+    return valid_isbns
+
+
 def get_scraping_stats() -> Dict:
     """Get current scraping statistics."""
     db_path = get_catalog_db_path()
@@ -280,6 +344,12 @@ async def extract_bookfinder_offers(page: Page) -> List[Dict]:
                 signed_str = await div.get_attribute('data-csa-c-signed') or 'false'
                 first_edition_str = await div.get_attribute('data-csa-c-firstedition') or 'false'
                 oldworld_str = await div.get_attribute('data-csa-c-oldworld') or 'false'
+
+                # Extract additional fields
+                offer_id = await div.get_attribute('data-csa-c-id') or ''
+                clickout_type = await div.get_attribute('data-csa-c-clickouttype') or ''
+                destination = await div.get_attribute('data-csa-c-destination') or ''
+                seller_location = await div.get_attribute('data-csa-c-sellerlocation') or ''
 
                 # Parse boolean flags
                 is_signed = 1 if signed_str.lower() == 'true' else 0
@@ -368,6 +438,10 @@ async def extract_bookfinder_offers(page: Page) -> List[Dict]:
                         'is_first_edition': is_first_edition,
                         'is_oldworld': is_oldworld,
                         'description': description,
+                        'offer_id': offer_id,
+                        'clickout_type': clickout_type,
+                        'destination': destination,
+                        'seller_location': seller_location,
                     })
 
             except Exception as e:
@@ -408,13 +482,16 @@ async def scrape_isbn(isbn: str, context: BrowserContext, retry_count: int = 0) 
 
         logger.debug(f"Page loaded with status: {response.status}")
 
-        # Wait for offers to render
+        # Wait for network to be idle (React hydration complete)
+        # BookFinder uses React and loads data via JS
         try:
-            await page.wait_for_selector('[data-csa-c-item-type="search-offer"]', timeout=10000)
-            logger.debug("Offers selector found")
+            await page.wait_for_load_state('networkidle', timeout=20000)
+            logger.debug("Network idle, page fully loaded")
         except Exception as e:
-            # Timeout is OK - offers may already be present
-            logger.debug(f"Selector wait timeout: {str(e)[:100]}")
+            # NetworkIdle timeout is OK - page is likely loaded
+            logger.debug(f"Network idle timeout: {str(e)[:100]}")
+            # Brief wait for any pending JS
+            await asyncio.sleep(2)
 
         # Extract offers
         offers = await extract_bookfinder_offers(page)
@@ -464,8 +541,9 @@ def save_offers(isbn: str, offers: List[Dict]):
         cursor.execute("""
             INSERT INTO bookfinder_offers
             (isbn, vendor, seller, price, shipping, condition, binding,
-             title, authors, publisher, is_signed, is_first_edition, is_oldworld, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             title, authors, publisher, is_signed, is_first_edition, is_oldworld, description,
+             offer_id, clickout_type, destination, seller_location)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             isbn,
             offer.get('vendor', ''),
@@ -480,7 +558,11 @@ def save_offers(isbn: str, offers: List[Dict]):
             offer.get('is_signed', 0),
             offer.get('is_first_edition', 0),
             offer.get('is_oldworld', 0),
-            offer.get('description', '')
+            offer.get('description', ''),
+            offer.get('offer_id', ''),
+            offer.get('clickout_type', ''),
+            offer.get('destination', ''),
+            offer.get('seller_location', '')
         ))
 
     conn.commit()
@@ -511,16 +593,18 @@ def update_progress(isbn: str, status: str, offer_count: int = 0, error_message:
     conn.close()
 
 
-async def main(limit: Optional[int] = None):
+async def main(limit: Optional[int] = None, source: str = 'catalog'):
     """
     Main scraper function.
 
     Args:
         limit: Optional limit on number of ISBNs to scrape (for testing)
+        source: Data source - 'catalog' (760 ISBNs), 'metadata_cache' (19,249 ISBNs), or 'all'
     """
 
     print("=" * 80)
     print("BOOKFINDER.COM PRODUCTION SCRAPER")
+    print(f"SOURCE: {source.upper()}")
     if limit:
         print(f"TEST MODE: Limiting to {limit} ISBNs")
     print("=" * 80)
@@ -537,8 +621,20 @@ async def main(limit: Optional[int] = None):
     if stats['completed'] > 0:
         logger.info(f"Average offers per ISBN: {stats['avg_offers_per_isbn']:.1f}")
 
-    # Load ISBNs to scrape
-    isbns = load_catalog_isbns()
+    # Load ISBNs to scrape based on source
+    if source == 'catalog':
+        isbns = load_catalog_isbns()
+    elif source == 'metadata_cache':
+        isbns = load_metadata_cache_isbns()
+    elif source == 'all':
+        catalog_isbns = load_catalog_isbns()
+        metadata_isbns = load_metadata_cache_isbns()
+        # Combine and deduplicate
+        isbns = list(set(catalog_isbns + metadata_isbns))
+        logger.info(f"Combined {len(catalog_isbns)} catalog + {len(metadata_isbns)} metadata_cache ISBNs = {len(isbns)} unique")
+    else:
+        logger.error(f"Invalid source: {source}. Must be 'catalog', 'metadata_cache', or 'all'")
+        return 1
 
     if not isbns:
         logger.info("✅ All ISBNs already scraped!")
@@ -693,6 +789,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Scrape BookFinder.com for book offers')
     parser.add_argument('--limit', type=int, help='Limit number of ISBNs to scrape (for testing)')
     parser.add_argument('--test', action='store_true', help='Test mode: scrape only 5 ISBNs')
+    parser.add_argument('--source', type=str, default='catalog',
+                        choices=['catalog', 'metadata_cache', 'all'],
+                        help='Data source: catalog (760 ISBNs), metadata_cache (19,249 ISBNs), or all (default: catalog)')
 
     args = parser.parse_args()
 
@@ -700,4 +799,4 @@ if __name__ == '__main__':
     if args.test:
         limit = 5
 
-    sys.exit(asyncio.run(main(limit=limit)))
+    sys.exit(asyncio.run(main(limit=limit, source=args.source)))

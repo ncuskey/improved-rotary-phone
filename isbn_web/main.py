@@ -21,7 +21,8 @@ if str(PROJECT_ROOT) not in sys.path:  # Ensure package imports work when run as
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from isbn_web.api.dependencies import cleanup_book_service, get_book_service
-from isbn_web.api.routes import actions, books, covers, covers_check, ebay_listings, events, lots, refresh
+from isbn_web.api.routes import actions, books, covers, covers_check, ebay_listings, events, lots, refresh, sphere_viz
+from isbn_web.api.routes.sphere_viz import viz_broadcaster
 from isbn_web.config import settings
 from isbn_web.logging_middleware import HTTPLoggingMiddleware
 
@@ -96,6 +97,7 @@ app.include_router(covers.router, prefix="/api", tags=["covers"])
 app.include_router(covers_check.router, prefix="/api/covers", tags=["covers"])
 app.include_router(refresh.router, prefix="/api/refresh", tags=["refresh"])
 app.include_router(ebay_listings.router, prefix="/api/ebay", tags=["ebay"])
+app.include_router(sphere_viz.router, tags=["visualization"])
 
 # Setup Jinja2 templates
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))
@@ -109,6 +111,18 @@ async def dashboard(request: Request):
         {
             "request": request,
             "title": "ISBN Lot Optimizer",
+        },
+    )
+
+
+@app.get("/sphere", response_class=HTMLResponse)
+async def sphere_visualization(request: Request):
+    """3D sphere visualization page."""
+    return templates.TemplateResponse(
+        "sphere.html",
+        {
+            "request": request,
+            "title": "Server Activity Visualization",
         },
     )
 
@@ -144,8 +158,20 @@ async def isbn_lookup(
 
     book = service.get_book(data.isbn)
 
+    # Broadcast DB read event
+    try:
+        await viz_broadcaster.database_read("get_book", 1)
+    except Exception:
+        pass  # Don't fail request if broadcast fails
+
     if book is None:
         try:
+            # Broadcast scraping event (will fetch metadata and market data)
+            try:
+                await viz_broadcaster.data_scraping("metadata", 1)
+            except Exception:
+                pass
+
             # Use scan_isbn to persist with REJECT status by default
             # User can later accept the book to change status to ACCEPT
             book = service.scan_isbn(
@@ -156,6 +182,14 @@ async def isbn_lookup(
                 recalc_lots=False,  # Don't recalc lots for rejected scans
                 status="REJECT",  # Default to REJECT - only accepted when user taps Accept
             )
+
+            # Broadcast post-scan events
+            try:
+                await viz_broadcaster.data_scraping("market", 1)  # eBay data collected
+                await viz_broadcaster.ml_prediction("probability", 1)  # ML probability calculated
+                await viz_broadcaster.database_write("scan_isbn", 1)  # Persisted to DB
+            except Exception:
+                pass
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except Exception as exc:  # pragma: no cover - defensive
@@ -167,6 +201,12 @@ async def isbn_lookup(
         # Book exists - check if it has market data, if not refetch it
         if book.market is None or (book.market.active_count == 0 and book.market.sold_count == 0):
             try:
+                # Broadcast scraping event for market data refresh
+                try:
+                    await viz_broadcaster.data_scraping("market_refresh", 1)
+                except Exception:
+                    pass
+
                 # Refresh market data for books that were scanned before Track B was fixed
                 refreshed_book = service.refresh_book_market(data.isbn, recalc_lots=False)
                 if refreshed_book:
@@ -187,6 +227,11 @@ async def isbn_lookup(
             try:
                 service.update_book_fields(data.isbn, update_fields)
                 book = service.get_book(data.isbn)  # Refresh
+                # Broadcast DB write event for attribute update
+                try:
+                    await viz_broadcaster.database_write("update_fields", 1)
+                except Exception:
+                    pass
             except Exception:
                 pass  # Don't fail if attributes update fails
 

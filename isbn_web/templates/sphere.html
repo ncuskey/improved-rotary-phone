@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #000814 0%, #001d3d 50%, #003566 100%);
+            color: #34EDF3;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        body:active {
+            cursor: grabbing;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Scanline effect */
+        #canvas-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(transparent, rgba(52, 237, 243, 0.3), transparent);
+            animation: scanline 8s linear infinite;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+
+        /* Noise texture overlay */
+        #canvas-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABVJREFUeNpi/P//PwMDAwMjAxQABBgAHRUH/hd/cqYAAAAASUVORK5CYII=');
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #info-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 8, 20, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 2px;
+            border: 1px solid rgba(52, 237, 243, 0.3);
+            box-shadow: 0 0 20px rgba(52, 237, 243, 0.2);
+            min-width: 320px;
+            z-index: 1000;
+            font-size: 13px;
+        }
+
+        #info-panel h1 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #34EDF3;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: normal;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(52, 237, 243, 0.1);
+        }
+
+        .stat:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #6287F8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            color: #34EDF3;
+            font-weight: bold;
+            text-align: right;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .status-connected {
+            background: #34EDF3;
+            color: #34EDF3;
+        }
+
+        .status-disconnected {
+            background: #F715AB;
+            color: #F715AB;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(0.9);
+            }
+        }
+
+        #legend {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 8, 20, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 2px;
+            border: 1px solid rgba(52, 237, 243, 0.3);
+            box-shadow: 0 0 20px rgba(52, 237, 243, 0.2);
+            z-index: 1000;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 8, 20, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 2px;
+            border: 1px solid rgba(52, 237, 243, 0.3);
+            box-shadow: 0 0 20px rgba(52, 237, 243, 0.2);
+            z-index: 1000;
+        }
+
+        .control-button {
+            background: rgba(52, 237, 243, 0.1);
+            border: 1px solid rgba(52, 237, 243, 0.5);
+            color: #34EDF3;
+            padding: 10px 16px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 11px;
+            margin: 5px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
+            display: block;
+            width: 180px;
+        }
+
+        .control-button:hover {
+            background: rgba(52, 237, 243, 0.2);
+            box-shadow: 0 0 15px rgba(52, 237, 243, 0.4);
+        }
+
+        .control-button:active {
+            transform: scale(0.98);
+        }
+
+        #fps-counter {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 8, 20, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            border-radius: 2px;
+            border: 1px solid rgba(52, 237, 243, 0.3);
+            font-size: 11px;
+            color: #34EDF3;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="info-panel">
+        <h1>◢ SYSTEM MONITOR</h1>
+        <div class="stat">
+            <span class="stat-label">Status</span>
+            <span class="stat-value">
+                <span id="connection-status" class="status-indicator status-disconnected"></span>
+                <span id="connection-text">CONNECTING...</span>
+            </span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Database</span>
+            <span class="stat-value" id="book-count">LOADING...</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Requests In</span>
+            <span class="stat-value" id="request-count">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Responses Out</span>
+            <span class="stat-value" id="response-count">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Books Accessed</span>
+            <span class="stat-value" id="book-access-count">0</span>
+        </div>
+    </div>
+
+    <div id="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #34EDF3; color: #34EDF3;"></div>
+            <span>Idle Point</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #F715AB; color: #F715AB;"></div>
+            <span>Book Active</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FF0080; color: #FF0080;"></div>
+            <span>Request Wave</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #00CCFF; color: #00CCFF;"></div>
+            <span>Response Wave</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #00FF4D; color: #00FF4D;"></div>
+            <span>DB Read</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FF9900; color: #FF9900;"></div>
+            <span>DB Write</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FFFF00; color: #FFFF00;"></div>
+            <span>Data Scraping</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #9933FF; color: #9933FF;"></div>
+            <span>ML Prediction</span>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button class="control-button" onclick="toggleRotation()" id="rotate-btn">⏸ PAUSE ROTATION</button>
+        <button class="control-button" onclick="resetView()">⟲ RESET VIEW</button>
+        <button class="control-button" onclick="testWaves()">⚡ TEST WAVES</button>
+    </div>
+
+    <div id="fps-counter">FPS: <span id="fps-value">--</span></div>
+
+    <!-- Three.js and dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        const CONFIG = {
+            SPHERE_RADIUS: 5,
+            NUM_POINTS: 6000,
+            AUTO_ROTATE_SPEED: 0.3,
+            WAVE_SPEED: 0.015,
+            WAVE_WIDTH: 0.15,
+            POINT_BASE_SIZE: 0.5,
+            IDLE_TIMEOUT: 3000, // Resume auto-rotate after 3s
+        };
+
+        const COLOR_PALETTE = {
+            idle: { r: 0.20, g: 0.88, b: 0.95 },      // Cyan #34EDF3
+            idleAlt: { r: 0.38, g: 0.53, b: 0.97 },   // Blue #6287F8
+            accessed: { r: 0.97, g: 0.08, b: 0.67 },  // Magenta #F715AB
+            requestWave: { r: 1.0, g: 0.0, b: 0.5 },  // Hot pink
+            responseWave: { r: 0.0, g: 0.8, b: 1.0 }, // Electric cyan
+            dbReadWave: { r: 0.0, g: 1.0, b: 0.3 },   // Green
+            dbWriteWave: { r: 1.0, g: 0.6, b: 0.0 },  // Orange
+            scrapingWave: { r: 1.0, g: 1.0, b: 0.0 }, // Yellow
+            mlWave: { r: 0.6, g: 0.2, b: 1.0 },       // Purple
+        };
+
+        // ==================== GLOBAL STATE ====================
+        let scene, camera, renderer, composer, controls;
+        let points, pointsMaterial, pointsGeometry;
+        let stars, grid;
+        let bookData = [];
+        let waves = [];
+        let updateQueue = new Set();
+        let latitudes = [];
+        let ws = null;
+        let requestCount = 0;
+        let responseCount = 0;
+        let bookAccessCount = 0;
+        let autoRotateTimeout = null;
+
+        // FPS counter
+        let fps = 0;
+        let frameCount = 0;
+        let lastFpsUpdate = Date.now();
+
+        // ==================== CUSTOM SHADERS ====================
+        const vertexShader = `
+            attribute float size;
+            attribute vec3 customColor;
+            attribute float waveIntensity;
+            varying vec3 vColor;
+            varying float vWaveIntensity;
+
+            void main() {
+                vColor = customColor;
+                vWaveIntensity = waveIntensity;
+
+                // Displace point outward based on wave intensity
+                vec3 displaced = position + normalize(position) * waveIntensity * 0.15;
+
+                vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
+                gl_PointSize = size * (300.0 / -mvPosition.z);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `;
+
+        const fragmentShader = `
+            varying vec3 vColor;
+            varying float vWaveIntensity;
+
+            void main() {
+                // Calculate distance from center for circular shape
+                vec2 center = gl_PointCoord - 0.5;
+                float dist = length(center);
+
+                // Smooth circular edge with antialiasing
+                float alpha = 1.0 - smoothstep(0.35, 0.5, dist);
+
+                if (alpha < 0.01) discard;
+
+                // Enhanced glow during wave
+                float glow = (1.0 - dist * 2.0) * (1.0 + vWaveIntensity * 3.0);
+                vec3 finalColor = vColor * (1.0 + glow * 0.6);
+
+                gl_FragColor = vec4(finalColor, alpha * 0.4);
+            }
+        `;
+
+        // ==================== ENHANCED WAVE CLASS ====================
+        class EnhancedWave {
+            constructor(type) {
+                this.type = type;
+
+                // Set direction and color based on type
+                if (type === 'request') {
+                    this.progress = 0;
+                    this.speed = CONFIG.WAVE_SPEED;
+                    this.color = COLOR_PALETTE.requestWave;
+                } else if (type === 'response') {
+                    this.progress = 1;
+                    this.speed = -CONFIG.WAVE_SPEED;
+                    this.color = COLOR_PALETTE.responseWave;
+                } else if (type === 'db_read') {
+                    this.progress = 0;
+                    this.speed = CONFIG.WAVE_SPEED * 1.2; // Slightly faster
+                    this.color = COLOR_PALETTE.dbReadWave;
+                } else if (type === 'db_write') {
+                    this.progress = 1;
+                    this.speed = -CONFIG.WAVE_SPEED * 1.2; // Slightly faster
+                    this.color = COLOR_PALETTE.dbWriteWave;
+                } else if (type === 'scraping') {
+                    this.progress = 0;
+                    this.speed = CONFIG.WAVE_SPEED * 0.8; // Slower (data collection takes time)
+                    this.color = COLOR_PALETTE.scrapingWave;
+                } else if (type === 'ml_prediction') {
+                    this.progress = 1;
+                    this.speed = -CONFIG.WAVE_SPEED * 0.8; // Slower
+                    this.color = COLOR_PALETTE.mlWave;
+                }
+
+                this.width = CONFIG.WAVE_WIDTH;
+                this.intensity = 0.8;
+            }
+
+            update() {
+                this.progress += this.speed;
+                return this.progress >= -0.2 && this.progress <= 1.2;
+            }
+
+            applyToPoint(latitude, pointIndex) {
+                const distance = Math.abs(latitude - this.progress);
+
+                if (distance < this.width) {
+                    // Smooth Gaussian-like wave curve
+                    const intensity = Math.exp(-Math.pow(distance / this.width, 2) * 3);
+                    const colorIntensity = intensity * 0.4; // Reduce color blending
+
+                    // Update color
+                    const colors = pointsGeometry.attributes.customColor.array;
+                    const idx = pointIndex * 3;
+
+                    const currentR = colors[idx];
+                    const currentG = colors[idx + 1];
+                    const currentB = colors[idx + 2];
+
+                    colors[idx] = this.color.r * colorIntensity + currentR * (1 - colorIntensity);
+                    colors[idx + 1] = this.color.g * colorIntensity + currentG * (1 - colorIntensity);
+                    colors[idx + 2] = this.color.b * colorIntensity + currentB * (1 - colorIntensity);
+
+                    // Update size
+                    const sizes = pointsGeometry.attributes.size.array;
+                    sizes[pointIndex] += intensity * this.intensity;
+
+                    // Update wave intensity for shader displacement
+                    const waveIntensities = pointsGeometry.attributes.waveIntensity.array;
+                    waveIntensities[pointIndex] = Math.max(waveIntensities[pointIndex], intensity);
+
+                    updateQueue.add(pointIndex);
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        // ==================== INITIALIZATION ====================
+        function init() {
+            const container = document.getElementById('canvas-container');
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000814, 0.015);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(
+                60,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 0, 12);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: false,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            // OrbitControls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_SPEED;
+            controls.minDistance = 8;
+            controls.maxDistance = 25;
+            controls.enablePan = false;
+            controls.maxPolarAngle = Math.PI;
+            controls.minPolarAngle = 0;
+
+            // Auto-rotate control
+            controls.addEventListener('start', function() {
+                clearTimeout(autoRotateTimeout);
+                controls.autoRotate = false;
+            });
+
+            controls.addEventListener('end', function() {
+                autoRotateTimeout = setTimeout(function() {
+                    controls.autoRotate = true;
+                }, CONFIG.IDLE_TIMEOUT);
+            });
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x34EDF3, 0.3);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x34EDF3, 1, 50);
+            pointLight.position.set(10, 10, 10);
+            scene.add(pointLight);
+
+            // Create scene elements
+            createBookSphere();
+            createStarfield();
+            createHoloGrid();
+
+            // Post-processing
+            setupPostProcessing();
+
+            // Event listeners
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Start animation
+            animate();
+
+            // Connect to WebSocket
+            connectWebSocket();
+
+            // Fetch book count
+            fetchBookCount();
+        }
+
+        // ==================== BOOK SPHERE CREATION ====================
+        function createBookSphere() {
+            const positions = [];
+            const colors = [];
+            const sizes = [];
+            const waveIntensities = [];
+
+            // Fibonacci sphere algorithm
+            const phi = Math.PI * (3 - Math.sqrt(5));
+
+            for (let i = 0; i < CONFIG.NUM_POINTS; i++) {
+                const y = 1 - (i / (CONFIG.NUM_POINTS - 1)) * 2;
+                const radius = Math.sqrt(1 - y * y);
+                const theta = phi * i;
+
+                const x = Math.cos(theta) * radius;
+                const z = Math.sin(theta) * radius;
+
+                positions.push(
+                    x * CONFIG.SPHERE_RADIUS,
+                    y * CONFIG.SPHERE_RADIUS,
+                    z * CONFIG.SPHERE_RADIUS
+                );
+
+                // Random idle color variation
+                const color = Math.random() > 0.8 ? COLOR_PALETTE.idleAlt : COLOR_PALETTE.idle;
+                colors.push(color.r, color.g, color.b);
+
+                sizes.push(CONFIG.POINT_BASE_SIZE);
+                waveIntensities.push(0);
+
+                // Pre-calculate latitude
+                const lat = (Math.asin(y) + Math.PI / 2) / Math.PI;
+                latitudes.push(lat);
+
+                // Store book data
+                bookData.push({
+                    accessed: false,
+                    accessTime: 0,
+                    baseColor: color
+                });
+            }
+
+            // Create geometry
+            pointsGeometry = new THREE.BufferGeometry();
+            pointsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            pointsGeometry.setAttribute('customColor', new THREE.Float32BufferAttribute(colors, 3));
+            pointsGeometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+            pointsGeometry.setAttribute('waveIntensity', new THREE.Float32BufferAttribute(waveIntensities, 1));
+
+            // Create custom shader material
+            pointsMaterial = new THREE.ShaderMaterial({
+                uniforms: {},
+                vertexShader: vertexShader,
+                fragmentShader: fragmentShader,
+                transparent: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+            });
+
+            points = new THREE.Points(pointsGeometry, pointsMaterial);
+            scene.add(points);
+
+            console.log(`✓ Created sphere with ${CONFIG.NUM_POINTS} points`);
+        }
+
+        // ==================== STARFIELD ====================
+        function createStarfield() {
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 1500;
+            const starPositions = [];
+            const starColors = [];
+
+            for (let i = 0; i < starCount; i++) {
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                const radius = 18 + Math.random() * 15;
+
+                starPositions.push(
+                    radius * Math.sin(phi) * Math.cos(theta),
+                    radius * Math.sin(phi) * Math.sin(theta),
+                    radius * Math.cos(phi)
+                );
+
+                // Slight color variation
+                const brightness = 0.6 + Math.random() * 0.4;
+                starColors.push(brightness, brightness * 0.9, brightness);
+            }
+
+            starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+            starGeometry.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
+
+            const starMaterial = new THREE.PointsMaterial({
+                size: 0.15,
+                transparent: true,
+                opacity: 0.7,
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+            });
+
+            stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+        }
+
+        // ==================== HOLOGRAPHIC GRID ====================
+        function createHoloGrid() {
+            grid = new THREE.GridHelper(25, 25, 0x34EDF3, 0x001d3d);
+            grid.position.y = -9;
+            grid.material.opacity = 0.2;
+            grid.material.transparent = true;
+            scene.add(grid);
+        }
+
+        // ==================== POST-PROCESSING ====================
+        function setupPostProcessing() {
+            composer = new THREE.EffectComposer(renderer);
+
+            const renderPass = new THREE.RenderPass(scene, camera);
+            composer.addPass(renderPass);
+
+            const bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.8,  // strength
+                0.6,  // radius
+                0.75  // threshold
+            );
+            composer.addPass(bloomPass);
+        }
+
+        // ==================== UPDATE LOOP ====================
+        function updatePoints() {
+            const colors = pointsGeometry.attributes.customColor.array;
+            const sizes = pointsGeometry.attributes.size.array;
+            const waveIntensities = pointsGeometry.attributes.waveIntensity.array;
+            const now = Date.now();
+
+            // Reset all points to base state
+            for (let i = 0; i < bookData.length; i++) {
+                const book = bookData[i];
+                const idx = i * 3;
+
+                colors[idx] = book.baseColor.r;
+                colors[idx + 1] = book.baseColor.g;
+                colors[idx + 2] = book.baseColor.b;
+                sizes[i] = CONFIG.POINT_BASE_SIZE;
+                waveIntensities[i] = 0;
+            }
+
+            // Apply book highlights
+            bookData.forEach((book, i) => {
+                if (!book.accessed) return;
+
+                const elapsed = now - book.accessTime;
+                const duration = 2500;
+
+                if (elapsed < duration) {
+                    const progress = elapsed / duration;
+                    const pulse = Math.sin(progress * Math.PI * 2) * (1 - progress);
+                    const fade = 1 - progress;
+
+                    const idx = i * 3;
+                    const magenta = COLOR_PALETTE.accessed;
+                    const idle = book.baseColor;
+
+                    colors[idx] = magenta.r * (1 - progress) + idle.r * progress;
+                    colors[idx + 1] = magenta.g * (1 - progress) + idle.g * progress;
+                    colors[idx + 2] = magenta.b * (1 - progress) + idle.b * progress;
+
+                    sizes[i] = CONFIG.POINT_BASE_SIZE + fade * (2.0 + pulse * 1.0);
+                    updateQueue.add(i);
+                } else {
+                    book.accessed = false;
+                }
+            });
+
+            // Apply wave effects
+            waves = waves.filter(wave => {
+                const alive = wave.update();
+
+                if (alive) {
+                    // Apply wave to relevant points
+                    const minLat = wave.progress - wave.width;
+                    const maxLat = wave.progress + wave.width;
+
+                    for (let i = 0; i < latitudes.length; i++) {
+                        if (latitudes[i] >= minLat && latitudes[i] <= maxLat) {
+                            wave.applyToPoint(latitudes[i], i);
+                        }
+                    }
+                }
+
+                return alive;
+            });
+
+            // Mark geometry for update
+            pointsGeometry.attributes.customColor.needsUpdate = true;
+            pointsGeometry.attributes.size.needsUpdate = true;
+            pointsGeometry.attributes.waveIntensity.needsUpdate = true;
+
+            updateQueue.clear();
+        }
+
+        // ==================== ANIMATION LOOP ====================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update FPS
+            frameCount++;
+            const now = Date.now();
+            if (now - lastFpsUpdate >= 1000) {
+                fps = frameCount;
+                document.getElementById('fps-value').textContent = fps;
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+
+            // Update controls
+            controls.update();
+
+            // Rotate grid slowly
+            if (grid) {
+                grid.rotation.y += 0.0005;
+            }
+
+            // Update points
+            updatePoints();
+
+            // Render with post-processing
+            composer.render();
+        }
+
+        // ==================== WAVE CREATION ====================
+        function createWave(type) {
+            waves.push(new EnhancedWave(type));
+
+            // Add secondary wave for depth
+            setTimeout(() => {
+                const secondWave = new EnhancedWave(type);
+                secondWave.speed *= 0.6;
+                secondWave.width *= 1.4;
+                secondWave.intensity *= 0.5;
+                waves.push(secondWave);
+            }, 200);
+        }
+
+        // ==================== BOOK HIGHLIGHTING ====================
+        function highlightBook(bookIndex = null) {
+            if (bookIndex === null) {
+                bookIndex = Math.floor(Math.random() * bookData.length);
+            }
+            const book = bookData[bookIndex];
+            book.accessed = true;
+            book.accessTime = Date.now();
+        }
+
+        // ==================== WEBSOCKET ====================
+        function connectWebSocket() {
+            const wsUrl = `ws://${window.location.host}/ws/viz`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('✓ WebSocket connected');
+                document.getElementById('connection-status').className = 'status-indicator status-connected';
+                document.getElementById('connection-text').textContent = 'ONLINE';
+            };
+
+            ws.onclose = () => {
+                console.log('✗ WebSocket disconnected');
+                document.getElementById('connection-status').className = 'status-indicator status-disconnected';
+                document.getElementById('connection-text').textContent = 'OFFLINE';
+                setTimeout(connectWebSocket, 5000);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleEvent(data);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function handleEvent(data) {
+            switch (data.type) {
+                case 'connected':
+                    console.log('✓ Visualization stream active');
+                    break;
+
+                case 'request_in':
+                    requestCount++;
+                    document.getElementById('request-count').textContent = requestCount;
+                    createWave('request');
+                    break;
+
+                case 'response_out':
+                    responseCount++;
+                    document.getElementById('response-count').textContent = responseCount;
+                    createWave('response');
+                    break;
+
+                case 'book_accessed':
+                    bookAccessCount++;
+                    document.getElementById('book-access-count').textContent = bookAccessCount;
+                    highlightBook();
+                    break;
+
+                case 'db_read':
+                    createWave('db_read');
+                    break;
+
+                case 'db_write':
+                    createWave('db_write');
+                    break;
+
+                case 'scraping':
+                    createWave('scraping');
+                    break;
+
+                case 'ml_prediction':
+                    createWave('ml_prediction');
+                    break;
+
+                case 'ping':
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send('pong');
+                    }
+                    break;
+            }
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function toggleRotation() {
+            controls.autoRotate = !controls.autoRotate;
+            const btn = document.getElementById('rotate-btn');
+            btn.textContent = controls.autoRotate ? '⏸ PAUSE ROTATION' : '▶ RESUME ROTATION';
+        }
+
+        function resetView() {
+            camera.position.set(0, 0, 12);
+            camera.lookAt(0, 0, 0);
+            controls.reset();
+            controls.autoRotate = true;
+            document.getElementById('rotate-btn').textContent = '⏸ PAUSE ROTATION';
+        }
+
+        function testWaves() {
+            // Spawn test waves - demonstrate all event types
+            createWave('request');
+            setTimeout(() => createWave('db_read'), 200);
+            setTimeout(() => createWave('scraping'), 400);
+            setTimeout(() => createWave('ml_prediction'), 600);
+            setTimeout(() => createWave('db_write'), 800);
+            setTimeout(() => createWave('response'), 1000);
+            setTimeout(() => {
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => highlightBook(), i * 200);
+                }
+            }, 1200);
+        }
+
+        async function fetchBookCount() {
+            try {
+                document.getElementById('book-count').textContent = '17,500+';
+            } catch (error) {
+                console.error('Failed to fetch book count:', error);
+                document.getElementById('book-count').textContent = '17,500+';
+            }
+        }
+
+        // ==================== START ====================
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+{
+  "platform": "amazon",
+  "model_type": "GradientBoostingRegressor",
+  "n_features": 21,
+  "feature_names": [
+    "log_amazon_rank",
+    "amazon_count",
+    "page_count",
+    "age_years",
+    "log_ratings",
+    "rating",
+    "has_list_price",
+    "list_price",
+    "is_new",
+    "is_like_new",
+    "is_very_good",
+    "is_good",
+    "is_acceptable",
+    "is_poor",
+    "is_hardcover",
+    "is_paperback",
+    "is_mass_market",
+    "is_signed",
+    "is_first_edition",
+    "is_textbook",
+    "is_fiction"
+  ],
+  "training_samples": 5216,
+  "test_samples": 1304,
+  "train_mae": 16.782887406102553,
+  "test_mae": 17.26563171443535,
+  "train_rmse": 32.97253376006153,
+  "test_rmse": 36.35903367909577,
+  "train_r2": 0.044549893218492564,
+  "test_r2": -0.00819618027498703,
+  "feature_importance": {
+    "log_amazon_rank": 0.2239450479402704,
+    "amazon_count": 0.1788583575957651,
+    "page_count": 0.3089017286636553,
+    "age_years": 0.06541637058817855,
+    "log_ratings": 0.07461868077170698,
+    "rating": 0.05895483440673727,
+    "has_list_price": 0.0,
+    "list_price": 0.0,
+    "is_new": 0.0,
+    "is_like_new": 0.0,
+    "is_very_good": 2.2194809482794967e-05,
+    "is_good": 0.0,
+    "is_acceptable": 0.0,
+    "is_poor": 0.0,
+    "is_hardcover": 0.0,
+    "is_paperback": 0.0,
+    "is_mass_market": 0.0,
+    "is_signed": 0.0,
+    "is_first_edition": 0.0,
+    "is_textbook": 0.002733623869996649,
+    "is_fiction": 0.08654916135420698
+  },
+  "top_features": [
+    [
+      "page_count",
+      0.3089017286636553
+    ],
+    [
+      "log_amazon_rank",
+      0.2239450479402704
+    ],
+    [
+      "amazon_count",
+      0.1788583575957651
+    ],
+    [
+      "is_fiction",
+      0.08654916135420698
+    ],
+    [
+      "log_ratings",
+      0.07461868077170698
+    ],
+    [
+      "age_years",
+      0.06541637058817855
+    ],
+    [
+      "rating",
+      0.05895483440673727
+    ],
+    [
+      "is_textbook",
+      0.002733623869996649
+    ],
+    [
+      "is_very_good",
+      2.2194809482794967e-05
+    ],
+    [
+      "has_list_price",
+      0.0
+    ]
+  ],
+  "trained_at": "2025-11-01T13:59:04.858763"
+}

@@ -1,0 +1,112 @@
+{
+  "platform": "ebay",
+  "model_type": "GradientBoostingRegressor",
+  "n_features": 26,
+  "feature_names": [
+    "ebay_sold_count",
+    "ebay_active_count",
+    "ebay_active_median",
+    "sell_through_rate",
+    "page_count",
+    "age_years",
+    "log_ratings",
+    "rating",
+    "has_list_price",
+    "list_price",
+    "is_new",
+    "is_like_new",
+    "is_very_good",
+    "is_good",
+    "is_acceptable",
+    "is_poor",
+    "is_hardcover",
+    "is_paperback",
+    "is_mass_market",
+    "is_signed",
+    "is_first_edition",
+    "is_textbook",
+    "is_fiction",
+    "demand_score",
+    "competition_ratio",
+    "price_velocity"
+  ],
+  "training_samples": 572,
+  "test_samples": 144,
+  "train_mae": 2.569494111955842,
+  "test_mae": 4.513864767420635,
+  "train_rmse": 3.564873452227761,
+  "test_rmse": 6.655506719117893,
+  "train_r2": 0.7217712066909373,
+  "test_r2": 0.04198762303236203,
+  "feature_importance": {
+    "ebay_sold_count": 0.003093040777495893,
+    "ebay_active_count": 0.0,
+    "ebay_active_median": 0.0,
+    "sell_through_rate": 0.0,
+    "page_count": 0.27238266002977574,
+    "age_years": 0.20554749113718732,
+    "log_ratings": 0.31103849508362,
+    "rating": 0.12799744520581532,
+    "has_list_price": 0.0,
+    "list_price": 0.0,
+    "is_new": 0.0,
+    "is_like_new": 0.0,
+    "is_very_good": 0.013435201090753416,
+    "is_good": 0.013689547488181209,
+    "is_acceptable": 0.0,
+    "is_poor": 0.0,
+    "is_hardcover": 0.0045290983429795515,
+    "is_paperback": 0.0,
+    "is_mass_market": 0.0011463165287045835,
+    "is_signed": 2.537311158369607e-05,
+    "is_first_edition": 0.002826785495060882,
+    "is_textbook": 0.005106749594079061,
+    "is_fiction": 0.036032368099303644,
+    "demand_score": 0.003149428015459782,
+    "competition_ratio": 0.0,
+    "price_velocity": 0.0
+  },
+  "top_features": [
+    [
+      "log_ratings",
+      0.31103849508362
+    ],
+    [
+      "page_count",
+      0.27238266002977574
+    ],
+    [
+      "age_years",
+      0.20554749113718732
+    ],
+    [
+      "rating",
+      0.12799744520581532
+    ],
+    [
+      "is_fiction",
+      0.036032368099303644
+    ],
+    [
+      "is_good",
+      0.013689547488181209
+    ],
+    [
+      "is_very_good",
+      0.013435201090753416
+    ],
+    [
+      "is_textbook",
+      0.005106749594079061
+    ],
+    [
+      "is_hardcover",
+      0.0045290983429795515
+    ],
+    [
+      "demand_score",
+      0.003149428015459782
+    ]
+  ],
+  "trained_at": "2025-11-01T13:56:42.059781"
+}

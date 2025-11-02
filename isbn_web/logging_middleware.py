@@ -58,6 +58,10 @@ class HTTPLoggingMiddleware(BaseHTTPMiddleware):
         query = str(request.url.query) if request.url.query else ""
         client_ip = request.client.host if request.client else "unknown"
 
+        # Skip WebSocket and static file logging for visualization
+        if path.startswith(("/ws", "/static", "/covers")):
+            return await call_next(request)
+
         # Sanitize headers (remove sensitive data)
         headers = dict(request.headers)
         sensitive_headers = {"authorization", "cookie", "x-api-key"}
@@ -71,6 +75,13 @@ class HTTPLoggingMiddleware(BaseHTTPMiddleware):
             (f"?{query}" if query else "") +
             f" | IP: {client_ip}"
         )
+
+        # Broadcast request event to visualization
+        try:
+            from isbn_web.api.routes.sphere_viz import viz_broadcaster
+            await viz_broadcaster.request_received(method, path)
+        except Exception:
+            pass  # Don't fail request if broadcast fails
 
         # Process request
         try:
@@ -95,6 +106,13 @@ class HTTPLoggingMiddleware(BaseHTTPMiddleware):
             f"Status: {status_code} | "
             f"Time: {duration:.3f}s"
         )
+
+        # Broadcast response event to visualization
+        try:
+            from isbn_web.api.routes.sphere_viz import viz_broadcaster
+            await viz_broadcaster.response_sent(method, path, status_code)
+        except Exception:
+            pass  # Don't fail request if broadcast fails
 
         # Add timing header
         response.headers["X-Response-Time"] = f"{duration:.3f}s"

@@ -12,6 +12,7 @@ from requests.auth import _basic_auth_str
 from shared.models import EbayMarketStats
 from shared.timing import timer
 from shared.lot_detector import is_lot as is_lot_listing
+from shared.feature_detector import is_signed as is_signed_title
 
 EBAY_FINDING_URL = "https://svcs.ebay.com/services/search/FindingService/v1"
 
@@ -161,9 +162,6 @@ def browse_active_by_isbn(
     js: Dict[str, Any] = r.json()
     items = cast(List[Dict[str, Any]], js.get("itemSummaries", []) or [])
 
-    # Keywords to filter signed copies (case-insensitive)
-    SIGNED_KEYWORDS = ["signed", "autographed", "signature"]
-
     prices: List[float] = []
     signed_count = 0
     lot_count = 0
@@ -176,13 +174,14 @@ def browse_active_by_isbn(
         total_count += 1
 
         # Extract title and price
-        title = (it.get("title") or "").lower()
+        title = (it.get("title") or "")
         p = it.get("price", {}).get("value")
 
         # Check for problematic keywords
         # Use centralized lot detector (30+ patterns, regex support)
         is_lot = is_lot_listing(title)
-        is_signed = any(keyword in title for keyword in SIGNED_KEYWORDS)
+        # Use improved feature detector with regex and word boundaries
+        is_signed = is_signed_title(title)
 
         # Track occurrences
         if is_lot:
@@ -313,9 +312,6 @@ def _browse_active_by_isbn(isbn: str, limit: int = 50, include_signed: bool = Fa
     Returns None if no prices found or on HTTP error.
     Filters out multi-book lots and (optionally) signed copies.
     """
-    # Keywords to filter signed copies (case-insensitive)
-    SIGNED_KEYWORDS = ["signed", "autographed", "signature"]
-
     tok = get_app_token()
     r = requests.get(
         BROWSE_URL,
@@ -334,12 +330,13 @@ def _browse_active_by_isbn(isbn: str, limit: int = 50, include_signed: bool = Fa
             continue
 
         # Extract title for filtering
-        title = (it.get("title") or "").lower()
+        title = (it.get("title") or "")
 
         # Check for problematic keywords
         # Use centralized lot detector (30+ patterns, regex support)
         is_lot = is_lot_listing(title)
-        is_signed = any(keyword in title for keyword in SIGNED_KEYWORDS)
+        # Use improved feature detector with regex and word boundaries
+        is_signed = is_signed_title(title)
 
         # Filter logic
         if is_lot or (is_signed and not include_signed):

@@ -1,0 +1,39 @@
+{
+  "n_samples": 726,
+  "n_features": 3,
+  "feature_names": [
+    "ebay_pred",
+    "abebooks_pred",
+    "amazon_pred"
+  ],
+  "ebay_metadata": {
+    "platform": "ebay",
+    "n_samples": 726,
+    "n_folds": 5,
+    "oof_mae": 7.188526455186234,
+    "oof_rmse": 17.382160678251836,
+    "oof_r2": -0.13470844176428431,
+    "target_mean": 11.815805785123967,
+    "target_std": 16.317800427107596
+  },
+  "abebooks_metadata": {
+    "platform": "abebooks",
+    "n_samples": 544,
+    "n_folds": 5,
+    "oof_mae": 0.9913670011420868,
+    "oof_rmse": 10.521900317741181,
+    "oof_r2": 0.5718065783384273,
+    "target_mean": 8.616360294117648,
+    "target_std": 16.0795610006346
+  },
+  "amazon_metadata": {
+    "platform": "amazon",
+    "n_samples": 564,
+    "n_folds": 5,
+    "oof_mae": 6.725019515510216,
+    "oof_rmse": 20.850790387878266,
+    "oof_r2": -0.09297409303422755,
+    "target_mean": 13.885780141843972,
+    "target_std": 19.944244444152712
+  }
+}

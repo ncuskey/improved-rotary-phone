@@ -50,6 +50,7 @@ class DecodoClient:
         base_url: str = DEFAULT_BASE_URL,
         timeout: int = DEFAULT_TIMEOUT,
         rate_limit: int = DEFAULT_RATE_LIMIT,
+        plan: str = "core",  # "core" or "advanced"
     ):
         """
         Initialize Decodo API client.
@@ -60,12 +61,14 @@ class DecodoClient:
             base_url: Base URL for Decodo API
             timeout: Request timeout in seconds
             rate_limit: Max requests per second (Core: 30)
+            plan: Plan type - "core" or "advanced" (affects available parameters)
         """
         self.username = username
         self.password = password
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.rate_limit = rate_limit
+        self.plan = plan.lower()
 
         # Session for connection pooling
         self.session = requests.Session()
@@ -102,11 +105,11 @@ class DecodoClient:
         max_retries: int = 3
     ) -> DecodoResponse:
         """
-        Scrape any URL using Decodo's Web target (bypasses bot protection).
+        Scrape any URL using Decodo API.
 
         Args:
             url: Full URL to scrape
-            render_js: Whether to enable JavaScript rendering (default: True)
+            render_js: Whether to enable JavaScript rendering (ignored for Core plan)
             max_retries: Number of retry attempts on failure
 
         Returns:
@@ -116,11 +119,19 @@ class DecodoClient:
             DecodoAPIError: If request fails after retries
         """
         endpoint = f"{self.base_url}/scrape"
-        payload = {
-            "target": "universal",  # Core API uses "universal" instead of "web"
-            "url": url,
-            "render_js": render_js
-        }
+
+        # Core plan: Simple URL-only request
+        # Advanced plan: Supports target and render_js parameters
+        if self.plan == "core":
+            payload = {
+                "url": url
+            }
+        else:  # advanced plan
+            payload = {
+                "target": "universal",
+                "url": url,
+                "render_js": render_js
+            }
 
         for attempt in range(max_retries):
             try:

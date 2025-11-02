@@ -60,3 +60,11 @@ tmp.png
 *_debug.txt
 SESSION_*.md
 CHANGELOG_*.md
+
+# Temporary collection scripts and logs
+*_TONIGHT.sh
+tonight_*.json
+
+# Experiment/test scripts (keep in scripts/experiments/)
+scripts/test_*.py
+scripts/analyze_*.py

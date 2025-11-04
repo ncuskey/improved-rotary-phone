@@ -57,6 +57,9 @@ from playwright.async_api import async_playwright, Page, Browser, BrowserContext
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Import backup functionality
+from scripts.backup_database import backup_database
+
 
 # User agent pool for rotation (realistic browser fingerprints)
 USER_AGENTS = [
@@ -101,15 +104,32 @@ def get_catalog_db_path() -> Path:
     return Path.home() / '.isbn_lot_optimizer' / 'catalog.db'
 
 
-def init_database():
+def get_metadata_cache_db_path() -> Path:
+    """Get path to metadata_cache database."""
+    return Path.home() / '.isbn_lot_optimizer' / 'metadata_cache.db'
+
+
+def get_db_path_for_source(source: str) -> Path:
+    """Get database path based on source."""
+    if source == 'catalog':
+        return get_catalog_db_path()
+    elif source == 'metadata_cache':
+        return get_metadata_cache_db_path()
+    else:  # 'all' - use catalog as default
+        return get_catalog_db_path()
+
+
+def init_database(db_path: Path):
     """
     Initialize database tables for BookFinder data.
+
+    Args:
+        db_path: Path to the database file
 
     Creates:
     - bookfinder_offers: Stores all offers (150-160 per ISBN)
     - bookfinder_progress: Tracks scraping progress for resume capability
     """
-    db_path = get_catalog_db_path()
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -273,15 +293,23 @@ def load_metadata_cache_isbns() -> List[str]:
     return valid_isbns
 
 
-def get_scraping_stats() -> Dict:
-    """Get current scraping statistics."""
-    db_path = get_catalog_db_path()
+def get_scraping_stats(db_path: Path) -> Dict:
+    """Get current scraping statistics.
+
+    Args:
+        db_path: Path to the database file
+    """
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Total ISBNs in catalog
-    cursor.execute("SELECT COUNT(DISTINCT isbn) FROM books WHERE isbn IS NOT NULL")
-    total_isbns = cursor.fetchone()[0]
+    # Total ISBNs - try books table first, fallback to progress table
+    try:
+        cursor.execute("SELECT COUNT(DISTINCT isbn) FROM books WHERE isbn IS NOT NULL")
+        total_isbns = cursor.fetchone()[0]
+    except sqlite3.OperationalError:
+        # books table doesn't exist (metadata_cache), use progress table
+        cursor.execute("SELECT COUNT(*) FROM bookfinder_progress")
+        total_isbns = cursor.fetchone()[0]
 
     # Completed ISBNs
     cursor.execute("SELECT COUNT(*) FROM bookfinder_progress WHERE status = 'completed'")
@@ -307,9 +335,147 @@ def get_scraping_stats() -> Dict:
     }
 
 
+async def extract_bookfinder_offers_html_fallback(page: Page) -> List[Dict]:
+    """
+    Fallback HTML parser for BookFinder 202 responses.
+
+    When BookFinder serves the simplified HTML version (202 status),
+    this parser extracts offers from the numbered list format.
+
+    Args:
+        page: Playwright page object
+
+    Returns:
+        List of offer dictionaries
+    """
+    offers = []
+    import re
+
+    try:
+        logger.info("Using fallback HTML parser for 202 response format")
+
+        # Get the full page HTML
+        html = await page.content()
+
+        # Look for price patterns like $23.99, $135.81
+        # Match vendor logos (amazon.com, amazon.co.uk, etc.)
+
+        # Find all text that looks like offers
+        # Simple approach: find all elements containing prices
+        price_elements = await page.query_selector_all('text=/\\$[0-9]+\\.[0-9]{2}/')
+
+        logger.debug(f"Found {len(price_elements)} price elements in HTML")
+
+        for elem in price_elements:
+            try:
+                # Get parent container to extract full offer details
+                parent = elem
+                for _ in range(5):  # Walk up 5 levels to find offer container
+                    parent = await parent.evaluate_handle('el => el.parentElement')
+                    if not parent:
+                        break
+
+                    text = await parent.inner_text()
+
+                    # Look for offer markers
+                    if 'Edition:' in text and 'Condition:' in text:
+                        # Extract price
+                        price_match = re.search(r'\\$([0-9]+\\.[0-9]{2})', text)
+                        if not price_match:
+                            continue
+                        price = float(price_match.group(1))
+
+                        # Extract vendor
+                        vendor = 'Unknown'
+                        if 'amazon.com' in text.lower():
+                            vendor = 'Amazon'
+                        elif 'amazon.co.uk' in text.lower():
+                            vendor = 'Amazon UK'
+                        elif 'ebay' in text.lower():
+                            vendor = 'eBay'
+                        elif 'abebooks' in text.lower():
+                            vendor = 'AbeBooks'
+
+                        # Extract condition
+                        condition = 'Used'
+                        if 'New' in text and ('Condition: New' in text or 'New -' in text):
+                            condition = 'New'
+                        elif 'Acceptable' in text:
+                            condition = 'Acceptable'
+                        elif 'Good' in text:
+                            condition = 'Good'
+                        elif 'Very Good' in text:
+                            condition = 'Very Good'
+                        elif 'Like New' in text:
+                            condition = 'Like New'
+
+                        # Extract binding
+                        binding = ''
+                        if 'Hardcover' in text:
+                            binding = 'Hardcover'
+                        elif 'Softcover' in text or 'Paperback' in text:
+                            binding = 'Softcover'
+                        elif 'Mass Market' in text:
+                            binding = 'Mass Market'
+
+                        # Extract publisher
+                        publisher = ''
+                        pub_match = re.search(r'Publisher:\\s*([^,\\n]+)', text)
+                        if pub_match:
+                            publisher = pub_match.group(1).strip()
+
+                        # Extract description (everything after condition)
+                        description = ''
+                        cond_idx = text.find('Condition:')
+                        if cond_idx >= 0:
+                            desc_text = text[cond_idx:].split('\\n')
+                            if len(desc_text) > 1:
+                                description = desc_text[1].strip()[:500]
+
+                        # Extract seller location
+                        seller_location = ''
+                        from_match = re.search(r'From:\\s*([^\\n]+)', text)
+                        if from_match:
+                            seller_location = from_match.group(1).strip()
+
+                        offers.append({
+                            'vendor': vendor,
+                            'seller': seller_location,
+                            'price': price,
+                            'condition': condition,
+                            'binding': binding,
+                            'shipping': 0.0,  # Included in price for 202 responses
+                            'title': '',
+                            'authors': '',
+                            'publisher': publisher,
+                            'is_signed': 0,
+                            'is_first_edition': 0,
+                            'is_oldworld': 0,
+                            'description': description,
+                            'offer_id': '',
+                            'clickout_type': '',
+                            'destination': '',
+                            'seller_location': seller_location,
+                        })
+
+                        break  # Found the offer container, stop walking up
+
+            except Exception as e:
+                logger.debug(f"Error parsing HTML offer: {e}")
+                continue
+
+        logger.info(f"HTML fallback parser extracted {len(offers)} offers")
+        return offers
+
+    except Exception as e:
+        logger.error(f"Error in HTML fallback parser: {e}")
+        return []
+
+
 async def extract_bookfinder_offers(page: Page) -> List[Dict]:
     """
-    Extract book offers from BookFinder page using data attributes.
+    Extract book offers from BookFinder page using data attributes (React format).
+    Falls back to HTML parsing for 202 responses.
 
     BookFinder stores all offer data in data-csa-c-* attributes on div elements.
 
@@ -322,10 +488,23 @@ async def extract_bookfinder_offers(page: Page) -> List[Dict]:
     offers = []
 
     try:
-        # Find all offer divs
+        # Wait for offers to load (React hydration)
+        # BookFinder uses React and needs time to add data attributes
+        try:
+            await page.wait_for_selector(
+                '[data-csa-c-item-type="search-offer"]',
+                timeout=15000,
+                state='attached'
+            )
+            logger.debug("Offer elements detected (React format)")
+        except Exception as e:
+            logger.warning(f"Offer elements not detected: {str(e)[:100]}")
+            # Continue anyway - page might have no offers or different structure
+
+        # Find all offer divs (React format)
         offer_divs = await page.query_selector_all('[data-csa-c-item-type="search-offer"]')
 
-        logger.debug(f"Found {len(offer_divs)} offer elements")
+        logger.debug(f"Found {len(offer_divs)} offer elements (React parser)")
 
         for div in offer_divs:
             try:
@@ -448,6 +627,11 @@ async def extract_bookfinder_offers(page: Page) -> List[Dict]:
                 logger.debug(f"Error parsing offer: {e}")
                 continue
 
+        # If no offers found with React parser, try HTML fallback
+        if len(offers) == 0:
+            logger.info("React parser found 0 offers, trying HTML fallback")
+            offers = await extract_bookfinder_offers_html_fallback(page)
+
         return offers
 
     except Exception as e:
@@ -493,6 +677,13 @@ async def scrape_isbn(isbn: str, context: BrowserContext, retry_count: int = 0) 
             # Brief wait for any pending JS
             await asyncio.sleep(2)
 
+        # Check for "no results" message first
+        no_results_text = await page.text_content('body')
+        if no_results_text and 'Sorry, we found no matching results' in no_results_text:
+            logger.info(f"ISBN {isbn} has no marketplace offers (legitimate empty result)")
+            await page.close()
+            return [], None  # Empty list = success with 0 offers
+
         # Extract offers
         offers = await extract_bookfinder_offers(page)
 
@@ -525,15 +716,15 @@ async def scrape_isbn(isbn: str, context: BrowserContext, retry_count: int = 0) 
         return None, error_msg
 
 
-def save_offers(isbn: str, offers: List[Dict]):
+def save_offers(isbn: str, offers: List[Dict], db_path: Path):
     """
     Save offers to database.
 
     Args:
         isbn: ISBN these offers belong to
         offers: List of offer dictionaries
+        db_path: Path to the database file
     """
-    db_path = get_catalog_db_path()
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -569,7 +760,7 @@ def save_offers(isbn: str, offers: List[Dict]):
     conn.close()
 
 
-def update_progress(isbn: str, status: str, offer_count: int = 0, error_message: str = None):
+def update_progress(isbn: str, status: str, offer_count: int = 0, error_message: str = None, db_path: Path = None):
     """
     Update scraping progress in database.
 
@@ -578,8 +769,10 @@ def update_progress(isbn: str, status: str, offer_count: int = 0, error_message:
         status: 'completed', 'failed', or 'skipped'
         offer_count: Number of offers found
         error_message: Error message if failed
+        db_path: Path to the database file
     """
-    db_path = get_catalog_db_path()
+    if db_path is None:
+        db_path = get_catalog_db_path()
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -610,11 +803,22 @@ async def main(limit: Optional[int] = None, source: str = 'catalog'):
     print("=" * 80)
     print()
 
+    # Get the correct database path for the source
+    db_path = get_db_path_for_source(source)
+    logger.info(f"Using database: {db_path}")
+
     # Initialize database
-    init_database()
+    init_database(db_path)
+
+    # Create initial backup before scraping
+    try:
+        logger.info("Creating pre-scrape backup...")
+        backup_database(db_path, reason="pre-scrape")
+    except Exception as e:
+        logger.warning(f"Backup failed (non-fatal): {e}")
 
     # Get current stats
-    stats = get_scraping_stats()
+    stats = get_scraping_stats(db_path)
     logger.info(f"Current progress: {stats['completed']}/{stats['total_isbns']} ISBNs completed")
     logger.info(f"Total offers collected: {stats['total_offers']}")
 
@@ -683,19 +887,59 @@ async def main(limit: Optional[int] = None, source: str = 'catalog'):
                 # Select random user agent
                 user_agent = random.choice(USER_AGENTS)
 
-                # Create new browser context with rotated fingerprint
+                # Random viewport to avoid fingerprinting
+                viewports = [
+                    {'width': 1920, 'height': 1080},
+                    {'width': 1680, 'height': 1050},
+                    {'width': 1440, 'height': 900},
+                    {'width': 2560, 'height': 1440},
+                ]
+                viewport = random.choice(viewports)
+
+                # Create new browser context with randomized fingerprint
                 context = await browser.new_context(
-                    viewport={'width': 1920, 'height': 1080},
+                    viewport=viewport,
                     user_agent=user_agent,
                     locale='en-US',
                     timezone_id='America/Los_Angeles',
+                    extra_http_headers={
+                        'Accept-Language': 'en-US,en;q=0.9',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'DNT': '1',
+                        'Connection': 'keep-alive',
+                        'Upgrade-Insecure-Requests': '1',
+                    }
                 )
 
-                # Hide automation
+                # Enhanced stealth scripts - hide automation markers
                 await context.add_init_script("""
+                    // Hide webdriver property
                     Object.defineProperty(navigator, 'webdriver', {
                         get: () => undefined
                     });
+
+                    // Override plugins array to look more natural
+                    Object.defineProperty(navigator, 'plugins', {
+                        get: () => [1, 2, 3, 4, 5]
+                    });
+
+                    // Override languages to look natural
+                    Object.defineProperty(navigator, 'languages', {
+                        get: () => ['en-US', 'en']
+                    });
+
+                    // Chrome present
+                    window.chrome = {
+                        runtime: {}
+                    };
+
+                    // Mock permissions
+                    const originalQuery = window.navigator.permissions.query;
+                    window.navigator.permissions.query = (parameters) => (
+                        parameters.name === 'notifications' ?
+                            Promise.resolve({ state: Notification.permission }) :
+                            originalQuery(parameters)
+                    );
                 """)
 
             print(f"[{i}/{len(isbns)}] ISBN: {isbn}")
@@ -707,8 +951,8 @@ async def main(limit: Optional[int] = None, source: str = 'catalog'):
             for attempt in range(3):  # Max 3 attempts
                 offers, error_msg = await scrape_isbn(isbn, context, retry_count=attempt)
 
-                if offers:
-                    break  # Success!
+                if offers is not None:  # Success (including empty list for no offers)
+                    break
 
                 if attempt < 2:  # Don't sleep after last attempt
                     wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s
@@ -716,15 +960,18 @@ async def main(limit: Optional[int] = None, source: str = 'catalog'):
                     await asyncio.sleep(wait_time)
 
             # Save results
-            if offers:
-                save_offers(isbn, offers)
-                update_progress(isbn, 'completed', len(offers))
+            if offers is not None:
+                save_offers(isbn, offers, db_path)
+                update_progress(isbn, 'completed', len(offers), db_path=db_path)
                 successful += 1
                 total_offers += len(offers)
 
-                print(f"  ✅ {len(offers)} offers collected")
+                if len(offers) > 0:
+                    print(f"  ✅ {len(offers)} offers collected")
+                else:
+                    print(f"  ⭕ No offers available (ISBN not in marketplace)")
             else:
-                update_progress(isbn, 'failed', 0, error_msg)
+                update_progress(isbn, 'failed', 0, error_msg, db_path=db_path)
                 failed += 1
                 print(f"  ❌ Failed: {error_msg}")
 
@@ -738,9 +985,21 @@ async def main(limit: Optional[int] = None, source: str = 'catalog'):
                 print()
                 print(f"Progress: {i}/{len(isbns)} ({i/len(isbns)*100:.1f}%)")
                 print(f"Success rate: {successful}/{i} ({successful/i*100:.1f}%)")
-                print(f"Total offers: {total_offers} (avg {total_offers/successful:.1f} per ISBN)")
+                if successful > 0:
+                    print(f"Total offers: {total_offers} (avg {total_offers/successful:.1f} per ISBN)")
+                else:
+                    print(f"Total offers: {total_offers}")
                 print(f"ETA: {eta_seconds/3600:.1f} hours")
                 print()
+
+            # Periodic backup every 100 ISBNs
+            if i % 100 == 0:
+                try:
+                    logger.info(f"Creating periodic backup at ISBN {i}/{len(isbns)}...")
+                    backup_database(db_path, reason=f"periodic-{i}")
+                    print(f"  💾 Database backed up ({i} ISBNs processed)")
+                except Exception as e:
+                    logger.warning(f"Periodic backup failed (non-fatal): {e}")
 
             # Rate limit: randomized 12-18 seconds between requests (avg 15s)
             if i < len(isbns):  # Don't wait after last ISBN
@@ -752,6 +1011,16 @@ async def main(limit: Optional[int] = None, source: str = 'catalog'):
             await context.close()
 
         await browser.close()
+
+    # Create final backup after scraping
+    try:
+        logger.info("Creating post-scrape backup...")
+        backup_database(db_path, reason="post-scrape")
+        print()
+        print("💾 Final database backup completed")
+        print()
+    except Exception as e:
+        logger.warning(f"Final backup failed (non-fatal): {e}")
 
     # Final summary
     elapsed = time.time() - start_time

@@ -1,6 +1,6 @@
 # CODEMAP
 
-**Last Updated:** 2025-11-01 (BookFinder Integration & ML Feature Expansion)
+**Last Updated:** 2025-11-03 (Sold Listings ML Integration Complete)
 
 ## Top Level
 - `README.md` – Project overview, quick start, and links to documentation
@@ -35,6 +35,18 @@ Common business logic used by all three applications. **14 modules total:**
 ### API Clients
 - **`bookscouter.py`** – BookScouter API client (multi-vendor buyback offers, 14+ vendors, rate-limited 60/min)
 - **`booksrun.py`** – BooksRun API client (simple SELL endpoint support)
+- **`search_api_async.py`** – ✨ NEW: Async Serper.dev API client for sold listings
+  - `AsyncSerperSearchAPI` class with token bucket rate limiter (50 req/sec)
+  - 7-day caching with TTL for cost optimization
+  - Concurrent request handling with configurable concurrency
+  - Used for collecting sold comparables from Google Search
+  - Supports eBay, Amazon, Mercari platforms
+
+### Feature Detection
+- **`feature_detector.py`** – Book feature extraction from titles and snippets
+  - `parse_all_features()` - Extracts signed, edition, cover_type, dust_jacket, etc.
+  - Used by sold listings collector to parse feature from search results
+  - Regex-based pattern matching for book characteristics
 
 ### Author System
 - **`author_aliases.py`** – Author name canonicalization with manual alias mapping (e.g., "Robert Galbraith" → "J. K. Rowling")

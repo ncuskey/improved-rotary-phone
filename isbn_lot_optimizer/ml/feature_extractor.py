@@ -45,6 +45,30 @@ FEATURE_NAMES = [
     "bookfinder_lowest_price",       # Absolute floor price across all vendors
     "bookfinder_source_count",       # Number of vendors offering the book
     "bookfinder_new_vs_used_spread", # Price gap between new and used
+    "bookfinder_avg_price",          # Average price across all offers
+    "bookfinder_total_offers",       # Total number of offers
+    "bookfinder_price_volatility",   # Price range as % of average (market uncertainty)
+    "bookfinder_signed_count",       # Number of signed copies available
+    "bookfinder_has_signed",         # Boolean: any signed copies available
+    "bookfinder_signed_lowest",      # Lowest price for signed copies
+    "bookfinder_first_edition_count",# Number of first editions available
+    "bookfinder_has_first_edition",  # Boolean: any first editions available
+    "bookfinder_first_ed_lowest",    # Lowest price for first editions
+    "bookfinder_oldworld_count",     # Number of "oldworld" condition copies
+    "bookfinder_avg_desc_length",    # Average description length (quality signal)
+    "bookfinder_detailed_pct",       # % of offers with detailed descriptions
+
+    # Sold listings data (Serper Google Search results)
+    "serper_sold_count",              # Number of sold listings found
+    "serper_sold_avg_price",          # Average sold price
+    "serper_sold_min_price",          # Minimum sold price
+    "serper_sold_max_price",          # Maximum sold price
+    "serper_sold_price_range",        # Price range (max - min)
+    "serper_sold_has_signed",         # Boolean: any signed copies in sold listings
+    "serper_sold_signed_pct",         # % of sold listings that are signed
+    "serper_sold_hardcover_pct",      # % of sold listings that are hardcover
+    "serper_sold_ebay_pct",           # % of sold listings from eBay
+    "serper_sold_demand_signal",      # Demand metric (count * avg_price)
 
     # Book attributes
     "page_count",
@@ -120,6 +144,7 @@ class FeatureExtractor:
         condition: str = "Good",
         abebooks: Optional[Dict] = None,
         bookfinder: Optional[Dict] = None,
+        sold_listings: Optional[Dict] = None,
     ) -> FeatureVector:
         """
         Extract features from book data.
@@ -131,6 +156,7 @@ class FeatureExtractor:
             condition: Book condition (New, Like New, Very Good, Good, Acceptable, Poor)
             abebooks: AbeBooks pricing data (min, avg, seller count, etc.)
             bookfinder: BookFinder aggregator data (lowest price, source count, spread)
+            sold_listings: Sold listings data from Serper (count, avg price, features)
 
         Returns:
             FeatureVector with extracted features and completeness score
@@ -239,19 +265,85 @@ class FeatureExtractor:
 
         # BookFinder aggregator data (meta-search pricing across 20+ vendors)
         if bookfinder:
+            # Original features
             features["bookfinder_lowest_price"] = bookfinder.get('bookfinder_lowest_price', 0)
             features["bookfinder_source_count"] = bookfinder.get('bookfinder_source_count', 0)
             features["bookfinder_new_vs_used_spread"] = bookfinder.get('bookfinder_new_vs_used_spread', 0)
+
+            # Enhanced pricing features
+            features["bookfinder_avg_price"] = bookfinder.get('bookfinder_avg_price', 0)
+            features["bookfinder_total_offers"] = bookfinder.get('bookfinder_total_offers', 0)
+            features["bookfinder_price_volatility"] = bookfinder.get('bookfinder_price_volatility', 0)
+
+            # Collectibility signals
+            features["bookfinder_signed_count"] = bookfinder.get('bookfinder_signed_count', 0)
+            features["bookfinder_has_signed"] = bookfinder.get('bookfinder_has_signed', 0)
+            features["bookfinder_signed_lowest"] = bookfinder.get('bookfinder_signed_lowest', 0)
+            features["bookfinder_first_edition_count"] = bookfinder.get('bookfinder_first_edition_count', 0)
+            features["bookfinder_has_first_edition"] = bookfinder.get('bookfinder_has_first_edition', 0)
+            features["bookfinder_first_ed_lowest"] = bookfinder.get('bookfinder_first_ed_lowest', 0)
+            features["bookfinder_oldworld_count"] = bookfinder.get('bookfinder_oldworld_count', 0)
+
+            # Quality signals
+            features["bookfinder_avg_desc_length"] = bookfinder.get('bookfinder_avg_desc_length', 0)
+            features["bookfinder_detailed_pct"] = bookfinder.get('bookfinder_detailed_pct', 0)
 
             if not features["bookfinder_lowest_price"]:
                 missing.append("bookfinder_lowest_price")
             if not features["bookfinder_source_count"]:
                 missing.append("bookfinder_source_count")
         else:
+            # Defaults when no BookFinder data
             features["bookfinder_lowest_price"] = 0
             features["bookfinder_source_count"] = 0
             features["bookfinder_new_vs_used_spread"] = 0
+            features["bookfinder_avg_price"] = 0
+            features["bookfinder_total_offers"] = 0
+            features["bookfinder_price_volatility"] = 0
+            features["bookfinder_signed_count"] = 0
+            features["bookfinder_has_signed"] = 0
+            features["bookfinder_signed_lowest"] = 0
+            features["bookfinder_first_edition_count"] = 0
+            features["bookfinder_has_first_edition"] = 0
+            features["bookfinder_first_ed_lowest"] = 0
+            features["bookfinder_oldworld_count"] = 0
+            features["bookfinder_avg_desc_length"] = 0
+            features["bookfinder_detailed_pct"] = 0
             missing.extend(["bookfinder_lowest_price", "bookfinder_source_count"])
+
+        # Sold listings data (Serper Google Search results)
+        if sold_listings:
+            features["serper_sold_count"] = sold_listings.get('serper_sold_count', 0)
+            features["serper_sold_avg_price"] = sold_listings.get('serper_sold_avg_price', 0)
+            features["serper_sold_min_price"] = sold_listings.get('serper_sold_min_price', 0)
+            features["serper_sold_max_price"] = sold_listings.get('serper_sold_max_price', 0)
+            features["serper_sold_price_range"] = sold_listings.get('serper_sold_price_range', 0)
+            features["serper_sold_has_signed"] = sold_listings.get('serper_sold_has_signed', 0)
+            features["serper_sold_signed_pct"] = sold_listings.get('serper_sold_signed_pct', 0)
+            features["serper_sold_hardcover_pct"] = sold_listings.get('serper_sold_hardcover_pct', 0)
+            features["serper_sold_ebay_pct"] = sold_listings.get('serper_sold_ebay_pct', 0)
+
+            # Demand signal: count * avg_price (books with many high-priced sales = high demand)
+            count = features["serper_sold_count"]
+            avg_price = features["serper_sold_avg_price"]
+            features["serper_sold_demand_signal"] = count * avg_price if (count > 0 and avg_price > 0) else 0
+
+            if not features["serper_sold_count"]:
+                missing.append("serper_sold_count")
+            if not features["serper_sold_avg_price"]:
+                missing.append("serper_sold_avg_price")
+        else:
+            features["serper_sold_count"] = 0
+            features["serper_sold_avg_price"] = 0
+            features["serper_sold_min_price"] = 0
+            features["serper_sold_max_price"] = 0
+            features["serper_sold_price_range"] = 0
+            features["serper_sold_has_signed"] = 0
+            features["serper_sold_signed_pct"] = 0
+            features["serper_sold_hardcover_pct"] = 0
+            features["serper_sold_ebay_pct"] = 0
+            features["serper_sold_demand_signal"] = 0
+            missing.extend(["serper_sold_count", "serper_sold_avg_price"])
 
         # Book attributes
         if metadata:
@@ -496,6 +588,117 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "is_fiction",
     ]
 
+    # NEW: Biblio features (antiquarian book marketplace)
+    BIBLIO_FEATURES = [
+        # BookFinder collectibility signals (critical for antiquarian)
+        "bookfinder_signed_count",
+        "bookfinder_has_signed",
+        "bookfinder_signed_lowest",
+        "bookfinder_first_edition_count",
+        "bookfinder_has_first_edition",
+        "bookfinder_first_ed_lowest",
+        "bookfinder_oldworld_count",
+        "bookfinder_avg_desc_length",
+        "bookfinder_detailed_pct",
+
+        # BookFinder pricing
+        "bookfinder_lowest_price",
+        "bookfinder_avg_price",
+        "bookfinder_source_count",
+        "bookfinder_price_volatility",
+
+        # Book attributes
+        "page_count",
+        "age_years",
+        "log_ratings",
+        "rating",
+
+        # Physical characteristics (critical for rare books)
+        "is_hardcover",
+        "is_paperback",
+        "is_signed",
+        "is_first_edition",
+
+        # Condition
+        "is_new",
+        "is_very_good",
+        "is_good",
+    ]
+
+    # NEW: Alibris features (independent booksellers marketplace)
+    ALIBRIS_FEATURES = [
+        # BookFinder collectibility signals
+        "bookfinder_signed_count",
+        "bookfinder_has_signed",
+        "bookfinder_signed_lowest",
+        "bookfinder_first_edition_count",
+        "bookfinder_has_first_edition",
+        "bookfinder_first_ed_lowest",
+        "bookfinder_oldworld_count",
+        "bookfinder_avg_desc_length",
+        "bookfinder_detailed_pct",
+
+        # BookFinder pricing
+        "bookfinder_lowest_price",
+        "bookfinder_avg_price",
+        "bookfinder_source_count",
+        "bookfinder_price_volatility",
+
+        # Book attributes
+        "page_count",
+        "age_years",
+        "log_ratings",
+        "rating",
+
+        # Physical characteristics
+        "is_hardcover",
+        "is_paperback",
+        "is_signed",
+        "is_first_edition",
+
+        # Condition
+        "is_new",
+        "is_very_good",
+        "is_good",
+    ]
+
+    # NEW: Zvab features (German antiquarian marketplace)
+    ZVAB_FEATURES = [
+        # BookFinder collectibility signals
+        "bookfinder_signed_count",
+        "bookfinder_has_signed",
+        "bookfinder_signed_lowest",
+        "bookfinder_first_edition_count",
+        "bookfinder_has_first_edition",
+        "bookfinder_first_ed_lowest",
+        "bookfinder_oldworld_count",
+        "bookfinder_avg_desc_length",
+        "bookfinder_detailed_pct",
+
+        # BookFinder pricing
+        "bookfinder_lowest_price",
+        "bookfinder_avg_price",
+        "bookfinder_source_count",
+        "bookfinder_price_volatility",
+
+        # Book attributes
+        "page_count",
+        "age_years",
+        "log_ratings",
+        "rating",
+
+        # Physical characteristics
+        "is_hardcover",
+        "is_paperback",
+        "is_signed",
+        "is_first_edition",
+
+        # Condition
+        "is_new",
+        "is_very_good",
+        "is_good",
+    ]
+
     def extract_for_platform(
         self,
         platform: str,
@@ -504,23 +707,27 @@ class PlatformFeatureExtractor(FeatureExtractor):
         bookscouter: Optional[BookScouterResult],
         condition: str = "Good",
         abebooks: Optional[Dict] = None,
+        bookfinder: Optional[Dict] = None,
+        sold_listings: Optional[Dict] = None,
     ) -> FeatureVector:
         """
         Extract platform-specific features.
 
         Args:
-            platform: Platform name ('ebay', 'abebooks', or 'amazon')
+            platform: Platform name ('ebay', 'abebooks', 'amazon', 'biblio', 'alibris', 'zvab')
             metadata: Book metadata
             market: eBay market statistics
             bookscouter: BookScouter data
             condition: Book condition
             abebooks: AbeBooks pricing data
+            bookfinder: BookFinder aggregator data
+            sold_listings: Sold listings data from Serper
 
         Returns:
             FeatureVector with platform-specific features only
         """
         # First extract all features
-        full_features = self.extract(metadata, market, bookscouter, condition, abebooks)
+        full_features = self.extract(metadata, market, bookscouter, condition, abebooks, bookfinder, sold_listings)
 
         # Get platform-specific feature subset
         if platform.lower() == 'ebay':
@@ -529,6 +736,12 @@ class PlatformFeatureExtractor(FeatureExtractor):
             selected_features = self.ABEBOOKS_FEATURES
         elif platform.lower() == 'amazon':
             selected_features = self.AMAZON_FEATURES
+        elif platform.lower() == 'biblio':
+            selected_features = self.BIBLIO_FEATURES
+        elif platform.lower() == 'alibris':
+            selected_features = self.ALIBRIS_FEATURES
+        elif platform.lower() == 'zvab':
+            selected_features = self.ZVAB_FEATURES
         else:
             raise ValueError(f"Unknown platform: {platform}")
 
@@ -561,6 +774,12 @@ class PlatformFeatureExtractor(FeatureExtractor):
             return PlatformFeatureExtractor.ABEBOOKS_FEATURES.copy()
         elif platform.lower() == 'amazon':
             return PlatformFeatureExtractor.AMAZON_FEATURES.copy()
+        elif platform.lower() == 'biblio':
+            return PlatformFeatureExtractor.BIBLIO_FEATURES.copy()
+        elif platform.lower() == 'alibris':
+            return PlatformFeatureExtractor.ALIBRIS_FEATURES.copy()
+        elif platform.lower() == 'zvab':
+            return PlatformFeatureExtractor.ZVAB_FEATURES.copy()
         else:
             raise ValueError(f"Unknown platform: {platform}")
 
@@ -569,10 +788,7 @@ def get_bookfinder_features(isbn: str, db_path: str) -> Optional[Dict]:
     """
     Query BookFinder aggregator features from database.
 
-    Computes 3 features from bookfinder_offers table:
-    - bookfinder_lowest_price: Absolute floor price across all vendors
-    - bookfinder_source_count: Number of unique vendors offering the book
-    - bookfinder_new_vs_used_spread: Price gap between new and used conditions
+    Extracts comprehensive pricing and collectibility signals from bookfinder_offers.
 
     Args:
         isbn: ISBN to query
@@ -587,12 +803,31 @@ def get_bookfinder_features(isbn: str, db_path: str) -> Optional[Dict]:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
+        # Comprehensive feature extraction
         cursor.execute("""
             SELECT
+                -- Basic pricing
                 MIN(price + COALESCE(shipping, 0)) as lowest_price,
+                AVG(price + COALESCE(shipping, 0)) as avg_price,
+                MAX(price + COALESCE(shipping, 0)) as highest_price,
+                COUNT(*) as total_offers,
                 COUNT(DISTINCT vendor) as source_count,
+
+                -- Condition spread
                 MIN(CASE WHEN condition='New' THEN price + COALESCE(shipping, 0) END) as min_new,
-                MIN(CASE WHEN condition='Used' THEN price + COALESCE(shipping, 0) END) as min_used
+                MIN(CASE WHEN condition='Used' THEN price + COALESCE(shipping, 0) END) as min_used,
+
+                -- Collectibility signals (NEW)
+                SUM(CASE WHEN is_signed = 1 THEN 1 ELSE 0 END) as signed_count,
+                MIN(CASE WHEN is_signed = 1 THEN price + COALESCE(shipping, 0) END) as signed_lowest_price,
+                SUM(CASE WHEN is_first_edition = 1 THEN 1 ELSE 0 END) as first_edition_count,
+                MIN(CASE WHEN is_first_edition = 1 THEN price + COALESCE(shipping, 0) END) as first_ed_lowest_price,
+                SUM(CASE WHEN is_oldworld = 1 THEN 1 ELSE 0 END) as oldworld_count,
+
+                -- Description richness (proxy for quality)
+                AVG(LENGTH(COALESCE(description, ''))) as avg_description_length,
+                SUM(CASE WHEN LENGTH(COALESCE(description, '')) > 100 THEN 1 ELSE 0 END) as detailed_offers_count
+
             FROM bookfinder_offers
             WHERE isbn = ?
         """, (isbn,))
@@ -601,19 +836,111 @@ def get_bookfinder_features(isbn: str, db_path: str) -> Optional[Dict]:
         conn.close()
 
         if row and row[0]:  # Has data
-            min_new = row[2] or 0
-            min_used = row[3] or 0
-            # Calculate spread only if both conditions exist
+            min_new = row[5] or 0
+            min_used = row[6] or 0
             spread = (min_new - min_used) if (min_new > 0 and min_used > 0) else 0
 
+            lowest_price = row[0]
+            avg_price = row[1] or 0
+            highest_price = row[2] or 0
+
+            # Price volatility (range as % of average)
+            price_volatility = ((highest_price - lowest_price) / avg_price) if avg_price > 0 else 0
+
             return {
-                'bookfinder_lowest_price': row[0],
-                'bookfinder_source_count': row[1],
-                'bookfinder_new_vs_used_spread': spread
+                # Original features
+                'bookfinder_lowest_price': lowest_price,
+                'bookfinder_source_count': row[4],
+                'bookfinder_new_vs_used_spread': spread,
+
+                # NEW: Enhanced pricing features
+                'bookfinder_avg_price': avg_price,
+                'bookfinder_total_offers': row[3],
+                'bookfinder_price_volatility': price_volatility,
+
+                # NEW: Collectibility signals
+                'bookfinder_signed_count': row[7] or 0,
+                'bookfinder_has_signed': 1 if row[7] and row[7] > 0 else 0,
+                'bookfinder_signed_lowest': row[8] or 0,
+                'bookfinder_first_edition_count': row[9] or 0,
+                'bookfinder_has_first_edition': 1 if row[9] and row[9] > 0 else 0,
+                'bookfinder_first_ed_lowest': row[10] or 0,
+                'bookfinder_oldworld_count': row[11] or 0,
+
+                # NEW: Quality signals
+                'bookfinder_avg_desc_length': row[12] or 0,
+                'bookfinder_detailed_pct': (row[13] / row[3]) if row[3] > 0 else 0,
             }
 
         return None
 
     except Exception as e:
         # Database may not have bookfinder_offers table yet
+        return None
+
+
+def get_sold_listings_features(isbn: str, db_path: str) -> Optional[Dict]:
+    """
+    Query sold listings features from database.
+
+    Extracts real market data from Serper Google Search results showing what
+    actually sold and at what prices.
+
+    Args:
+        isbn: ISBN to query
+        db_path: Path to catalog database
+
+    Returns:
+        Dict with sold listings features, or None if no data available
+    """
+    import sqlite3
+
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Aggregate sold listings data
+        cursor.execute("""
+            SELECT
+                COUNT(*) as count,
+                AVG(price) as avg_price,
+                MIN(price) as min_price,
+                MAX(price) as max_price,
+                SUM(CASE WHEN signed = 1 THEN 1 ELSE 0 END) as signed_count,
+                SUM(CASE WHEN cover_type = 'Hardcover' THEN 1 ELSE 0 END) as hardcover_count,
+                SUM(CASE WHEN platform = 'ebay' THEN 1 ELSE 0 END) as ebay_count
+            FROM sold_listings
+            WHERE isbn = ? AND price IS NOT NULL
+        """, (isbn,))
+
+        row = cursor.fetchone()
+        conn.close()
+
+        if row and row[0] and row[0] > 0:  # Has sold listings
+            count = row[0]
+            avg_price = row[1] or 0
+            min_price = row[2] or 0
+            max_price = row[3] or 0
+            signed_count = row[4] or 0
+            hardcover_count = row[5] or 0
+            ebay_count = row[6] or 0
+
+            price_range = max_price - min_price if (max_price > 0 and min_price > 0) else 0
+
+            return {
+                'serper_sold_count': count,
+                'serper_sold_avg_price': avg_price,
+                'serper_sold_min_price': min_price,
+                'serper_sold_max_price': max_price,
+                'serper_sold_price_range': price_range,
+                'serper_sold_has_signed': 1 if signed_count > 0 else 0,
+                'serper_sold_signed_pct': (signed_count / count) if count > 0 else 0,
+                'serper_sold_hardcover_pct': (hardcover_count / count) if count > 0 else 0,
+                'serper_sold_ebay_pct': (ebay_count / count) if count > 0 else 0,
+            }
+
+        return None
+
+    except Exception as e:
+        # Database may not have sold_listings table yet
         return None

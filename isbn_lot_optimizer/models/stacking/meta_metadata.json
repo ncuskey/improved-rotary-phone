@@ -5,25 +5,31 @@
   "feature_names": [
     "eBay",
     "AbeBooks",
-    "Amazon"
+    "Amazon",
+    "Biblio",
+    "Alibris",
+    "Zvab"
   ],
   "coefficients": {
-    "eBay": 0.09457441991336098,
-    "AbeBooks": 0.5272369917124852,
-    "Amazon": -0.039721752097413535
+    "eBay": 0.20906556192884232,
+    "AbeBooks": 0.46193711841018487,
+    "Amazon": -0.09895600105810186,
+    "Biblio": 0.11468400834145598,
+    "Alibris": 0.18036913696236506,
+    "Zvab": -0.46412224024773996
   },
-  "intercept": 8.159437633856136,
-  "training_samples": 580,
-  "test_samples": 146,
-  "train_mae": 6.551115060062621,
-  "test_mae": 4.978893200326305,
-  "train_rmse": 16.60089867819794,
-  "test_rmse": 7.0366863849208,
-  "train_r2": 0.12700456388725678,
-  "test_r2": 0.2587495886009651,
-  "ebay_test_mae": 6.785873820961546,
-  "abebooks_test_mae": 6.740759073754889,
-  "amazon_test_mae": 7.723106487756693,
-  "improvement_pct": 26.137499562748058,
-  "trained_at": "2025-11-01T14:01:34.726189"
+  "intercept": 7.38574836478174,
+  "training_samples": 604,
+  "test_samples": 152,
+  "train_mae": 6.309006021166195,
+  "test_mae": 5.264360875015486,
+  "train_rmse": 16.22413999186998,
+  "test_rmse": 7.420917704744646,
+  "train_r2": 0.14808157551915024,
+  "test_r2": -0.07730191849134016,
+  "ebay_test_mae": 6.530969368328643,
+  "abebooks_test_mae": 6.936989125053611,
+  "amazon_test_mae": 7.739895145060565,
+  "improvement_pct": 19.393882008625898,
+  "trained_at": "2025-11-02T00:02:47.069761"
 }

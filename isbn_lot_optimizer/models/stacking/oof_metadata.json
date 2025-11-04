@@ -1,39 +1,72 @@
 {
-  "n_samples": 726,
-  "n_features": 3,
+  "n_samples": 756,
+  "n_features": 6,
   "feature_names": [
     "ebay_pred",
     "abebooks_pred",
-    "amazon_pred"
+    "amazon_pred",
+    "biblio_pred",
+    "alibris_pred",
+    "zvab_pred"
   ],
   "ebay_metadata": {
     "platform": "ebay",
-    "n_samples": 726,
+    "n_samples": 756,
     "n_folds": 5,
-    "oof_mae": 7.188526455186234,
-    "oof_rmse": 17.382160678251836,
-    "oof_r2": -0.13470844176428431,
-    "target_mean": 11.815805785123967,
-    "target_std": 16.317800427107596
+    "oof_mae": 7.031180487552798,
+    "oof_rmse": 17.037915104276927,
+    "oof_r2": -0.12746290162521,
+    "target_mean": 11.553802910052909,
+    "target_std": 16.04594575224552
   },
   "abebooks_metadata": {
     "platform": "abebooks",
-    "n_samples": 544,
+    "n_samples": 575,
     "n_folds": 5,
-    "oof_mae": 0.9913670011420868,
-    "oof_rmse": 10.521900317741181,
-    "oof_r2": 0.5718065783384273,
-    "target_mean": 8.616360294117648,
-    "target_std": 16.0795610006346
+    "oof_mae": 0.9967145808301892,
+    "oof_rmse": 9.819143536193371,
+    "oof_r2": 0.616483074760855,
+    "target_mean": 8.93264347826087,
+    "target_std": 15.855551082900192
   },
   "amazon_metadata": {
     "platform": "amazon",
-    "n_samples": 564,
+    "n_samples": 593,
     "n_folds": 5,
-    "oof_mae": 6.725019515510216,
-    "oof_rmse": 20.850790387878266,
-    "oof_r2": -0.09297409303422755,
-    "target_mean": 13.885780141843972,
-    "target_std": 19.944244444152712
+    "oof_mae": 6.7746962116041365,
+    "oof_rmse": 20.04791019656268,
+    "oof_r2": -0.0240949991902093,
+    "target_mean": 14.13300168634064,
+    "target_std": 19.81066187368614
+  },
+  "biblio_metadata": {
+    "platform": "biblio",
+    "n_samples": 135,
+    "n_folds": 5,
+    "oof_mae": 3.039046523986325,
+    "oof_rmse": 9.113705064931949,
+    "oof_r2": 0.04900810814408174,
+    "target_mean": 6.71362962962963,
+    "target_std": 9.345586528759416
+  },
+  "alibris_metadata": {
+    "platform": "alibris",
+    "n_samples": 137,
+    "n_folds": 5,
+    "oof_mae": 5.8223740099403525,
+    "oof_rmse": 9.164333006495983,
+    "oof_r2": -0.14023149260613033,
+    "target_mean": 11.092335766423359,
+    "target_std": 8.582312932661115
+  },
+  "zvab_metadata": {
+    "platform": "zvab",
+    "n_samples": 108,
+    "n_folds": 5,
+    "oof_mae": 4.80522154906269,
+    "oof_rmse": 10.911901486135585,
+    "oof_r2": 0.05337742589814709,
+    "target_mean": 8.482222222222223,
+    "target_std": 11.215328740854282
   }
 }

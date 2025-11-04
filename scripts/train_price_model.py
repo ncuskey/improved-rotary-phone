@@ -20,7 +20,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from isbn_lot_optimizer.ml.feature_extractor import FeatureExtractor, get_bookfinder_features
+from isbn_lot_optimizer.ml.feature_extractor import FeatureExtractor, get_bookfinder_features, get_sold_listings_features
 from shared.models import BookMetadata, EbayMarketStats, BookScouterResult
 from shared.lot_detector import is_lot
 
@@ -316,6 +316,9 @@ def extract_features_for_training(
         # Query BookFinder aggregator data
         bookfinder_data = get_bookfinder_features(record["isbn"], str(catalog_db_path))
 
+        # Query sold listings data (NEW)
+        sold_listings_data = get_sold_listings_features(record["isbn"], str(catalog_db_path))
+
         features = feature_extractor.extract(
             metadata=record["metadata"],
             market=record["market"],
@@ -323,6 +326,7 @@ def extract_features_for_training(
             condition=record["condition"],
             abebooks=record.get("abebooks"),
             bookfinder=bookfinder_data,
+            sold_listings=sold_listings_data,
         )
 
         feature_matrix.append(features.values)
@@ -407,7 +411,7 @@ def train_model(
     joblib.dump(scaler, model_dir / "scaler_v1.pkl")
 
     metadata = {
-        "version": "v1_abebooks",
+        "version": "v2_sold_listings",
         "model_type": "GradientBoostingRegressor",
         "train_date": datetime.now().isoformat(),
         "train_samples": len(X_train),

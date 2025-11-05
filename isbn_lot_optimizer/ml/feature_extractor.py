@@ -21,8 +21,22 @@ FEATURE_NAMES = [
     # Market signals (strongest predictors)
     "log_amazon_rank",
     "amazon_count",
+
+    # Amazon pricing features (Phase 3: specialist model improvements)
+    "amazon_lowest_price",
+    "amazon_trade_in_price",
+    "amazon_price_per_rank",
+    "amazon_competitive_density",
+
     "ebay_sold_count",
     "ebay_active_median",
+
+    # eBay pricing features (Phase 2: specialist model improvements)
+    "ebay_sold_min",
+    "ebay_sold_median",
+    "ebay_sold_max",
+    "ebay_sold_price_spread",
+    "ebay_active_vs_sold_ratio",
 
     # AbeBooks pricing (NEW - competitive market data)
     "abebooks_min_price",
@@ -177,22 +191,76 @@ class FeatureExtractor:
             features["amazon_count"] = 0
             missing.append("amazon_count")
 
+        # Amazon pricing features (Phase 3: specialist model improvements)
+        if bookscouter and bookscouter.amazon_lowest_price:
+            features["amazon_lowest_price"] = bookscouter.amazon_lowest_price
+        else:
+            features["amazon_lowest_price"] = 0
+            missing.append("amazon_lowest_price")
+
+        if bookscouter and hasattr(bookscouter, 'amazon_trade_in_price') and bookscouter.amazon_trade_in_price:
+            features["amazon_trade_in_price"] = bookscouter.amazon_trade_in_price
+        else:
+            features["amazon_trade_in_price"] = 0
+
+        # Amazon derived competitive features
+        amazon_rank_log = features["log_amazon_rank"]
+        amazon_price = features["amazon_lowest_price"]
+        amazon_count = features["amazon_count"]
+
+        # Price per rank: lower rank books should command higher prices
+        if amazon_price > 0 and amazon_rank_log > 0:
+            features["amazon_price_per_rank"] = amazon_price / amazon_rank_log
+        else:
+            features["amazon_price_per_rank"] = 0
+
+        # Competitive density: high seller count + good rank = competitive market
+        if amazon_count > 0 and amazon_rank_log > 0:
+            features["amazon_competitive_density"] = amazon_count / amazon_rank_log
+        else:
+            features["amazon_competitive_density"] = 0
+
         if market:
             features["ebay_sold_count"] = market.sold_count if market.sold_count is not None else 0
             features["ebay_active_count"] = market.active_count if market.active_count else 0
             features["ebay_active_median"] = market.active_median_price if market.active_median_price else 0
             features["sell_through_rate"] = market.sell_through_rate if market.sell_through_rate else 0
 
+            # eBay sold comps pricing features (Phase 2: specialist model improvements)
+            features["ebay_sold_min"] = market.sold_comps_min if hasattr(market, 'sold_comps_min') and market.sold_comps_min else 0
+            features["ebay_sold_median"] = market.sold_comps_median if hasattr(market, 'sold_comps_median') and market.sold_comps_median else 0
+            features["ebay_sold_max"] = market.sold_comps_max if hasattr(market, 'sold_comps_max') and market.sold_comps_max else 0
+
+            # Derived pricing features
+            if features["ebay_sold_max"] and features["ebay_sold_min"]:
+                features["ebay_sold_price_spread"] = features["ebay_sold_max"] - features["ebay_sold_min"]
+            else:
+                features["ebay_sold_price_spread"] = 0
+
+            # Active vs sold ratio (market premium indicator)
+            if features["ebay_sold_median"] and features["ebay_active_median"]:
+                features["ebay_active_vs_sold_ratio"] = features["ebay_active_median"] / features["ebay_sold_median"]
+            else:
+                features["ebay_active_vs_sold_ratio"] = 0
+
             if market.sold_count is None or market.sold_count == 0:
                 missing.append("ebay_sold_count")
             if not market.active_median_price:
                 missing.append("ebay_active_median")
+            if not features["ebay_sold_median"]:
+                missing.append("ebay_sold_median")
         else:
             features["ebay_sold_count"] = 0
             features["ebay_active_count"] = 0
             features["ebay_active_median"] = 0
             features["sell_through_rate"] = 0
-            missing.extend(["ebay_sold_count", "ebay_active_count", "ebay_active_median", "sell_through_rate"])
+            features["ebay_sold_min"] = 0
+            features["ebay_sold_median"] = 0
+            features["ebay_sold_max"] = 0
+            features["ebay_sold_price_spread"] = 0
+            features["ebay_active_vs_sold_ratio"] = 0
+            missing.extend(["ebay_sold_count", "ebay_active_count", "ebay_active_median", "sell_through_rate",
+                          "ebay_sold_median"])
 
         # AbeBooks pricing (NEW competitive market data)
         if abebooks:
@@ -538,9 +606,9 @@ class PlatformFeatureExtractor(FeatureExtractor):
     Platform-specific feature extractor for stacking models.
 
     Extracts relevant feature subsets optimized for each platform:
-    - eBay: Market signals, demand, condition (27 features)
+    - eBay: Market signals, pricing data, demand, condition (20 features)
     - AbeBooks: AbeBooks pricing, book attributes, competition (31 features)
-    - Amazon: Amazon rank, book attributes, categories (23 features)
+    - Amazon: Amazon pricing, rank, book attributes, categories (18 features)
     """
 
     # Platform-specific feature subsets
@@ -548,6 +616,13 @@ class PlatformFeatureExtractor(FeatureExtractor):
         # Market signals (eBay-specific)
         "ebay_sold_count",
         "ebay_active_median",
+
+        # eBay pricing features (Phase 2: specialist model improvements)
+        "ebay_sold_min",
+        "ebay_sold_median",
+        "ebay_sold_max",
+        "ebay_sold_price_spread",
+        "ebay_active_vs_sold_ratio",
 
         # Book attributes
         "page_count",
@@ -609,6 +684,12 @@ class PlatformFeatureExtractor(FeatureExtractor):
         # Amazon signals
         "log_amazon_rank",
         "amazon_count",
+
+        # Amazon pricing features (Phase 3: specialist model improvements)
+        "amazon_lowest_price",
+        "amazon_trade_in_price",
+        "amazon_price_per_rank",
+        "amazon_competitive_density",
 
         # Book attributes
         "page_count",

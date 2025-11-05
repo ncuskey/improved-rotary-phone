@@ -26,7 +26,8 @@ class PredictionRouter:
     otherwise falls back to unified model.
 
     Current specialists:
-    - AbeBooks: MAE $0.29, R² 0.863 (98.4% catalog coverage)
+    - AbeBooks: MAE $0.06, R² 0.999 (98.4% catalog coverage)
+    - eBay: MAE $3.03, R² 0.469 (72% catalog coverage)
     """
 
     def __init__(self, model_dir: Optional[Path] = None, monitor=None):
@@ -59,10 +60,22 @@ class PredictionRouter:
             logger.warning(f"Could not load AbeBooks specialist: {e}")
             self.has_abebooks_specialist = False
 
+        # Load eBay specialist
+        try:
+            ebay_dir = self.model_dir / "stacking"
+            self.ebay_model = joblib.load(ebay_dir / "ebay_model.pkl")
+            self.ebay_scaler = joblib.load(ebay_dir / "ebay_scaler.pkl")
+            self.has_ebay_specialist = True
+            logger.info("eBay specialist model loaded successfully")
+        except Exception as e:
+            logger.warning(f"Could not load eBay specialist: {e}")
+            self.has_ebay_specialist = False
+
         # Track routing statistics
         self.stats = {
             'total_predictions': 0,
             'abebooks_routed': 0,
+            'ebay_routed': 0,
             'unified_fallback': 0,
         }
 
@@ -107,7 +120,7 @@ class PredictionRouter:
 
                 routing_info = {
                     'model': 'abebooks_specialist',
-                    'model_mae': 0.29,
+                    'model_mae': 0.06,
                     'features': 28,
                     'confidence': 'high',
                 }
@@ -130,7 +143,43 @@ class PredictionRouter:
                 return price, 'abebooks_specialist', routing_info
 
             except Exception as e:
-                logger.warning(f"AbeBooks specialist failed, falling back to unified: {e}")
+                logger.warning(f"AbeBooks specialist failed, falling back: {e}")
+
+        # Check if we can route to eBay specialist
+        if self._can_use_ebay(market):
+            try:
+                price = self._predict_ebay(
+                    metadata, market, bookscouter, condition,
+                    abebooks, bookfinder, sold_listings
+                )
+                self.stats['ebay_routed'] += 1
+
+                routing_info = {
+                    'model': 'ebay_specialist',
+                    'model_mae': 3.03,
+                    'features': 20,
+                    'confidence': 'high',
+                }
+
+                # Log to monitor if available
+                if self.monitor:
+                    self._log_prediction(
+                        model_name='ebay_specialist',
+                        price=price,
+                        metadata=metadata,
+                        market=market,
+                        bookscouter=bookscouter,
+                        condition=condition,
+                        abebooks=abebooks,
+                        bookfinder=bookfinder,
+                        sold_listings=sold_listings,
+                        start_time=start_time,
+                    )
+
+                return price, 'ebay_specialist', routing_info
+
+            except Exception as e:
+                logger.warning(f"eBay specialist failed, falling back to unified: {e}")
 
         # Fallback to unified model
         price = self._predict_unified(
@@ -184,6 +233,27 @@ class PredictionRouter:
 
         return True
 
+    def _can_use_ebay(self, market: Optional[EbayMarketStats]) -> bool:
+        """
+        Check if book has sufficient eBay data for specialist model.
+
+        Requires:
+        - eBay specialist loaded
+        - Market data present
+        - Either active median price OR sold comps median available
+        """
+        if not self.has_ebay_specialist:
+            return False
+
+        if not market:
+            return False
+
+        # Check for either active or sold comps data
+        has_active = hasattr(market, 'active_median_price') and market.active_median_price and market.active_median_price > 0
+        has_sold_comps = hasattr(market, 'sold_comps_median') and market.sold_comps_median and market.sold_comps_median > 0
+
+        return has_active or has_sold_comps
+
     def _predict_abebooks(
         self,
         metadata: Optional[BookMetadata],
@@ -216,6 +286,41 @@ class PredictionRouter:
         # Scale and predict
         X_scaled = self.abebooks_scaler.transform(X)
         prediction = self.abebooks_model.predict(X_scaled)[0]
+
+        return max(0.01, prediction)  # Ensure positive price
+
+    def _predict_ebay(
+        self,
+        metadata: Optional[BookMetadata],
+        market: Optional[EbayMarketStats],
+        bookscouter: Optional[BookScouterResult],
+        condition: str,
+        abebooks: Optional[Dict],
+        bookfinder: Optional[Dict],
+        sold_listings: Optional[Dict],
+    ) -> float:
+        """Predict using eBay specialist model."""
+        # Extract platform-specific features
+        features = self.extractor.extract_for_platform(
+            platform='ebay',
+            metadata=metadata,
+            market=market,
+            bookscouter=bookscouter,
+            condition=condition,
+            abebooks=abebooks,
+            bookfinder=bookfinder,
+            sold_listings=sold_listings,
+        )
+
+        # Get feature names for platform
+        feature_names = PlatformFeatureExtractor.get_platform_feature_names('ebay')
+
+        # Build feature vector
+        X = np.array([features.values])
+
+        # Scale and predict
+        X_scaled = self.ebay_scaler.transform(X)
+        prediction = self.ebay_model.predict(X_scaled)[0]
 
         return max(0.01, prediction)  # Ensure positive price
 
@@ -295,7 +400,12 @@ class PredictionRouter:
                 features['abebooks_count'] = abebooks.get('abebooks_count', 0)
 
             # Determine platform based on which specialist was used
-            platform = 'abebooks' if model_name == 'abebooks_specialist' else 'general'
+            if model_name == 'abebooks_specialist':
+                platform = 'abebooks'
+            elif model_name == 'ebay_specialist':
+                platform = 'ebay'
+            else:
+                platform = 'general'
 
             # Log to monitor
             self.monitor.log_prediction(
@@ -317,6 +427,7 @@ class PredictionRouter:
 
         stats_with_pct = self.stats.copy()
         stats_with_pct['abebooks_pct'] = round(100 * self.stats['abebooks_routed'] / total, 2)
+        stats_with_pct['ebay_pct'] = round(100 * self.stats['ebay_routed'] / total, 2)
         stats_with_pct['unified_pct'] = round(100 * self.stats['unified_fallback'] / total, 2)
 
         return stats_with_pct
@@ -326,6 +437,7 @@ class PredictionRouter:
         self.stats = {
             'total_predictions': 0,
             'abebooks_routed': 0,
+            'ebay_routed': 0,
             'unified_fallback': 0,
         }
 

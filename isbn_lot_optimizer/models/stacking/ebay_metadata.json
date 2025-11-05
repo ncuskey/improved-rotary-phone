@@ -1,10 +1,15 @@
 {
   "platform": "ebay",
   "model_type": "XGBRegressor",
-  "n_features": 15,
+  "n_features": 20,
   "feature_names": [
     "ebay_sold_count",
     "ebay_active_median",
+    "ebay_sold_min",
+    "ebay_sold_median",
+    "ebay_sold_max",
+    "ebay_sold_price_spread",
+    "ebay_active_vs_sold_ratio",
     "page_count",
     "age_years",
     "log_ratings",
@@ -21,23 +26,23 @@
   ],
   "training_samples": 705,
   "test_samples": 177,
-  "train_mae": 3.56251264474747,
-  "test_mae": 4.2424270308758585,
-  "train_rmse": 5.324033248782647,
-  "test_rmse": 5.824575807595659,
-  "train_r2": 0.3124778093463648,
-  "test_r2": 0.06322384032423933,
-  "cv_mae": 4.2985430394707,
+  "train_mae": 2.676272664929113,
+  "test_mae": 3.0291771903819282,
+  "train_rmse": 4.356590906282819,
+  "test_rmse": 4.7513230124755585,
+  "train_r2": 0.5213353191552504,
+  "test_r2": 0.46871841923359137,
+  "cv_mae": 3.329844422550066,
   "hyperparameters": {
-    "subsample": 0.8,
+    "subsample": 0.6,
     "reg_lambda": 10,
-    "reg_alpha": 0,
-    "n_estimators": 200,
-    "min_child_weight": 3,
-    "max_depth": 7,
+    "reg_alpha": 1,
+    "n_estimators": 500,
+    "min_child_weight": 2,
+    "max_depth": 5,
     "learning_rate": 0.01,
-    "gamma": 0.2,
-    "colsample_bytree": 0.9
+    "gamma": 0.1,
+    "colsample_bytree": 0.6
   },
   "optimization": {
     "method": "RandomizedSearchCV",
@@ -46,63 +51,68 @@
     "scoring": "neg_mean_absolute_error"
   },
   "feature_importance": {
-    "ebay_sold_count": 0.06359545886516571,
-    "ebay_active_median": 0.0,
-    "page_count": 0.12058523297309875,
-    "age_years": 0.08840756118297577,
-    "log_ratings": 0.10474879294633865,
-    "rating": 0.11798017472028732,
-    "is_very_good": 0.08594419807195663,
-    "is_good": 0.05913713946938515,
-    "is_hardcover": 0.07963860034942627,
-    "is_mass_market": 0.06583777070045471,
-    "is_signed": 0.006269105710089207,
-    "is_first_edition": 0.02801704779267311,
-    "is_textbook": 0.05249423906207085,
-    "is_fiction": 0.07394251227378845,
-    "demand_score": 0.053402166813611984
+    "ebay_sold_count": 0.050920046865940094,
+    "ebay_active_median": 0.2566996216773987,
+    "ebay_sold_min": 0.0,
+    "ebay_sold_median": 0.0,
+    "ebay_sold_max": 0.0,
+    "ebay_sold_price_spread": 0.0,
+    "ebay_active_vs_sold_ratio": 0.0,
+    "page_count": 0.08451453596353531,
+    "age_years": 0.06751597672700882,
+    "log_ratings": 0.0721903145313263,
+    "rating": 0.06163478270173073,
+    "is_very_good": 0.042950164526700974,
+    "is_good": 0.03701293095946312,
+    "is_hardcover": 0.05745580792427063,
+    "is_mass_market": 0.044472116976976395,
+    "is_signed": 0.0286537054926157,
+    "is_first_edition": 0.037234049290418625,
+    "is_textbook": 0.0708281397819519,
+    "is_fiction": 0.04736614227294922,
+    "demand_score": 0.04055168852210045
   },
   "top_features": [
     [
-      "page_count",
-      0.12058523297309875
+      "ebay_active_median",
+      0.2566996216773987
     ],
     [
-      "rating",
-      0.11798017472028732
+      "page_count",
+      0.08451453596353531
     ],
     [
       "log_ratings",
-      0.10474879294633865
+      0.0721903145313263
+    ],
+    [
+      "is_textbook",
+      0.0708281397819519
     ],
     [
       "age_years",
-      0.08840756118297577
+      0.06751597672700882
     ],
     [
-      "is_very_good",
-      0.08594419807195663
+      "rating",
+      0.06163478270173073
     ],
     [
       "is_hardcover",
-      0.07963860034942627
-    ],
-    [
-      "is_fiction",
-      0.07394251227378845
-    ],
-    [
-      "is_mass_market",
-      0.06583777070045471
+      0.05745580792427063
     ],
     [
       "ebay_sold_count",
-      0.06359545886516571
+      0.050920046865940094
     ],
     [
-      "is_good",
-      0.05913713946938515
+      "is_fiction",
+      0.04736614227294922
+    ],
+    [
+      "is_mass_market",
+      0.044472116976976395
     ]
   ],
-  "trained_at": "2025-11-04T19:09:58.295798"
+  "trained_at": "2025-11-04T21:01:19.391238"
 }

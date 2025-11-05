@@ -377,11 +377,15 @@ class ModelMonitor:
         for row in rows:
             features = json.loads(row[1])
             for feature_name, value in features.items():
-                if isinstance(value, (int, float)):
+                # Only compute stats for numeric values (not booleans)
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
                     feature_stats[feature_name].append(value)
 
         for feature_name, values in feature_stats.items():
-            values = np.array(values)
+            if len(values) == 0:
+                continue  # Skip if no numeric values
+
+            values = np.array(values, dtype=np.float64)  # Ensure float64 type
             baselines.extend([
                 (model_name, feature_name, "mean", float(np.mean(values)), timestamp),
                 (model_name, feature_name, "std", float(np.std(values)), timestamp),

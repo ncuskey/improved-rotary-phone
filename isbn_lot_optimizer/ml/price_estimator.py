@@ -18,6 +18,9 @@ import numpy as np
 from isbn_lot_optimizer.ml.feature_extractor import FeatureExtractor, FeatureVector
 from shared.models import BookMetadata, EbayMarketStats, BookScouterResult
 
+# Phase 1: Platform-specific routing feature flag
+USE_ROUTING = os.environ.get("ML_USE_ROUTING", "1") == "1"
+
 
 @dataclass
 class PriceEstimate:
@@ -75,6 +78,15 @@ class MLPriceEstimator:
         self.metadata = {}
         self.feature_importance = {}
 
+        # Initialize prediction router if enabled
+        self.router = None
+        if USE_ROUTING:
+            try:
+                from isbn_lot_optimizer.ml.prediction_router import get_prediction_router
+                self.router = get_prediction_router()
+            except Exception as e:
+                print(f"Warning: Could not initialize prediction router: {e}")
+
         self._load_model()
 
     def _load_model(self) -> None:
@@ -113,19 +125,50 @@ class MLPriceEstimator:
         market: Optional[EbayMarketStats],
         bookscouter: Optional[BookScouterResult],
         condition: str = "Good",
+        abebooks: Optional[Dict] = None,
+        bookfinder: Optional[Dict] = None,
+        sold_listings: Optional[Dict] = None,
     ) -> PriceEstimate:
         """
-        Estimate book price using ML model.
+        Estimate book price using ML model with intelligent routing.
 
         Args:
             metadata: Book metadata
             market: eBay market statistics
             bookscouter: BookScouter data
             condition: Book condition
+            abebooks: AbeBooks pricing data (optional, enables specialist routing)
+            bookfinder: BookFinder aggregator data (optional)
+            sold_listings: Sold listings data (optional)
 
         Returns:
             PriceEstimate with prediction and confidence
         """
+        # Try platform-specific routing if enabled and data available
+        if self.router and abebooks and abebooks.get('abebooks_avg_price', 0) > 0:
+            try:
+                price, model_used, routing_info = self.router.predict(
+                    metadata=metadata,
+                    market=market,
+                    bookscouter=bookscouter,
+                    condition=condition,
+                    abebooks=abebooks,
+                    bookfinder=bookfinder,
+                    sold_listings=sold_listings,
+                )
+
+                # Return result with routing metadata
+                return PriceEstimate(
+                    price=round(price, 2),
+                    confidence=0.95 if model_used == 'abebooks_specialist' else 0.75,
+                    prediction_interval=None,
+                    reason=f"Routed to {model_used} (MAE: ${routing_info['model_mae']:.2f})",
+                    feature_importance={},
+                    model_version=routing_info['model']
+                )
+            except Exception as e:
+                # Fall through to unified model on routing errors
+                pass
         if not self.is_ready():
             return PriceEstimate(
                 price=None,

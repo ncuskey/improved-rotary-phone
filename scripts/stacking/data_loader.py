@@ -24,12 +24,18 @@ class PlatformDataLoader:
 
     def __init__(self):
         self.catalog_db = Path.home() / '.isbn_lot_optimizer' / 'catalog.db'
-        self.training_db = Path.home() / '.isbn_lot_optimizer' / 'training_data.db'
-        self.cache_db = Path.home() / '.isbn_lot_optimizer' / 'metadata_cache.db'
+        self.training_db = Path.home() / '.isbn_lot_optimizer' / 'training_data.db'  # Legacy, deprecated
+        self.cache_db = Path.home() / '.isbn_lot_optimizer' / 'metadata_cache.db'  # NEW: Unified training DB
 
     def load_all_data(self) -> Dict[str, Tuple[List[dict], List[float]]]:
         """
         Load all platform-specific training data.
+
+        Data sources (in priority order):
+        1. Unified Training DB (metadata_cache.db with in_training=1)
+        2. Catalog (catalog.db - recent scans)
+        3. Legacy Training DB (training_data.db - deprecated)
+        4. Amazon Pricing (metadata_cache.db amazon_pricing table)
 
         Returns:
             Dict mapping platform name to (book_records, targets) tuple:
@@ -42,14 +48,16 @@ class PlatformDataLoader:
         print("=" * 80)
 
         # Load raw data from all sources
+        unified_training_books = self._load_unified_training_books()  # NEW: Primary source
         catalog_books = self._load_catalog_books()
-        training_books = self._load_training_books()
-        cache_books = self._load_cache_books()
+        training_books = self._load_training_books()  # Legacy
+        cache_books = self._load_cache_books()  # Amazon pricing
 
         print(f"\nRaw data loaded:")
-        print(f"  Catalog:  {len(catalog_books)} books")
-        print(f"  Training: {len(training_books)} books")
-        print(f"  Cache:    {len(cache_books)} books")
+        print(f"  Unified Training DB: {len(unified_training_books)} books (in_training=1)")
+        print(f"  Catalog:             {len(catalog_books)} books")
+        print(f"  Legacy Training:     {len(training_books)} books")
+        print(f"  Amazon Pricing:      {len(cache_books)} books")
 
         # Organize by platform
         ebay_data = []
@@ -58,6 +66,32 @@ class PlatformDataLoader:
         biblio_data = []
         alibris_data = []
         zvab_data = []
+
+        # Process unified training books (NEW: Primary source)
+        for book in unified_training_books:
+            # Apply lot detection
+            if book.get('metadata') and 'title' in book['metadata']:
+                if is_lot(book['metadata']['title']):
+                    continue
+
+            # Categorize by available target
+            if book.get('ebay_target'):
+                ebay_data.append((book, book['ebay_target']))
+
+            if book.get('abebooks_target'):
+                abebooks_data.append((book, book['abebooks_target']))
+
+            if book.get('amazon_target'):
+                amazon_data.append((book, book['amazon_target']))
+
+            if book.get('biblio_target'):
+                biblio_data.append((book, book['biblio_target']))
+
+            if book.get('alibris_target'):
+                alibris_data.append((book, book['alibris_target']))
+
+            if book.get('zvab_target'):
+                zvab_data.append((book, book['zvab_target']))
 
         # Process catalog books
         for book in catalog_books:
@@ -326,6 +360,89 @@ class PlatformDataLoader:
                 'printing': printing,
                 'abebooks': None,
                 'ebay_target': sold_median if sold_median else sold_avg,
+            }
+
+            books.append(book)
+
+        return books
+
+    def _load_unified_training_books(self) -> List[dict]:
+        """
+        Load books from unified training database (metadata_cache.db with in_training=1).
+
+        This is the NEW primary source for training data, containing high-quality
+        books that meet quality gates:
+        - in_training = 1
+        - sold_comps_count >= 8
+        - sold_comps_median >= $5
+        - training_quality_score >= 0.6
+        """
+        if not self.cache_db.exists():
+            print(f"Warning: {self.cache_db} not found")
+            return []
+
+        conn = sqlite3.connect(self.cache_db)
+        cursor = conn.cursor()
+
+        query = """
+        SELECT
+            isbn,
+            title,
+            authors,
+            publisher,
+            publication_year,
+            binding,
+            page_count,
+            sold_comps_median,
+            market_json,
+            bookscouter_json,
+            cover_type,
+            signed,
+            printing,
+            training_quality_score
+        FROM cached_books
+        WHERE in_training = 1
+          AND sold_comps_count >= 8
+          AND sold_comps_median >= 5
+        ORDER BY training_quality_score DESC
+        """
+
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        conn.close()
+
+        books = []
+        for row in rows:
+            (isbn, title, authors, publisher, pub_year, binding, page_count,
+             sold_comps_median, market_json, bookscouter_json,
+             cover_type, signed, printing, training_quality_score) = row
+
+            # Parse JSONs
+            market_dict = json.loads(market_json) if market_json else {}
+            bookscouter_dict = json.loads(bookscouter_json) if bookscouter_json else {}
+
+            # Build metadata dict
+            metadata_dict = {
+                'title': title,
+                'authors': authors,
+                'publisher': publisher,
+                'published_year': pub_year,
+                'page_count': page_count,
+                'binding': binding,
+            }
+
+            book = {
+                'isbn': isbn,
+                'metadata': metadata_dict,
+                'market': market_dict,
+                'bookscouter': bookscouter_dict,
+                'condition': 'Good',
+                'cover_type': cover_type,
+                'signed': signed,
+                'printing': printing,
+                'abebooks': None,
+                'ebay_target': sold_comps_median,
+                'training_quality_score': training_quality_score,
             }
 
             books.append(book)

@@ -10,6 +10,13 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
+# Import organic growth manager for auto-sync
+try:
+    from shared.organic_growth import OrganicGrowthManager
+    ORGANIC_GROWTH_AVAILABLE = True
+except ImportError:
+    ORGANIC_GROWTH_AVAILABLE = False
+
 
 # ------------------------------------------------------------------------------
 # Lightweight module-level logger for DB activity
@@ -45,11 +52,21 @@ def _log(action: str, **fields: Any) -> None:
 class DatabaseManager:
     """Lightweight SQLite wrapper for storing scanned books and lot suggestions."""
 
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: Path, enable_organic_growth: bool = True):
         self.db_path = Path(db_path)
         if not self.db_path.parent.exists():
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._local = threading.local()  # Thread-local storage for connections
+
+        # Initialize organic growth manager for auto-sync to training database
+        self.organic_growth = None
+        if enable_organic_growth and ORGANIC_GROWTH_AVAILABLE:
+            try:
+                self.organic_growth = OrganicGrowthManager()
+                _logger.info("Organic growth system initialized")
+            except Exception as e:
+                _logger.warning(f"Failed to initialize organic growth: {e}")
+
         self._initialise()
 
     def _initialise(self) -> None:
@@ -283,6 +300,13 @@ class DatabaseManager:
                 """,
                 data,
             )
+
+            # Auto-sync to training database (organic growth)
+            if self.organic_growth:
+                try:
+                    self.organic_growth.sync_book_to_training_db(data)
+                except Exception as e:
+                    _logger.warning(f"Failed to sync book to training DB: {e}")
 
     def update_book_market_json(self, isbn: str, market_blob: Dict[str, Any]) -> None:
         """Update market data and set market_fetched_at timestamp."""

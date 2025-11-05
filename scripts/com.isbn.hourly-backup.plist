@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Label for launchd -->
+    <key>Label</key>
+    <string>com.isbn.hourly-backup</string>
+
+    <!-- Path to the Python script -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/nickcuskey/.pyenv/shims/python3</string>
+        <string>/Users/nickcuskey/ISBN/scripts/scheduled_backup.py</string>
+        <string>--reason</string>
+        <string>hourly</string>
+        <string>--if-changed</string>
+        <string>2</string>
+        <string>--quiet</string>
+    </array>
+
+    <!-- Run hourly -->
+    <key>StartInterval</key>
+    <integer>3600</integer>
+
+    <!-- Standard output and error logs -->
+    <key>StandardOutPath</key>
+    <string>/tmp/isbn-hourly-backup.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/isbn-hourly-backup.error.log</string>
+
+    <!-- Run at load (immediate first run) -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <!-- Keep job alive if it exits -->
+    <key>KeepAlive</key>
+    <false/>
+
+    <!-- Set working directory -->
+    <key>WorkingDirectory</key>
+    <string>/Users/nickcuskey/ISBN</string>
+</dict>
+</plist>

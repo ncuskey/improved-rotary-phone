@@ -21,10 +21,12 @@ if str(PROJECT_ROOT) not in sys.path:  # Ensure package imports work when run as
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from isbn_web.api.dependencies import cleanup_book_service, get_book_service
-from isbn_web.api.routes import actions, books, covers, covers_check, ebay_listings, events, lots, refresh, sphere_viz
+from isbn_web.api.routes import actions, books, covers, covers_check, ebay_listings, events, lots, refresh, sold_history, sphere_viz
 from isbn_web.api.routes.sphere_viz import viz_broadcaster
 from isbn_web.config import settings
 from isbn_web.logging_middleware import HTTPLoggingMiddleware
+from isbn_lot_optimizer.ml.monitor import ModelMonitor
+from isbn_lot_optimizer.ml.dashboard import MonitoringDashboard
 
 if TYPE_CHECKING:  # pragma: no cover - import only for typing
     from isbn_lot_optimizer.service import BookService
@@ -35,6 +37,14 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup: ensure directories exist
     settings.COVER_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Initialize ML monitor
+    app.state.ml_monitor = ModelMonitor()
+    app.state.ml_dashboard = MonitoringDashboard(app.state.ml_monitor)
+
+    # Initialize ML estimator with monitor (must happen before any predictions)
+    from isbn_lot_optimizer.ml import get_ml_estimator
+    get_ml_estimator(monitor=app.state.ml_monitor)
 
     yield
 
@@ -97,6 +107,7 @@ app.include_router(covers.router, prefix="/api", tags=["covers"])
 app.include_router(covers_check.router, prefix="/api/covers", tags=["covers"])
 app.include_router(refresh.router, prefix="/api/refresh", tags=["refresh"])
 app.include_router(ebay_listings.router, prefix="/api/ebay", tags=["ebay"])
+app.include_router(sold_history.router, tags=["sold_history"])
 app.include_router(sphere_viz.router, tags=["visualization"])
 
 # Setup Jinja2 templates
@@ -125,6 +136,27 @@ async def sphere_visualization(request: Request):
             "title": "Server Activity Visualization",
         },
     )
+
+
+@app.get("/ml/dashboard", response_class=HTMLResponse)
+async def ml_monitoring_dashboard(
+    request: Request,
+    model: str | None = None,
+    hours: int = 24
+):
+    """ML monitoring dashboard with drift detection and performance metrics."""
+    html = request.app.state.ml_dashboard.generate_html(model_name=model, hours=hours)
+    return HTMLResponse(content=html)
+
+
+@app.get("/ml/metrics")
+async def ml_metrics(
+    request: Request,
+    model: str | None = None,
+    hours: int = 24
+):
+    """Get ML monitoring metrics as JSON."""
+    return request.app.state.ml_dashboard.get_dashboard_data(model_name=model, hours=hours)
 
 
 @app.get("/health")

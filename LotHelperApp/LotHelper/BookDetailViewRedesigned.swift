@@ -11,6 +11,8 @@ struct BookDetailViewRedesigned: View {
     @State private var priceVariants: PriceVariantsResponse?
     @State private var isLoadingVariants = false
     @State private var showVariantsExpanded = false
+    @State private var soldStatistics: SoldStatistics?
+    @State private var isLoadingSoldStats = false
     @Environment(\.dismiss) private var dismiss
 
     // Interactive attributes state
@@ -81,6 +83,11 @@ struct BookDetailViewRedesigned: View {
                     marketDataPanel
                 }
 
+                // Sold listings statistics
+                if let stats = soldStatistics {
+                    soldListingsPanel(stats)
+                }
+
                 // Buyback offers
                 if let bookscouter = record.bookscouter, bookscouter.totalVendors > 0 {
                     buybackOffersPanel(bookscouter)
@@ -111,6 +118,7 @@ struct BookDetailViewRedesigned: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadLots() }
         .task { await loadPriceVariants() }
+        .task { await loadSoldStatistics() }
         .sheet(isPresented: $showingEbayWizard) {
             let book = CachedBook(from: record)
             EbayListingWizardView(book: book) { response in
@@ -338,63 +346,62 @@ struct BookDetailViewRedesigned: View {
 
     @ViewBuilder
     private var profitAnalysisPanel: some View {
-        if let soldMedian = record.market?.soldCompsMedian,
-           let vendorPrice = record.bookscouter?.bestPrice {
-
-            let margin = soldMedian - vendorPrice
-            let percentage = (margin / vendorPrice) * 100
-
+        if let soldMedian = record.market?.soldCompsMedian {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "chart.line.uptrend.xyaxis")
                         .foregroundStyle(.green)
-                    Text("Profit Analysis")
+                    Text("Multi-Scenario Profit Analysis")
                         .font(.headline)
                 }
 
-                // Profit margin
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("Potential Margin")
-                            .font(.subheadline)
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(formattedCurrency(margin))
-                                .font(.title2)
-                                .bold()
-                                .foregroundStyle(margin > 0 ? .green : .red)
-                            Text("\(String(format: "%.0f", percentage))% markup")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                // Best Case: Vendor acquisition
+                if let vendorPrice = record.bookscouter?.bestPrice, vendorPrice > 0 {
+                    profitScenarioCard(
+                        title: "Best Case (Vendor)",
+                        salePrice: soldMedian,
+                        cost: vendorPrice,
+                        badge: "Optimal",
+                        badgeColor: .green
+                    )
+                }
 
+                // Alternative: Amazon acquisition
+                if let amazonPrice = record.bookscouter?.amazonLowestPrice, amazonPrice > 0 {
+                    profitScenarioCard(
+                        title: "Amazon Sourcing",
+                        salePrice: soldMedian,
+                        cost: amazonPrice,
+                        badge: "Alternative",
+                        badgeColor: .orange
+                    )
+                }
+
+                // Estimated: ML prediction
+                if let estimatedPrice = record.estimatedPrice, estimatedPrice > 0 {
+                    profitScenarioCard(
+                        title: "ML Estimate",
+                        salePrice: soldMedian,
+                        cost: estimatedPrice,
+                        badge: "Predicted",
+                        badgeColor: .blue
+                    )
+                }
+
+                // Summary comparison
+                if let vendorPrice = record.bookscouter?.bestPrice,
+                   let amazonPrice = record.bookscouter?.amazonLowestPrice,
+                   vendorPrice > 0, amazonPrice > 0 {
                     Divider()
-
-                    // Calculation breakdown
-                    HStack {
-                        Text("eBay Sale")
+                    HStack(spacing: 4) {
+                        Image(systemName: "lightbulb.fill")
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                        Text("Best margin: \(bestScenarioName(soldMedian: soldMedian))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(formattedCurrency(soldMedian))
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-
-                    HStack {
-                        Text("Cost (Vendor)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(formattedCurrency(vendorPrice))
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.green)
                     }
                 }
-                .padding(12)
-                .background(Color.green.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
             }
             .padding()
             .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -471,6 +478,149 @@ struct BookDetailViewRedesigned: View {
             .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
             .shadow(color: DS.Shadow.card, radius: 4, x: 0, y: 2)
         }
+    }
+
+    // MARK: - Sold Listings Panel
+    @ViewBuilder
+    private func soldListingsPanel(_ stats: SoldStatistics) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.blue)
+                Text("Sold Listings Analysis")
+                    .font(.headline)
+                Spacer()
+                if stats.hasSufficientData {
+                    Text(stats.dataQuality.qualityLabel)
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.green.opacity(0.2))
+                        )
+                }
+            }
+
+            // Demand Signal
+            if let demand = stats.demandSignal {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Market Demand")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(stats.demandLabel)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(demandColor(for: stats.demandLabel))
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("Signal Score")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(String(format: "%.0f", demand))
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                    }
+                }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(demandColor(for: stats.demandLabel).opacity(0.1))
+                )
+            }
+
+            // Platform Breakdown
+            if stats.platformBreakdown.sortedPlatforms.first(where: { $0.percentage > 0 }) != nil {
+                Divider()
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Platform Distribution")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+
+                    ForEach(stats.platformBreakdown.sortedPlatforms, id: \.name) { platform in
+                        if platform.percentage > 0 {
+                            HStack(spacing: 8) {
+                                Text(platform.name)
+                                    .font(.caption)
+                                    .frame(width: 60, alignment: .leading)
+
+                                GeometryReader { geometry in
+                                    ZStack(alignment: .leading) {
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(height: 8)
+                                            .cornerRadius(4)
+
+                                        Rectangle()
+                                            .fill(platformColor(for: platform.name))
+                                            .frame(width: geometry.size.width * (platform.percentage / 100), height: 8)
+                                            .cornerRadius(4)
+                                    }
+                                }
+                                .frame(height: 8)
+
+                                Text(String(format: "%.0f%%", platform.percentage))
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .frame(width: 40, alignment: .trailing)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Price & Features
+            if let avgPrice = stats.features.avgPrice, let range = stats.features.priceRange {
+                Divider()
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Avg Price")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(formattedCurrency(avgPrice))
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Range")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(formattedCurrency(range))
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    if let signedPct = stats.features.signedPct, signedPct > 0 {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Signed")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(String(format: "%.0f%%", signedPct * 100))
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+            }
+
+            // Data Quality
+            HStack(spacing: 12) {
+                metricChip("Total", "\(stats.dataQuality.totalCount)", color: .blue)
+                if stats.dataQuality.singleSalesCount > 0 {
+                    metricChip("Single", "\(stats.dataQuality.singleSalesCount)", color: .green)
+                }
+                if stats.dataQuality.lotSalesCount > 0 {
+                    metricChip("Lots", "\(stats.dataQuality.lotSalesCount)", color: .orange)
+                }
+            }
+        }
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 4, x: 0, y: 2)
     }
 
     // MARK: - Buyback Offers Panel
@@ -795,6 +945,34 @@ struct BookDetailViewRedesigned: View {
         }
     }
 
+    private func demandColor(for label: String) -> Color {
+        switch label.lowercased() {
+        case "very high":
+            return .green
+        case "high":
+            return .blue
+        case "moderate":
+            return .orange
+        case "low":
+            return .red
+        default:
+            return .gray
+        }
+    }
+
+    private func platformColor(for platform: String) -> Color {
+        switch platform.lowercased() {
+        case "ebay":
+            return .blue
+        case "amazon":
+            return .orange
+        case "mercari":
+            return .purple
+        default:
+            return .gray
+        }
+    }
+
     private func ttsCategory(from days: Int?) -> String? {
         guard let days = days else { return nil }
         if days <= 30 {
@@ -823,6 +1001,107 @@ struct BookDetailViewRedesigned: View {
         }
     }
 
+    @ViewBuilder
+    private func profitScenarioCard(
+        title: String,
+        salePrice: Double,
+        cost: Double,
+        badge: String,
+        badgeColor: Color
+    ) -> some View {
+        let margin = salePrice - cost
+        let marginPct = (margin / cost) * 100
+
+        VStack(alignment: .leading, spacing: 8) {
+            // Header with badge
+            HStack {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Spacer()
+                Text(badge)
+                    .font(.caption2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(badgeColor.opacity(0.2))
+                    )
+                    .foregroundStyle(badgeColor)
+            }
+
+            // Price breakdown
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Sale Price")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(formattedCurrency(salePrice))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                }
+
+                Image(systemName: "minus")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Cost")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(formattedCurrency(cost))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                }
+
+                Image(systemName: "equal")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Profit")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(formattedCurrency(margin))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(margin > 0 ? .green : .red)
+                }
+
+                Spacer()
+
+                // Margin percentage
+                Text(String(format: "%.0f%%", marginPct))
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundStyle(margin > 0 ? .green : .red)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
+    }
+
+    private func bestScenarioName(soldMedian: Double) -> String {
+        var scenarios: [(name: String, margin: Double)] = []
+
+        if let vendorPrice = record.bookscouter?.bestPrice, vendorPrice > 0 {
+            scenarios.append(("Vendor", soldMedian - vendorPrice))
+        }
+
+        if let amazonPrice = record.bookscouter?.amazonLowestPrice, amazonPrice > 0 {
+            scenarios.append(("Amazon", soldMedian - amazonPrice))
+        }
+
+        if let estimatedPrice = record.estimatedPrice, estimatedPrice > 0 {
+            scenarios.append(("ML Estimate", soldMedian - estimatedPrice))
+        }
+
+        return scenarios.max(by: { $0.margin < $1.margin })?.name ?? "Unknown"
+    }
+
     @MainActor
     private func loadLots() async {
         isLoadingLots = true
@@ -846,6 +1125,18 @@ struct BookDetailViewRedesigned: View {
         } catch {
             print("Failed to load price variants: \(error.localizedDescription)")
             priceVariants = nil
+        }
+    }
+
+    private func loadSoldStatistics() async {
+        isLoadingSoldStats = true
+        defer { isLoadingSoldStats = false }
+
+        do {
+            soldStatistics = try await BookAPI.fetchSoldStatistics(record.isbn)
+        } catch {
+            print("Failed to load sold statistics: \(error.localizedDescription)")
+            soldStatistics = nil
         }
     }
 

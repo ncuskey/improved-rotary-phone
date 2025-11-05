@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Train Amazon specialist model for stacking ensemble.
+Train Biblio specialist model for stacking ensemble.
 
-Trains a GradientBoostingRegressor optimized for Amazon pricing prediction
-using Amazon-specific features (sales rank, book attributes, categories).
+Trains a GradientBoostingRegressor optimized for Biblio sold comps prediction
+using Biblio-specific features (market signals, demand, condition).
 """
 
 import json
@@ -23,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from scripts.stacking.data_loader import load_platform_training_data
 from isbn_lot_optimizer.ml.feature_extractor import PlatformFeatureExtractor
+from shared.models import BookMetadata, EbayMarketStats, BookScouterResult
 
 
 def create_simple_objects(record: dict):
@@ -67,21 +68,22 @@ def create_simple_objects(record: dict):
 
 
 def extract_features(records, targets, extractor, catalog_db_path):
+    """Extract Biblio-specific features from records."""
     from isbn_lot_optimizer.ml.feature_extractor import get_bookfinder_features
+    from pathlib import Path
 
-    """Extract Amazon-specific features from records."""
     X = []
     y = []
     completeness_scores = []
 
     for record, target in zip(records, targets):
         metadata, market, bookscouter = create_simple_objects(record)
+
         # Query BookFinder features for this ISBN
         bookfinder_data = get_bookfinder_features(record['isbn'], str(catalog_db_path))
 
-
         features = extractor.extract_for_platform(
-            platform='amazon',
+            platform='biblio',
             metadata=metadata,
             market=market,
             bookscouter=bookscouter,
@@ -104,27 +106,28 @@ def remove_outliers(X, y, threshold=3.0):
     return X[mask], y[mask]
 
 
-def train_amazon_model():
-    """Train and save Amazon specialist model."""
+def train_biblio_model():
+    """Train and save Biblio specialist model."""
     print("=" * 80)
-    print("TRAINING AMAZON SPECIALIST MODEL")
+    print("TRAINING BIBLIO SPECIALIST MODEL")
     print("=" * 80)
 
     # Load data
-    print("\n1. Loading Amazon training data...")
+    print("\n1. Loading Biblio training data...")
     platform_data = load_platform_training_data()
-    amazon_records, amazon_targets = platform_data['amazon']
+    biblio_records, biblio_targets = platform_data['biblio']
 
-    print(f"\n   Loaded {len(amazon_records)} Amazon books")
-    print(f"   Target range: ${min(amazon_targets):.2f} - ${max(amazon_targets):.2f}")
-    print(f"   Target mean: ${np.mean(amazon_targets):.2f}")
+    print(f"\n   Loaded {len(biblio_records)} Biblio books")
+    print(f"   Target range: ${min(biblio_targets):.2f} - ${max(biblio_targets):.2f}")
+    print(f"   Target mean: ${np.mean(biblio_targets):.2f}")
 
     # Extract features
-    print("\n2. Extracting Amazon-specific features...")
+    print("\n2. Extracting Biblio-specific features...")
     extractor = PlatformFeatureExtractor()
-    X, y, completeness = extract_features(amazon_records, amazon_targets, extractor, Path.home() / '.isbn_lot_optimizer' / 'catalog.db')
+    catalog_db_path = Path.home() / '.isbn_lot_optimizer' / 'catalog.db'
+    X, y, completeness = extract_features(biblio_records, biblio_targets, extractor, catalog_db_path)
 
-    feature_names = PlatformFeatureExtractor.get_platform_feature_names('amazon')
+    feature_names = PlatformFeatureExtractor.get_platform_feature_names('biblio')
     print(f"   Features extracted: {len(feature_names)} features")
     print(f"   Average completeness: {np.mean(completeness):.1%}")
 
@@ -178,7 +181,7 @@ def train_amazon_model():
     test_r2 = r2_score(y_test, y_test_pred)
 
     print("\n" + "=" * 80)
-    print("AMAZON MODEL PERFORMANCE")
+    print("BIBLIO MODEL PERFORMANCE")
     print("=" * 80)
     print(f"\nTraining Metrics:")
     print(f"  MAE:  ${train_mae:.2f}")
@@ -210,18 +213,18 @@ def train_amazon_model():
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Save model
-    model_path = model_dir / 'amazon_model.pkl'
+    model_path = model_dir / 'biblio_model.pkl'
     joblib.dump(model, model_path)
     print(f"✓ Saved model: {model_path}")
 
     # Save scaler
-    scaler_path = model_dir / 'amazon_scaler.pkl'
+    scaler_path = model_dir / 'biblio_scaler.pkl'
     joblib.dump(scaler, scaler_path)
     print(f"✓ Saved scaler: {scaler_path}")
 
     # Save metadata
     metadata = {
-        'platform': 'amazon',
+        'platform': 'biblio',
         'model_type': 'GradientBoostingRegressor',
         'n_features': len(feature_names),
         'feature_names': feature_names,
@@ -238,13 +241,13 @@ def train_amazon_model():
         'trained_at': datetime.now().isoformat(),
     }
 
-    metadata_path = model_dir / 'amazon_metadata.json'
+    metadata_path = model_dir / 'biblio_metadata.json'
     with open(metadata_path, 'w') as f:
         json.dump(metadata, f, indent=2)
     print(f"✓ Saved metadata: {metadata_path}")
 
     print("\n" + "=" * 80)
-    print("AMAZON MODEL TRAINING COMPLETE")
+    print("BIBLIO MODEL TRAINING COMPLETE")
     print("=" * 80)
     print(f"\nModel saved to: {model_path}")
     print(f"Test MAE: ${test_mae:.2f}")
@@ -261,4 +264,4 @@ def train_amazon_model():
 
 
 if __name__ == "__main__":
-    train_amazon_model()
+    train_biblio_model()

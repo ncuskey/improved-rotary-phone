@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Label for launchd -->
+    <key>Label</key>
+    <string>com.isbn.daily-backup</string>
+
+    <!-- Path to the Python script -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/nickcuskey/.pyenv/shims/python3</string>
+        <string>/Users/nickcuskey/ISBN/scripts/scheduled_backup.py</string>
+        <string>--reason</string>
+        <string>daily</string>
+    </array>
+
+    <!-- Run daily at 3 AM -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- Standard output and error logs -->
+    <key>StandardOutPath</key>
+    <string>/tmp/isbn-daily-backup.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/isbn-daily-backup.error.log</string>
+
+    <!-- Run at load (immediate first run) -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <!-- Keep job alive if it exits -->
+    <key>KeepAlive</key>
+    <false/>
+
+    <!-- Set working directory -->
+    <key>WorkingDirectory</key>
+    <string>/Users/nickcuskey/ISBN</string>
+</dict>
+</plist>

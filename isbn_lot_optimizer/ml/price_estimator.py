@@ -56,13 +56,14 @@ class MLPriceEstimator:
     extracted features from book metadata and market data.
     """
 
-    def __init__(self, model_dir: Optional[Path] = None):
+    def __init__(self, model_dir: Optional[Path] = None, monitor=None):
         """
         Initialize estimator by loading trained model.
 
         Args:
             model_dir: Directory containing model files. Defaults to
                       isbn_lot_optimizer/models/
+            monitor: Optional ModelMonitor instance for prediction tracking
         """
         if model_dir is None:
             # Default to models/ directory in package
@@ -83,7 +84,7 @@ class MLPriceEstimator:
         if USE_ROUTING:
             try:
                 from isbn_lot_optimizer.ml.prediction_router import get_prediction_router
-                self.router = get_prediction_router()
+                self.router = get_prediction_router(monitor=monitor)
             except Exception as e:
                 print(f"Warning: Could not initialize prediction router: {e}")
 
@@ -328,12 +329,13 @@ class MLPriceEstimator:
 _global_estimator: Optional[MLPriceEstimator] = None
 
 
-def get_ml_estimator(model_dir: Optional[Path] = None) -> MLPriceEstimator:
+def get_ml_estimator(model_dir: Optional[Path] = None, monitor=None) -> MLPriceEstimator:
     """
     Get or create global ML estimator instance.
 
     Args:
         model_dir: Optional model directory (only used on first call)
+        monitor: Optional ModelMonitor instance for prediction tracking (only used on first call)
 
     Returns:
         MLPriceEstimator instance
@@ -341,6 +343,6 @@ def get_ml_estimator(model_dir: Optional[Path] = None) -> MLPriceEstimator:
     global _global_estimator
 
     if _global_estimator is None:
-        _global_estimator = MLPriceEstimator(model_dir)
+        _global_estimator = MLPriceEstimator(model_dir, monitor=monitor)
 
     return _global_estimator

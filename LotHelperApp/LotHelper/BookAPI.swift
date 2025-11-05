@@ -637,6 +637,40 @@ enum BookAPI {
         }
     }
 
+    /// Fetch sold listings statistics for an ISBN
+    static func fetchSoldStatistics(_ isbn: String) async throws -> SoldStatistics {
+        guard let url = URL(string: "\(baseURLString)/api/books/\(isbn)/sold-statistics") else {
+            throw URLError(.badURL)
+        }
+
+        let (data, response) = try await session.data(from: url)
+
+        guard let http = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            let body = String(data: data, encoding: .utf8)
+            print("❌ GET /api/books/\(isbn)/sold-statistics failed — status: \(http.statusCode)\nResponse body: \(body ?? "<no body>")")
+            throw BookAPIError.badStatus(code: http.statusCode, body: body)
+        }
+
+        return try await decodeOnWorker(SoldStatistics.self, from: data)
+    }
+
+    /// Completion-based wrapper for fetchSoldStatistics
+    static func fetchSoldStatistics(_ isbn: String, completion: @escaping (SoldStatistics?) -> Void) {
+        Task {
+            do {
+                let stats = try await fetchSoldStatistics(isbn)
+                await MainActor.run { completion(stats) }
+            } catch {
+                print("Fetch sold statistics error: \(error)")
+                await MainActor.run { completion(nil) }
+            }
+        }
+    }
+
     /// Delete a book from the database
     static func deleteBook(_ isbn: String) async throws {
         guard let url = URL(string: "\(baseURLString)/api/books/\(isbn)/json") else {

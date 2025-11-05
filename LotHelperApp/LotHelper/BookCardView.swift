@@ -13,6 +13,7 @@ struct BookCardView: View {
         let bestVendorPrice: Double?
         let amazonLowestPrice: Double?
         let timeToSellDays: Int?
+        let soldCount: Int?
 
         var coverURL: URL? { URL(string: thumbnail) }
         var coverRequest: URLRequest? {
@@ -45,7 +46,7 @@ struct BookCardView: View {
             }
         }
 
-        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, estimatedPrice: nil, soldCompsMedian: nil, bestVendorPrice: nil, amazonLowestPrice: nil, timeToSellDays: nil)
+        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, estimatedPrice: nil, soldCompsMedian: nil, bestVendorPrice: nil, amazonLowestPrice: nil, timeToSellDays: nil, soldCount: nil)
     }
 
     let book: Book
@@ -100,6 +101,16 @@ struct BookCardView: View {
                             .font(.caption)
                     }
                     .foregroundStyle(ttsColor(for: tts))
+                    .lineLimit(1)
+                }
+                if let count = book.soldCount, count > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption2)
+                        Text("\(count) sold")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.blue)
                     .lineLimit(1)
                 }
                 if let margin = book.profitMargin, let percentage = book.profitMarginPercentage {
@@ -219,7 +230,8 @@ struct BookCardView: View {
         soldCompsMedian: 24.99,
         bestVendorPrice: 8.50,
         amazonLowestPrice: 28.99,
-        timeToSellDays: 25
+        timeToSellDays: 25,
+        soldCount: 18
     ))
     .padding()
     .background(DS.Color.background)

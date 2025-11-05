@@ -208,9 +208,16 @@ class ModelMonitor:
         """
         timestamp = datetime.now().isoformat()
         error = (prediction - true_value) if true_value is not None else None
-        # Convert numpy types to Python types for JSON serialization
+        # Convert numpy types to Python types for JSON serialization and DB storage
         features_serializable = self._convert_to_json_serializable(features)
         features_json = json.dumps(features_serializable)
+
+        # Ensure all numeric values are Python native types (not numpy)
+        prediction = float(prediction) if prediction is not None else None
+        confidence_std = float(confidence_std) if confidence_std is not None else None
+        true_value = float(true_value) if true_value is not None else None
+        error = float(error) if error is not None else None
+        latency_ms = float(latency_ms) if latency_ms is not None else None
 
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -299,11 +306,11 @@ class ModelMonitor:
         if not rows:
             return None
 
-        # Extract data
-        predictions = [row[0] for row in rows]
-        confidence_stds = [row[1] for row in rows if row[1] is not None]
-        errors = [row[3] for row in rows if row[3] is not None]
-        latencies = [row[4] for row in rows]
+        # Extract data (cast to float to handle SQLite's dynamic typing)
+        predictions = [float(row[0]) for row in rows]
+        confidence_stds = [float(row[1]) for row in rows if row[1] is not None]
+        errors = [float(row[3]) for row in rows if row[3] is not None]
+        latencies = [float(row[4]) for row in rows]
 
         # Compute metrics
         metrics = MonitoringMetrics(

@@ -55,6 +55,9 @@ class PlatformDataLoader:
         ebay_data = []
         abebooks_data = []
         amazon_data = []
+        biblio_data = []
+        alibris_data = []
+        zvab_data = []
 
         # Process catalog books
         for book in catalog_books:
@@ -72,6 +75,16 @@ class PlatformDataLoader:
 
             if book.get('amazon_target'):
                 amazon_data.append((book, book['amazon_target']))
+
+            # NEW: BookFinder vendor targets
+            if book.get('biblio_target'):
+                biblio_data.append((book, book['biblio_target']))
+
+            if book.get('alibris_target'):
+                alibris_data.append((book, book['alibris_target']))
+
+            if book.get('zvab_target'):
+                zvab_data.append((book, book['zvab_target']))
 
         # Process training books (eBay only)
         for book in training_books:
@@ -95,6 +108,9 @@ class PlatformDataLoader:
         print(f"  eBay:     {len(ebay_data)} books")
         print(f"  AbeBooks: {len(abebooks_data)} books")
         print(f"  Amazon:   {len(amazon_data)} books")
+        print(f"  Biblio:   {len(biblio_data)} books")
+        print(f"  Alibris:  {len(alibris_data)} books")
+        print(f"  Zvab:     {len(zvab_data)} books")
 
         # Split into records and targets
         ebay_records = [record for record, _ in ebay_data]
@@ -106,10 +122,22 @@ class PlatformDataLoader:
         amazon_records = [record for record, _ in amazon_data]
         amazon_targets = [target for _, target in amazon_data]
 
+        biblio_records = [record for record, _ in biblio_data]
+        biblio_targets = [target for _, target in biblio_data]
+
+        alibris_records = [record for record, _ in alibris_data]
+        alibris_targets = [target for _, target in alibris_data]
+
+        zvab_records = [record for record, _ in zvab_data]
+        zvab_targets = [target for _, target in zvab_data]
+
         return {
             'ebay': (ebay_records, ebay_targets),
             'abebooks': (abebooks_records, abebooks_targets),
             'amazon': (amazon_records, amazon_targets),
+            'biblio': (biblio_records, biblio_targets),
+            'alibris': (alibris_records, alibris_targets),
+            'zvab': (zvab_records, zvab_targets),
         }
 
     def _load_catalog_books(self) -> List[dict]:
@@ -147,7 +175,7 @@ class PlatformDataLoader:
 
         cursor.execute(query)
         rows = cursor.fetchall()
-        conn.close()
+        # Don't close conn yet - need it for BookFinder queries below
 
         books = []
         for row in rows:
@@ -201,6 +229,49 @@ class PlatformDataLoader:
 
             books.append(book)
 
+        # NOW: Query BookFinder vendor prices and augment book records
+        print("\n  Querying BookFinder vendor prices...")
+        for book in books:
+            isbn = book['isbn']
+
+            # Query minimum prices for each vendor from BookFinder
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT vendor, MIN(price + COALESCE(shipping, 0)) as min_price
+                FROM bookfinder_offers
+                WHERE isbn = ?
+                GROUP BY vendor
+            """, (isbn,))
+
+            vendor_prices = {row[0]: row[1] for row in cursor.fetchall()}
+
+            # Add BookFinder vendor targets (augments existing models + creates new ones)
+            if 'eBay' in vendor_prices and vendor_prices['eBay'] > 0:
+                # Augment existing eBay model with BookFinder eBay data
+                if 'ebay_target' not in book or not book['ebay_target']:
+                    book['ebay_target'] = vendor_prices['eBay']
+
+            if 'AbeBooks' in vendor_prices and vendor_prices['AbeBooks'] > 0:
+                # Augment existing AbeBooks model
+                if 'abebooks_target' not in book or not book['abebooks_target']:
+                    book['abebooks_target'] = vendor_prices['AbeBooks']
+
+            if 'Amazon_Usa' in vendor_prices and vendor_prices['Amazon_Usa'] > 0:
+                # Augment existing Amazon model
+                if 'amazon_target' not in book or not book['amazon_target']:
+                    book['amazon_target'] = vendor_prices['Amazon_Usa']
+
+            # NEW: Add targets for new vendor models
+            if 'Biblio' in vendor_prices and vendor_prices['Biblio'] > 0:
+                book['biblio_target'] = vendor_prices['Biblio']
+
+            if 'Alibris' in vendor_prices and vendor_prices['Alibris'] > 0:
+                book['alibris_target'] = vendor_prices['Alibris']
+
+            if 'Zvab' in vendor_prices and vendor_prices['Zvab'] > 0:
+                book['zvab_target'] = vendor_prices['Zvab']
+
+        conn.close()
         return books
 
     def _load_training_books(self) -> List[dict]:

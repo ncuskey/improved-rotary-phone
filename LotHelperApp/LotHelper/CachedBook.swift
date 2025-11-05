@@ -46,6 +46,12 @@ final class CachedBook {
     var ebaySoldCompsSource: String?
     var ebaySoldCompsLastSoldDate: String?
 
+    // Smart filtering metadata
+    var ebaySignedListingsDetected: Int?
+    var ebayLotListingsDetected: Int?
+    var ebayFilteredCount: Int?
+    var ebayTotalListings: Int?
+
     // BookScouter fields (flattened)
     var bookscouterIsbn10: String?
     var bookscouterIsbn13: String?
@@ -114,6 +120,10 @@ final class CachedBook {
         self.ebaySoldCompsIsEstimate = record.market?.soldCompsIsEstimate
         self.ebaySoldCompsSource = record.market?.soldCompsSource
         self.ebaySoldCompsLastSoldDate = record.market?.soldCompsLastSoldDate
+        self.ebaySignedListingsDetected = record.market?.signedListingsDetected
+        self.ebayLotListingsDetected = record.market?.lotListingsDetected
+        self.ebayFilteredCount = record.market?.filteredCount
+        self.ebayTotalListings = record.market?.totalListings
 
         // Flatten BookScouter
         self.bookscouterIsbn10 = record.bookscouter?.isbn10
@@ -184,10 +194,10 @@ final class CachedBook {
             soldCompsIsEstimate: ebaySoldCompsIsEstimate,
             soldCompsSource: ebaySoldCompsSource,
             soldCompsLastSoldDate: ebaySoldCompsLastSoldDate,
-            signedListingsDetected: nil,
-            lotListingsDetected: nil,
-            filteredCount: nil,
-            totalListings: nil
+            signedListingsDetected: ebaySignedListingsDetected,
+            lotListingsDetected: ebayLotListingsDetected,
+            filteredCount: ebayFilteredCount,
+            totalListings: ebayTotalListings
         )
 
         var bookscouter: BookScouterResult?

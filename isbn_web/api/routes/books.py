@@ -408,6 +408,106 @@ async def get_price_variants(
     return JSONResponse(content=variants)
 
 
+@router.get("/{isbn}/sold-statistics")
+async def get_sold_statistics(
+    isbn: str,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Get detailed sold listings statistics including demand signals and platform breakdown.
+
+    Leverages enriched sold listings data (96.2% coverage) to provide:
+    - Demand signal (count × avg_price)
+    - Platform distribution (eBay, Amazon, Mercari percentages)
+    - Signed/unsigned detection
+    - Price distribution metrics
+    - Data quality indicators
+
+    Returns:
+        {
+            "demand_signal": float,
+            "platform_breakdown": {
+                "ebay_pct": float,
+                "amazon_pct": float,
+                "mercari_pct": float
+            },
+            "features": {
+                "signed_pct": float,
+                "hardcover_pct": float,
+                "avg_price": float,
+                "price_range": float
+            },
+            "data_quality": {
+                "total_count": int,
+                "single_sales_count": int,
+                "lot_sales_count": int,
+                "data_completeness": float
+            }
+        }
+    """
+    from shared.sold_features import extract_sold_ml_features
+
+    normalized_isbn = normalise_isbn(isbn)
+
+    if not normalized_isbn:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid ISBN", "isbn": isbn}
+        )
+
+    # Extract sold listings features
+    features = extract_sold_ml_features(normalized_isbn)
+
+    # Calculate demand signal (count × avg_price)
+    demand_signal = None
+    if features.get('sold_sales_count') and features.get('sold_avg_price'):
+        demand_signal = features['sold_sales_count'] * features['sold_avg_price']
+
+    # Calculate platform breakdown percentages
+    total_count = features.get('sold_sales_count', 0)
+    platform_breakdown = {
+        "ebay_pct": 0.0,
+        "amazon_pct": 0.0,
+        "mercari_pct": 0.0
+    }
+
+    if total_count > 0:
+        ebay_count = features.get('sold_ebay_count', 0)
+        amazon_count = features.get('sold_amazon_count', 0)
+        mercari_count = features.get('sold_mercari_count', 0)
+
+        platform_breakdown = {
+            "ebay_pct": (ebay_count / total_count * 100) if ebay_count else 0.0,
+            "amazon_pct": (amazon_count / total_count * 100) if amazon_count else 0.0,
+            "mercari_pct": (mercari_count / total_count * 100) if mercari_count else 0.0
+        }
+
+    # Calculate price range
+    price_range = None
+    if features.get('sold_max_price') and features.get('sold_min_price'):
+        price_range = features['sold_max_price'] - features['sold_min_price']
+
+    # Build response
+    result = {
+        "demand_signal": demand_signal,
+        "platform_breakdown": platform_breakdown,
+        "features": {
+            "signed_pct": features.get('sold_signed_pct'),
+            "hardcover_pct": features.get('sold_hardcover_pct'),
+            "avg_price": features.get('sold_avg_price'),
+            "price_range": price_range
+        },
+        "data_quality": {
+            "total_count": total_count,
+            "single_sales_count": features.get('sold_single_sales_count', 0),
+            "lot_sales_count": features.get('sold_lot_sales_count', 0),
+            "data_completeness": features.get('sold_data_completeness', 0.0)
+        }
+    }
+
+    return JSONResponse(content=result)
+
+
 @router.post("/{isbn}/accept")
 async def accept_book(
     isbn: str,

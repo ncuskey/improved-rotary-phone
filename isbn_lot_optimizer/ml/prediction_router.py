@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Optional, Dict, Tuple
 import joblib
 import numpy as np
+import time
 
 from isbn_lot_optimizer.ml.feature_extractor import PlatformFeatureExtractor
 from shared.models import BookMetadata, EbayMarketStats, BookScouterResult
@@ -28,18 +29,20 @@ class PredictionRouter:
     - AbeBooks: MAE $0.29, R² 0.863 (98.4% catalog coverage)
     """
 
-    def __init__(self, model_dir: Optional[Path] = None):
+    def __init__(self, model_dir: Optional[Path] = None, monitor=None):
         """
         Initialize prediction router with models.
 
         Args:
             model_dir: Directory containing model files (default: ~/ISBN/isbn_lot_optimizer/models)
+            monitor: Optional ModelMonitor instance for prediction tracking
         """
         if model_dir is None:
             model_dir = Path.home() / "ISBN" / "isbn_lot_optimizer" / "models"
 
         self.model_dir = Path(model_dir)
         self.extractor = PlatformFeatureExtractor()
+        self.monitor = monitor
 
         # Load unified model (fallback)
         self.unified_model = joblib.load(self.model_dir / "price_v1.pkl")
@@ -88,6 +91,9 @@ class PredictionRouter:
         Returns:
             Tuple of (predicted_price, model_used, routing_info)
         """
+        # Start timing
+        start_time = time.time()
+
         self.stats['total_predictions'] += 1
 
         # Check if we can route to AbeBooks specialist
@@ -105,6 +111,21 @@ class PredictionRouter:
                     'features': 28,
                     'confidence': 'high',
                 }
+
+                # Log to monitor if available
+                if self.monitor:
+                    self._log_prediction(
+                        model_name='abebooks_specialist',
+                        price=price,
+                        metadata=metadata,
+                        market=market,
+                        bookscouter=bookscouter,
+                        condition=condition,
+                        abebooks=abebooks,
+                        bookfinder=bookfinder,
+                        sold_listings=sold_listings,
+                        start_time=start_time,
+                    )
 
                 return price, 'abebooks_specialist', routing_info
 
@@ -124,6 +145,21 @@ class PredictionRouter:
             'features': 91,
             'confidence': 'medium',
         }
+
+        # Log to monitor if available
+        if self.monitor:
+            self._log_prediction(
+                model_name='unified',
+                price=price,
+                metadata=metadata,
+                market=market,
+                bookscouter=bookscouter,
+                condition=condition,
+                abebooks=abebooks,
+                bookfinder=bookfinder,
+                sold_listings=sold_listings,
+                start_time=start_time,
+            )
 
         return price, 'unified', routing_info
 
@@ -214,6 +250,65 @@ class PredictionRouter:
 
         return max(0.01, prediction)  # Ensure positive price
 
+    def _log_prediction(
+        self,
+        model_name: str,
+        price: float,
+        metadata: Optional[BookMetadata],
+        market: Optional[EbayMarketStats],
+        bookscouter: Optional[BookScouterResult],
+        condition: str,
+        abebooks: Optional[Dict],
+        bookfinder: Optional[Dict],
+        sold_listings: Optional[Dict],
+        start_time: float,
+    ):
+        """Log prediction to monitor."""
+        try:
+            # Calculate latency
+            latency_ms = (time.time() - start_time) * 1000
+
+            # Extract key features for monitoring
+            features = {
+                'condition': condition,
+                'has_metadata': metadata is not None,
+                'has_market': market is not None,
+                'has_bookscouter': bookscouter is not None,
+                'has_abebooks': abebooks is not None and abebooks.get('abebooks_avg_price', 0) > 0,
+                'has_bookfinder': bookfinder is not None,
+                'has_sold_listings': sold_listings is not None,
+            }
+
+            # Add numeric features if available
+            if metadata:
+                features['year'] = metadata.published_year or 0
+                features['page_count'] = metadata.page_count or 0
+
+            if market:
+                features['active_count'] = market.active_count
+                features['sold_count'] = market.sold_count
+                features['sold_avg_price'] = market.sold_avg_price or 0
+                features['active_avg_price'] = market.active_avg_price or 0
+
+            if abebooks:
+                features['abebooks_avg'] = abebooks.get('abebooks_avg_price', 0)
+                features['abebooks_count'] = abebooks.get('abebooks_count', 0)
+
+            # Determine platform based on which specialist was used
+            platform = 'abebooks' if model_name == 'abebooks_specialist' else 'general'
+
+            # Log to monitor
+            self.monitor.log_prediction(
+                model_name=model_name,
+                platform=platform,
+                prediction=price,
+                features=features,
+                latency_ms=latency_ms,
+            )
+        except Exception as e:
+            # Don't fail predictions if monitoring fails
+            logger.warning(f"Failed to log prediction to monitor: {e}")
+
     def get_routing_stats(self) -> Dict:
         """Get routing statistics."""
         total = self.stats['total_predictions']
@@ -235,14 +330,17 @@ class PredictionRouter:
         }
 
 
-def get_prediction_router() -> PredictionRouter:
+def get_prediction_router(monitor=None) -> PredictionRouter:
     """
     Get singleton prediction router instance.
+
+    Args:
+        monitor: Optional ModelMonitor instance for prediction tracking
 
     Returns:
         PredictionRouter instance
     """
     if not hasattr(get_prediction_router, '_instance'):
-        get_prediction_router._instance = PredictionRouter()
+        get_prediction_router._instance = PredictionRouter(monitor=monitor)
 
     return get_prediction_router._instance

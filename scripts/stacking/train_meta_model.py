@@ -37,13 +37,13 @@ def train_meta_model():
     meta_y = oof_data['meta_y']
 
     print(f"   Loaded {len(meta_X)} samples")
-    print(f"   Features: {meta_X.shape[1]} (eBay, AbeBooks, Amazon predictions)")
+    print(f"   Features: {meta_X.shape[1]} (eBay, AbeBooks, Amazon, Biblio, Alibris, Zvab predictions)")
     print(f"   Target range: ${meta_y.min():.2f} - ${meta_y.max():.2f}")
     print(f"   Target mean: ${meta_y.mean():.2f}")
 
     # Display feature statistics
     print("\n2. Feature statistics:")
-    feature_names = ['eBay', 'AbeBooks', 'Amazon']
+    feature_names = ['eBay', 'AbeBooks', 'Amazon', 'Biblio', 'Alibris', 'Zvab']
     for i, name in enumerate(feature_names):
         non_zero = np.count_nonzero(meta_X[:, i])
         coverage = non_zero / len(meta_X) * 100

@@ -662,6 +662,61 @@ DRIFT ALERTS:
 - `isbn_lot_optimizer/ml/monitor.py` (720 lines)
 - `isbn_lot_optimizer/ml/dashboard.py` (520 lines)
 
+#### Baseline Configuration
+
+**Implementation**: Created automated baseline configuration system for drift detection.
+
+Created `/tmp/configure_baselines.py`:
+```python
+def configure_baselines(hours=168):
+    """Configure monitoring baselines for drift detection."""
+    monitor = ModelMonitor()
+
+    # Check for recent predictions
+    all_metrics = monitor.compute_metrics(model_name=None, hours=hours)
+
+    # Configure baselines for models with 10+ predictions
+    for model_name in ['abebooks_specialist', 'unified']:
+        metrics = monitor.compute_metrics(model_name=model_name, hours=hours)
+        if metrics and metrics.n_predictions >= 10:
+            monitor.save_baseline(model_name=model_name, hours=hours)
+```
+
+**Bug Fix**: Fixed numpy boolean handling in `monitor.py` line 375-395:
+```python
+# Before: Boolean features caused numpy calculation errors
+if isinstance(value, (int, float)):
+    feature_stats[feature_name].append(value)
+
+# After: Explicitly exclude booleans from statistical calculations
+if isinstance(value, (int, float)) and not isinstance(value, bool):
+    feature_stats[feature_name].append(value)
+
+# Also added: empty array handling and explicit float64 casting
+if len(values) == 0:
+    continue
+values = np.array(values, dtype=np.float64)
+```
+
+**Test Configuration** (24-hour baseline, 33 predictions):
+```
+Model: abebooks_specialist
+Predictions: 33
+Mean prediction: $19.65 ± $4.67
+Mean latency: 0.3ms (P95: 0.5ms)
+
+Drift Detection Configured:
+  - Warning threshold: 20% change
+  - Critical threshold: 50% change
+  - Baseline period: 24 hours
+```
+
+**Supporting Tools**:
+- `/tmp/generate_test_predictions.py` - Generates synthetic test data for baseline setup
+- `/tmp/configure_baselines.py` - Automated baseline configuration with validation
+
+**Commit**: `ef45e70` - "feat: Configure monitoring baselines for drift detection"
+
 ---
 
 ## Summary of All Phases
@@ -697,6 +752,8 @@ DRIFT ALERTS:
    - Interactive HTML dashboard with charts
    - Alert system with severity levels
    - Multi-model support
+   - Baseline configuration system with automated setup
+   - Bug fixes for numpy boolean handling
 
 ### Git Commits
 
@@ -705,6 +762,7 @@ DRIFT ALERTS:
 3. `feat: Add bootstrap ensemble for ML confidence scoring`
 4. `feat: Add comprehensive ML model evaluation suite`
 5. `feat: Add ML monitoring dashboard with drift detection`
+6. `feat: Configure monitoring baselines for drift detection` (ef45e70)
 
 ### Production Readiness
 

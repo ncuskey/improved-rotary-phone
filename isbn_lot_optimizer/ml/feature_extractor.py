@@ -22,9 +22,7 @@ FEATURE_NAMES = [
     "log_amazon_rank",
     "amazon_count",
     "ebay_sold_count",
-    "ebay_active_count",
     "ebay_active_median",
-    "sell_through_rate",
 
     # AbeBooks pricing (NEW - competitive market data)
     "abebooks_min_price",
@@ -32,7 +30,6 @@ FEATURE_NAMES = [
     "abebooks_seller_count",
     "abebooks_condition_spread",
     "abebooks_has_new",
-    "abebooks_has_used",
     "abebooks_hardcover_premium",
 
     # Platform scaling features (cross-platform intelligence)
@@ -52,9 +49,7 @@ FEATURE_NAMES = [
     "bookfinder_has_signed",         # Boolean: any signed copies available
     "bookfinder_signed_lowest",      # Lowest price for signed copies
     "bookfinder_first_edition_count",# Number of first editions available
-    "bookfinder_has_first_edition",  # Boolean: any first editions available
     "bookfinder_first_ed_lowest",    # Lowest price for first editions
-    "bookfinder_oldworld_count",     # Number of "oldworld" condition copies
     "bookfinder_avg_desc_length",    # Average description length (quality signal)
     "bookfinder_detailed_pct",       # % of offers with detailed descriptions
 
@@ -71,52 +66,29 @@ FEATURE_NAMES = [
     "serper_sold_ebay_pct",           # % of sold listings from eBay
 
     # Phase 2.4: Author-level aggregates
-    "author_book_count",               # Number of books by author in catalog
-    "log_author_catalog_size",         # Log-scaled catalog size
-    "author_avg_sold_price",           # Average sold price for author's books
-    "log_author_avg_price",            # Log-scaled author avg price
-    "author_avg_sales_velocity",       # Average sales velocity for author
-    "author_collectibility_score",     # Author collectibility composite score
-    "author_popularity_score",         # Author popularity metric
-    "author_avg_rating",               # Average rating across author's books
 
     # Book attributes
     "page_count",
     "age_years",
     "log_ratings",
     "rating",
-    "has_list_price",
-    "list_price",
 
     # Phase 2.1: Temporal features
-    "is_new_release",      # Published within 1 year
     "is_recent",           # Published within 3 years
     "is_backlist",         # Published 3-10 years ago
-    "is_classic",          # Published over 50 years ago
     "decade_sin",          # Cyclical decade encoding (sin)
     "decade_cos",          # Cyclical decade encoding (cos)
     "age_squared",         # Quadratic age transformation
     "log_age",             # Log-scaled age
 
     # Phase 2.2: Series completion features
-    "has_series",          # Boolean: part of a series
-    "series_index",        # Position in series
-    "is_series_start",     # Boolean: first book in series
-    "is_series_middle",    # Boolean: books 2-5 in series
-    "is_series_late",      # Boolean: books 6+ in series
-    "log_series_index",    # Log-scaled series position
 
     # Condition (one-hot encoded)
-    "is_new",
-    "is_like_new",
     "is_very_good",
     "is_good",
-    "is_acceptable",
-    "is_poor",
 
     # Book attributes (physical characteristics)
     "is_hardcover",
-    "is_paperback",
     "is_mass_market",
     "is_signed",
     "is_first_edition",
@@ -127,8 +99,6 @@ FEATURE_NAMES = [
 
     # Derived features
     "demand_score",
-    "competition_ratio",
-    "price_velocity",
 ]
 
 
@@ -577,29 +547,20 @@ class PlatformFeatureExtractor(FeatureExtractor):
     EBAY_FEATURES = [
         # Market signals (eBay-specific)
         "ebay_sold_count",
-        "ebay_active_count",
         "ebay_active_median",
-        "sell_through_rate",
 
         # Book attributes
         "page_count",
         "age_years",
         "log_ratings",
         "rating",
-        "has_list_price",
-        "list_price",
 
         # Condition (critical for eBay)
-        "is_new",
-        "is_like_new",
         "is_very_good",
         "is_good",
-        "is_acceptable",
-        "is_poor",
 
         # Physical characteristics
         "is_hardcover",
-        "is_paperback",
         "is_mass_market",
         "is_signed",
         "is_first_edition",
@@ -610,8 +571,6 @@ class PlatformFeatureExtractor(FeatureExtractor):
 
         # Derived features
         "demand_score",
-        "competition_ratio",
-        "price_velocity",
     ]
 
     ABEBOOKS_FEATURES = [
@@ -621,7 +580,6 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "abebooks_seller_count",
         "abebooks_condition_spread",
         "abebooks_has_new",
-        "abebooks_has_used",
         "abebooks_hardcover_premium",
 
         # Platform scaling features
@@ -635,20 +593,13 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "age_years",
         "log_ratings",
         "rating",
-        "has_list_price",
-        "list_price",
 
         # Condition
-        "is_new",
-        "is_like_new",
         "is_very_good",
         "is_good",
-        "is_acceptable",
-        "is_poor",
 
         # Physical characteristics
         "is_hardcover",
-        "is_paperback",
         "is_mass_market",
         "is_signed",
         "is_first_edition",
@@ -664,20 +615,13 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "age_years",
         "log_ratings",
         "rating",
-        "has_list_price",
-        "list_price",
 
         # Condition
-        "is_new",
-        "is_like_new",
         "is_very_good",
         "is_good",
-        "is_acceptable",
-        "is_poor",
 
         # Physical characteristics
         "is_hardcover",
-        "is_paperback",
         "is_mass_market",
         "is_signed",
         "is_first_edition",
@@ -694,9 +638,7 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "bookfinder_has_signed",
         "bookfinder_signed_lowest",
         "bookfinder_first_edition_count",
-        "bookfinder_has_first_edition",
         "bookfinder_first_ed_lowest",
-        "bookfinder_oldworld_count",
         "bookfinder_avg_desc_length",
         "bookfinder_detailed_pct",
 
@@ -714,12 +656,10 @@ class PlatformFeatureExtractor(FeatureExtractor):
 
         # Physical characteristics (critical for rare books)
         "is_hardcover",
-        "is_paperback",
         "is_signed",
         "is_first_edition",
 
         # Condition
-        "is_new",
         "is_very_good",
         "is_good",
     ]
@@ -731,9 +671,7 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "bookfinder_has_signed",
         "bookfinder_signed_lowest",
         "bookfinder_first_edition_count",
-        "bookfinder_has_first_edition",
         "bookfinder_first_ed_lowest",
-        "bookfinder_oldworld_count",
         "bookfinder_avg_desc_length",
         "bookfinder_detailed_pct",
 
@@ -751,12 +689,10 @@ class PlatformFeatureExtractor(FeatureExtractor):
 
         # Physical characteristics
         "is_hardcover",
-        "is_paperback",
         "is_signed",
         "is_first_edition",
 
         # Condition
-        "is_new",
         "is_very_good",
         "is_good",
     ]
@@ -768,9 +704,7 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "bookfinder_has_signed",
         "bookfinder_signed_lowest",
         "bookfinder_first_edition_count",
-        "bookfinder_has_first_edition",
         "bookfinder_first_ed_lowest",
-        "bookfinder_oldworld_count",
         "bookfinder_avg_desc_length",
         "bookfinder_detailed_pct",
 
@@ -788,12 +722,10 @@ class PlatformFeatureExtractor(FeatureExtractor):
 
         # Physical characteristics
         "is_hardcover",
-        "is_paperback",
         "is_signed",
         "is_first_edition",
 
         # Condition
-        "is_new",
         "is_very_good",
         "is_good",
     ]

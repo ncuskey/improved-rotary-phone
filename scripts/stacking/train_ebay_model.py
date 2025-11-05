@@ -2,7 +2,7 @@
 """
 Train eBay specialist model for stacking ensemble.
 
-Trains a GradientBoostingRegressor optimized for eBay sold comps prediction
+Trains an XGBoost model with hyperparameter tuning optimized for eBay sold comps prediction
 using eBay-specific features (market signals, demand, condition).
 """
 
@@ -13,9 +13,9 @@ from datetime import datetime
 
 import joblib
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import GradientBoostingRegressor
+import xgboost as xgb
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # Add parent directory to path
@@ -67,8 +67,10 @@ def create_simple_objects(record: dict):
     return metadata, market, bookscouter
 
 
-def extract_features(records, targets, extractor):
+def extract_features(records, targets, extractor, catalog_db_path):
     """Extract eBay-specific features from records."""
+    from isbn_lot_optimizer.ml.feature_extractor import get_bookfinder_features
+
     X = []
     y = []
     completeness_scores = []
@@ -76,13 +78,17 @@ def extract_features(records, targets, extractor):
     for record, target in zip(records, targets):
         metadata, market, bookscouter = create_simple_objects(record)
 
+        # Query BookFinder features for this ISBN
+        bookfinder_data = get_bookfinder_features(record['isbn'], str(catalog_db_path))
+
         features = extractor.extract_for_platform(
             platform='ebay',
             metadata=metadata,
             market=market,
             bookscouter=bookscouter,
             condition=record.get('condition', 'Good'),
-            abebooks=record.get('abebooks')
+            abebooks=record.get('abebooks'),
+            bookfinder=bookfinder_data
         )
 
         X.append(features.values)
@@ -117,7 +123,8 @@ def train_ebay_model():
     # Extract features
     print("\n2. Extracting eBay-specific features...")
     extractor = PlatformFeatureExtractor()
-    X, y, completeness = extract_features(ebay_records, ebay_targets, extractor)
+    catalog_db_path = Path.home() / '.isbn_lot_optimizer' / 'catalog.db'
+    X, y, completeness = extract_features(ebay_records, ebay_targets, extractor, catalog_db_path)
 
     feature_names = PlatformFeatureExtractor.get_platform_feature_names('ebay')
     print(f"   Features extracted: {len(feature_names)} features")
@@ -143,22 +150,51 @@ def train_ebay_model():
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # Train model
-    print("\n6. Training GradientBoostingRegressor...")
-    model = GradientBoostingRegressor(
-        n_estimators=200,
-        max_depth=4,
-        learning_rate=0.05,
-        subsample=0.8,
-        min_samples_split=6,
-        min_samples_leaf=3,
+    # Train model with hyperparameter tuning
+    print("\n6. Training XGBoost model with hyperparameter tuning...")
+
+    # Define hyperparameter search space
+    param_distributions = {
+        'n_estimators': [100, 200, 300, 400, 500],
+        'max_depth': [3, 4, 5, 6, 7],
+        'learning_rate': [0.01, 0.05, 0.1, 0.15, 0.2],
+        'subsample': [0.6, 0.7, 0.8, 0.9, 1.0],
+        'colsample_bytree': [0.6, 0.7, 0.8, 0.9, 1.0],
+        'min_child_weight': [1, 2, 3, 4, 5],
+        'gamma': [0, 0.1, 0.2, 0.3, 0.4],
+        'reg_alpha': [0, 0.01, 0.1, 1],
+        'reg_lambda': [1, 10, 100],
+    }
+
+    base_model = xgb.XGBRegressor(
+        objective='reg:squarederror',
         random_state=42,
-        loss='squared_error',
-        verbose=0
+        n_jobs=-1,
+        tree_method='hist',
     )
 
-    model.fit(X_train_scaled, y_train)
-    print("   Training complete!")
+    print("   Searching for best hyperparameters (50 iterations, 3-fold CV)...")
+    random_search = RandomizedSearchCV(
+        estimator=base_model,
+        param_distributions=param_distributions,
+        n_iter=50,
+        cv=3,
+        scoring='neg_mean_absolute_error',
+        n_jobs=-1,
+        random_state=42,
+        verbose=1
+    )
+
+    random_search.fit(X_train_scaled, y_train)
+    model = random_search.best_estimator_
+    best_params = random_search.best_params_
+    cv_mae = -random_search.best_score_
+
+    print("\n   Best hyperparameters found:")
+    for param, value in sorted(best_params.items()):
+        print(f"    {param:20s} = {value}")
+    print(f"    Best CV MAE: ${cv_mae:.2f}")
+    print("\n   Training complete!")
 
     # Evaluate
     print("\n7. Evaluating model...")
@@ -217,7 +253,7 @@ def train_ebay_model():
     # Save metadata
     metadata = {
         'platform': 'ebay',
-        'model_type': 'GradientBoostingRegressor',
+        'model_type': 'XGBRegressor',
         'n_features': len(feature_names),
         'feature_names': feature_names,
         'training_samples': len(X_train),
@@ -228,6 +264,14 @@ def train_ebay_model():
         'test_rmse': float(test_rmse),
         'train_r2': float(train_r2),
         'test_r2': float(test_r2),
+        'cv_mae': float(cv_mae),
+        'hyperparameters': {k: v for k, v in best_params.items()},
+        'optimization': {
+            'method': 'RandomizedSearchCV',
+            'n_iter': 50,
+            'cv_folds': 3,
+            'scoring': 'neg_mean_absolute_error'
+        },
         'feature_importance': {name: float(imp) for name, imp in importance.items()},
         'top_features': [(name, float(imp)) for name, imp in top_features],
         'trained_at': datetime.now().isoformat(),

@@ -1,112 +1,108 @@
 {
   "platform": "ebay",
-  "model_type": "GradientBoostingRegressor",
-  "n_features": 26,
+  "model_type": "XGBRegressor",
+  "n_features": 15,
   "feature_names": [
     "ebay_sold_count",
-    "ebay_active_count",
     "ebay_active_median",
-    "sell_through_rate",
     "page_count",
     "age_years",
     "log_ratings",
     "rating",
-    "has_list_price",
-    "list_price",
-    "is_new",
-    "is_like_new",
     "is_very_good",
     "is_good",
-    "is_acceptable",
-    "is_poor",
     "is_hardcover",
-    "is_paperback",
     "is_mass_market",
     "is_signed",
     "is_first_edition",
     "is_textbook",
     "is_fiction",
-    "demand_score",
-    "competition_ratio",
-    "price_velocity"
+    "demand_score"
   ],
-  "training_samples": 596,
-  "test_samples": 150,
-  "train_mae": 2.7690232610222703,
-  "test_mae": 3.8644281020018374,
-  "train_rmse": 3.9507047461019167,
-  "test_rmse": 5.5818152161477474,
-  "train_r2": 0.6803144111635139,
-  "test_r2": -0.05659967164698787,
+  "training_samples": 705,
+  "test_samples": 177,
+  "train_mae": 3.56251264474747,
+  "test_mae": 4.2424270308758585,
+  "train_rmse": 5.324033248782647,
+  "test_rmse": 5.824575807595659,
+  "train_r2": 0.3124778093463648,
+  "test_r2": 0.06322384032423933,
+  "cv_mae": 4.2985430394707,
+  "hyperparameters": {
+    "subsample": 0.8,
+    "reg_lambda": 10,
+    "reg_alpha": 0,
+    "n_estimators": 200,
+    "min_child_weight": 3,
+    "max_depth": 7,
+    "learning_rate": 0.01,
+    "gamma": 0.2,
+    "colsample_bytree": 0.9
+  },
+  "optimization": {
+    "method": "RandomizedSearchCV",
+    "n_iter": 50,
+    "cv_folds": 3,
+    "scoring": "neg_mean_absolute_error"
+  },
   "feature_importance": {
-    "ebay_sold_count": 0.005792845782152652,
-    "ebay_active_count": 0.0,
+    "ebay_sold_count": 0.06359545886516571,
     "ebay_active_median": 0.0,
-    "sell_through_rate": 0.0,
-    "page_count": 0.28494008220117767,
-    "age_years": 0.19620314981413614,
-    "log_ratings": 0.3150648504287934,
-    "rating": 0.13189883474534503,
-    "has_list_price": 0.0,
-    "list_price": 0.0,
-    "is_new": 0.0,
-    "is_like_new": 0.0,
-    "is_very_good": 0.009071690131743974,
-    "is_good": 0.0045789259731173195,
-    "is_acceptable": 0.0,
-    "is_poor": 0.0,
-    "is_hardcover": 0.005232266369236878,
-    "is_paperback": 0.0,
-    "is_mass_market": 0.0016517823858041077,
-    "is_signed": 8.609137582421528e-05,
-    "is_first_edition": 0.0008135480933279201,
-    "is_textbook": 0.0012727706843536609,
-    "is_fiction": 0.03422529237528498,
-    "demand_score": 0.009167869639701995,
-    "competition_ratio": 0.0,
-    "price_velocity": 0.0
+    "page_count": 0.12058523297309875,
+    "age_years": 0.08840756118297577,
+    "log_ratings": 0.10474879294633865,
+    "rating": 0.11798017472028732,
+    "is_very_good": 0.08594419807195663,
+    "is_good": 0.05913713946938515,
+    "is_hardcover": 0.07963860034942627,
+    "is_mass_market": 0.06583777070045471,
+    "is_signed": 0.006269105710089207,
+    "is_first_edition": 0.02801704779267311,
+    "is_textbook": 0.05249423906207085,
+    "is_fiction": 0.07394251227378845,
+    "demand_score": 0.053402166813611984
   },
   "top_features": [
     [
-      "log_ratings",
-      0.3150648504287934
-    ],
-    [
       "page_count",
-      0.28494008220117767
-    ],
-    [
-      "age_years",
-      0.19620314981413614
+      0.12058523297309875
     ],
     [
       "rating",
-      0.13189883474534503
+      0.11798017472028732
     ],
     [
-      "is_fiction",
-      0.03422529237528498
+      "log_ratings",
+      0.10474879294633865
     ],
     [
-      "demand_score",
-      0.009167869639701995
+      "age_years",
+      0.08840756118297577
     ],
     [
       "is_very_good",
-      0.009071690131743974
-    ],
-    [
-      "ebay_sold_count",
-      0.005792845782152652
+      0.08594419807195663
     ],
     [
       "is_hardcover",
-      0.005232266369236878
+      0.07963860034942627
+    ],
+    [
+      "is_fiction",
+      0.07394251227378845
+    ],
+    [
+      "is_mass_market",
+      0.06583777070045471
+    ],
+    [
+      "ebay_sold_count",
+      0.06359545886516571
     ],
     [
       "is_good",
-      0.0045789259731173195
+      0.05913713946938515
     ]
   ],
-  "trained_at": "2025-11-01T23:59:48.602343"
+  "trained_at": "2025-11-04T19:09:58.295798"
 }

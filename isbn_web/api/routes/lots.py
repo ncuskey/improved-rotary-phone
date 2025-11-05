@@ -129,10 +129,29 @@ async def regenerate_lots_json(
 async def get_all_lots_json(
     service: BookService = Depends(get_book_service),
 ):
-    """Return persisted lot suggestions as JSON."""
+    """
+    Return persisted lot suggestions as JSON.
 
+    Filters out lots where:
+    - Books have been deleted from catalog
+    - Books have status != 'ACCEPT'
+    - Fewer than 2 accepted books remain
+    """
     lots = service.list_lots()
-    return [_lot_suggestion_to_dict(lot) for lot in lots]
+    valid_lots = []
+
+    for lot in lots:
+        # Get books for this lot and filter by catalog status
+        books = service.get_books_for_lot(lot)
+        accepted_books = [b for b in books if b.status == 'ACCEPT']
+
+        # Only include lots with 2+ accepted books
+        if len(accepted_books) >= 2:
+            # Attach accepted books to lot for serialization
+            lot.books = tuple(accepted_books)
+            valid_lots.append(lot)
+
+    return [_lot_suggestion_to_dict(lot) for lot in valid_lots]
 
 
 @router.get("/{lot_id:int}", response_class=HTMLResponse)

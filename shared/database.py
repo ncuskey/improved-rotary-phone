@@ -154,6 +154,7 @@ class DatabaseManager:
             self._ensure_bookscouter_column(conn)
             self._ensure_bookscouter_fetched_at(conn)
             self._ensure_api_fetch_timestamps(conn)
+            self._ensure_status_column(conn)
 
     def _get_connection(self) -> sqlite3.Connection:
         """
@@ -223,6 +224,29 @@ class DatabaseManager:
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_books_metadata_fetched_at
                 ON books(metadata_fetched_at)
+            """)
+
+    def _ensure_status_column(self, conn: sqlite3.Connection) -> None:
+        """
+        Ensure status column exists for tracking book acceptance/rejection.
+
+        Status values: 'ACCEPT', 'REJECT', 'SKIP'
+        Default: 'ACCEPT' for backward compatibility with existing books
+        """
+        cursor = conn.execute("PRAGMA table_info(books)")
+        columns = {row[1] for row in cursor.fetchall()}
+
+        if "status" not in columns:
+            # Add column with default value
+            conn.execute("ALTER TABLE books ADD COLUMN status TEXT DEFAULT 'ACCEPT'")
+
+            # Backfill existing books with ACCEPT status
+            conn.execute("UPDATE books SET status = 'ACCEPT' WHERE status IS NULL")
+
+            # Create index for efficient filtering
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_books_status
+                ON books(status)
             """)
 
     # ------------------------------------------------------------------

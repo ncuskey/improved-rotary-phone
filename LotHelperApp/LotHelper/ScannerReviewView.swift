@@ -2465,7 +2465,9 @@ private extension BookInfo {
             bestVendorPrice: nil,
             amazonLowestPrice: nil,
             timeToSellDays: nil,
-            soldCount: nil
+            soldCount: nil,
+            routingInfo: nil,
+            channelRecommendation: nil
         )
     }
 }

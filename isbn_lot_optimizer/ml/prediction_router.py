@@ -120,9 +120,14 @@ class PredictionRouter:
 
                 routing_info = {
                     'model': 'abebooks_specialist',
+                    'model_display_name': 'AbeBooks Specialist',
                     'model_mae': 0.06,
+                    'model_r2': 0.999,
                     'features': 28,
                     'confidence': 'high',
+                    'confidence_score': 0.95,  # Numerical confidence (0-1)
+                    'routing_reason': 'High-quality AbeBooks pricing data available',
+                    'coverage': '98.4% of catalog',
                 }
 
                 # Log to monitor if available
@@ -156,9 +161,14 @@ class PredictionRouter:
 
                 routing_info = {
                     'model': 'ebay_specialist',
+                    'model_display_name': 'eBay Specialist',
                     'model_mae': 3.03,
+                    'model_r2': 0.469,
                     'features': 20,
                     'confidence': 'high',
+                    'confidence_score': 0.85,  # Numerical confidence (0-1)
+                    'routing_reason': 'eBay market data available (active listings or sold comps)',
+                    'coverage': '72% of catalog',
                 }
 
                 # Log to monitor if available
@@ -190,9 +200,14 @@ class PredictionRouter:
 
         routing_info = {
             'model': 'unified',
+            'model_display_name': 'Unified Model',
             'model_mae': 3.36,
+            'model_r2': 0.015,
             'features': 91,
             'confidence': 'medium',
+            'confidence_score': 0.70,  # Numerical confidence (0-1)
+            'routing_reason': 'No platform-specific data available, using general model',
+            'coverage': '100% of catalog (fallback)',
         }
 
         # Log to monitor if available

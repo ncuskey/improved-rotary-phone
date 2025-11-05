@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import datetime, timezone
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote_plus
@@ -50,8 +51,14 @@ async def get_database_statistics(
         )
 
 
-def _book_evaluation_to_dict(evaluation) -> Dict[str, Any]:
-    """Serialize a BookEvaluation into JSON-friendly dict."""
+def _book_evaluation_to_dict(evaluation, routing_info: Optional[Dict] = None, channel_recommendation: Optional[Dict] = None) -> Dict[str, Any]:
+    """Serialize a BookEvaluation into JSON-friendly dict.
+
+    Args:
+        evaluation: BookEvaluation object to serialize
+        routing_info: Optional ML model routing metadata (which model was used, confidence, etc.)
+        channel_recommendation: Optional sales channel recommendation (eBay/Vendor/Lot/Hold)
+    """
     metadata = evaluation.metadata
     metadata_dict: Dict[str, Any] | None = None
     if metadata:
@@ -75,6 +82,14 @@ def _book_evaluation_to_dict(evaluation) -> Dict[str, Any]:
         "justification": list(evaluation.justification) if evaluation.justification else [],
         "metadata": metadata_dict,
     }
+
+    # Add ML model routing metadata if available
+    if routing_info:
+        result["routing_info"] = routing_info
+
+    # Add sales channel recommendation if available
+    if channel_recommendation:
+        result["channel_recommendation"] = channel_recommendation
 
     if evaluation.market:
         market = asdict(evaluation.market)
@@ -345,7 +360,50 @@ async def get_book_evaluation_json(
         book.bookscouter = bookscouter_data
         book.booksrun = booksrun_data
 
-    result_dict = _book_evaluation_to_dict(book)
+    # Get ML model routing info by re-running prediction with router
+    routing_info = None
+    try:
+        from isbn_lot_optimizer.ml.prediction_router import get_prediction_router
+        router = get_prediction_router()
+
+        # Get abebooks and bookfinder data if available
+        abebooks_data = None
+        bookfinder_data = None
+        sold_listings_data = None
+
+        # Re-run prediction to get routing metadata
+        _, model_used, routing_metadata = router.predict(
+            metadata=book.metadata,
+            market=book.market,
+            bookscouter=book.bookscouter,
+            condition=book.condition,
+            abebooks=abebooks_data,
+            bookfinder=bookfinder_data,
+            sold_listings=sold_listings_data,
+        )
+        routing_info = routing_metadata
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to get routing info: {e}")
+
+    # Get sales channel recommendation
+    channel_recommendation = None
+    try:
+        from isbn_lot_optimizer.book_routing import route_book
+        routing_decision = route_book(book)
+
+        channel_recommendation = {
+            'channel': routing_decision.channel.value,
+            'confidence': routing_decision.confidence,
+            'reasoning': routing_decision.reasoning,
+            'expected_profit': routing_decision.expected_profit,
+            'expected_days_to_sale': routing_decision.expected_days_to_sale,
+        }
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Failed to get channel recommendation: {e}")
+
+    result_dict = _book_evaluation_to_dict(book, routing_info=routing_info, channel_recommendation=channel_recommendation)
     print(f"DEBUG: Result dict - condition={result_dict.get('condition')!r}, edition={result_dict.get('edition')!r}")
     return JSONResponse(content=result_dict)
 

@@ -271,6 +271,48 @@ struct PriceVariantsResponse: Codable {
     }
 }
 
+// MARK: - ML Model Routing Info
+struct MLRoutingInfo: Codable, Hashable {
+    let model: String
+    let modelDisplayName: String
+    let modelMae: Double
+    let modelR2: Double
+    let features: Int
+    let confidence: String
+    let confidenceScore: Double
+    let routingReason: String
+    let coverage: String
+
+    enum CodingKeys: String, CodingKey {
+        case model
+        case modelDisplayName = "model_display_name"
+        case modelMae = "model_mae"
+        case modelR2 = "model_r2"
+        case features
+        case confidence
+        case confidenceScore = "confidence_score"
+        case routingReason = "routing_reason"
+        case coverage
+    }
+}
+
+// MARK: - Sales Channel Recommendation
+struct ChannelRecommendation: Codable, Hashable {
+    let channel: String
+    let confidence: Double
+    let reasoning: [String]
+    let expectedProfit: Double
+    let expectedDaysToSale: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case channel
+        case confidence
+        case reasoning
+        case expectedProfit = "expected_profit"
+        case expectedDaysToSale = "expected_days_to_sale"
+    }
+}
+
 struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let isbn: String
     let originalIsbn: String?
@@ -293,6 +335,10 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let updatedAt: String?
     let createdAt: String?
     let timeToSellDays: Int?
+
+    // NEW: ML model routing and channel recommendation
+    let routingInfo: MLRoutingInfo?
+    let channelRecommendation: ChannelRecommendation?
 
     var id: String { isbn }
 
@@ -318,6 +364,8 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
         case updatedAt = "updated_at"
         case createdAt = "created_at"
         case timeToSellDays = "time_to_sell_days"
+        case routingInfo = "routing_info"
+        case channelRecommendation = "channel_recommendation"
     }
 }
 

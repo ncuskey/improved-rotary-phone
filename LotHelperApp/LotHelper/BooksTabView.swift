@@ -429,7 +429,9 @@ private extension BookEvaluationRecord {
             bestVendorPrice: bookscouter?.bestPrice,
             amazonLowestPrice: bookscouter?.amazonLowestPrice,
             timeToSellDays: timeToSellDays,
-            soldCount: market?.soldCount
+            soldCount: market?.soldCount,
+            routingInfo: routingInfo,
+            channelRecommendation: channelRecommendation
         )
     }
 
@@ -1044,7 +1046,9 @@ struct BookDetailView: View {
                 rarity: nil,
                 updatedAt: "2025-01-15T12:00:00Z",
                 createdAt: "2025-01-10T12:00:00Z",
-                timeToSellDays: nil
+                timeToSellDays: nil,
+                routingInfo: nil,
+                channelRecommendation: nil
             )
         )
     }

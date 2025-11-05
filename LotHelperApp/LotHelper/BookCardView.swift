@@ -15,6 +15,10 @@ struct BookCardView: View {
         let timeToSellDays: Int?
         let soldCount: Int?
 
+        // NEW: Routing info and channel recommendation
+        let routingInfo: MLRoutingInfo?
+        let channelRecommendation: ChannelRecommendation?
+
         var coverURL: URL? { URL(string: thumbnail) }
         var coverRequest: URLRequest? {
             guard let url = coverURL else { return nil }
@@ -46,7 +50,7 @@ struct BookCardView: View {
             }
         }
 
-        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, estimatedPrice: nil, soldCompsMedian: nil, bestVendorPrice: nil, amazonLowestPrice: nil, timeToSellDays: nil, soldCount: nil)
+        static let placeholder = Book(title: "Loading", author: nil, series: nil, thumbnail: "", score: nil, profitPotential: nil, estimatedPrice: nil, soldCompsMedian: nil, bestVendorPrice: nil, amazonLowestPrice: nil, timeToSellDays: nil, soldCount: nil, routingInfo: nil, channelRecommendation: nil)
     }
 
     let book: Book
@@ -54,127 +58,170 @@ struct BookCardView: View {
     var onAddToLot: () -> Void = {}
 
     var body: some View {
-        HStack(spacing: DS.Spacing.md) {
-            AsyncImage(url: book.coverURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFill()
-                case .failure:
-                    Rectangle().fill(DS.Color.cardBg)
-                        .overlay(Image(systemName: "book.closed").foregroundStyle(DS.Color.textSecondary))
-                default:
-                    Rectangle().fill(DS.Color.cardBg)
-                        .overlay(ProgressView())
-                }
-            }
-            .frame(width: 60, height: 90)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
-            .accessibilityLabel(Text("Cover of \(book.title)"))
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(book.title)
-                    .titleStyle()
-                    .lineLimit(2)
-                if let author = book.author, !author.isEmpty {
-                    Text(author)
-                        .subtitleStyle()
-                        .lineLimit(1)
-                }
-                if let series = book.series, !series.isEmpty {
-                    HStack(spacing: 4) {
-                        Image(systemName: "books.vertical.fill")
-                            .font(.caption2)
-                        Text(series)
-                            .font(.caption)
-                    }
-                    .foregroundStyle(DS.Color.textSecondary)
-                    .lineLimit(1)
-                }
-                if let tts = book.ttsCategory {
-                    HStack(spacing: 4) {
-                        Image(systemName: ttsIcon(for: tts))
-                            .font(.caption2)
-                        Text("TTS: \(tts)")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(ttsColor(for: tts))
-                    .lineLimit(1)
-                }
-                if let count = book.soldCount, count > 0 {
-                    HStack(spacing: 4) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.caption2)
-                        Text("\(count) sold")
-                            .font(.caption)
-                    }
-                    .foregroundStyle(.blue)
-                    .lineLimit(1)
-                }
-                if let margin = book.profitMargin, let percentage = book.profitMarginPercentage {
-                    Text("$\(String(format: "%.2f", margin)) (\(String(format: "%.0f", percentage))%)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer(minLength: DS.Spacing.md)
-
-            VStack(alignment: .trailing, spacing: 4) {
-                if let score = book.score {
-                    Label(score, systemImage: "chart.line.uptrend.xyaxis")
-                        .font(.caption)
-                        .foregroundStyle(DS.Color.textSecondary)
-                        .labelStyle(.titleAndIcon)
-                        .accessibilityLabel("Sales signal score \(score)")
-                }
-                if let median = book.soldCompsMedian {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("eBay")
+        VStack(alignment: .leading, spacing: DS.Spacing.sm) {
+            // HERO METRICS SECTION - Most important info at top
+            if let recommendation = book.channelRecommendation {
+                HStack(alignment: .center, spacing: 12) {
+                    // Expected profit - largest, most prominent
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Expected Profit")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                        Text("$\(String(format: "%.2f", median))")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-                    }
-                }
-                if let vendor = book.bestVendorPrice, vendor > 0 {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("Vendor")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text("$\(String(format: "%.2f", vendor))")
-                            .font(.caption)
-                            .fontWeight(.semibold)
+                        Text("$\(String(format: "%.2f", recommendation.expectedProfit))")
+                            .font(.title2)
+                            .fontWeight(.bold)
                             .foregroundStyle(.green)
                     }
-                }
-                if let amazonPrice = book.amazonLowestPrice, amazonPrice > 0 {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("Amazon")
+
+                    Divider()
+                        .frame(height: 30)
+
+                    // Channel recommendation
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Sell via")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                        Text("$\(String(format: "%.2f", amazonPrice))")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.orange)
+                        ChannelRecommendationPill(recommendation: recommendation)
                     }
+
+                    Spacer()
                 }
-                if let estimated = book.estimatedPrice, estimated > 0 {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("Estimate")
+                .padding(.bottom, 4)
+            } else if let estimated = book.estimatedPrice, estimated > 0 {
+                // Fallback: just show estimated price if no recommendation
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Estimated Value")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         Text("$\(String(format: "%.2f", estimated))")
-                            .font(.caption)
-                            .fontWeight(.semibold)
+                            .font(.title2)
+                            .fontWeight(.bold)
                             .foregroundStyle(.blue)
+                    }
+                    Spacer()
+                }
+                .padding(.bottom, 4)
+            }
+
+            Divider()
+
+            // BOOK INFO & DETAILS SECTION
+            HStack(spacing: DS.Spacing.md) {
+                // Cover image
+                AsyncImage(url: book.coverURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .interpolation(.high)
+                            .scaledToFill()
+                    case .failure:
+                        Rectangle().fill(DS.Color.cardBg)
+                            .overlay(Image(systemName: "book.closed").foregroundStyle(DS.Color.textSecondary))
+                    default:
+                        Rectangle().fill(DS.Color.cardBg)
+                            .overlay(ProgressView())
+                    }
+                }
+                .frame(width: 50, height: 75)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Radius.sm))
+                .accessibilityLabel(Text("Cover of \(book.title)"))
+
+                // Book metadata
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(book.title)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .lineLimit(2)
+                    if let author = book.author, !author.isEmpty {
+                        Text(author)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    if let series = book.series, !series.isEmpty {
+                        HStack(spacing: 3) {
+                            Image(systemName: "books.vertical.fill")
+                                .font(.caption2)
+                            Text(series)
+                                .font(.caption2)
+                        }
+                        .foregroundStyle(DS.Color.textSecondary)
+                        .lineLimit(1)
+                    }
+                }
+
+                Spacer(minLength: DS.Spacing.sm)
+
+                // ML model badge (compact, right side)
+                if let routing = book.routingInfo {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        MLModelBadge(routing: routing)
+                        if let score = book.score {
+                            Label(score, systemImage: "chart.line.uptrend.xyaxis")
+                                .font(.caption2)
+                                .foregroundStyle(DS.Color.textSecondary)
+                                .labelStyle(.titleAndIcon)
+                        }
                     }
                 }
             }
+
+            // QUICK METRICS ROW
+            HStack(spacing: 12) {
+                // Time to sell
+                if let tts = book.ttsCategory {
+                    HStack(spacing: 3) {
+                        Image(systemName: ttsIcon(for: tts))
+                            .font(.caption2)
+                        Text(tts)
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(ttsColor(for: tts))
+                }
+
+                // Sold count
+                if let count = book.soldCount, count > 0 {
+                    HStack(spacing: 3) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption2)
+                        Text("\(count) sold")
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(.blue)
+                }
+
+                Spacer()
+
+                // Platform prices (compact)
+                HStack(spacing: 8) {
+                    if let median = book.soldCompsMedian {
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text("eBay")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text("$\(String(format: "%.0f", median))")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    if let vendor = book.bestVendorPrice, vendor > 0 {
+                        VStack(alignment: .trailing, spacing: 1) {
+                            Text("Cost")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text("$\(String(format: "%.0f", vendor))")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.green)
+                        }
+                    }
+                }
+            }
+            .font(.caption2)
         }
         .padding(DS.Spacing.md)
         .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
@@ -231,7 +278,25 @@ struct BookCardView: View {
         bestVendorPrice: 8.50,
         amazonLowestPrice: 28.99,
         timeToSellDays: 25,
-        soldCount: 18
+        soldCount: 18,
+        routingInfo: MLRoutingInfo(
+            model: "ebay_specialist",
+            modelDisplayName: "eBay Specialist",
+            modelMae: 3.03,
+            modelR2: 0.469,
+            features: 20,
+            confidence: "high",
+            confidenceScore: 0.85,
+            routingReason: "eBay market data available",
+            coverage: "72% of catalog"
+        ),
+        channelRecommendation: ChannelRecommendation(
+            channel: "ebay_individual",
+            confidence: 0.85,
+            reasoning: ["High eBay value", "Good sell-through rate"],
+            expectedProfit: 16.49,
+            expectedDaysToSale: 25
+        )
     ))
     .padding()
     .background(DS.Color.background)

@@ -26,10 +26,24 @@ struct BookDetailViewRedesigned: View {
     @State private var attributeDeltas: [AttributeDelta] = []
     @State private var isUpdatingPrice: Bool = false
 
+    // Dynamic routing info (fetched from API if missing)
+    @State private var dynamicRoutingInfo: MLRoutingInfo? = nil
+    @State private var dynamicChannelRecommendation: ChannelRecommendation? = nil
+    @State private var isLoadingRoutingInfo = false
+
     var lotsContainingBook: [LotSuggestionDTO] {
         lots.filter { lot in
             lot.bookIsbns.contains(record.isbn)
         }
+    }
+
+    // Use dynamic routing info if available, otherwise from record
+    var effectiveRoutingInfo: MLRoutingInfo? {
+        dynamicRoutingInfo ?? record.routingInfo
+    }
+
+    var effectiveChannelRecommendation: ChannelRecommendation? {
+        dynamicChannelRecommendation ?? record.channelRecommendation
     }
 
     var body: some View {
@@ -40,6 +54,19 @@ struct BookDetailViewRedesigned: View {
 
                 // List to eBay button
                 ebayListingButton
+
+                // ML Model Routing Info (NEW)
+                if let routing = effectiveRoutingInfo {
+                    RoutingInfoDetailView(routing: routing)
+                } else if isLoadingRoutingInfo {
+                    ProgressView("Loading ML insights...")
+                        .padding()
+                }
+
+                // Channel Recommendation (NEW)
+                if let recommendation = effectiveChannelRecommendation {
+                    ChannelRecommendationDetailView(recommendation: recommendation)
+                }
 
                 // Price comparison panel
                 priceComparisonPanel
@@ -119,6 +146,7 @@ struct BookDetailViewRedesigned: View {
         .task { await loadLots() }
         .task { await loadPriceVariants() }
         .task { await loadSoldStatistics() }
+        .task { await fetchRoutingInfoIfNeeded() }
         .sheet(isPresented: $showingEbayWizard) {
             let book = CachedBook(from: record)
             EbayListingWizardView(book: book) { response in
@@ -1137,6 +1165,34 @@ struct BookDetailViewRedesigned: View {
         } catch {
             print("Failed to load sold statistics: \(error.localizedDescription)")
             soldStatistics = nil
+        }
+    }
+
+    // Fetch routing info from API if not already present
+    private func fetchRoutingInfoIfNeeded() async {
+        // Skip if already have data
+        if record.routingInfo != nil && record.channelRecommendation != nil {
+            return
+        }
+
+        isLoadingRoutingInfo = true
+        defer { isLoadingRoutingInfo = false }
+
+        do {
+            // Call the evaluate endpoint to get fresh routing data
+            let evaluation = try await BookAPI.fetchBookEvaluation(record.isbn)
+
+            // Update state with dynamic data
+            await MainActor.run {
+                if evaluation.routingInfo != nil {
+                    dynamicRoutingInfo = evaluation.routingInfo
+                }
+                if evaluation.channelRecommendation != nil {
+                    dynamicChannelRecommendation = evaluation.channelRecommendation
+                }
+            }
+        } catch {
+            print("Failed to fetch routing info: \(error.localizedDescription)")
         }
     }
 

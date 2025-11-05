@@ -1260,7 +1260,9 @@ struct FinalReviewEditStepView: View {
         rarity: nil,
         updatedAt: nil,
         createdAt: nil,
-        timeToSellDays: nil
+        timeToSellDays: nil,
+        routingInfo: nil,
+        channelRecommendation: nil
     )
 
     let book = CachedBook(from: record)

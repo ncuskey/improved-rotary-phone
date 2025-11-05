@@ -265,7 +265,9 @@ final class CachedBook {
             rarity: rarity,
             updatedAt: remoteUpdatedAt ?? cachedBookISOFormatter.string(from: lastUpdated),
             createdAt: remoteCreatedAt,
-            timeToSellDays: timeToSellDays
+            timeToSellDays: timeToSellDays,
+            routingInfo: nil,
+            channelRecommendation: nil
         )
     }
 }

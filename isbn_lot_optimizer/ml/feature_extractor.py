@@ -58,17 +58,27 @@ FEATURE_NAMES = [
     "bookfinder_avg_desc_length",    # Average description length (quality signal)
     "bookfinder_detailed_pct",       # % of offers with detailed descriptions
 
+    # Phase 2.3: BookFinder premium differentials
+    "bookfinder_signed_premium_pct",   # Signed book premium percentage
+    "bookfinder_first_ed_premium_pct", # First edition premium percentage
+
     # Sold listings data (Serper Google Search results)
+    # NOTE: Price features removed (Phase 1) to prevent data leakage
     "serper_sold_count",              # Number of sold listings found
-    "serper_sold_avg_price",          # Average sold price
-    "serper_sold_min_price",          # Minimum sold price
-    "serper_sold_max_price",          # Maximum sold price
-    "serper_sold_price_range",        # Price range (max - min)
     "serper_sold_has_signed",         # Boolean: any signed copies in sold listings
     "serper_sold_signed_pct",         # % of sold listings that are signed
     "serper_sold_hardcover_pct",      # % of sold listings that are hardcover
     "serper_sold_ebay_pct",           # % of sold listings from eBay
-    "serper_sold_demand_signal",      # Demand metric (count * avg_price)
+
+    # Phase 2.4: Author-level aggregates
+    "author_book_count",               # Number of books by author in catalog
+    "log_author_catalog_size",         # Log-scaled catalog size
+    "author_avg_sold_price",           # Average sold price for author's books
+    "log_author_avg_price",            # Log-scaled author avg price
+    "author_avg_sales_velocity",       # Average sales velocity for author
+    "author_collectibility_score",     # Author collectibility composite score
+    "author_popularity_score",         # Author popularity metric
+    "author_avg_rating",               # Average rating across author's books
 
     # Book attributes
     "page_count",
@@ -77,6 +87,24 @@ FEATURE_NAMES = [
     "rating",
     "has_list_price",
     "list_price",
+
+    # Phase 2.1: Temporal features
+    "is_new_release",      # Published within 1 year
+    "is_recent",           # Published within 3 years
+    "is_backlist",         # Published 3-10 years ago
+    "is_classic",          # Published over 50 years ago
+    "decade_sin",          # Cyclical decade encoding (sin)
+    "decade_cos",          # Cyclical decade encoding (cos)
+    "age_squared",         # Quadratic age transformation
+    "log_age",             # Log-scaled age
+
+    # Phase 2.2: Series completion features
+    "has_series",          # Boolean: part of a series
+    "series_index",        # Position in series
+    "is_series_start",     # Boolean: first book in series
+    "is_series_middle",    # Boolean: books 2-5 in series
+    "is_series_late",      # Boolean: books 6+ in series
+    "log_series_index",    # Log-scaled series position
 
     # Condition (one-hot encoded)
     "is_new",
@@ -145,6 +173,7 @@ class FeatureExtractor:
         abebooks: Optional[Dict] = None,
         bookfinder: Optional[Dict] = None,
         sold_listings: Optional[Dict] = None,
+        author_aggregates: Optional[Dict] = None,
     ) -> FeatureVector:
         """
         Extract features from book data.
@@ -157,6 +186,7 @@ class FeatureExtractor:
             abebooks: AbeBooks pricing data (min, avg, seller count, etc.)
             bookfinder: BookFinder aggregator data (lowest price, source count, spread)
             sold_listings: Sold listings data from Serper (count, avg price, features)
+            author_aggregates: Author-level statistics (Phase 2.4)
 
         Returns:
             FeatureVector with extracted features and completeness score
@@ -288,6 +318,10 @@ class FeatureExtractor:
             features["bookfinder_avg_desc_length"] = bookfinder.get('bookfinder_avg_desc_length', 0)
             features["bookfinder_detailed_pct"] = bookfinder.get('bookfinder_detailed_pct', 0)
 
+            # Phase 2.3: Premium differentials
+            features["bookfinder_signed_premium_pct"] = bookfinder.get('bookfinder_signed_premium_pct', 0)
+            features["bookfinder_first_ed_premium_pct"] = bookfinder.get('bookfinder_first_ed_premium_pct', 0)
+
             if not features["bookfinder_lowest_price"]:
                 missing.append("bookfinder_lowest_price")
             if not features["bookfinder_source_count"]:
@@ -309,41 +343,51 @@ class FeatureExtractor:
             features["bookfinder_oldworld_count"] = 0
             features["bookfinder_avg_desc_length"] = 0
             features["bookfinder_detailed_pct"] = 0
+            features["bookfinder_signed_premium_pct"] = 0
+            features["bookfinder_first_ed_premium_pct"] = 0
             missing.extend(["bookfinder_lowest_price", "bookfinder_source_count"])
 
         # Sold listings data (Serper Google Search results)
+        # NOTE: Price features removed to prevent data leakage
+        # Only using non-price statistics: volume, platform distribution, format indicators
         if sold_listings:
             features["serper_sold_count"] = sold_listings.get('serper_sold_count', 0)
-            features["serper_sold_avg_price"] = sold_listings.get('serper_sold_avg_price', 0)
-            features["serper_sold_min_price"] = sold_listings.get('serper_sold_min_price', 0)
-            features["serper_sold_max_price"] = sold_listings.get('serper_sold_max_price', 0)
-            features["serper_sold_price_range"] = sold_listings.get('serper_sold_price_range', 0)
             features["serper_sold_has_signed"] = sold_listings.get('serper_sold_has_signed', 0)
             features["serper_sold_signed_pct"] = sold_listings.get('serper_sold_signed_pct', 0)
             features["serper_sold_hardcover_pct"] = sold_listings.get('serper_sold_hardcover_pct', 0)
             features["serper_sold_ebay_pct"] = sold_listings.get('serper_sold_ebay_pct', 0)
 
-            # Demand signal: count * avg_price (books with many high-priced sales = high demand)
-            count = features["serper_sold_count"]
-            avg_price = features["serper_sold_avg_price"]
-            features["serper_sold_demand_signal"] = count * avg_price if (count > 0 and avg_price > 0) else 0
-
             if not features["serper_sold_count"]:
                 missing.append("serper_sold_count")
-            if not features["serper_sold_avg_price"]:
-                missing.append("serper_sold_avg_price")
         else:
             features["serper_sold_count"] = 0
-            features["serper_sold_avg_price"] = 0
-            features["serper_sold_min_price"] = 0
-            features["serper_sold_max_price"] = 0
-            features["serper_sold_price_range"] = 0
             features["serper_sold_has_signed"] = 0
             features["serper_sold_signed_pct"] = 0
             features["serper_sold_hardcover_pct"] = 0
             features["serper_sold_ebay_pct"] = 0
-            features["serper_sold_demand_signal"] = 0
-            missing.extend(["serper_sold_count", "serper_sold_avg_price"])
+            missing.append("serper_sold_count")
+
+        # Phase 2.4: Author-level aggregates
+        if author_aggregates:
+            features["author_book_count"] = author_aggregates.get('author_book_count', 0)
+            features["log_author_catalog_size"] = author_aggregates.get('log_author_catalog_size', 0)
+            features["author_avg_sold_price"] = author_aggregates.get('author_avg_sold_price', 0)
+            features["log_author_avg_price"] = author_aggregates.get('log_author_avg_price', 0)
+            features["author_avg_sales_velocity"] = author_aggregates.get('author_avg_sales_velocity', 0)
+            features["author_collectibility_score"] = author_aggregates.get('author_collectibility_score', 0)
+            features["author_popularity_score"] = author_aggregates.get('author_popularity_score', 0)
+            features["author_avg_rating"] = author_aggregates.get('author_avg_rating', 0)
+        else:
+            # Defaults when no author data available
+            features["author_book_count"] = 1  # Assume single book
+            features["log_author_catalog_size"] = 0
+            features["author_avg_sold_price"] = 15.0  # Market average
+            features["log_author_avg_price"] = math.log1p(15.0)
+            features["author_avg_sales_velocity"] = 5.0  # Low-mid velocity
+            features["author_collectibility_score"] = 0.2  # Low collectibility
+            features["author_popularity_score"] = 1.0  # Low popularity
+            features["author_avg_rating"] = 3.5  # Neutral rating
+            missing.append("author_book_count")
 
         # Book attributes
         if metadata:
@@ -353,6 +397,45 @@ class FeatureExtractor:
             features["rating"] = metadata.average_rating if metadata.average_rating else 0
             features["has_list_price"] = 1 if metadata.list_price else 0
             features["list_price"] = metadata.list_price if metadata.list_price else 0
+
+            # Enhanced temporal features (Phase 2.1)
+            age = features["age_years"]
+            # Age category indicators
+            features["is_new_release"] = 1 if age <= 1 else 0  # Published this year or last
+            features["is_recent"] = 1 if age <= 3 else 0  # Published within 3 years
+            features["is_backlist"] = 1 if 3 < age <= 10 else 0  # 3-10 years old
+            features["is_classic"] = 1 if age > 50 else 0  # Over 50 years old
+
+            # Decade cyclical encoding (captures periodic patterns)
+            pub_year = metadata.published_year if metadata.published_year else 2020
+            decade = (pub_year // 10) % 10  # 0-9 representing last digit of decade
+            features["decade_sin"] = math.sin(2 * math.pi * decade / 10)
+            features["decade_cos"] = math.cos(2 * math.pi * decade / 10)
+
+            # Age-based value decay (older books may have different pricing dynamics)
+            features["age_squared"] = age ** 2
+            features["log_age"] = math.log1p(age)
+
+            # Series completion features (Phase 2.2)
+            series_name = getattr(metadata, 'series_name', None)
+            series_index = getattr(metadata, 'series_index', None)
+            features["has_series"] = 1 if series_name else 0
+            if series_name and series_index is not None:
+                # Assuming series typically have 3-10 books, normalize position
+                # Lower index = earlier in series, may have collector value
+                series_idx = series_index
+                features["series_index"] = series_idx
+                features["is_series_start"] = 1 if series_idx == 1 else 0  # First book premium
+                features["is_series_middle"] = 1 if 1 < series_idx <= 5 else 0
+                features["is_series_late"] = 1 if series_idx > 5 else 0
+                # Log transform for diminishing returns on later books
+                features["log_series_index"] = math.log1p(series_idx)
+            else:
+                features["series_index"] = 0
+                features["is_series_start"] = 0
+                features["is_series_middle"] = 0
+                features["is_series_late"] = 0
+                features["log_series_index"] = 0
 
             if not metadata.page_count:
                 missing.append("page_count")
@@ -371,6 +454,22 @@ class FeatureExtractor:
             features["rating"] = 0
             features["has_list_price"] = 0
             features["list_price"] = 0
+            # Default temporal features
+            features["is_new_release"] = 0
+            features["is_recent"] = 1  # Default to recent
+            features["is_backlist"] = 0
+            features["is_classic"] = 0
+            features["decade_sin"] = 0
+            features["decade_cos"] = 1
+            features["age_squared"] = 25
+            features["log_age"] = math.log1p(5)
+            # Default series features
+            features["has_series"] = 0
+            features["series_index"] = 0
+            features["is_series_start"] = 0
+            features["is_series_middle"] = 0
+            features["is_series_late"] = 0
+            features["log_series_index"] = 0
             missing.extend(["page_count", "age_years", "log_ratings", "rating", "list_price"])
 
         # Condition (one-hot encoding)
@@ -803,7 +902,7 @@ def get_bookfinder_features(isbn: str, db_path: str) -> Optional[Dict]:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        # Comprehensive feature extraction
+        # Comprehensive feature extraction with Phase 2.3 premium calculations
         cursor.execute("""
             SELECT
                 -- Basic pricing
@@ -826,7 +925,13 @@ def get_bookfinder_features(isbn: str, db_path: str) -> Optional[Dict]:
 
                 -- Description richness (proxy for quality)
                 AVG(LENGTH(COALESCE(description, ''))) as avg_description_length,
-                SUM(CASE WHEN LENGTH(COALESCE(description, '')) > 100 THEN 1 ELSE 0 END) as detailed_offers_count
+                SUM(CASE WHEN LENGTH(COALESCE(description, '')) > 100 THEN 1 ELSE 0 END) as detailed_offers_count,
+
+                -- Phase 2.3: Premium differential data
+                AVG(CASE WHEN is_signed = 1 THEN price + COALESCE(shipping, 0) END) as signed_avg_price,
+                AVG(CASE WHEN is_signed = 0 OR is_signed IS NULL THEN price + COALESCE(shipping, 0) END) as unsigned_avg_price,
+                AVG(CASE WHEN is_first_edition = 1 THEN price + COALESCE(shipping, 0) END) as first_ed_avg_price,
+                AVG(CASE WHEN is_first_edition = 0 OR is_first_edition IS NULL THEN price + COALESCE(shipping, 0) END) as non_first_ed_avg_price
 
             FROM bookfinder_offers
             WHERE isbn = ?
@@ -846,6 +951,17 @@ def get_bookfinder_features(isbn: str, db_path: str) -> Optional[Dict]:
 
             # Price volatility (range as % of average)
             price_volatility = ((highest_price - lowest_price) / avg_price) if avg_price > 0 else 0
+
+            # Phase 2.3: Premium differential calculations
+            signed_avg = row[14] or 0
+            unsigned_avg = row[15] or 0
+            first_ed_avg = row[16] or 0
+            non_first_ed_avg = row[17] or 0
+
+            # Signed book premium percentage
+            signed_premium_pct = ((signed_avg - unsigned_avg) / unsigned_avg * 100) if unsigned_avg > 0 and signed_avg > 0 else 0
+            # First edition premium percentage
+            first_ed_premium_pct = ((first_ed_avg - non_first_ed_avg) / non_first_ed_avg * 100) if non_first_ed_avg > 0 and first_ed_avg > 0 else 0
 
             return {
                 # Original features
@@ -870,6 +986,10 @@ def get_bookfinder_features(isbn: str, db_path: str) -> Optional[Dict]:
                 # NEW: Quality signals
                 'bookfinder_avg_desc_length': row[12] or 0,
                 'bookfinder_detailed_pct': (row[13] / row[3]) if row[3] > 0 else 0,
+
+                # Phase 2.3: Premium differentials
+                'bookfinder_signed_premium_pct': signed_premium_pct,
+                'bookfinder_first_ed_premium_pct': first_ed_premium_pct,
             }
 
         return None
@@ -881,17 +1001,17 @@ def get_bookfinder_features(isbn: str, db_path: str) -> Optional[Dict]:
 
 def get_sold_listings_features(isbn: str, db_path: str) -> Optional[Dict]:
     """
-    Query sold listings features from database.
+    Query sold listings NON-PRICE features from database.
 
-    Extracts real market data from Serper Google Search results showing what
-    actually sold and at what prices.
+    NOTE: Price features removed to prevent data leakage.
+    Only extracts market demand indicators: volume, platform distribution, format indicators.
 
     Args:
         isbn: ISBN to query
         db_path: Path to catalog database
 
     Returns:
-        Dict with sold listings features, or None if no data available
+        Dict with sold listings NON-PRICE features, or None if no data available
     """
     import sqlite3
 
@@ -899,13 +1019,10 @@ def get_sold_listings_features(isbn: str, db_path: str) -> Optional[Dict]:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        # Aggregate sold listings data
+        # Aggregate sold listings data (NON-PRICE STATISTICS ONLY)
         cursor.execute("""
             SELECT
                 COUNT(*) as count,
-                AVG(price) as avg_price,
-                MIN(price) as min_price,
-                MAX(price) as max_price,
                 SUM(CASE WHEN signed = 1 THEN 1 ELSE 0 END) as signed_count,
                 SUM(CASE WHEN cover_type = 'Hardcover' THEN 1 ELSE 0 END) as hardcover_count,
                 SUM(CASE WHEN platform = 'ebay' THEN 1 ELSE 0 END) as ebay_count
@@ -918,21 +1035,12 @@ def get_sold_listings_features(isbn: str, db_path: str) -> Optional[Dict]:
 
         if row and row[0] and row[0] > 0:  # Has sold listings
             count = row[0]
-            avg_price = row[1] or 0
-            min_price = row[2] or 0
-            max_price = row[3] or 0
-            signed_count = row[4] or 0
-            hardcover_count = row[5] or 0
-            ebay_count = row[6] or 0
-
-            price_range = max_price - min_price if (max_price > 0 and min_price > 0) else 0
+            signed_count = row[1] or 0
+            hardcover_count = row[2] or 0
+            ebay_count = row[3] or 0
 
             return {
                 'serper_sold_count': count,
-                'serper_sold_avg_price': avg_price,
-                'serper_sold_min_price': min_price,
-                'serper_sold_max_price': max_price,
-                'serper_sold_price_range': price_range,
                 'serper_sold_has_signed': 1 if signed_count > 0 else 0,
                 'serper_sold_signed_pct': (signed_count / count) if count > 0 else 0,
                 'serper_sold_hardcover_pct': (hardcover_count / count) if count > 0 else 0,
@@ -943,4 +1051,87 @@ def get_sold_listings_features(isbn: str, db_path: str) -> Optional[Dict]:
 
     except Exception as e:
         # Database may not have sold_listings table yet
+        return None
+
+
+def get_author_aggregates(canonical_author: str, db_path: str) -> Optional[Dict]:
+    """
+    Query author-level aggregate features from database.
+
+    Phase 2.4: Extract author-specific patterns to capture author brand value
+    (e.g., Stephen King vs unknown author).
+
+    Args:
+        canonical_author: Canonical author name to query
+        db_path: Path to catalog database
+
+    Returns:
+        Dict with author aggregate features, or None if no data available
+    """
+    import sqlite3
+    import math
+
+    if not canonical_author or canonical_author == "Unknown":
+        return None
+
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Aggregate statistics across all books by this author
+        cursor.execute("""
+            SELECT
+                COUNT(*) as book_count,
+                AVG(COALESCE(sold_comps_median, 0)) as avg_sold_price,
+                AVG(COALESCE(sold_count, 0)) as avg_sales_velocity,
+                AVG(COALESCE(ratings_count, 0)) as avg_ratings_count,
+                AVG(COALESCE(average_rating, 0)) as avg_rating,
+                SUM(CASE WHEN bookfinder_has_signed = 1 THEN 1 ELSE 0 END) as signed_book_count,
+                SUM(CASE WHEN bookfinder_has_first_edition = 1 THEN 1 ELSE 0 END) as first_ed_book_count
+            FROM books
+            WHERE canonical_author = ? AND sold_comps_median IS NOT NULL
+        """, (canonical_author,))
+
+        row = cursor.fetchone()
+        conn.close()
+
+        if row and row[0] and row[0] > 0:  # Has books by this author
+            book_count = row[0]
+            avg_sold_price = row[1] or 0
+            avg_sales_velocity = row[2] or 0
+            avg_ratings_count = row[3] or 0
+            avg_rating = row[4] or 0
+            signed_book_count = row[5] or 0
+            first_ed_book_count = row[6] or 0
+
+            # Author collectibility score (weighted combination of signals)
+            signed_pct = (signed_book_count / book_count) if book_count > 0 else 0
+            first_ed_pct = (first_ed_book_count / book_count) if book_count > 0 else 0
+            # Normalize price to 0-1 scale (assume $100 as high-end)
+            price_normalized = min(avg_sold_price / 100.0, 1.0)
+
+            collectibility_score = (
+                signed_pct * 0.3 +
+                first_ed_pct * 0.3 +
+                price_normalized * 0.4
+            )
+
+            # Author popularity score (log-scaled ratings * sales velocity)
+            popularity_score = math.log1p(avg_ratings_count) * avg_sales_velocity
+
+            return {
+                'author_book_count': book_count,
+                'log_author_catalog_size': math.log1p(book_count),
+                'author_avg_sold_price': avg_sold_price,
+                'log_author_avg_price': math.log1p(avg_sold_price),
+                'author_avg_sales_velocity': avg_sales_velocity,
+                'author_collectibility_score': collectibility_score,
+                'author_popularity_score': popularity_score,
+                'author_avg_rating': avg_rating,
+            }
+
+        return None
+
+    except Exception as e:
+        # Database may not have required columns yet
         return None

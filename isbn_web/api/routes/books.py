@@ -1586,3 +1586,184 @@ async def get_books_grouped_by_vendor(
             status_code=500,
             content={"error": f"Failed to group books by vendor: {str(e)}"}
         )
+
+
+class PotentialLotBook(BaseModel):
+    """Book in a potential lot."""
+    isbn: str
+    title: str
+    authors: str
+    owned: bool  # Whether user owns this book
+    estimated_price: Optional[float] = None
+    condition: Optional[str] = None
+
+
+class PotentialLot(BaseModel):
+    """Potential lot that could be created."""
+    lot_type: str  # "author" or "series"
+    lot_name: str  # Author name or series name
+    book_count: int
+    owned_count: int  # How many books user owns
+    needed_count: int  # How many books user needs to acquire
+    total_estimated_value: float
+    books: List[PotentialLotBook]
+
+
+@router.get("/{isbn}/potential_lots")
+@router.get("/{isbn}/potential_lots.json")
+async def get_potential_lots(
+    isbn: str,
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Get potential lots this book could belong to.
+
+    Searches metadata_cache.db (training database) to find other books
+    by the same author or in the same series. Shows what lots COULD be
+    created even if the user doesn't own all the books yet.
+
+    Useful for identifying which books to look for when building lots.
+
+    Args:
+        isbn: ISBN of the book to find potential lots for
+
+    Returns:
+        List[PotentialLot]: Potential lots with owned vs. needed books
+    """
+    try:
+        # Get the book from catalog
+        book = service.get_book(isbn)
+        if not book or not book.metadata:
+            return JSONResponse(
+                status_code=404,
+                content={"error": f"Book {isbn} not found or missing metadata"}
+            )
+
+        potential_lots = []
+
+        # Get owned ISBNs from catalog
+        owned_books = service.list_books()
+        owned_isbns = {b.isbn for b in owned_books}
+
+        # Connect to metadata_cache.db (training database)
+        from pathlib import Path
+        import sqlite3
+        
+        metadata_cache_path = Path.home() / '.isbn_lot_optimizer' / 'metadata_cache.db'
+        
+        if not metadata_cache_path.exists():
+            return JSONResponse(content=[])
+
+        conn = sqlite3.connect(str(metadata_cache_path))
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        # Search by author
+        if book.metadata.authors:
+            author = book.metadata.authors[0] if book.metadata.authors else None
+            
+            if author:
+                # Find other books by this author
+                cursor.execute('''
+                    SELECT isbn, title, authors, sold_comps_median
+                    FROM cached_books
+                    WHERE authors LIKE ?
+                    ORDER BY sold_comps_median DESC
+                    LIMIT 20
+                ''', (f'%{author}%',))
+
+                author_books_rows = cursor.fetchall()
+                
+                if len(author_books_rows) >= 2:  # Need at least 2 books for a lot
+                    author_books = []
+                    owned_count = 0
+                    total_value = 0.0
+
+                    for row in author_books_rows:
+                        book_isbn = row['isbn']
+                        is_owned = book_isbn in owned_isbns
+                        
+                        if is_owned:
+                            owned_count += 1
+
+                        estimated_price = row['sold_comps_median'] or 0.0
+                        total_value += estimated_price
+
+                        author_books.append({
+                            "isbn": book_isbn,
+                            "title": row['title'] or "Unknown Title",
+                            "authors": row['authors'] or "Unknown Author",
+                            "owned": is_owned,
+                            "estimated_price": round(estimated_price, 2) if estimated_price else None,
+                            "condition": None
+                        })
+
+                    potential_lots.append({
+                        "lot_type": "author",
+                        "lot_name": f"{author} Collection",
+                        "book_count": len(author_books),
+                        "owned_count": owned_count,
+                        "needed_count": len(author_books) - owned_count,
+                        "total_estimated_value": round(total_value, 2),
+                        "books": author_books
+                    })
+
+        # Search by series (if available)
+        series_name = getattr(book.metadata, 'series_name', None)
+        if series_name:
+            # Find other books in this series
+            cursor.execute('''
+                SELECT isbn, title, authors, sold_comps_median
+                FROM cached_books
+                WHERE title LIKE ?
+                ORDER BY title
+                LIMIT 20
+            ''', (f'%{series_name}%',))
+
+            series_books_rows = cursor.fetchall()
+
+            if len(series_books_rows) >= 2:  # Need at least 2 books for a lot
+                series_books = []
+                owned_count = 0
+                total_value = 0.0
+
+                for row in series_books_rows:
+                    book_isbn = row['isbn']
+                    is_owned = book_isbn in owned_isbns
+
+                    if is_owned:
+                        owned_count += 1
+
+                    estimated_price = row['sold_comps_median'] or 0.0
+                    total_value += estimated_price
+
+                    series_books.append({
+                        "isbn": book_isbn,
+                        "title": row['title'] or "Unknown Title",
+                        "authors": row['authors'] or "Unknown Author",
+                        "owned": is_owned,
+                        "estimated_price": round(estimated_price, 2) if estimated_price else None,
+                        "condition": None
+                    })
+
+                potential_lots.append({
+                    "lot_type": "series",
+                    "lot_name": f"{series_name} Series",
+                    "book_count": len(series_books),
+                    "owned_count": owned_count,
+                    "needed_count": len(series_books) - owned_count,
+                    "total_estimated_value": round(total_value, 2),
+                    "books": series_books
+                })
+
+        conn.close()
+
+        return JSONResponse(content=potential_lots)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to get potential lots: {str(e)}"}
+        )

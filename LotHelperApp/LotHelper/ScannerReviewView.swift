@@ -1298,101 +1298,8 @@ struct ScannerReviewView: View {
         let profit = calculateProfit(eval)
 
         VStack(spacing: 12) {
-            // Decision header - varies by state
-            switch decision {
-            case .buy(let reason):
-                HStack(spacing: 12) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(.green)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("BUY")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.green)
-
-                        Text(reason)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-
-                    Spacer()
-                }
-
-            case .skip(let reason):
-                HStack(spacing: 12) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(.red)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("DON'T BUY")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.red)
-
-                        Text(reason)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
-                    }
-
-                    Spacer()
-                }
-
-            case .needsReview(let reason, let concerns):
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(.orange)
-
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("NEEDS REVIEW")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.orange)
-
-                            Text(reason)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                        }
-
-                        Spacer()
-                    }
-
-                    // Show concerns list
-                    if !concerns.isEmpty {
-                        Divider()
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Concerns:")
-                                .font(.caption)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.secondary)
-
-                            ForEach(concerns, id: \.self) { concern in
-                                HStack(alignment: .top, spacing: 6) {
-                                    Text("•")
-                                        .font(.caption)
-                                        .foregroundStyle(.orange)
-                                    Text(concern)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Profit display (always show if we have profit data)
+            // 🎯 PRICE/PROFIT FIRST - Match BookDetailViewRedesigned layout
             if profit.estimatedProfit != nil || profit.buybackProfit != nil || profit.amazonProfit != nil {
-                Divider()
-
                 VStack(spacing: 8) {
                     // eBay Path
                     if let salePrice = profit.salePrice, let netProfit = profit.estimatedProfit {
@@ -1530,6 +1437,100 @@ struct ScannerReviewView: View {
                     }
                 }
                 .padding(.top, 4)
+                .padding(.bottom, 8)
+            }
+
+            // DECISION HEADER SECOND - After profit display to match book details format
+            Divider()
+
+            switch decision {
+            case .buy(let reason):
+                HStack(spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.green)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("BUY")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.green)
+
+                        Text(reason)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer()
+                }
+
+            case .skip(let reason):
+                HStack(spacing: 12) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.red)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("DON'T BUY")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.red)
+
+                        Text(reason)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
+
+                    Spacer()
+                }
+
+            case .needsReview(let reason, let concerns):
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.orange)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("NEEDS REVIEW")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.orange)
+
+                            Text(reason)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+
+                        Spacer()
+                    }
+
+                    // Show concerns list
+                    if !concerns.isEmpty {
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Concerns:")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.secondary)
+
+                            ForEach(concerns, id: \.self) { concern in
+                                HStack(alignment: .top, spacing: 6) {
+                                    Text("•")
+                                        .font(.caption)
+                                        .foregroundStyle(.orange)
+                                    Text(concern)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         .padding()

@@ -121,19 +121,31 @@ struct ChannelRecommendationPill: View {
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
 
-            // Confidence badge
-            if recommendation.confidence >= 0.8 {
+            // Confidence indicator - always show with visual stars/dots
+            HStack(spacing: 2) {
+                // Star rating visualization
+                ForEach(0..<3, id: \.self) { index in
+                    Image(systemName: starIcon(for: index))
+                        .font(.system(size: 8))
+                        .foregroundColor(confidenceColor)
+                }
+
+                // Percentage badge
                 Text("\(Int(recommendation.confidence * 100))%")
                     .font(.caption2)
                     .fontWeight(.medium)
-                    .foregroundColor(channelColor)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(
-                        Capsule()
-                            .fill(channelColor.opacity(0.15))
-                    )
+                    .foregroundColor(confidenceColor)
             }
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(
+                Capsule()
+                    .fill(confidenceColor.opacity(0.15))
+            )
+            .overlay(
+                Capsule()
+                    .strokeBorder(confidenceColor.opacity(0.3), lineWidth: 0.5)
+            )
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
@@ -145,6 +157,34 @@ struct ChannelRecommendationPill: View {
             Capsule()
                 .strokeBorder(channelColor.opacity(0.3), lineWidth: 1)
         )
+    }
+
+    // Star icon based on confidence level
+    private func starIcon(for index: Int) -> String {
+        let confidence = recommendation.confidence
+
+        if confidence >= 0.9 {
+            return "star.fill"  // All 3 stars filled for 90%+
+        } else if confidence >= 0.75 {
+            return index < 2 ? "star.fill" : "star"  // 2 stars filled for 75-89%
+        } else if confidence >= 0.6 {
+            return index < 1 ? "star.fill" : "star"  // 1 star filled for 60-74%
+        } else {
+            return "star"  // No stars filled for <60%
+        }
+    }
+
+    // Confidence-based color (independent of channel color)
+    private var confidenceColor: Color {
+        if recommendation.confidence >= 0.9 {
+            return .green
+        } else if recommendation.confidence >= 0.75 {
+            return .blue
+        } else if recommendation.confidence >= 0.6 {
+            return .orange
+        } else {
+            return .gray
+        }
     }
 
     private var channelDisplayName: String {

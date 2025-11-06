@@ -1225,218 +1225,229 @@ async def estimate_price_with_attributes(
     from isbn_lot_optimizer.ml import get_ml_estimator
     from copy import deepcopy
 
-    normalized_isbn = normalise_isbn(isbn)
-    if not normalized_isbn:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Invalid ISBN"}
+    try:
+        normalized_isbn = normalise_isbn(isbn)
+        if not normalized_isbn:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Invalid ISBN"}
+            )
+
+        # Get book from database (returns BookEvaluation with parsed objects)
+        book = service.get_book(normalized_isbn)
+        if not book:
+            return JSONResponse(
+                status_code=404,
+                content={"error": "Book not found"}
+            )
+
+        # Get ML estimator
+        estimator = get_ml_estimator()
+        if not estimator or not estimator.is_ready():
+            return JSONResponse(
+                status_code=503,
+                content={"error": "ML model not available"}
+            )
+
+        # Use parsed objects from BookEvaluation
+        metadata = book.metadata
+        market = book.market
+        bookscouter = book.bookscouter
+
+        # Calculate baseline price (no attributes)
+        baseline_metadata = deepcopy(metadata) if metadata else None
+        if baseline_metadata:
+            baseline_metadata.cover_type = None
+            baseline_metadata.signed = False
+            baseline_metadata.printing = None
+
+        baseline_estimate = estimator.estimate_price(
+            baseline_metadata,
+            market,
+            bookscouter,
+            request_body.condition
         )
+        baseline_price = baseline_estimate.price or 10.0
 
-    # Get book from database (returns BookEvaluation with parsed objects)
-    book = service.get_book(normalized_isbn)
-    if not book:
-        return JSONResponse(
-            status_code=404,
-            content={"error": "Book not found"}
+        # Calculate price with user-selected attributes
+        final_metadata = deepcopy(metadata) if metadata else None
+        if final_metadata:
+            # Apply user selections
+            if request_body.is_hardcover:
+                final_metadata.cover_type = "Hardcover"
+            elif request_body.is_paperback:
+                final_metadata.cover_type = "Paperback"
+            elif request_body.is_mass_market:
+                final_metadata.cover_type = "Mass Market"
+            else:
+                final_metadata.cover_type = None
+
+            final_metadata.signed = request_body.is_signed or False
+            final_metadata.printing = "1st" if request_body.is_first_edition else None
+
+        final_estimate = estimator.estimate_price(
+            final_metadata,
+            market,
+            bookscouter,
+            request_body.condition
         )
+        final_price = final_estimate.price or baseline_price
 
-    # Get ML estimator
-    estimator = get_ml_estimator()
-    if not estimator.is_ready():
-        return JSONResponse(
-            status_code=503,
-            content={"error": "ML model not available"}
-        )
+        # Calculate deltas for each attribute
+        deltas = []
 
-    # Use parsed objects from BookEvaluation
-    metadata = book.metadata
-    market = book.market
-    bookscouter = book.bookscouter
+        # Hardcover delta
+        if request_body.is_hardcover or request_body.is_paperback or request_body.is_mass_market:
+            # Calculate price without format
+            no_format_metadata = deepcopy(final_metadata) if final_metadata else None
+            if no_format_metadata:
+                no_format_metadata.cover_type = None
+            no_format_estimate = estimator.estimate_price(no_format_metadata, market, bookscouter, request_body.condition)
+            no_format_price = no_format_estimate.price or baseline_price
 
-    # Calculate baseline price (no attributes)
-    baseline_metadata = deepcopy(metadata) if metadata else None
-    if baseline_metadata:
-        baseline_metadata.cover_type = None
-        baseline_metadata.signed = False
-        baseline_metadata.printing = None
+            if request_body.is_hardcover:
+                deltas.append(AttributeDelta(
+                    attribute="is_hardcover",
+                    label="Hardcover",
+                    delta=round(final_price - no_format_price, 2),
+                    enabled=True
+                ))
+            elif request_body.is_paperback:
+                deltas.append(AttributeDelta(
+                    attribute="is_paperback",
+                    label="Paperback",
+                    delta=round(final_price - no_format_price, 2),
+                    enabled=True
+                ))
+            elif request_body.is_mass_market:
+                deltas.append(AttributeDelta(
+                    attribute="is_mass_market",
+                    label="Mass Market",
+                    delta=round(final_price - no_format_price, 2),
+                    enabled=True
+                ))
 
-    baseline_estimate = estimator.estimate_price(
-        baseline_metadata,
-        market,
-        bookscouter,
-        request_body.condition
-    )
-    baseline_price = baseline_estimate.price or 10.0
+        # Signed delta
+        if request_body.is_signed:
+            no_signed_metadata = deepcopy(final_metadata) if final_metadata else None
+            if no_signed_metadata:
+                no_signed_metadata.signed = False
+            no_signed_estimate = estimator.estimate_price(no_signed_metadata, market, bookscouter, request_body.condition)
+            no_signed_price = no_signed_estimate.price or baseline_price
 
-    # Calculate price with user-selected attributes
-    final_metadata = deepcopy(metadata) if metadata else None
-    if final_metadata:
-        # Apply user selections
-        if request_body.is_hardcover:
-            final_metadata.cover_type = "Hardcover"
-        elif request_body.is_paperback:
-            final_metadata.cover_type = "Paperback"
-        elif request_body.is_mass_market:
-            final_metadata.cover_type = "Mass Market"
-        else:
-            final_metadata.cover_type = None
-
-        final_metadata.signed = request_body.is_signed or False
-        final_metadata.printing = "1st" if request_body.is_first_edition else None
-
-    final_estimate = estimator.estimate_price(
-        final_metadata,
-        market,
-        bookscouter,
-        request_body.condition
-    )
-    final_price = final_estimate.price or baseline_price
-
-    # Calculate deltas for each attribute
-    deltas = []
-
-    # Hardcover delta
-    if request_body.is_hardcover or request_body.is_paperback or request_body.is_mass_market:
-        # Calculate price without format
-        no_format_metadata = deepcopy(final_metadata) if final_metadata else None
-        if no_format_metadata:
-            no_format_metadata.cover_type = None
-        no_format_estimate = estimator.estimate_price(no_format_metadata, market, bookscouter, request_body.condition)
-        no_format_price = no_format_estimate.price or baseline_price
-
-        if request_body.is_hardcover:
             deltas.append(AttributeDelta(
-                attribute="is_hardcover",
-                label="Hardcover",
-                delta=round(final_price - no_format_price, 2),
+                attribute="is_signed",
+                label="Signed/Autographed",
+                delta=round(final_price - no_signed_price, 2),
                 enabled=True
             ))
-        elif request_body.is_paperback:
+
+        # First edition delta
+        if request_body.is_first_edition:
+            no_first_metadata = deepcopy(final_metadata) if final_metadata else None
+            if no_first_metadata:
+                no_first_metadata.printing = None
+            no_first_estimate = estimator.estimate_price(no_first_metadata, market, bookscouter, request_body.condition)
+            no_first_price = no_first_estimate.price or baseline_price
+
             deltas.append(AttributeDelta(
-                attribute="is_paperback",
-                label="Paperback",
-                delta=round(final_price - no_format_price, 2),
+                attribute="is_first_edition",
+                label="First Edition",
+                delta=round(final_price - no_first_price, 2),
                 enabled=True
             ))
-        elif request_body.is_mass_market:
-            deltas.append(AttributeDelta(
-                attribute="is_mass_market",
-                label="Mass Market",
-                delta=round(final_price - no_format_price, 2),
-                enabled=True
-            ))
 
-    # Signed delta
-    if request_body.is_signed:
-        no_signed_metadata = deepcopy(final_metadata) if final_metadata else None
-        if no_signed_metadata:
-            no_signed_metadata.signed = False
-        no_signed_estimate = estimator.estimate_price(no_signed_metadata, market, bookscouter, request_body.condition)
-        no_signed_price = no_signed_estimate.price or baseline_price
+        # Calculate profit scenarios
+        # Assume purchase cost is $0 for now (user owns the book)
+        purchase_cost = 0.0
+        ebay_fee_rate = 0.135  # 13.5% eBay fees
+        amazon_fee_rate = 0.15  # 15% Amazon referral fee
 
-        deltas.append(AttributeDelta(
-            attribute="is_signed",
-            label="Signed/Autographed",
-            delta=round(final_price - no_signed_price, 2),
-            enabled=True
-        ))
+        profit_scenarios = []
 
-    # First edition delta
-    if request_body.is_first_edition:
-        no_first_metadata = deepcopy(final_metadata) if final_metadata else None
-        if no_first_metadata:
-            no_first_metadata.printing = None
-        no_first_estimate = estimator.estimate_price(no_first_metadata, market, bookscouter, request_body.condition)
-        no_first_price = no_first_estimate.price or baseline_price
+        # Scenario 1: Best Case (with signed + 1st edition if available)
+        best_case_metadata = deepcopy(metadata) if metadata else None
+        if best_case_metadata:
+            best_case_metadata.signed = True
+            best_case_metadata.printing = "1st"
+            if request_body.is_hardcover:
+                best_case_metadata.cover_type = "Hardcover"
+            elif request_body.is_paperback:
+                best_case_metadata.cover_type = "Paperback"
+            elif request_body.is_mass_market:
+                best_case_metadata.cover_type = "Mass Market"
 
-        deltas.append(AttributeDelta(
-            attribute="is_first_edition",
-            label="First Edition",
-            delta=round(final_price - no_first_price, 2),
-            enabled=True
-        ))
-
-    # Calculate profit scenarios
-    # Assume purchase cost is $0 for now (user owns the book)
-    purchase_cost = 0.0
-    ebay_fee_rate = 0.135  # 13.5% eBay fees
-    amazon_fee_rate = 0.15  # 15% Amazon referral fee
-
-    profit_scenarios = []
-
-    # Scenario 1: Best Case (with signed + 1st edition if available)
-    best_case_metadata = deepcopy(metadata) if metadata else None
-    if best_case_metadata:
-        best_case_metadata.signed = True
-        best_case_metadata.printing = "1st"
-        if request_body.is_hardcover:
-            best_case_metadata.cover_type = "Hardcover"
-        elif request_body.is_paperback:
-            best_case_metadata.cover_type = "Paperback"
-        elif request_body.is_mass_market:
-            best_case_metadata.cover_type = "Mass Market"
-
-    best_case_estimate = estimator.estimate_price(best_case_metadata, market, bookscouter, request_body.condition)
-    best_case_revenue = best_case_estimate.price or final_price
-    best_case_fees = best_case_revenue * ebay_fee_rate
-    best_case_profit = best_case_revenue - best_case_fees - purchase_cost
-    best_case_margin = (best_case_profit / best_case_revenue * 100) if best_case_revenue > 0 else 0
-
-    profit_scenarios.append(ProfitScenario(
-        name="Best Case",
-        revenue=round(best_case_revenue, 2),
-        fees=round(best_case_fees, 2),
-        cost=round(purchase_cost, 2),
-        profit=round(best_case_profit, 2),
-        margin_percent=round(best_case_margin, 2)
-    ))
-
-    # Scenario 2: Amazon Trade-in
-    amazon_revenue = 0.0
-    if bookscouter and bookscouter.amazon_trade_in_price:
-        amazon_revenue = float(bookscouter.amazon_trade_in_price)
-    elif bookscouter and bookscouter.best_price:
-        amazon_revenue = float(bookscouter.best_price)
-
-    if amazon_revenue > 0:
-        amazon_fees = amazon_revenue * amazon_fee_rate
-        amazon_profit = amazon_revenue - amazon_fees - purchase_cost
-        amazon_margin = (amazon_profit / amazon_revenue * 100) if amazon_revenue > 0 else 0
+        best_case_estimate = estimator.estimate_price(best_case_metadata, market, bookscouter, request_body.condition)
+        best_case_revenue = best_case_estimate.price or final_price
+        best_case_fees = best_case_revenue * ebay_fee_rate
+        best_case_profit = best_case_revenue - best_case_fees - purchase_cost
+        best_case_margin = (best_case_profit / best_case_revenue * 100) if best_case_revenue > 0 else 0
 
         profit_scenarios.append(ProfitScenario(
-            name="Amazon",
-            revenue=round(amazon_revenue, 2),
-            fees=round(amazon_fees, 2),
+            name="Best Case",
+            revenue=round(best_case_revenue, 2),
+            fees=round(best_case_fees, 2),
             cost=round(purchase_cost, 2),
-            profit=round(amazon_profit, 2),
-            margin_percent=round(amazon_margin, 2)
+            profit=round(best_case_profit, 2),
+            margin_percent=round(best_case_margin, 2)
         ))
 
-    # Scenario 3: ML Estimate (current selection)
-    ml_revenue = final_price
-    ml_fees = ml_revenue * ebay_fee_rate
-    ml_profit = ml_revenue - ml_fees - purchase_cost
-    ml_margin = (ml_profit / ml_revenue * 100) if ml_revenue > 0 else 0
+        # Scenario 2: Amazon Trade-in
+        amazon_revenue = 0.0
+        if bookscouter and bookscouter.amazon_trade_in_price:
+            amazon_revenue = float(bookscouter.amazon_trade_in_price)
+        elif bookscouter and bookscouter.best_price:
+            amazon_revenue = float(bookscouter.best_price)
 
-    profit_scenarios.append(ProfitScenario(
-        name="ML Estimate",
-        revenue=round(ml_revenue, 2),
-        fees=round(ml_fees, 2),
-        cost=round(purchase_cost, 2),
-        profit=round(ml_profit, 2),
-        margin_percent=round(ml_margin, 2)
-    ))
+        if amazon_revenue > 0:
+            amazon_fees = amazon_revenue * amazon_fee_rate
+            amazon_profit = amazon_revenue - amazon_fees - purchase_cost
+            amazon_margin = (amazon_profit / amazon_revenue * 100) if amazon_revenue > 0 else 0
 
-    response = EstimatePriceResponse(
-        estimated_price=round(final_price, 2),
-        baseline_price=round(baseline_price, 2),
-        confidence=final_estimate.confidence,
-        deltas=deltas,
-        model_version=final_estimate.model_version,
-        profit_scenarios=profit_scenarios
-    )
+            profit_scenarios.append(ProfitScenario(
+                name="Amazon",
+                revenue=round(amazon_revenue, 2),
+                fees=round(amazon_fees, 2),
+                cost=round(purchase_cost, 2),
+                profit=round(amazon_profit, 2),
+                margin_percent=round(amazon_margin, 2)
+            ))
 
-    return JSONResponse(content=response.dict())
+        # Scenario 3: ML Estimate (current selection)
+        ml_revenue = final_price
+        ml_fees = ml_revenue * ebay_fee_rate
+        ml_profit = ml_revenue - ml_fees - purchase_cost
+        ml_margin = (ml_profit / ml_revenue * 100) if ml_revenue > 0 else 0
+
+        profit_scenarios.append(ProfitScenario(
+            name="ML Estimate",
+            revenue=round(ml_revenue, 2),
+            fees=round(ml_fees, 2),
+            cost=round(purchase_cost, 2),
+            profit=round(ml_profit, 2),
+            margin_percent=round(ml_margin, 2)
+        ))
+
+        response = EstimatePriceResponse(
+            estimated_price=round(final_price, 2),
+            baseline_price=round(baseline_price, 2),
+            confidence=final_estimate.confidence,
+            deltas=deltas,
+            model_version=final_estimate.model_version,
+            profit_scenarios=profit_scenarios
+        )
+
+        return JSONResponse(content=response.dict())
+
+    except Exception as e:
+        import traceback
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": f"Failed to estimate price: {str(e)}",
+                "traceback": traceback.format_exc()
+            }
+        )
 
 
 class UpdateAttributesRequest(BaseModel):

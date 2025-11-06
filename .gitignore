@@ -68,3 +68,4 @@ tonight_*.json
 # Experiment/test scripts (keep in scripts/experiments/)
 scripts/test_*.py
 scripts/analyze_*.py
+*.xcuserstate

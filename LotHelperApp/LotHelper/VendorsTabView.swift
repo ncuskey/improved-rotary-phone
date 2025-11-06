@@ -290,7 +290,9 @@ struct VendorBook: Codable {
 
 extension BookAPI {
     static func getVendorGroups() async throws -> [VendorGroup] {
-        let url = BookAPI.baseURL.appendingPathComponent("/api/books/grouped_by_vendor")
+        guard let url = URL(string: "\(BookAPI.baseURLString)/api/books/grouped_by_vendor") else {
+            throw URLError(.badURL)
+        }
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"

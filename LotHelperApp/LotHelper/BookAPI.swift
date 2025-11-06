@@ -1350,12 +1350,32 @@ struct AttributeDelta: Codable, Identifiable {
     let enabled: Bool
 }
 
+struct ProfitScenario: Codable, Identifiable {
+    var id: String { name }
+    let name: String          // "Best Case", "Amazon", "ML Estimate"
+    let revenue: Double       // Selling price
+    let fees: Double          // Platform fees
+    let cost: Double          // Purchase cost
+    let profit: Double        // Net profit after fees and cost
+    let marginPercent: Double // Profit margin percentage
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case revenue
+        case fees
+        case cost
+        case profit
+        case marginPercent = "margin_percent"
+    }
+}
+
 struct EstimatePriceResponse: Codable {
     let estimatedPrice: Double
     let baselinePrice: Double
     let confidence: Double
     let deltas: [AttributeDelta]
     let modelVersion: String
+    let profitScenarios: [ProfitScenario]?
 
     enum CodingKeys: String, CodingKey {
         case estimatedPrice = "estimated_price"
@@ -1363,6 +1383,7 @@ struct EstimatePriceResponse: Codable {
         case confidence
         case deltas
         case modelVersion = "model_version"
+        case profitScenarios = "profit_scenarios"
     }
 }
 

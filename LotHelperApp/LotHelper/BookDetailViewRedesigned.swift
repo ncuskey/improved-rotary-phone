@@ -25,6 +25,7 @@ struct BookDetailViewRedesigned: View {
     @State private var dynamicEstimate: Double? = nil
     @State private var attributeDeltas: [AttributeDelta] = []
     @State private var isUpdatingPrice: Bool = false
+    @State private var dynamicProfitScenarios: [ProfitScenario]? = nil
 
     // Dynamic routing info (fetched from API if missing)
     @State private var dynamicRoutingInfo: MLRoutingInfo? = nil
@@ -363,6 +364,11 @@ struct BookDetailViewRedesigned: View {
 
     // MARK: - Profit Analysis Panel
     private var shouldShowProfitAnalysis: Bool {
+        // Show if we have dynamic profit scenarios OR old static data
+        if dynamicProfitScenarios != nil && !dynamicProfitScenarios!.isEmpty {
+            return true
+        }
+
         guard let market = record.market,
               market.soldCompsMedian != nil,
               let bookscouter = record.bookscouter,
@@ -374,15 +380,34 @@ struct BookDetailViewRedesigned: View {
 
     @ViewBuilder
     private var profitAnalysisPanel: some View {
-        if let soldMedian = record.market?.soldCompsMedian {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .foregroundStyle(.green)
-                    Text("Multi-Scenario Profit Analysis")
-                        .font(.headline)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .foregroundStyle(.green)
+                Text("Multi-Scenario Profit Analysis")
+                    .font(.headline)
+            }
+
+            // Use dynamic profit scenarios if available
+            if let scenarios = dynamicProfitScenarios, !scenarios.isEmpty {
+                ForEach(scenarios) { scenario in
+                    dynamicProfitScenarioCard(scenario: scenario)
                 }
 
+                // Show best scenario indicator
+                if let bestScenario = scenarios.max(by: { $0.marginPercent < $1.marginPercent }) {
+                    Divider()
+                    HStack(spacing: 4) {
+                        Image(systemName: "lightbulb.fill")
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                        Text("Best margin: \(bestScenario.name) (\(String(format: "%.0f%%", bestScenario.marginPercent)))")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } else if let soldMedian = record.market?.soldCompsMedian {
+                // Fallback to static calculations if no dynamic data
                 // Best Case: Vendor acquisition
                 if let vendorPrice = record.bookscouter?.bestPrice, vendorPrice > 0 {
                     profitScenarioCard(
@@ -431,10 +456,10 @@ struct BookDetailViewRedesigned: View {
                     }
                 }
             }
-            .padding()
-            .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
-            .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
         }
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
     }
 
     // MARK: - Market Data Panel
@@ -1030,6 +1055,95 @@ struct BookDetailViewRedesigned: View {
     }
 
     @ViewBuilder
+    private func dynamicProfitScenarioCard(scenario: ProfitScenario) -> some View {
+        let badgeColor: Color = {
+            switch scenario.name {
+            case "Best Case": return .green
+            case "Amazon": return .orange
+            case "ML Estimate": return .blue
+            default: return .gray
+            }
+        }()
+
+        VStack(alignment: .leading, spacing: 8) {
+            // Header with badge
+            HStack {
+                Text(scenario.name)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Spacer()
+                Text(String(format: "%.0f%% margin", scenario.marginPercent))
+                    .font(.caption2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(badgeColor.opacity(0.2))
+                    )
+                    .foregroundStyle(badgeColor)
+            }
+
+            // Price breakdown
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Revenue")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(formattedCurrency(scenario.revenue))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                }
+
+                Image(systemName: "minus")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Fees")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(formattedCurrency(scenario.fees))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.orange)
+                }
+
+                Image(systemName: "minus")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Cost")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(formattedCurrency(scenario.cost))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                }
+
+                Image(systemName: "equal")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Profit")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text(formattedCurrency(scenario.profit))
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(scenario.profit > 0 ? .green : .red)
+                }
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(uiColor: .secondarySystemBackground))
+        )
+    }
+
+    @ViewBuilder
     private func profitScenarioCard(
         title: String,
         salePrice: Double,
@@ -1214,6 +1328,7 @@ struct BookDetailViewRedesigned: View {
 
             dynamicEstimate = response.estimatedPrice
             attributeDeltas = response.deltas
+            dynamicProfitScenarios = response.profitScenarios
         } catch {
             print("Failed to update price estimate: \(error.localizedDescription)")
         }

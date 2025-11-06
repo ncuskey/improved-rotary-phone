@@ -37,6 +37,7 @@ from shared.constants import (
 )
 from shared.database import DatabaseManager
 from shared.metadata import create_http_session, enrich_authorship, fetch_metadata
+from shared.organic_growth import OrganicGrowthManager
 from shared.series_index import (
     SeriesIndex,
     canonical_series,
@@ -108,6 +109,8 @@ class BookService:
         self._lot_manual_cache: dict[str, str] = {}
         self._series_catalog_fetched: set[str] = set()
         self.recent_scans = RecentScansCache(max_size=100)
+        # Initialize organic growth manager for DB caching
+        self.organic_growth = OrganicGrowthManager()
         # Standardize on BOOKSRUN_KEY (deprecated: BOOKSRUN_API_KEY)
         key_from_env = os.getenv("BOOKSRUN_KEY") or os.getenv("BOOKSRUN_API_KEY")
         if os.getenv("BOOKSRUN_API_KEY") and not os.getenv("BOOKSRUN_KEY"):
@@ -2763,6 +2766,26 @@ class BookService:
         self._apply_bookscouter_to_evaluation(evaluation, bookscouter_result)
         self._persist_book(evaluation, v2_stats=v2_stats_result)
         return evaluation
+
+    def _should_skip_enrichment(self, isbn: str) -> bool:
+        """
+        Check if we should skip external API calls for this ISBN.
+
+        Uses OrganicGrowthManager.should_enrich() to determine if we have
+        fresh cached data in metadata_cache.db (training database).
+
+        Returns:
+            True if we should SKIP enrichment (have fresh data)
+            False if we should proceed with enrichment (need fresh data)
+        """
+        try:
+            # should_enrich returns True if we NEED to enrich
+            # So we invert it - return True to SKIP if we don't need to enrich
+            needs_enrichment = self.organic_growth.should_enrich(isbn)
+            return not needs_enrichment
+        except Exception:
+            # On error, be conservative and allow enrichment
+            return False
 
     def _build_metadata_from_payload(
         self,

@@ -1183,6 +1183,16 @@ class AttributeDelta(BaseModel):
     enabled: bool  # Whether this attribute is currently enabled
 
 
+class ProfitScenario(BaseModel):
+    """Profit calculation for a selling scenario."""
+    name: str  # "Best Case", "Amazon", "ML Estimate"
+    revenue: float  # Selling price
+    fees: float  # Platform fees
+    cost: float  # Purchase cost
+    profit: float  # Net profit after fees and cost
+    margin_percent: float  # Profit margin percentage
+
+
 class EstimatePriceResponse(BaseModel):
     """Response with dynamic price estimate and deltas."""
     estimated_price: float
@@ -1190,6 +1200,7 @@ class EstimatePriceResponse(BaseModel):
     confidence: float
     deltas: List[AttributeDelta]
     model_version: str
+    profit_scenarios: Optional[List[ProfitScenario]] = None  # Dynamic profit calculations
 
 
 @router.post("/{isbn}/estimate_price")
@@ -1345,12 +1356,84 @@ async def estimate_price_with_attributes(
             enabled=True
         ))
 
+    # Calculate profit scenarios
+    # Assume purchase cost is $0 for now (user owns the book)
+    purchase_cost = 0.0
+    ebay_fee_rate = 0.135  # 13.5% eBay fees
+    amazon_fee_rate = 0.15  # 15% Amazon referral fee
+
+    profit_scenarios = []
+
+    # Scenario 1: Best Case (with signed + 1st edition if available)
+    best_case_metadata = deepcopy(metadata) if metadata else None
+    if best_case_metadata:
+        best_case_metadata.signed = True
+        best_case_metadata.printing = "1st"
+        if request_body.is_hardcover:
+            best_case_metadata.cover_type = "Hardcover"
+        elif request_body.is_paperback:
+            best_case_metadata.cover_type = "Paperback"
+        elif request_body.is_mass_market:
+            best_case_metadata.cover_type = "Mass Market"
+
+    best_case_estimate = estimator.estimate_price(best_case_metadata, market, bookscouter, request_body.condition)
+    best_case_revenue = best_case_estimate.price or final_price
+    best_case_fees = best_case_revenue * ebay_fee_rate
+    best_case_profit = best_case_revenue - best_case_fees - purchase_cost
+    best_case_margin = (best_case_profit / best_case_revenue * 100) if best_case_revenue > 0 else 0
+
+    profit_scenarios.append(ProfitScenario(
+        name="Best Case",
+        revenue=round(best_case_revenue, 2),
+        fees=round(best_case_fees, 2),
+        cost=round(purchase_cost, 2),
+        profit=round(best_case_profit, 2),
+        margin_percent=round(best_case_margin, 2)
+    ))
+
+    # Scenario 2: Amazon Trade-in
+    amazon_revenue = 0.0
+    if bookscouter and bookscouter.amazon_trade_in_price:
+        amazon_revenue = float(bookscouter.amazon_trade_in_price)
+    elif bookscouter and bookscouter.best_price:
+        amazon_revenue = float(bookscouter.best_price)
+
+    if amazon_revenue > 0:
+        amazon_fees = amazon_revenue * amazon_fee_rate
+        amazon_profit = amazon_revenue - amazon_fees - purchase_cost
+        amazon_margin = (amazon_profit / amazon_revenue * 100) if amazon_revenue > 0 else 0
+
+        profit_scenarios.append(ProfitScenario(
+            name="Amazon",
+            revenue=round(amazon_revenue, 2),
+            fees=round(amazon_fees, 2),
+            cost=round(purchase_cost, 2),
+            profit=round(amazon_profit, 2),
+            margin_percent=round(amazon_margin, 2)
+        ))
+
+    # Scenario 3: ML Estimate (current selection)
+    ml_revenue = final_price
+    ml_fees = ml_revenue * ebay_fee_rate
+    ml_profit = ml_revenue - ml_fees - purchase_cost
+    ml_margin = (ml_profit / ml_revenue * 100) if ml_revenue > 0 else 0
+
+    profit_scenarios.append(ProfitScenario(
+        name="ML Estimate",
+        revenue=round(ml_revenue, 2),
+        fees=round(ml_fees, 2),
+        cost=round(purchase_cost, 2),
+        profit=round(ml_profit, 2),
+        margin_percent=round(ml_margin, 2)
+    ))
+
     response = EstimatePriceResponse(
         estimated_price=round(final_price, 2),
         baseline_price=round(baseline_price, 2),
         confidence=final_estimate.confidence,
         deltas=deltas,
-        model_version=final_estimate.model_version
+        model_version=final_estimate.model_version,
+        profit_scenarios=profit_scenarios
     )
 
     return JSONResponse(content=response.dict())

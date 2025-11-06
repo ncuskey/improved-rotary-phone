@@ -14,6 +14,9 @@ struct ContentView: View {
             )
                 .tabItem { Label("Lots", systemImage: "square.grid.2x2") }
 
+            VendorsTabView()
+                .tabItem { Label("Vendors", systemImage: "shippingbox") }
+
             NavigationStack {
                 ScannerReviewView()
             }

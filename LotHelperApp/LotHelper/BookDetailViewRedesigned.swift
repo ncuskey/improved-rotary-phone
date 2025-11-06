@@ -52,6 +52,14 @@ struct BookDetailViewRedesigned: View {
                 // Hero section with cover and title
                 heroSection
 
+                // PRIORITY 1: Price comparison panel (MOVED UP)
+                priceComparisonPanel
+
+                // PRIORITY 2: Profit analysis (MOVED UP - if available)
+                if shouldShowProfitAnalysis {
+                    profitAnalysisPanel
+                }
+
                 // List to eBay button
                 ebayListingButton
 
@@ -67,9 +75,6 @@ struct BookDetailViewRedesigned: View {
                 if let recommendation = effectiveChannelRecommendation {
                     ChannelRecommendationDetailView(recommendation: recommendation)
                 }
-
-                // Price comparison panel
-                priceComparisonPanel
 
                 // Price variants panel (condition and feature adjustments)
                 if let variants = priceVariants {
@@ -99,11 +104,6 @@ struct BookDetailViewRedesigned: View {
                         }
                     }
                 )
-
-                // Profit analysis (if available)
-                if shouldShowProfitAnalysis {
-                    profitAnalysisPanel
-                }
 
                 // Market data
                 if record.market != nil {

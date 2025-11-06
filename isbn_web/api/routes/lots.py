@@ -141,12 +141,31 @@ async def get_all_lots_json(
     valid_lots = []
 
     for lot in lots:
-        # Get books for this lot and filter by catalog status
-        books = service.get_books_for_lot(lot)
-        accepted_books = [b for b in books if b.status == 'ACCEPT']
+        # Get ISBNs for this lot
+        isbns = list(lot.book_isbns) if hasattr(lot, 'book_isbns') else []
+
+        if not isbns:
+            continue
+
+        # Query database directly to check status for each ISBN
+        accepted_isbns = []
+        for isbn in isbns:
+            row = service.db.fetch_book(isbn)
+            if row:
+                # Check status column (default to 'ACCEPT' for backward compatibility)
+                status = row.get('status', 'ACCEPT')
+                if status == 'ACCEPT':
+                    accepted_isbns.append(isbn)
 
         # Only include lots with 2+ accepted books
-        if len(accepted_books) >= 2:
+        if len(accepted_isbns) >= 2:
+            # Get full book evaluations for accepted books only
+            accepted_books = []
+            for isbn in accepted_isbns:
+                row = service.db.fetch_book(isbn)
+                if row:
+                    accepted_books.append(service._row_to_evaluation(row))
+
             # Attach accepted books to lot for serialization
             lot.books = tuple(accepted_books)
             valid_lots.append(lot)

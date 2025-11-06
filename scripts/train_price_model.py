@@ -474,6 +474,85 @@ def train_model(
     return metadata
 
 
+def oversample_rare_attributes(book_records: List[dict], target_prices: List[float]) -> Tuple[List[dict], List[float]]:
+    """
+    Oversample books with rare attributes (signed, first edition) to balance training data.
+
+    This prevents the model from learning spurious negative correlations for rare attributes
+    that are underrepresented in the training set.
+
+    Args:
+        book_records: List of book record dicts
+        target_prices: List of target prices
+
+    Returns:
+        Tuple of (oversampled_book_records, oversampled_target_prices)
+    """
+    # Count rare attribute books
+    signed_books = []
+    first_edition_books = []
+
+    for i, record in enumerate(book_records):
+        metadata = record.get("metadata")
+        if metadata:
+            if getattr(metadata, "signed", False):
+                signed_books.append(i)
+            if getattr(metadata, "printing", None) == "1st":
+                first_edition_books.append(i)
+
+    total_books = len(book_records)
+    signed_count = len(signed_books)
+    first_ed_count = len(first_edition_books)
+
+    print(f"   Original distribution:")
+    print(f"     Total: {total_books}")
+    print(f"     Signed: {signed_count} ({100*signed_count/total_books:.2f}%)")
+    print(f"     First Edition: {first_ed_count} ({100*first_ed_count/total_books:.2f}%)")
+
+    # Target: at least 5% representation for each rare attribute
+    # This gives the model enough signal to learn correct patterns
+    target_proportion = 0.05
+
+    oversampled_records = list(book_records)
+    oversampled_prices = list(target_prices)
+
+    # Oversample signed books
+    if signed_count > 0 and signed_count / total_books < target_proportion:
+        target_signed = int(total_books * target_proportion)
+        copies_needed = (target_signed // signed_count) - 1
+
+        if copies_needed > 0:
+            print(f"\n   Oversampling signed books {copies_needed}x to reach {target_proportion:.0%} representation...")
+            for idx in signed_books:
+                for _ in range(copies_needed):
+                    oversampled_records.append(book_records[idx])
+                    oversampled_prices.append(target_prices[idx])
+
+    # Oversample first edition books
+    if first_ed_count > 0 and first_ed_count / total_books < target_proportion:
+        target_first_ed = int(total_books * target_proportion)
+        copies_needed = (target_first_ed // first_ed_count) - 1
+
+        if copies_needed > 0:
+            print(f"   Oversampling first edition books {copies_needed}x to reach {target_proportion:.0%} representation...")
+            for idx in first_edition_books:
+                for _ in range(copies_needed):
+                    oversampled_records.append(book_records[idx])
+                    oversampled_prices.append(target_prices[idx])
+
+    # Report final distribution
+    signed_final = sum(1 for r in oversampled_records if getattr(r.get("metadata"), "signed", False))
+    first_ed_final = sum(1 for r in oversampled_records if getattr(r.get("metadata"), "printing", None) == "1st")
+    total_final = len(oversampled_records)
+
+    print(f"\n   After oversampling:")
+    print(f"     Total: {total_final} (+{total_final - total_books})")
+    print(f"     Signed: {signed_final} ({100*signed_final/total_final:.2f}%)")
+    print(f"     First Edition: {first_ed_final} ({100*first_ed_final/total_final:.2f}%)")
+
+    return oversampled_records, oversampled_prices
+
+
 def main():
     """Main entry point for model training."""
     import argparse
@@ -497,6 +576,11 @@ def main():
         default=0.2,
         help="Test set size (default: 0.2)"
     )
+    parser.add_argument(
+        "--no-oversample",
+        action="store_true",
+        help="Disable oversampling of rare attributes"
+    )
     args = parser.parse_args()
 
     db_path = Path(args.db)
@@ -518,6 +602,11 @@ def main():
     # Load training data
     print("\n1. Loading training data...")
     book_records, target_prices = load_training_data(db_path)
+
+    # Oversample rare attributes to prevent model from learning spurious negative correlations
+    if not args.no_oversample:
+        print("\n   Balancing rare attributes (signed, first edition)...")
+        book_records, target_prices = oversample_rare_attributes(book_records, target_prices)
 
     # Extract features
     print("\n2. Extracting features...")

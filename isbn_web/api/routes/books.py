@@ -1357,6 +1357,17 @@ async def estimate_price_with_attributes(
                 enabled=True
             ))
 
+        # Note: Model retrained with oversampling (2025-11-05)
+        # Signed books now predict correctly (+$1.23 avg), but first edition still negative
+        # Likely cause: Training first edition books had confounding factors (damage, book club editions)
+        # Fix: Parse ~370 sold_listings titles with edition keywords for better training data
+
+        # Minimal override for first_edition until we parse sold_listings titles
+        for delta in deltas:
+            if delta.attribute == "is_first_edition" and delta.delta < 0:
+                # Conservative 3% boost for first editions
+                delta.delta = round(baseline_price * 0.03, 2)
+
         # Calculate profit scenarios
         # Assume purchase cost is $0 for now (user owns the book)
         purchase_cost = 0.0

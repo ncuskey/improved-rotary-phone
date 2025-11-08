@@ -368,14 +368,13 @@ class PlatformDataLoader:
 
     def _load_unified_training_books(self) -> List[dict]:
         """
-        Load books from unified training database (metadata_cache.db with in_training=1).
+        Load books from unified training database (metadata_cache.db with enriched market data).
 
-        This is the NEW primary source for training data, containing high-quality
-        books that meet quality gates:
-        - in_training = 1
-        - sold_comps_count >= 8
-        - sold_comps_median >= $5
-        - training_quality_score >= 0.6
+        This is the NEW primary source for training data, containing books
+        enriched with eBay market data:
+        - last_enrichment_at IS NOT NULL (has been enriched)
+        - sold_comps_count >= 1 (has at least 1 comp)
+        - sold_comps_median >= $3 (reasonable minimum price)
         """
         if not self.cache_db.exists():
             print(f"Warning: {self.cache_db} not found")
@@ -399,12 +398,12 @@ class PlatformDataLoader:
             cover_type,
             signed,
             printing,
-            training_quality_score
+            sold_comps_count
         FROM cached_books
-        WHERE in_training = 1
-          AND sold_comps_count >= 8
-          AND sold_comps_median >= 5
-        ORDER BY training_quality_score DESC
+        WHERE last_enrichment_at IS NOT NULL
+          AND sold_comps_count >= 5
+          AND sold_comps_median >= 3
+        ORDER BY sold_comps_count DESC, sold_comps_median DESC
         """
 
         cursor.execute(query)
@@ -415,7 +414,7 @@ class PlatformDataLoader:
         for row in rows:
             (isbn, title, authors, publisher, pub_year, binding, page_count,
              sold_comps_median, market_json, bookscouter_json,
-             cover_type, signed, printing, training_quality_score) = row
+             cover_type, signed, printing, sold_comps_count) = row
 
             # Parse JSONs
             market_dict = json.loads(market_json) if market_json else {}
@@ -442,7 +441,7 @@ class PlatformDataLoader:
                 'printing': printing,
                 'abebooks': None,
                 'ebay_target': sold_comps_median,
-                'training_quality_score': training_quality_score,
+                'sold_comps_count': sold_comps_count,
             }
 
             books.append(book)

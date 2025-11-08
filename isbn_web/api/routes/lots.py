@@ -1,6 +1,8 @@
 """API routes for lot management."""
 from __future__ import annotations
 
+from typing import List
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -14,6 +16,29 @@ from .books import _book_evaluation_to_dict
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))
+
+
+class LotPriceEstimateRequest(BaseModel):
+    """Request body for lot price estimation."""
+    series_id: int
+    series_title: str
+    lot_size: int
+    is_complete_set: bool = False
+    condition: str = "https://schema.org/UsedCondition"
+    is_sold: bool = False
+    price_per_book: float = 0.0
+    inferred_series_size: int = None
+
+
+class LotPriceEstimateResponse(BaseModel):
+    """Response body for lot price estimation."""
+    estimated_price: float
+    price_per_book: float
+    completion_pct: float
+    is_near_complete: bool
+    model_version: str
+    model_mae: float
+    model_r2: float
 
 
 def _lot_suggestion_to_dict(lot: LotSuggestion) -> dict:
@@ -470,3 +495,97 @@ async def remove_book_from_lot(
         "components/carousel.html",
         {"request": request, "books": books},
     )
+
+
+@router.post("/estimate_price", response_class=JSONResponse)
+async def estimate_lot_price(
+    request_body: LotPriceEstimateRequest,
+) -> LotPriceEstimateResponse:
+    """
+    Estimate lot price using the trained lot specialist model.
+
+    Uses the lot model to predict the total price based on:
+    - Lot size and series information
+    - Completion percentage (relative to inferred series size)
+    - Condition and other attributes
+    - Individual book pricing if available
+
+    Returns:
+        LotPriceEstimateResponse with predicted price and metadata
+    """
+    import joblib
+    import numpy as np
+    import json
+    from pathlib import Path
+
+    try:
+        # Load the lot model
+        model_dir = Path(__file__).parent.parent.parent.parent / 'isbn_lot_optimizer' / 'models' / 'stacking'
+        model_path = model_dir / 'lot_model.pkl'
+        scaler_path = model_dir / 'lot_scaler.pkl'
+        metadata_path = model_dir / 'lot_metadata.json'
+
+        if not model_path.exists():
+            return JSONResponse(
+                status_code=503,
+                content={"error": "Lot prediction model not found"}
+            )
+
+        model = joblib.load(model_path)
+        scaler = joblib.load(scaler_path)
+
+        with open(metadata_path, 'r') as f:
+            model_metadata = json.load(f)
+
+        # Calculate inferred series size (use provided or lot_size as fallback)
+        inferred_series_size = request_body.inferred_series_size or request_body.lot_size
+        completion_pct = request_body.lot_size / inferred_series_size if inferred_series_size > 0 else 0
+
+        # Condition mapping
+        condition_map = {
+            'https://schema.org/NewCondition': 1.0,
+            'https://schema.org/UsedCondition': 0.6,
+            'https://schema.org/RefurbishedCondition': 0.8,
+            'https://schema.org/DamagedCondition': 0.3,
+        }
+        condition_value = condition_map.get(request_body.condition, 0.5)
+
+        # Build feature vector (must match training order)
+        features = [
+            request_body.lot_size,  # lot_size
+            1 if request_body.is_complete_set else 0,  # is_complete_set
+            1 if request_body.is_sold else 0,  # is_sold
+            request_body.price_per_book,  # price_per_book
+            condition_value,  # condition_score
+            1 if request_body.lot_size <= 3 else 0,  # is_small_lot
+            1 if 4 <= request_body.lot_size <= 7 else 0,  # is_medium_lot
+            1 if 8 <= request_body.lot_size <= 12 else 0,  # is_large_lot
+            1 if request_body.lot_size > 12 else 0,  # is_very_large_lot
+            request_body.series_id,  # series_id
+        ]
+
+        # Scale features
+        X = np.array([features])
+        X_scaled = scaler.transform(X)
+
+        # Predict
+        predicted_price = float(model.predict(X_scaled)[0])
+
+        # Calculate price per book from prediction
+        price_per_book = predicted_price / request_body.lot_size if request_body.lot_size > 0 else 0
+
+        return LotPriceEstimateResponse(
+            estimated_price=round(predicted_price, 2),
+            price_per_book=round(price_per_book, 2),
+            completion_pct=round(completion_pct, 3),
+            is_near_complete=(completion_pct >= 0.9),
+            model_version=model_metadata.get('trained_at', 'unknown'),
+            model_mae=round(model_metadata.get('test_mae', 0), 2),
+            model_r2=round(model_metadata.get('test_r2', 0), 3),
+        )
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to estimate lot price: {str(e)}"}
+        )

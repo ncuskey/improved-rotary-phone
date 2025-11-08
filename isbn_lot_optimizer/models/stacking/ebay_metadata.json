@@ -1,7 +1,7 @@
 {
   "platform": "ebay",
   "model_type": "XGBRegressor",
-  "n_features": 20,
+  "n_features": 24,
   "feature_names": [
     "ebay_sold_count",
     "ebay_active_median",
@@ -14,8 +14,12 @@
     "age_years",
     "log_ratings",
     "rating",
+    "is_new",
+    "is_like_new",
     "is_very_good",
     "is_good",
+    "is_acceptable",
+    "is_poor",
     "is_hardcover",
     "is_mass_market",
     "is_signed",
@@ -24,25 +28,25 @@
     "is_fiction",
     "demand_score"
   ],
-  "training_samples": 705,
-  "test_samples": 177,
-  "train_mae": 2.676272664929113,
-  "test_mae": 3.0291771903819282,
-  "train_rmse": 4.356590906282819,
-  "test_rmse": 4.7513230124755585,
-  "train_r2": 0.5213353191552504,
-  "test_r2": 0.46871841923359137,
-  "cv_mae": 3.329844422550066,
+  "training_samples": 704,
+  "test_samples": 176,
+  "train_mae": 3.285291275300763,
+  "test_mae": 3.6096778357028962,
+  "train_rmse": 5.368302226860057,
+  "test_rmse": 5.276699412255627,
+  "train_r2": 0.1266284724440908,
+  "test_r2": 0.1054320573422104,
+  "cv_mae": 3.515241355468094,
   "hyperparameters": {
-    "subsample": 0.6,
-    "reg_lambda": 10,
-    "reg_alpha": 1,
-    "n_estimators": 500,
-    "min_child_weight": 2,
-    "max_depth": 5,
-    "learning_rate": 0.01,
-    "gamma": 0.1,
-    "colsample_bytree": 0.6
+    "subsample": 0.7,
+    "reg_lambda": 100,
+    "reg_alpha": 0.01,
+    "n_estimators": 200,
+    "min_child_weight": 3,
+    "max_depth": 6,
+    "learning_rate": 0.05,
+    "gamma": 0.3,
+    "colsample_bytree": 0.8
   },
   "optimization": {
     "method": "RandomizedSearchCV",
@@ -51,68 +55,72 @@
     "scoring": "neg_mean_absolute_error"
   },
   "feature_importance": {
-    "ebay_sold_count": 0.050920046865940094,
-    "ebay_active_median": 0.2566996216773987,
+    "ebay_sold_count": 0.0,
+    "ebay_active_median": 0.21512728929519653,
     "ebay_sold_min": 0.0,
     "ebay_sold_median": 0.0,
     "ebay_sold_max": 0.0,
     "ebay_sold_price_spread": 0.0,
     "ebay_active_vs_sold_ratio": 0.0,
-    "page_count": 0.08451453596353531,
-    "age_years": 0.06751597672700882,
-    "log_ratings": 0.0721903145313263,
-    "rating": 0.06163478270173073,
-    "is_very_good": 0.042950164526700974,
-    "is_good": 0.03701293095946312,
-    "is_hardcover": 0.05745580792427063,
-    "is_mass_market": 0.044472116976976395,
-    "is_signed": 0.0286537054926157,
-    "is_first_edition": 0.037234049290418625,
-    "is_textbook": 0.0708281397819519,
-    "is_fiction": 0.04736614227294922,
-    "demand_score": 0.04055168852210045
+    "page_count": 0.2600666284561157,
+    "age_years": 0.24963542819023132,
+    "log_ratings": 0.0,
+    "rating": 0.0,
+    "is_new": 0.0,
+    "is_like_new": 0.0,
+    "is_very_good": 0.0,
+    "is_good": 0.0,
+    "is_acceptable": 0.0,
+    "is_poor": 0.0,
+    "is_hardcover": 0.0,
+    "is_mass_market": 0.0,
+    "is_signed": 0.0,
+    "is_first_edition": 0.0,
+    "is_textbook": 0.0,
+    "is_fiction": 0.0,
+    "demand_score": 0.2751706838607788
   },
   "top_features": [
     [
-      "ebay_active_median",
-      0.2566996216773987
+      "demand_score",
+      0.2751706838607788
     ],
     [
       "page_count",
-      0.08451453596353531
-    ],
-    [
-      "log_ratings",
-      0.0721903145313263
-    ],
-    [
-      "is_textbook",
-      0.0708281397819519
+      0.2600666284561157
     ],
     [
       "age_years",
-      0.06751597672700882
+      0.24963542819023132
     ],
     [
-      "rating",
-      0.06163478270173073
-    ],
-    [
-      "is_hardcover",
-      0.05745580792427063
+      "ebay_active_median",
+      0.21512728929519653
     ],
     [
       "ebay_sold_count",
-      0.050920046865940094
+      0.0
     ],
     [
-      "is_fiction",
-      0.04736614227294922
+      "ebay_sold_min",
+      0.0
     ],
     [
-      "is_mass_market",
-      0.044472116976976395
+      "ebay_sold_median",
+      0.0
+    ],
+    [
+      "ebay_sold_max",
+      0.0
+    ],
+    [
+      "ebay_sold_price_spread",
+      0.0
+    ],
+    [
+      "ebay_active_vs_sold_ratio",
+      0.0
     ]
   ],
-  "trained_at": "2025-11-04T21:01:19.391238"
+  "trained_at": "2025-11-07T22:39:34.012615"
 }

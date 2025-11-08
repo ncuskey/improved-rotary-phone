@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Train eBay specialist model for stacking ensemble.
+Train Lot specialist model for stacking ensemble.
 
-Trains an XGBoost model with hyperparameter tuning optimized for eBay sold comps prediction
-using eBay-specific features (market signals, demand, condition).
+Trains an XGBoost model optimized for predicting book lot prices based on:
+- Lot characteristics (size, completeness)
+- Series popularity and metadata
+- Individual book pricing data when available
 """
 
 import json
@@ -13,6 +15,7 @@ from datetime import datetime
 
 import joblib
 import numpy as np
+import sqlite3
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
@@ -25,91 +28,161 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from shared.python_version_check import check_python_version
 check_python_version()
 
-from scripts.stacking.data_loader import load_platform_training_data
-from isbn_lot_optimizer.ml.feature_extractor import PlatformFeatureExtractor
-from shared.models import BookMetadata, EbayMarketStats, BookScouterResult
+
+def load_lot_training_data():
+    """Load lot training data from series_lot_comps table with completion percentage."""
+    cache_db = Path.home() / '.isbn_lot_optimizer' / 'metadata_cache.db'
+
+    if not cache_db.exists():
+        print(f"Error: {cache_db} not found")
+        return [], []
+
+    conn = sqlite3.connect(cache_db)
+    cursor = conn.cursor()
+
+    # First, get the inferred series size (max lot_size per series)
+    series_sizes_query = """
+    SELECT
+        series_id,
+        MAX(lot_size) as inferred_series_size
+    FROM series_lot_comps
+    WHERE lot_size > 0
+    GROUP BY series_id
+    """
+
+    cursor.execute(series_sizes_query)
+    series_sizes = dict(cursor.fetchall())
+
+    # Load lots with valid pricing data
+    # Use both sold and active listings (active represent market expectations)
+    query = """
+    SELECT
+        series_id,
+        series_title,
+        author_name,
+        lot_size,
+        is_complete_set,
+        condition,
+        price,
+        is_sold,
+        price_per_book
+    FROM series_lot_comps
+    WHERE price IS NOT NULL
+      AND price >= 2.0  -- Minimum reasonable price
+      AND lot_size > 0
+      AND lot_size <= 50  -- Filter out unrealistic lot sizes
+    ORDER BY scraped_at DESC
+    """
+
+    cursor.execute(query)
+    rows = cursor.fetchall()
+    conn.close()
+
+    records = []
+    targets = []
+
+    for row in rows:
+        series_id = row[0]
+        lot_size = row[3]
+        inferred_series_size = series_sizes.get(series_id, lot_size)
+
+        record = {
+            'series_id': series_id,
+            'series_title': row[1],
+            'author_name': row[2],
+            'lot_size': lot_size,
+            'is_complete_set': bool(row[4]),
+            'condition': row[5],
+            'price': row[6],
+            'is_sold': bool(row[7]),
+            'price_per_book': row[8],
+            'inferred_series_size': inferred_series_size,
+            'completion_pct': lot_size / inferred_series_size if inferred_series_size > 0 else 0,
+        }
+        records.append(record)
+        targets.append(row[6])  # price
+
+    return records, np.array(targets)
 
 
-def create_simple_objects(record: dict):
-    """Convert record dict to simple objects for feature extraction."""
-    class SimpleMetadata:
-        def __init__(self, d, cover_type, signed, printing):
-            self.page_count = d.get('page_count')
-            self.published_year = d.get('published_year')
-            self.average_rating = d.get('average_rating')
-            self.ratings_count = d.get('ratings_count')
-            self.list_price = d.get('list_price')
-            self.categories = d.get('categories', [])
-            self.cover_type = cover_type
-            self.signed = bool(signed)
-            self.printing = printing
-
-    class SimpleMarket:
-        def __init__(self, d):
-            # Handle both old format (training_data.db) and new format (metadata_cache.db)
-            # Try new field names first, fall back to old names
-            self.sold_count = d.get('sold_comps_count') or d.get('sold_count')
-            self.active_count = d.get('active_count', 0)  # Not available in new format
-            self.active_median_price = d.get('active_median_price', 0)  # Not available in new format
-
-            # Use median as proxy for average if not available
-            sold_median = d.get('sold_comps_median')
-            self.sold_avg_price = d.get('sold_avg_price') or sold_median
-
-            # Calculate sell-through rate if we have the data
-            if self.sold_count and self.active_count and (self.sold_count + self.active_count) > 0:
-                self.sell_through_rate = self.sold_count / (self.sold_count + self.active_count)
-            else:
-                self.sell_through_rate = d.get('sell_through_rate')  # Use explicit value if available
-
-    class SimpleBookscouter:
-        def __init__(self, d):
-            self.amazon_sales_rank = d.get('amazon_sales_rank')
-            self.amazon_count = d.get('amazon_count')
-            self.amazon_lowest_price = d.get('amazon_lowest_price')
-
-    metadata = SimpleMetadata(
-        record['metadata'],
-        record.get('cover_type'),
-        record.get('signed', False),
-        record.get('printing')
-    ) if record['metadata'] else None
-
-    market = SimpleMarket(record['market']) if record['market'] else None
-    bookscouter = SimpleBookscouter(record['bookscouter']) if record['bookscouter'] else None
-
-    return metadata, market, bookscouter
-
-
-def extract_features(records, targets, extractor, catalog_db_path):
-    """Extract eBay-specific features from records."""
-    from isbn_lot_optimizer.ml.feature_extractor import get_bookfinder_features
-
+def extract_lot_features(records):
+    """Extract lot-specific features from records including completion percentage."""
     X = []
-    y = []
-    completeness_scores = []
 
-    for record, target in zip(records, targets):
-        metadata, market, bookscouter = create_simple_objects(record)
+    # Condition mapping
+    condition_map = {
+        'https://schema.org/NewCondition': 1.0,
+        'https://schema.org/UsedCondition': 0.6,
+        'https://schema.org/RefurbishedCondition': 0.8,
+        'https://schema.org/DamagedCondition': 0.3,
+    }
 
-        # Query BookFinder features for this ISBN
-        bookfinder_data = get_bookfinder_features(record['isbn'], str(catalog_db_path))
+    for record in records:
+        features = []
 
-        features = extractor.extract_for_platform(
-            platform='ebay',
-            metadata=metadata,
-            market=market,
-            bookscouter=bookscouter,
-            condition=record.get('condition', 'Good'),
-            abebooks=record.get('abebooks'),
-            bookfinder=bookfinder_data
-        )
+        # Lot characteristics
+        features.append(record['lot_size'])  # Number of books in lot
+        features.append(1 if record['is_complete_set'] else 0)  # Complete set indicator
+        features.append(1 if record['is_sold'] else 0)  # Sold vs active listing
 
-        X.append(features.values)
-        y.append(target)
-        completeness_scores.append(features.completeness)
+        # Price per book (if available)
+        features.append(record['price_per_book'] if record['price_per_book'] else 0)
 
-    return np.array(X), np.array(y), completeness_scores
+        # Condition (normalized)
+        condition_value = condition_map.get(record['condition'], 0.5)
+        features.append(condition_value)
+
+        # Lot size bins (categorical encoded as binary features)
+        features.append(1 if record['lot_size'] <= 3 else 0)  # Small lot
+        features.append(1 if 4 <= record['lot_size'] <= 7 else 0)  # Medium lot
+        features.append(1 if 8 <= record['lot_size'] <= 12 else 0)  # Large lot
+        features.append(1 if record['lot_size'] > 12 else 0)  # Very large lot
+
+        # Series popularity proxy (series with more lots are likely more popular)
+        # This will be same for all lots in a series, but helps model learn series value
+        features.append(record['series_id'])  # Will be normalized during scaling
+
+        # Completion percentage features (based on analysis showing U-shaped pricing curve)
+        completion_pct = record['completion_pct']
+        features.append(completion_pct)  # Linear completion percentage
+        features.append(completion_pct ** 2)  # Quadratic term to capture U-shaped curve
+
+        # Near-complete indicator (90%+ completion gets premium pricing)
+        is_near_complete = 1 if completion_pct >= 0.9 else 0
+        features.append(is_near_complete)
+
+        # Complete set marketing premium (interaction term)
+        # Analysis showed 42% premium when marketed as "complete set" vs not
+        complete_set_premium = 1 if (record['is_complete_set'] and is_near_complete) else 0
+        features.append(complete_set_premium)
+
+        # Inferred series size (helps model understand scale)
+        features.append(record['inferred_series_size'])
+
+        X.append(features)
+
+    return np.array(X)
+
+
+def get_feature_names():
+    """Return list of feature names in order."""
+    return [
+        'lot_size',
+        'is_complete_set',
+        'is_sold',
+        'price_per_book',
+        'condition_score',
+        'is_small_lot',
+        'is_medium_lot',
+        'is_large_lot',
+        'is_very_large_lot',
+        'series_id',
+        'completion_pct',
+        'completion_pct_squared',
+        'is_near_complete',
+        'complete_set_premium',
+        'inferred_series_size',
+    ]
 
 
 def remove_outliers(X, y, threshold=3.0):
@@ -119,30 +192,28 @@ def remove_outliers(X, y, threshold=3.0):
     return X[mask], y[mask]
 
 
-def train_ebay_model():
-    """Train and save eBay specialist model."""
+def train_lot_model():
+    """Train and save lot specialist model."""
     print("=" * 80)
-    print("TRAINING EBAY SPECIALIST MODEL")
+    print("TRAINING LOT SPECIALIST MODEL")
     print("=" * 80)
 
     # Load data
-    print("\n1. Loading eBay training data...")
-    platform_data = load_platform_training_data()
-    ebay_records, ebay_targets = platform_data['ebay']
+    print("\n1. Loading lot training data...")
+    records, targets = load_lot_training_data()
 
-    print(f"\n   Loaded {len(ebay_records)} eBay books")
-    print(f"   Target range: ${min(ebay_targets):.2f} - ${max(ebay_targets):.2f}")
-    print(f"   Target mean: ${np.mean(ebay_targets):.2f}")
+    print(f"\n   Loaded {len(records)} lot listings")
+    print(f"   Target range: ${min(targets):.2f} - ${max(targets):.2f}")
+    print(f"   Target mean: ${np.mean(targets):.2f}")
+    print(f"   Target median: ${np.median(targets):.2f}")
 
     # Extract features
-    print("\n2. Extracting eBay-specific features...")
-    extractor = PlatformFeatureExtractor()
-    catalog_db_path = Path.home() / '.isbn_lot_optimizer' / 'catalog.db'
-    X, y, completeness = extract_features(ebay_records, ebay_targets, extractor, catalog_db_path)
+    print("\n2. Extracting lot-specific features...")
+    X = extract_lot_features(records)
+    y = targets
 
-    feature_names = PlatformFeatureExtractor.get_platform_feature_names('ebay')
+    feature_names = get_feature_names()
     print(f"   Features extracted: {len(feature_names)} features")
-    print(f"   Average completeness: {np.mean(completeness):.1%}")
 
     # Remove outliers
     print("\n3. Removing outliers...")
@@ -223,7 +294,7 @@ def train_ebay_model():
     test_r2 = r2_score(y_test, y_test_pred)
 
     print("\n" + "=" * 80)
-    print("EBAY MODEL PERFORMANCE")
+    print("LOT MODEL PERFORMANCE")
     print("=" * 80)
     print(f"\nTraining Metrics:")
     print(f"  MAE:  ${train_mae:.2f}")
@@ -255,18 +326,18 @@ def train_ebay_model():
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # Save model
-    model_path = model_dir / 'ebay_model.pkl'
+    model_path = model_dir / 'lot_model.pkl'
     joblib.dump(model, model_path)
     print(f"✓ Saved model: {model_path}")
 
     # Save scaler
-    scaler_path = model_dir / 'ebay_scaler.pkl'
+    scaler_path = model_dir / 'lot_scaler.pkl'
     joblib.dump(scaler, scaler_path)
     print(f"✓ Saved scaler: {scaler_path}")
 
     # Save metadata
     metadata = {
-        'platform': 'ebay',
+        'platform': 'lot',
         'model_type': 'XGBRegressor',
         'n_features': len(feature_names),
         'feature_names': feature_names,
@@ -291,13 +362,13 @@ def train_ebay_model():
         'trained_at': datetime.now().isoformat(),
     }
 
-    metadata_path = model_dir / 'ebay_metadata.json'
+    metadata_path = model_dir / 'lot_metadata.json'
     with open(metadata_path, 'w') as f:
         json.dump(metadata, f, indent=2)
     print(f"✓ Saved metadata: {metadata_path}")
 
     print("\n" + "=" * 80)
-    print("EBAY MODEL TRAINING COMPLETE")
+    print("LOT MODEL TRAINING COMPLETE")
     print("=" * 80)
     print(f"\nModel saved to: {model_path}")
     print(f"Test MAE: ${test_mae:.2f}")
@@ -314,4 +385,4 @@ def train_ebay_model():
 
 
 if __name__ == "__main__":
-    train_ebay_model()
+    train_lot_model()

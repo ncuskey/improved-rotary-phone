@@ -6,7 +6,7 @@ import asyncio
 import json
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
 if TYPE_CHECKING:
@@ -109,6 +109,32 @@ class VizEventBroadcaster:
             "count": count,
             "timestamp": asyncio.get_event_loop().time(),
         })
+
+
+@router.post("/api/viz/emit")
+async def emit_events(request: Request):
+    """
+    Receive batched visualization events from db_monitor.
+
+    This endpoint is called by shared.db_monitor.EventBatcher when
+    database writes occur, allowing background scripts to send
+    visualization events without going through the web API.
+
+    Body: {"events": [{"type": "db_write", "isbn": "...", ...}, ...]}
+
+    Returns: {"status": "ok", "processed": N}
+    """
+    try:
+        data = await request.json()
+        events = data.get("events", [])
+
+        # Broadcast each event to connected WebSocket clients
+        for event in events:
+            await VizEventBroadcaster.broadcast(event)
+
+        return {"status": "ok", "processed": len(events)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 @router.websocket("/ws/viz")

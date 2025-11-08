@@ -45,6 +45,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shared.decodo import DecodoClient
 from shared.amazon_fbm_parser import parse_amazon_fbm_from_decodo, AmazonFBMParseError
+from shared.db_monitor import monitored_connect
 
 # Configure logging
 logging.basicConfig(
@@ -205,7 +206,7 @@ class AmazonFBMCollector:
             isbn: ISBN-13 string
             fbm_stats: Dict with FBM statistics
         """
-        conn = sqlite3.connect(self.cache_db_path)
+        conn = monitored_connect(self.cache_db_path)
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -246,7 +247,7 @@ class AmazonFBMCollector:
         Returns:
             List of ISBN strings
         """
-        conn = sqlite3.connect(self.cache_db_path)
+        conn = monitored_connect(self.cache_db_path)
         cursor = conn.cursor()
 
         # Build query - prioritize high quality but process all ISBNs

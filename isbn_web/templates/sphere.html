@@ -226,6 +226,125 @@
             color: #34EDF3;
             z-index: 1000;
         }
+
+        #activity-log {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(0, 8, 20, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 2px;
+            border: 1px solid rgba(52, 237, 243, 0.3);
+            box-shadow: 0 0 20px rgba(52, 237, 243, 0.2);
+            z-index: 1000;
+            width: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+
+        #activity-log h2 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #34EDF3;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: normal;
+            border-bottom: 1px solid rgba(52, 237, 243, 0.3);
+            padding-bottom: 8px;
+        }
+
+        #activity-log::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #activity-log::-webkit-scrollbar-track {
+            background: rgba(52, 237, 243, 0.05);
+        }
+
+        #activity-log::-webkit-scrollbar-thumb {
+            background: rgba(52, 237, 243, 0.3);
+            border-radius: 3px;
+        }
+
+        #activity-log::-webkit-scrollbar-thumb:hover {
+            background: rgba(52, 237, 243, 0.5);
+        }
+
+        .activity-entry {
+            padding: 8px;
+            margin: 5px 0;
+            border-left: 2px solid;
+            background: rgba(52, 237, 243, 0.05);
+            font-family: 'Courier New', monospace;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .activity-entry.db-insert {
+            border-left-color: #00FF66;
+        }
+
+        .activity-entry.db-update {
+            border-left-color: #3399FF;
+        }
+
+        .activity-entry.db-delete {
+            border-left-color: #FF3333;
+        }
+
+        .activity-entry.book-accessed {
+            border-left-color: #F715AB;
+        }
+
+        .activity-entry.request {
+            border-left-color: #FF0080;
+        }
+
+        .activity-entry.response {
+            border-left-color: #00CCFF;
+        }
+
+        .activity-time {
+            color: #6287F8;
+            font-size: 10px;
+            margin-right: 8px;
+        }
+
+        .activity-type {
+            color: #34EDF3;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+
+        .activity-isbn {
+            color: #00FF66;
+            font-family: 'Courier New', monospace;
+        }
+
+        .activity-table {
+            color: #F715AB;
+            margin-left: 4px;
+        }
+
+        .activity-operation {
+            color: #FFFF00;
+            text-transform: uppercase;
+            font-size: 10px;
+            margin-left: 4px;
+        }
     </style>
 </head>
 <body>
@@ -268,6 +387,18 @@
             <span>Book Active</span>
         </div>
         <div class="legend-item">
+            <div class="legend-color" style="background: #00FF66; color: #00FF66;"></div>
+            <span>DB Insert</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #3399FF; color: #3399FF;"></div>
+            <span>DB Update</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #FF3333; color: #FF3333;"></div>
+            <span>DB Delete</span>
+        </div>
+        <div class="legend-item">
             <div class="legend-color" style="background: #FF0080; color: #FF0080;"></div>
             <span>Request Wave</span>
         </div>
@@ -277,19 +408,15 @@
         </div>
         <div class="legend-item">
             <div class="legend-color" style="background: #00FF4D; color: #00FF4D;"></div>
-            <span>DB Read</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-color" style="background: #FF9900; color: #FF9900;"></div>
-            <span>DB Write</span>
+            <span>DB Read Wave</span>
         </div>
         <div class="legend-item">
             <div class="legend-color" style="background: #FFFF00; color: #FFFF00;"></div>
-            <span>Data Scraping</span>
+            <span>Scraping</span>
         </div>
         <div class="legend-item">
             <div class="legend-color" style="background: #9933FF; color: #9933FF;"></div>
-            <span>ML Prediction</span>
+            <span>ML Predict</span>
         </div>
     </div>
 
@@ -300,6 +427,11 @@
     </div>
 
     <div id="fps-counter">FPS: <span id="fps-value">--</span></div>
+
+    <div id="activity-log">
+        <h2>◢ ACTIVITY LOG</h2>
+        <div id="activity-entries"></div>
+    </div>
 
     <!-- Three.js and dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -333,6 +465,9 @@
             dbWriteWave: { r: 1.0, g: 0.6, b: 0.0 },  // Orange
             scrapingWave: { r: 1.0, g: 1.0, b: 0.0 }, // Yellow
             mlWave: { r: 0.6, g: 0.2, b: 1.0 },       // Purple
+            dbInsert: { r: 0.0, g: 1.0, b: 0.4 },     // Bright green for INSERT
+            dbUpdate: { r: 0.2, g: 0.6, b: 1.0 },     // Bright blue for UPDATE
+            dbDelete: { r: 1.0, g: 0.2, b: 0.2 },     // Bright red for DELETE
         };
 
         // ==================== GLOBAL STATE ====================
@@ -353,6 +488,10 @@
         let fps = 0;
         let frameCount = 0;
         let lastFpsUpdate = Date.now();
+
+        // Activity log
+        const MAX_LOG_ENTRIES = 100;
+        let activityEntries = [];
 
         // ==================== CUSTOM SHADERS ====================
         const vertexShader = `
@@ -714,17 +853,21 @@
                     const fade = 1 - progress;
 
                     const idx = i * 3;
-                    const magenta = COLOR_PALETTE.accessed;
+
+                    // Use pulseColor if set (for db_write events), otherwise use magenta (for book_accessed)
+                    const highlightColor = book.pulseColor || COLOR_PALETTE.accessed;
                     const idle = book.baseColor;
 
-                    colors[idx] = magenta.r * (1 - progress) + idle.r * progress;
-                    colors[idx + 1] = magenta.g * (1 - progress) + idle.g * progress;
-                    colors[idx + 2] = magenta.b * (1 - progress) + idle.b * progress;
+                    colors[idx] = highlightColor.r * (1 - progress) + idle.r * progress;
+                    colors[idx + 1] = highlightColor.g * (1 - progress) + idle.g * progress;
+                    colors[idx + 2] = highlightColor.b * (1 - progress) + idle.b * progress;
 
                     sizes[i] = CONFIG.POINT_BASE_SIZE + fade * (2.0 + pulse * 1.0);
+                    waveIntensities[i] = fade; // Fade the wave intensity over time
                     updateQueue.add(i);
                 } else {
                     book.accessed = false;
+                    book.pulseColor = null; // Clear pulse color
                 }
             });
 
@@ -798,6 +941,26 @@
             }, 200);
         }
 
+        // ==================== ISBN MAPPING ====================
+        function hashISBN(isbn) {
+            /**
+             * Hash ISBN to a consistent point index (0 to NUM_POINTS-1).
+             * Uses simple string hash for deterministic mapping.
+             */
+            if (!isbn) return null;
+
+            // Simple hash function
+            let hash = 0;
+            for (let i = 0; i < isbn.length; i++) {
+                const char = isbn.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32-bit integer
+            }
+
+            // Map to point index
+            return Math.abs(hash) % CONFIG.NUM_POINTS;
+        }
+
         // ==================== BOOK HIGHLIGHTING ====================
         function highlightBook(bookIndex = null) {
             if (bookIndex === null) {
@@ -806,6 +969,122 @@
             const book = bookData[bookIndex];
             book.accessed = true;
             book.accessTime = Date.now();
+        }
+
+        function triggerPointPulse(pointIndex, operation = 'update') {
+            /**
+             * Light up a specific point on the sphere with operation-specific color.
+             *
+             * @param {number} pointIndex - Index of the point (0 to NUM_POINTS-1)
+             * @param {string} operation - 'insert', 'update', or 'delete'
+             */
+            if (pointIndex === null || pointIndex < 0 || pointIndex >= bookData.length) {
+                return;
+            }
+
+            const book = bookData[pointIndex];
+            const colors = pointsGeometry.attributes.customColor.array;
+            const sizes = pointsGeometry.attributes.size.array;
+            const waveIntensities = pointsGeometry.attributes.waveIntensity.array;
+
+            // Choose color based on operation
+            let pulseColor;
+            switch (operation) {
+                case 'insert':
+                    pulseColor = COLOR_PALETTE.dbInsert;
+                    break;
+                case 'delete':
+                    pulseColor = COLOR_PALETTE.dbDelete;
+                    break;
+                case 'update':
+                default:
+                    pulseColor = COLOR_PALETTE.dbUpdate;
+                    break;
+            }
+
+            // Set point color immediately
+            const idx = pointIndex * 3;
+            colors[idx] = pulseColor.r;
+            colors[idx + 1] = pulseColor.g;
+            colors[idx + 2] = pulseColor.b;
+
+            // Enlarge point
+            sizes[pointIndex] = CONFIG.POINT_BASE_SIZE * 4.0;
+
+            // Set wave intensity for shader displacement
+            waveIntensities[pointIndex] = 1.0;
+
+            // Mark for animation
+            book.accessed = true;
+            book.accessTime = Date.now();
+            book.pulseColor = pulseColor;
+
+            updateQueue.add(pointIndex);
+
+            // Mark geometry for update
+            pointsGeometry.attributes.customColor.needsUpdate = true;
+            pointsGeometry.attributes.size.needsUpdate = true;
+            pointsGeometry.attributes.waveIntensity.needsUpdate = true;
+        }
+
+        // ==================== ACTIVITY LOG ====================
+        function addActivityEntry(type, data = {}) {
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour12: false });
+
+            // Create entry HTML
+            let entryClass = 'activity-entry';
+            let typeLabel = type.toUpperCase().replace('_', ' ');
+            let details = '';
+
+            switch (type) {
+                case 'db_write':
+                    const op = (data.operation || 'update').toLowerCase();
+                    entryClass += ` db-${op}`;
+                    typeLabel = `DB ${op.toUpperCase()}`;
+                    if (data.isbn) {
+                        details = `<span class="activity-isbn">${data.isbn}</span>`;
+                    }
+                    if (data.table) {
+                        details += `<span class="activity-table">${data.table}</span>`;
+                    }
+                    break;
+
+                case 'book_accessed':
+                    entryClass += ' book-accessed';
+                    typeLabel = 'BOOK ACCESS';
+                    break;
+
+                case 'request_in':
+                    entryClass += ' request';
+                    typeLabel = 'REQUEST IN';
+                    break;
+
+                case 'response_out':
+                    entryClass += ' response';
+                    typeLabel = 'RESPONSE OUT';
+                    break;
+            }
+
+            const entryHTML = `
+                <div class="${entryClass}">
+                    <span class="activity-time">${time}</span>
+                    <span class="activity-type">${typeLabel}</span>
+                    ${details}
+                </div>
+            `;
+
+            // Add to array
+            activityEntries.unshift(entryHTML);
+
+            // Limit entries
+            if (activityEntries.length > MAX_LOG_ENTRIES) {
+                activityEntries = activityEntries.slice(0, MAX_LOG_ENTRIES);
+            }
+
+            // Update DOM
+            const container = document.getElementById('activity-entries');
+            container.innerHTML = activityEntries.join('');
         }
 
         // ==================== WEBSOCKET ====================
@@ -845,35 +1124,49 @@
                 case 'request_in':
                     requestCount++;
                     document.getElementById('request-count').textContent = requestCount;
-                    createWave('request');
+                    addActivityEntry('request_in', data);
+                    // Wave disabled: createWave('request');
                     break;
 
                 case 'response_out':
                     responseCount++;
                     document.getElementById('response-count').textContent = responseCount;
-                    createWave('response');
+                    addActivityEntry('response_out', data);
+                    // Wave disabled: createWave('response');
                     break;
 
                 case 'book_accessed':
                     bookAccessCount++;
                     document.getElementById('book-access-count').textContent = bookAccessCount;
+                    addActivityEntry('book_accessed', data);
                     highlightBook();
                     break;
 
                 case 'db_read':
-                    createWave('db_read');
+                    // Wave disabled: createWave('db_read');
                     break;
 
                 case 'db_write':
-                    createWave('db_write');
+                    // Log activity
+                    addActivityEntry('db_write', data);
+
+                    // Light up specific point if ISBN provided
+                    if (data.isbn) {
+                        const pointIndex = hashISBN(data.isbn);
+                        if (pointIndex !== null) {
+                            console.log(`DB ${data.operation || 'update'}: ${data.isbn} -> point ${pointIndex}`);
+                            triggerPointPulse(pointIndex, data.operation || 'update');
+                        }
+                    }
+                    // Wave disabled (no fallback)
                     break;
 
                 case 'scraping':
-                    createWave('scraping');
+                    // Wave disabled: createWave('scraping');
                     break;
 
                 case 'ml_prediction':
-                    createWave('ml_prediction');
+                    // Wave disabled: createWave('ml_prediction');
                     break;
 
                 case 'ping':
@@ -914,11 +1207,38 @@
             setTimeout(() => createWave('ml_prediction'), 600);
             setTimeout(() => createWave('db_write'), 800);
             setTimeout(() => createWave('response'), 1000);
+
+            // Test ISBN-specific pulses
+            setTimeout(() => {
+                // Test INSERT (green)
+                const testISBN1 = '9780140449136';
+                const idx1 = hashISBN(testISBN1);
+                triggerPointPulse(idx1, 'insert');
+                console.log(`Test INSERT pulse at index ${idx1} for ISBN ${testISBN1}`);
+            }, 1200);
+
+            setTimeout(() => {
+                // Test UPDATE (blue)
+                const testISBN2 = '9780307277671';
+                const idx2 = hashISBN(testISBN2);
+                triggerPointPulse(idx2, 'update');
+                console.log(`Test UPDATE pulse at index ${idx2} for ISBN ${testISBN2}`);
+            }, 1400);
+
+            setTimeout(() => {
+                // Test DELETE (red)
+                const testISBN3 = '9780061120084';
+                const idx3 = hashISBN(testISBN3);
+                triggerPointPulse(idx3, 'delete');
+                console.log(`Test DELETE pulse at index ${idx3} for ISBN ${testISBN3}`);
+            }, 1600);
+
+            // Test random book access highlights
             setTimeout(() => {
                 for (let i = 0; i < 5; i++) {
                     setTimeout(() => highlightBook(), i * 200);
                 }
-            }, 1200);
+            }, 1800);
         }
 
         async function fetchBookCount() {

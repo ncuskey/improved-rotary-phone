@@ -87,34 +87,57 @@ Tested with 10,000 INSERT operations:
 ### Currently Monitored
 
 - ✅ `scripts/collect_amazon_fbm_prices.py` - Amazon FBM collection
+- ✅ `scripts/enrich_metadata_cache_market_data.py` - Market data enrichment (eBay sold listings)
+- ✅ `scripts/enrich_series_lot_market_data.py` - Series lot market data enrichment
 
 ### Needs Update
 
-- ⏳ `scripts/enrich_metadata_cache_market_data.py` - Market data enrichment
-- ⏳ Other collection scripts that write to database
+- ⏳ Other collection scripts that write to cached_books/books/sold_listings tables
 
 ## Visualization
 
 ### Current Implementation (sphere.html)
 
-The sphere currently shows generic waves for all events. Database events are broadcast to WebSocket clients but not yet mapped to specific ISBN orbs.
+The sphere features ISBN-specific visualization with the following capabilities:
 
-### Needed Updates
-
-1. **ISBN Mapping**
-   - Load all ISBNs from database on page load
-   - Assign each ISBN to a sphere position (Fibonacci distribution)
-   - Store mapping: `{isbn: {index, position}}`
+1. **Hash-Based ISBN Mapping**
+   - Each ISBN is deterministically mapped to a sphere point using a hash function
+   - `hashISBN(isbn)` maps any ISBN to a point index (0-5999)
+   - Same ISBN always maps to the same point on the sphere
+   - No need to fetch all ISBNs upfront - automatic mapping
 
 2. **Event Handling**
-   - Receive `db_write` events with ISBN field
-   - Look up ISBN in mapping
-   - Trigger wave/pulse at that specific position
+   - `db_write` events with ISBN field trigger specific point pulses
+   - `triggerPointPulse(pointIndex, operation)` lights up individual orbs
+   - No wave effects (disabled for clarity)
 
 3. **Visual Effects**
-   - Light up specific orbs when their ISBN is written
-   - Different colors for insert/update/delete
-   - Fade effect over time
+   - **INSERT**: Bright green pulse (#00FF66)
+   - **UPDATE**: Bright blue pulse (#3399FF)
+   - **DELETE**: Bright red pulse (#FF3333)
+   - 2.5 second fade animation with size pulse
+   - Shader displacement effect during pulse
+
+4. **Activity Log**
+   - Real-time scrolling log on right side of screen
+   - Shows timestamped entries with color-coded borders:
+     - Green border: DB INSERT
+     - Blue border: DB UPDATE
+     - Red border: DB DELETE
+     - Magenta border: Book accessed
+     - Pink border: Request in
+     - Cyan border: Response out
+   - Each entry displays:
+     - Time (HH:MM:SS format)
+     - Event type
+     - ISBN (if available)
+     - Table name (if available)
+   - Auto-scrolls with newest entries at top
+   - Limited to 100 most recent entries
+
+5. **Testing**
+   - "Test Waves" button demonstrates all event types including ISBN-specific pulses
+   - Console logging for ISBN→index mapping verification
 
 ## Testing
 
@@ -194,9 +217,11 @@ If ISBN isn't in the WHERE clause or named parameter, it won't be extracted.
 - ✅ API endpoint `/api/viz/emit`
 - ✅ WebSocket broadcasting
 - ✅ FBM collection script updated
-- ⏳ ISBN→sphere position mapping
-- ⏳ Specific orb lighting effects
-- ⏳ Other collection scripts
+- ✅ ISBN→sphere position mapping (hash-based)
+- ✅ Specific orb lighting effects (INSERT/UPDATE/DELETE colors)
+- ✅ Main collection scripts updated (metadata enrichment, series lot enrichment)
+- ✅ Activity log with real-time event display
+- ✅ Wave effects disabled for clarity
 
 ## Related Documentation
 

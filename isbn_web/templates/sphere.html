@@ -318,7 +318,7 @@
             NUM_POINTS: 6000,
             AUTO_ROTATE_SPEED: 0.3,
             WAVE_SPEED: 0.015,
-            WAVE_WIDTH: 0.15,
+            WAVE_WIDTH: 0.04,  // very narrow wave band
             POINT_BASE_SIZE: 0.5,
             IDLE_TIMEOUT: 3000, // Resume auto-rotate after 3s
         };
@@ -366,8 +366,8 @@
                 vColor = customColor;
                 vWaveIntensity = waveIntensity;
 
-                // Displace point outward based on wave intensity
-                vec3 displaced = position + normalize(position) * waveIntensity * 0.15;
+                // Displace point outward based on wave intensity (minimal displacement)
+                vec3 displaced = position + normalize(position) * waveIntensity * 0.025;
 
                 vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
                 gl_PointSize = size * (300.0 / -mvPosition.z);
@@ -389,9 +389,9 @@
 
                 if (alpha < 0.01) discard;
 
-                // Enhanced glow during wave
-                float glow = (1.0 - dist * 2.0) * (1.0 + vWaveIntensity * 3.0);
-                vec3 finalColor = vColor * (1.0 + glow * 0.6);
+                // Very subtle glow during wave (minimal intensity)
+                float glow = (1.0 - dist * 2.0) * (1.0 + vWaveIntensity * 0.4);
+                vec3 finalColor = vColor * (1.0 + glow * 0.1);
 
                 gl_FragColor = vec4(finalColor, alpha * 0.4);
             }
@@ -675,9 +675,9 @@
 
             const bloomPass = new THREE.UnrealBloomPass(
                 new THREE.Vector2(window.innerWidth, window.innerHeight),
-                0.8,  // strength
-                0.6,  // radius
-                0.75  // threshold
+                0.15,  // strength (much more subtle)
+                0.2,   // radius (very tight glow)
+                0.92   // threshold (only very bright objects bloom)
             );
             composer.addPass(bloomPass);
         }

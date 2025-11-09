@@ -1,7 +1,7 @@
 {
   "platform": "amazon",
   "model_type": "GradientBoostingRegressor",
-  "n_features": 18,
+  "n_features": 27,
   "feature_names": [
     "log_amazon_rank",
     "amazon_count",
@@ -9,12 +9,21 @@
     "amazon_trade_in_price",
     "amazon_price_per_rank",
     "amazon_competitive_density",
+    "amazon_fbm_median",
+    "amazon_fbm_count",
+    "amazon_fbm_price_spread",
+    "amazon_fbm_vs_rank",
+    "amazon_fbm_avg_rating",
     "page_count",
     "age_years",
     "log_ratings",
     "rating",
+    "is_new",
+    "is_like_new",
     "is_very_good",
     "is_good",
+    "is_acceptable",
+    "is_poor",
     "is_hardcover",
     "is_mass_market",
     "is_signed",
@@ -22,75 +31,84 @@
     "is_textbook",
     "is_fiction"
   ],
-  "training_samples": 5217,
-  "test_samples": 1305,
-  "train_mae": 16.14806769094208,
-  "test_mae": 16.416112319781757,
-  "train_rmse": 32.888481489094744,
-  "test_rmse": 35.89054773609223,
-  "train_r2": 0.044041569474955855,
-  "test_r2": 0.034501170089386024,
+  "training_samples": 11559,
+  "test_samples": 2890,
+  "train_mae": 0.19248121310009658,
+  "test_mae": 0.18454387435793398,
+  "train_rmse": 2.8865222946262534,
+  "test_rmse": 2.2924262816878573,
+  "train_r2": 0.9954027717154976,
+  "test_r2": 0.9970040784819127,
   "feature_importance": {
-    "log_amazon_rank": 0.00021098572133078727,
-    "amazon_count": 0.02881359471769493,
-    "amazon_lowest_price": 0.4429561661386638,
+    "log_amazon_rank": 0.0,
+    "amazon_count": 0.0,
+    "amazon_lowest_price": 0.0,
     "amazon_trade_in_price": 0.0,
-    "amazon_price_per_rank": 0.422533377632708,
-    "amazon_competitive_density": 0.040890316737934626,
-    "page_count": 0.034203741424032874,
-    "age_years": 0.000868306510767337,
-    "log_ratings": 0.0019638939648300184,
-    "rating": 0.0005126756013323528,
+    "amazon_price_per_rank": 0.0,
+    "amazon_competitive_density": 0.0,
+    "amazon_fbm_median": 0.6413505474205715,
+    "amazon_fbm_count": 0.0013925622923249181,
+    "amazon_fbm_price_spread": 8.984883240778419e-06,
+    "amazon_fbm_vs_rank": 0.35717237026798787,
+    "amazon_fbm_avg_rating": 1.93799166188583e-05,
+    "page_count": 4.8945674861202084e-05,
+    "age_years": 7.209544394907404e-06,
+    "log_ratings": 0.0,
+    "rating": 0.0,
+    "is_new": 0.0,
+    "is_like_new": 0.0,
     "is_very_good": 0.0,
     "is_good": 0.0,
+    "is_acceptable": 0.0,
+    "is_poor": 0.0,
     "is_hardcover": 0.0,
     "is_mass_market": 0.0,
     "is_signed": 0.0,
     "is_first_edition": 0.0,
-    "is_textbook": 5.766749205117117e-06,
-    "is_fiction": 0.02704117480150017
+    "is_textbook": 0.0,
+    "is_fiction": 0.0
   },
   "top_features": [
     [
-      "amazon_lowest_price",
-      0.4429561661386638
+      "amazon_fbm_median",
+      0.6413505474205715
     ],
     [
-      "amazon_price_per_rank",
-      0.422533377632708
+      "amazon_fbm_vs_rank",
+      0.35717237026798787
     ],
     [
-      "amazon_competitive_density",
-      0.040890316737934626
+      "amazon_fbm_count",
+      0.0013925622923249181
     ],
     [
       "page_count",
-      0.034203741424032874
+      4.8945674861202084e-05
     ],
     [
-      "amazon_count",
-      0.02881359471769493
+      "amazon_fbm_avg_rating",
+      1.93799166188583e-05
     ],
     [
-      "is_fiction",
-      0.02704117480150017
-    ],
-    [
-      "log_ratings",
-      0.0019638939648300184
+      "amazon_fbm_price_spread",
+      8.984883240778419e-06
     ],
     [
       "age_years",
-      0.000868306510767337
-    ],
-    [
-      "rating",
-      0.0005126756013323528
+      7.209544394907404e-06
     ],
     [
       "log_amazon_rank",
-      0.00021098572133078727
+      0.0
+    ],
+    [
+      "amazon_count",
+      0.0
+    ],
+    [
+      "amazon_lowest_price",
+      0.0
     ]
   ],
-  "trained_at": "2025-11-04T21:01:50.772885"
+  "trained_at": "2025-11-08T17:01:53.463824"
 }

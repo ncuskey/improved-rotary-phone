@@ -28,6 +28,13 @@ FEATURE_NAMES = [
     "amazon_price_per_rank",
     "amazon_competitive_density",
 
+    # Amazon FBM (Fulfilled by Merchant) features - NEW Phase 4
+    "amazon_fbm_median",
+    "amazon_fbm_count",
+    "amazon_fbm_price_spread",
+    "amazon_fbm_vs_rank",
+    "amazon_fbm_avg_rating",
+
     "ebay_sold_count",
     "ebay_active_median",
 
@@ -98,8 +105,12 @@ FEATURE_NAMES = [
     # Phase 2.2: Series completion features
 
     # Condition (one-hot encoded)
+    "is_new",
+    "is_like_new",
     "is_very_good",
     "is_good",
+    "is_acceptable",
+    "is_poor",
 
     # Book attributes (physical characteristics)
     "is_hardcover",
@@ -158,6 +169,7 @@ class FeatureExtractor:
         bookfinder: Optional[Dict] = None,
         sold_listings: Optional[Dict] = None,
         author_aggregates: Optional[Dict] = None,
+        amazon_fbm: Optional[Dict] = None,
     ) -> FeatureVector:
         """
         Extract features from book data.
@@ -219,6 +231,38 @@ class FeatureExtractor:
             features["amazon_competitive_density"] = amazon_count / amazon_rank_log
         else:
             features["amazon_competitive_density"] = 0
+
+        # Amazon FBM (Fulfilled by Merchant) features - Phase 4
+        if amazon_fbm:
+            features["amazon_fbm_median"] = amazon_fbm.get('amazon_fbm_median', 0) or 0
+            features["amazon_fbm_count"] = amazon_fbm.get('amazon_fbm_count', 0) or 0
+            fbm_min = amazon_fbm.get('amazon_fbm_min', 0) or 0
+            fbm_max = amazon_fbm.get('amazon_fbm_max', 0) or 0
+            features["amazon_fbm_avg_rating"] = amazon_fbm.get('amazon_fbm_avg_rating', 0) or 0
+
+            # Price spread (market volatility indicator)
+            if fbm_max > 0 and fbm_min > 0:
+                features["amazon_fbm_price_spread"] = fbm_max - fbm_min
+            else:
+                features["amazon_fbm_price_spread"] = 0
+
+            # FBM price efficiency vs sales rank
+            if features["amazon_fbm_median"] > 0 and amazon_rank_log > 0:
+                features["amazon_fbm_vs_rank"] = features["amazon_fbm_median"] / amazon_rank_log
+            else:
+                features["amazon_fbm_vs_rank"] = 0
+
+            if not features["amazon_fbm_median"]:
+                missing.append("amazon_fbm_median")
+            if not features["amazon_fbm_count"]:
+                missing.append("amazon_fbm_count")
+        else:
+            features["amazon_fbm_median"] = 0
+            features["amazon_fbm_count"] = 0
+            features["amazon_fbm_price_spread"] = 0
+            features["amazon_fbm_vs_rank"] = 0
+            features["amazon_fbm_avg_rating"] = 0
+            missing.extend(["amazon_fbm_median", "amazon_fbm_count"])
 
         if market:
             features["ebay_sold_count"] = market.sold_count if market.sold_count is not None else 0
@@ -451,8 +495,10 @@ class FeatureExtractor:
             features["decade_cos"] = math.cos(2 * math.pi * decade / 10)
 
             # Age-based value decay (older books may have different pricing dynamics)
-            features["age_squared"] = age ** 2
-            features["log_age"] = math.log1p(age)
+            # Ensure age is non-negative for log transform
+            age_safe = max(0, age)
+            features["age_squared"] = age_safe ** 2
+            features["log_age"] = math.log1p(age_safe)
 
             # Series completion features (Phase 2.2)
             series_name = getattr(metadata, 'series_name', None)
@@ -631,8 +677,12 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "rating",
 
         # Condition (critical for eBay)
+        "is_new",
+        "is_like_new",
         "is_very_good",
         "is_good",
+        "is_acceptable",
+        "is_poor",
 
         # Physical characteristics
         "is_hardcover",
@@ -670,8 +720,12 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "rating",
 
         # Condition
+        "is_new",
+        "is_like_new",
         "is_very_good",
         "is_good",
+        "is_acceptable",
+        "is_poor",
 
         # Physical characteristics
         "is_hardcover",
@@ -691,6 +745,13 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "amazon_price_per_rank",
         "amazon_competitive_density",
 
+        # Amazon FBM (Fulfilled by Merchant) features - Phase 4
+        "amazon_fbm_median",
+        "amazon_fbm_count",
+        "amazon_fbm_price_spread",
+        "amazon_fbm_vs_rank",
+        "amazon_fbm_avg_rating",
+
         # Book attributes
         "page_count",
         "age_years",
@@ -698,8 +759,12 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "rating",
 
         # Condition
+        "is_new",
+        "is_like_new",
         "is_very_good",
         "is_good",
+        "is_acceptable",
+        "is_poor",
 
         # Physical characteristics
         "is_hardcover",
@@ -741,8 +806,12 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "is_first_edition",
 
         # Condition
+        "is_new",
+        "is_like_new",
         "is_very_good",
         "is_good",
+        "is_acceptable",
+        "is_poor",
     ]
 
     # NEW: Alibris features (independent booksellers marketplace)
@@ -774,8 +843,12 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "is_first_edition",
 
         # Condition
+        "is_new",
+        "is_like_new",
         "is_very_good",
         "is_good",
+        "is_acceptable",
+        "is_poor",
     ]
 
     # NEW: Zvab features (German antiquarian marketplace)
@@ -807,8 +880,12 @@ class PlatformFeatureExtractor(FeatureExtractor):
         "is_first_edition",
 
         # Condition
+        "is_new",
+        "is_like_new",
         "is_very_good",
         "is_good",
+        "is_acceptable",
+        "is_poor",
     ]
 
     def extract_for_platform(
@@ -821,6 +898,7 @@ class PlatformFeatureExtractor(FeatureExtractor):
         abebooks: Optional[Dict] = None,
         bookfinder: Optional[Dict] = None,
         sold_listings: Optional[Dict] = None,
+        amazon_fbm: Optional[Dict] = None,
     ) -> FeatureVector:
         """
         Extract platform-specific features.
@@ -834,12 +912,13 @@ class PlatformFeatureExtractor(FeatureExtractor):
             abebooks: AbeBooks pricing data
             bookfinder: BookFinder aggregator data
             sold_listings: Sold listings data from Serper
+            amazon_fbm: Amazon FBM (Fulfilled by Merchant) pricing data
 
         Returns:
             FeatureVector with platform-specific features only
         """
         # First extract all features
-        full_features = self.extract(metadata, market, bookscouter, condition, abebooks, bookfinder, sold_listings)
+        full_features = self.extract(metadata, market, bookscouter, condition, abebooks, bookfinder, sold_listings, author_aggregates=None, amazon_fbm=amazon_fbm)
 
         # Get platform-specific feature subset
         if platform.lower() == 'ebay':

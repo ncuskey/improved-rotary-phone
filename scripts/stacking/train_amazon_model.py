@@ -21,6 +21,10 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+# Check Python version for XGBoost/OpenMP compatibility
+from shared.python_version_check import check_python_version
+check_python_version()
+
 from scripts.stacking.data_loader import load_platform_training_data
 from isbn_lot_optimizer.ml.feature_extractor import PlatformFeatureExtractor
 
@@ -87,7 +91,8 @@ def extract_features(records, targets, extractor, catalog_db_path):
             bookscouter=bookscouter,
             condition=record.get('condition', 'Good'),
             abebooks=record.get('abebooks'),
-            bookfinder=bookfinder_data
+            bookfinder=bookfinder_data,
+            amazon_fbm=record.get('amazon_fbm')
         )
 
         X.append(features.values)

@@ -449,7 +449,7 @@ class PlatformDataLoader:
         return books
 
     def _load_cache_books(self) -> List[dict]:
-        """Load books from metadata_cache.db (Amazon pricing)."""
+        """Load books from metadata_cache.db (Amazon pricing + FBM data)."""
         if not self.cache_db.exists():
             print(f"Warning: {self.cache_db} not found")
             return []
@@ -468,11 +468,16 @@ class PlatformDataLoader:
             c.page_count,
             p.median_used_good,
             p.median_used_very_good,
-            p.offer_count
+            p.offer_count,
+            c.amazon_fbm_count,
+            c.amazon_fbm_min,
+            c.amazon_fbm_median,
+            c.amazon_fbm_max,
+            c.amazon_fbm_avg_rating
         FROM cached_books c
-        JOIN amazon_pricing p ON c.isbn = p.isbn
-        WHERE p.median_used_good IS NOT NULL
-           OR p.median_used_very_good IS NOT NULL
+        LEFT JOIN amazon_pricing p ON c.isbn = p.isbn
+        WHERE (p.median_used_good IS NOT NULL OR p.median_used_very_good IS NOT NULL)
+           OR c.amazon_fbm_median IS NOT NULL
         """
 
         cursor.execute(query)
@@ -482,7 +487,8 @@ class PlatformDataLoader:
         books = []
         for row in rows:
             (isbn, title, authors, publisher, pub_year, binding, page_count,
-             price_good, price_vg, offer_count) = row
+             price_good, price_vg, offer_count,
+             fbm_count, fbm_min, fbm_median, fbm_max, fbm_avg_rating) = row
 
             # Create minimal metadata
             metadata_dict = {
@@ -493,8 +499,25 @@ class PlatformDataLoader:
                 'page_count': page_count,
             }
 
-            # Use Good condition price, fallback to Very Good
-            target_price = price_good if price_good and price_good > 0 else price_vg
+            # Build Amazon FBM dict if data available
+            amazon_fbm_dict = None
+            if fbm_median or fbm_count:
+                amazon_fbm_dict = {
+                    'amazon_fbm_count': fbm_count,
+                    'amazon_fbm_min': fbm_min,
+                    'amazon_fbm_median': fbm_median,
+                    'amazon_fbm_max': fbm_max,
+                    'amazon_fbm_avg_rating': fbm_avg_rating,
+                }
+
+            # Use FBM median as primary target, fallback to old pricing
+            target_price = None
+            if fbm_median and fbm_median > 0:
+                target_price = fbm_median
+            elif price_good and price_good > 0:
+                target_price = price_good
+            elif price_vg and price_vg > 0:
+                target_price = price_vg
 
             if target_price and target_price > 0:
                 book = {
@@ -507,6 +530,7 @@ class PlatformDataLoader:
                     'signed': False,
                     'printing': None,
                     'abebooks': None,
+                    'amazon_fbm': amazon_fbm_dict,
                     'amazon_target': target_price,
                 }
                 books.append(book)

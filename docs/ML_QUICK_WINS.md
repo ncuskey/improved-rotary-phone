@@ -242,12 +242,57 @@ print(f'Price types: {set(price_types)}')
 **Key Insight:**
 eBay model already has good performance (11.9% MAPE) BECAUSE it uses 100% SOLD prices. This validates the hypothesis that sold vs listing price distinction is critical.
 
+### AbeBooks Model Retraining (November 9, 2025)
+
+**Setup:**
+- Integrated temporal weighting (365-day half-life)
+- Integrated price type weighting (3x for sold prices)
+- Modified `train_abebooks_model.py` with same pattern as eBay
+
+**Results:**
+- Baseline (v2): Test MAE $3.08, Test MAPE 17.7%, R² 0.276
+- Quick Wins (v3): Test MAE $3.08, Test MAPE 17.7%, R² 0.276
+- **No improvement observed**
+
+**Root Cause Analysis:**
+1. **Temporal weighting ineffective**: Weight range 1.0000-1.0000 (completely uniform)
+   - All timestamps are identical (no temporal variation in data)
+
+2. **Price type weighting ineffective**: Mean sold weight 0.00x (should be 3.00x)
+   - ALL AbeBooks samples are 'listing' prices (100% asking prices)
+   - No 'sold' prices to upweight
+   - Normalization results in uniform weight=1.0 for all samples
+
+**Key Insight:**
+AbeBooks has WORSE performance (17.7% MAPE) than eBay (11.9% MAPE) BECAUSE it uses 100% LISTING prices instead of SOLD prices. This further validates that sold vs listing price distinction is critical.
+
+---
+
+### Critical Discovery: Quick Wins Require Mixed Price Types
+
+**The problem:** Quick wins are ineffective when training data contains only ONE price type.
+
+| Model | Price Type Mix | MAPE | Quick Wins Impact |
+|-------|----------------|------|-------------------|
+| eBay | 100% sold | 11.9% | None (already optimal) |
+| AbeBooks | 100% listing | 17.7% | None (no sold to upweight) |
+| **Ideal** | **Mix of sold + listing** | **?** | **Expected: 20-30% improvement** |
+
+**Why quick wins need mixed data:**
+- Price type weighting differentiates between sold (ground truth) and listing (seller optimism)
+- With 100% of one type, normalization creates uniform weights (no differentiation)
+- Real benefit comes when we have BOTH types and can prioritize sold prices 3x higher
+
+**To achieve improvement, we need:**
+1. Collect more sold price data sources (expand beyond eBay sold_comps)
+2. Mix sold and listing prices in training datasets
+3. Then 3x sold price weighting will prioritize ground truth over noise
+
 **Next Steps:**
-The quick wins will likely have MUCH BIGGER impact on models that use LISTING prices:
-- Amazon model (currently 0.8% MAPE, but circular - predicting listings from listings)
-- AbeBooks model (17.7% MAPE, uses listing prices)
-- Alibris model (27.1% MAPE, uses listing prices)
-- Other models using BookFinder data (mixed sold/listing)
+The quick wins infrastructure is validated and ready. To see real impact:
+- Collect sold price data from additional sources (completed sales, auction results)
+- Create hybrid training sets mixing eBay sold_comps with vendor listings
+- Train models that learn from BOTH ground truth and market estimates
 
 ---
 

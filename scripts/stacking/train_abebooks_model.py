@@ -30,7 +30,9 @@ from scripts.stacking.training_utils import (
     inverse_log_transform,
     group_train_test_split,
     compute_metrics,
-    remove_outliers
+    remove_outliers,
+    calculate_temporal_weights,
+    calculate_price_type_weights
 )
 from isbn_lot_optimizer.ml.feature_extractor import PlatformFeatureExtractor
 
@@ -84,6 +86,8 @@ def extract_features(records, targets, extractor, catalog_db_path):
     y = []
     isbns = []
     completeness_scores = []
+    timestamps = []
+    price_types = []
 
     for record, target in zip(records, targets):
         metadata, market, bookscouter = create_simple_objects(record)
@@ -105,7 +109,11 @@ def extract_features(records, targets, extractor, catalog_db_path):
         isbns.append(record['isbn'])
         completeness_scores.append(features.completeness)
 
-    return np.array(X), np.array(y), isbns, completeness_scores
+        # Extract timestamp and price type for quick wins
+        timestamps.append(record.get('abebooks_timestamp'))
+        price_types.append(record.get('abebooks_price_type', 'listing'))
+
+    return np.array(X), np.array(y), isbns, completeness_scores, timestamps, price_types
 
 
 def train_abebooks_model():
@@ -126,19 +134,68 @@ def train_abebooks_model():
     # Extract features
     print("\n2. Extracting AbeBooks-specific features...")
     extractor = PlatformFeatureExtractor()
-    X, y, isbns, completeness = extract_features(abebooks_records, abebooks_targets, extractor, Path.home() / '.isbn_lot_optimizer' / 'catalog.db')
+    X, y, isbns, completeness, timestamps, price_types = extract_features(abebooks_records, abebooks_targets, extractor, Path.home() / '.isbn_lot_optimizer' / 'catalog.db')
 
     feature_names = PlatformFeatureExtractor.get_platform_feature_names('abebooks')
     print(f"   Features extracted: {len(feature_names)} features")
     print(f"   Average completeness: {np.mean(completeness):.1%}")
 
-    # Remove outliers
+    # Calculate temporal and price type weights (Quick Wins)
+    print("\n   Calculating temporal and price type weights...")
+    temporal_weights = calculate_temporal_weights(timestamps, decay_days=365.0)
+    price_type_weights = calculate_price_type_weights(price_types, sold_weight=3.0)
+
+    # Combine weights (element-wise multiply)
+    if temporal_weights is not None and price_type_weights is not None:
+        combined_weights = temporal_weights * price_type_weights
+        print(f"   ✓ Temporal weighting: weight range {temporal_weights.min():.4f}-{temporal_weights.max():.4f}")
+        print(f"   ✓ Price type weighting: mean sold weight {price_type_weights[np.array(price_types) == 'sold'].mean() if any(pt == 'sold' for pt in price_types) else 0:.2f}x")
+        print(f"   ✓ Combined weight range: {combined_weights.min():.4f}-{combined_weights.max():.4f}")
+    else:
+        combined_weights = None
+        print(f"   ⚠ Temporal/price type weights unavailable, proceeding without weighting")
+
+    # Remove outliers (need to track indices for weights)
     print("\n3. Removing outliers...")
-    X_clean, y_clean, isbns_clean = remove_outliers(X, y, isbns, threshold=3.0)
+    z_scores = np.abs((y - np.mean(y)) / np.std(y))
+    outlier_mask = z_scores < 3.0
+
+    X_clean = X[outlier_mask]
+    y_clean = y[outlier_mask]
+    isbns_clean = [isbn for i, isbn in enumerate(isbns) if outlier_mask[i]]
+
+    # Apply same mask to weights if available
+    if combined_weights is not None:
+        combined_weights = combined_weights[outlier_mask]
+
+    print(f"   Removed {len(X) - len(X_clean)} outliers ({(len(X) - len(X_clean)) / len(X) * 100:.1f}%)")
+    print(f"   Training samples: {len(X_clean)}")
 
     # Split data using GroupKFold by ISBN (prevents leakage)
     print("\n4. Splitting train/test with GroupKFold by ISBN...")
-    X_train, X_test, y_train, y_test = group_train_test_split(X_clean, y_clean, isbns_clean, n_splits=5)
+    from sklearn.model_selection import GroupKFold
+
+    isbn_groups = np.array(isbns_clean)
+    gkf = GroupKFold(n_splits=5)
+    train_idx, test_idx = list(gkf.split(X_clean, y_clean, groups=isbn_groups))[-1]
+
+    X_train = X_clean[train_idx]
+    X_test = X_clean[test_idx]
+    y_train = y_clean[train_idx]
+    y_test = y_clean[test_idx]
+
+    # Split weights for train/test
+    if combined_weights is not None:
+        train_weights = combined_weights[train_idx]
+        test_weights = combined_weights[test_idx]
+    else:
+        train_weights = None
+        test_weights = None
+
+    print(f"   Train: {len(X_train)} samples")
+    print(f"   Test:  {len(X_test)} samples")
+    print(f"   Unique ISBNs in train: {len(set(isbn_groups[train_idx]))}")
+    print(f"   Unique ISBNs in test:  {len(set(isbn_groups[test_idx]))}")
 
     # Apply log transform (best practice)
     print("\n5. Applying log transform to target...")
@@ -185,8 +242,13 @@ def train_abebooks_model():
         verbose=1
     )
 
-    # Fit on log-transformed targets
-    random_search.fit(X_train_scaled, y_train_log)
+    # Fit on log-transformed targets with sample weights (Quick Wins)
+    if train_weights is not None:
+        print(f"   Using temporal + price type sample weighting (Quick Wins)")
+        random_search.fit(X_train_scaled, y_train_log, sample_weight=train_weights)
+    else:
+        print(f"   Training without sample weighting")
+        random_search.fit(X_train_scaled, y_train_log)
     model = random_search.best_estimator_
     best_params = random_search.best_params_
     cv_mae = -random_search.best_score_
@@ -265,7 +327,7 @@ def train_abebooks_model():
     metadata = {
         'platform': 'abebooks',
         'model_type': 'XGBRegressor',
-        'version': 'v2_log_target_groupkfold',
+        'version': 'v3_quick_wins_temporal_price_type',
         'n_features': len(feature_names),
         'feature_names': feature_names,
         'training_samples': len(X_train),
@@ -280,6 +342,13 @@ def train_abebooks_model():
         'cv_mae': float(cv_mae),
         'use_log_target': True,
         'use_groupkfold': True,
+        'use_temporal_weighting': train_weights is not None,
+        'use_price_type_weighting': train_weights is not None,
+        'quick_wins': {
+            'temporal_decay_days': 365.0,
+            'sold_weight_multiplier': 3.0,
+            'enabled': train_weights is not None
+        },
         'hyperparameters': {k: v for k, v in best_params.items()},
         'optimization': {
             'method': 'RandomizedSearchCV',

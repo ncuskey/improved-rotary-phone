@@ -1,7 +1,8 @@
 {
   "model_type": "Ridge",
+  "version": "v2_with_mape",
   "alpha": 1000.0,
-  "n_features": 3,
+  "n_features": 6,
   "feature_names": [
     "eBay",
     "AbeBooks",
@@ -11,25 +12,27 @@
     "Zvab"
   ],
   "coefficients": {
-    "eBay": 0.20906556192884232,
-    "AbeBooks": 0.46193711841018487,
-    "Amazon": -0.09895600105810186,
-    "Biblio": 0.11468400834145598,
-    "Alibris": 0.18036913696236506,
-    "Zvab": -0.46412224024773996
+    "eBay": 0.7300506887399496,
+    "AbeBooks": -0.01616430497670109,
+    "Amazon": 0.25007774392423776,
+    "Biblio": -0.770548043523783,
+    "Alibris": -0.33344319368247527,
+    "Zvab": 0.8289888395080709
   },
-  "intercept": 7.38574836478174,
-  "training_samples": 604,
-  "test_samples": 152,
-  "train_mae": 6.309006021166195,
-  "test_mae": 5.264360875015486,
-  "train_rmse": 16.22413999186998,
-  "test_rmse": 7.420917704744646,
-  "train_r2": 0.14808157551915024,
-  "test_r2": -0.07730191849134016,
-  "ebay_test_mae": 6.530969368328643,
-  "abebooks_test_mae": 6.936989125053611,
-  "amazon_test_mae": 7.739895145060565,
-  "improvement_pct": 19.393882008625898,
-  "trained_at": "2025-11-02T00:02:47.069761"
+  "intercept": 5.083311872952361,
+  "training_samples": 8907,
+  "test_samples": 2227,
+  "train_mae": 11.060178998007611,
+  "test_mae": 10.203141067938697,
+  "train_rmse": 39.38419892576024,
+  "test_rmse": 30.961162305900693,
+  "train_r2": 0.12176828058303613,
+  "test_r2": -0.08906998269323219,
+  "train_mape": 85.28143072977599,
+  "test_mape": 88.22960487349513,
+  "ebay_test_mae": 9.018825696983404,
+  "abebooks_test_mae": 15.503953455013502,
+  "amazon_test_mae": 12.109538539052956,
+  "improvement_pct": -13.131591747597696,
+  "trained_at": "2025-11-09T09:59:18.712970"
 }

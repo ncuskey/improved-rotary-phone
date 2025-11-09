@@ -21,6 +21,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from scripts.stacking.data_loader import load_platform_training_data
+from scripts.stacking.training_utils import apply_log_transform, inverse_log_transform
 from isbn_lot_optimizer.ml.feature_extractor import PlatformFeatureExtractor
 
 
@@ -83,7 +84,8 @@ def extract_platform_features(records, platform, extractor, catalog_db_path):
             bookscouter=bookscouter,
             condition=record.get('condition', 'Good'),
             abebooks=record.get('abebooks'),
-            bookfinder=bookfinder_data
+            bookfinder=bookfinder_data,
+            amazon_fbm=record.get('amazon_fbm')
         )
         X.append(features.values)
     return np.array(X)
@@ -129,6 +131,9 @@ def generate_oof_for_platform(
         X_train, X_val = X[train_idx], X[val_idx]
         y_train, y_val = y[train_idx], y[val_idx]
 
+        # Apply log transform
+        y_train_log = np.log1p(y_train)
+
         # Scale features
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train)
@@ -147,10 +152,11 @@ def generate_oof_for_platform(
             verbose=0
         )
 
-        model.fit(X_train_scaled, y_train)
+        model.fit(X_train_scaled, y_train_log)
 
-        # Generate OOF predictions
-        oof_predictions[val_idx] = model.predict(X_val_scaled)
+        # Generate OOF predictions (inverse transform back to original scale)
+        y_val_pred_log = model.predict(X_val_scaled)
+        oof_predictions[val_idx] = np.expm1(y_val_pred_log)
 
         # Calculate fold MAE
         fold_mae = np.mean(np.abs(y_val - oof_predictions[val_idx]))

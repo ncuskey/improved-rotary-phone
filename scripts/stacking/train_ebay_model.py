@@ -13,10 +13,10 @@ from datetime import datetime
 
 import joblib
 import numpy as np
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler
 import xgboost as xgb
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -26,6 +26,13 @@ from shared.python_version_check import check_python_version
 check_python_version()
 
 from scripts.stacking.data_loader import load_platform_training_data
+from scripts.stacking.training_utils import (
+    apply_log_transform,
+    inverse_log_transform,
+    group_train_test_split,
+    compute_metrics,
+    remove_outliers
+)
 from isbn_lot_optimizer.ml.feature_extractor import PlatformFeatureExtractor
 from shared.models import BookMetadata, EbayMarketStats, BookScouterResult
 
@@ -87,6 +94,7 @@ def extract_features(records, targets, extractor, catalog_db_path):
 
     X = []
     y = []
+    isbns = []
     completeness_scores = []
 
     for record, target in zip(records, targets):
@@ -108,16 +116,10 @@ def extract_features(records, targets, extractor, catalog_db_path):
 
         X.append(features.values)
         y.append(target)
+        isbns.append(record['isbn'])
         completeness_scores.append(features.completeness)
 
-    return np.array(X), np.array(y), completeness_scores
-
-
-def remove_outliers(X, y, threshold=3.0):
-    """Remove outliers using Z-score method."""
-    z_scores = np.abs((y - np.mean(y)) / np.std(y))
-    mask = z_scores < threshold
-    return X[mask], y[mask]
+    return np.array(X), np.array(y), isbns, completeness_scores
 
 
 def train_ebay_model():
@@ -139,7 +141,7 @@ def train_ebay_model():
     print("\n2. Extracting eBay-specific features...")
     extractor = PlatformFeatureExtractor()
     catalog_db_path = Path.home() / '.isbn_lot_optimizer' / 'catalog.db'
-    X, y, completeness = extract_features(ebay_records, ebay_targets, extractor, catalog_db_path)
+    X, y, isbns, completeness = extract_features(ebay_records, ebay_targets, extractor, catalog_db_path)
 
     feature_names = PlatformFeatureExtractor.get_platform_feature_names('ebay')
     print(f"   Features extracted: {len(feature_names)} features")
@@ -147,26 +149,26 @@ def train_ebay_model():
 
     # Remove outliers
     print("\n3. Removing outliers...")
-    X_clean, y_clean = remove_outliers(X, y)
+    X_clean, y_clean, isbns_clean = remove_outliers(X, y, isbns, threshold=3.0)
     print(f"   Removed {len(X) - len(X_clean)} outliers ({(len(X) - len(X_clean)) / len(X) * 100:.1f}%)")
     print(f"   Training samples: {len(X_clean)}")
 
-    # Split data
-    print("\n4. Splitting train/test (80/20)...")
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_clean, y_clean, test_size=0.2, random_state=42
-    )
-    print(f"   Train: {len(X_train)} samples")
-    print(f"   Test:  {len(X_test)} samples")
+    # Split data using GroupKFold by ISBN (prevents leakage)
+    print("\n4. Splitting train/test with GroupKFold by ISBN...")
+    X_train, X_test, y_train, y_test = group_train_test_split(X_clean, y_clean, isbns_clean, n_splits=5)
+
+    # Apply log transform (best practice)
+    print("\n5. Applying log transform to target...")
+    y_train_log, y_test_log, y_train_orig, y_test_orig = apply_log_transform(y_train, y_test)
 
     # Scale features
-    print("\n5. Scaling features...")
+    print("\n6. Scaling features...")
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
     # Train model with hyperparameter tuning
-    print("\n6. Training XGBoost model with hyperparameter tuning...")
+    print("\n7. Training XGBoost model with hyperparameter tuning...")
 
     # Define hyperparameter search space
     param_distributions = {
@@ -200,7 +202,8 @@ def train_ebay_model():
         verbose=1
     )
 
-    random_search.fit(X_train_scaled, y_train)
+    # Fit on log-transformed targets
+    random_search.fit(X_train_scaled, y_train_log)
     model = random_search.best_estimator_
     best_params = random_search.best_params_
     cv_mae = -random_search.best_score_
@@ -212,16 +215,25 @@ def train_ebay_model():
     print("\n   Training complete!")
 
     # Evaluate
-    print("\n7. Evaluating model...")
-    y_train_pred = model.predict(X_train_scaled)
-    y_test_pred = model.predict(X_test_scaled)
+    print("\n8. Evaluating model...")
+    y_train_pred_log = model.predict(X_train_scaled)
+    y_test_pred_log = model.predict(X_test_scaled)
 
-    train_mae = mean_absolute_error(y_train, y_train_pred)
-    test_mae = mean_absolute_error(y_test, y_test_pred)
-    train_rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
-    test_rmse = np.sqrt(mean_squared_error(y_test, y_test_pred))
-    train_r2 = r2_score(y_train, y_train_pred)
-    test_r2 = r2_score(y_test, y_test_pred)
+    # Inverse transform to get actual prices
+    y_train_pred = inverse_log_transform(y_train_pred_log)
+    y_test_pred = inverse_log_transform(y_test_pred_log)
+
+    # Compute metrics on original scale
+    train_metrics = compute_metrics(y_train_orig, y_train_pred, use_log_target=True)
+    test_metrics = compute_metrics(y_test_orig, y_test_pred, use_log_target=True)
+
+    train_mae = train_metrics['mae']
+    test_mae = test_metrics['mae']
+    train_rmse = train_metrics['rmse']
+    test_rmse = test_metrics['rmse']
+    train_r2 = train_metrics['r2']
+    test_r2 = test_metrics['r2']
+    test_mape = test_metrics['mape']
 
     print("\n" + "=" * 80)
     print("EBAY MODEL PERFORMANCE")
@@ -235,6 +247,7 @@ def train_ebay_model():
     print(f"  MAE:  ${test_mae:.2f}")
     print(f"  RMSE: ${test_rmse:.2f}")
     print(f"  R²:   {test_r2:.3f}")
+    print(f"  MAPE: {test_mape:.1f}%")
 
     # Feature importance
     print("\n" + "=" * 80)
@@ -269,6 +282,7 @@ def train_ebay_model():
     metadata = {
         'platform': 'ebay',
         'model_type': 'XGBRegressor',
+        'version': 'v2_log_target_groupkfold',
         'n_features': len(feature_names),
         'feature_names': feature_names,
         'training_samples': len(X_train),
@@ -279,7 +293,10 @@ def train_ebay_model():
         'test_rmse': float(test_rmse),
         'train_r2': float(train_r2),
         'test_r2': float(test_r2),
+        'test_mape': float(test_mape),
         'cv_mae': float(cv_mae),
+        'use_log_target': True,
+        'use_groupkfold': True,
         'hyperparameters': {k: v for k, v in best_params.items()},
         'optimization': {
             'method': 'RandomizedSearchCV',

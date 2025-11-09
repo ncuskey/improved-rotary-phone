@@ -1254,7 +1254,8 @@ async def estimate_price_with_attributes(
         market = book.market
         bookscouter = book.bookscouter
 
-        # Calculate baseline price (no attributes)
+        # Calculate baseline price (no attributes, "Good" condition)
+        # Baseline is always "Good" condition with no special attributes
         baseline_metadata = deepcopy(metadata) if metadata else None
         if baseline_metadata:
             baseline_metadata.cover_type = None
@@ -1265,7 +1266,7 @@ async def estimate_price_with_attributes(
             baseline_metadata,
             market,
             bookscouter,
-            request_body.condition
+            "Good"  # Baseline always uses "Good" condition
         )
         baseline_price = baseline_estimate.price or 10.0
 
@@ -1357,16 +1358,34 @@ async def estimate_price_with_attributes(
                 enabled=True
             ))
 
-        # Note: Model retrained with oversampling (2025-11-05)
-        # Signed books now predict correctly (+$1.23 avg), but first edition still negative
-        # Likely cause: Training first edition books had confounding factors (damage, book club editions)
-        # Fix: Parse ~370 sold_listings titles with edition keywords for better training data
+        # Note: Model retrained with sold_listings data and negative examples (2025-11-05)
+        # ✓ Signed books predict correctly (+$0.83) after oversampling
+        # ✗ First editions still predict negative (-$0.99) despite:
+        #   - Loading only true 1st editions (not anniversary/collector's)
+        #   - Adding negative examples (2nd/3rd/later editions)
+        #   - High feature importance (3rd place, 7.85%)
+        # Root cause: 2nd editions sell for MORE than 1st on average ($31.22 vs $30.84)
+        # Likely due to: condition differences, selection bias, different book sets
 
-        # Minimal override for first_edition until we parse sold_listings titles
+        # Solution: Use specialized edition premium calibration model (2025-11-05)
+        # Trained on 478 ISBNs with BookFinder paired edition data
+        # Test MAE: 1.07%, R²: 0.9987
+        from isbn_lot_optimizer.ml.edition_premium_estimator import get_edition_premium_estimator
+
+        edition_estimator = get_edition_premium_estimator()
         for delta in deltas:
-            if delta.attribute == "is_first_edition" and delta.delta < 0:
-                # Conservative 3% boost for first editions
-                delta.delta = round(baseline_price * 0.03, 2)
+            if delta.attribute == "is_first_edition":
+                if edition_estimator.is_ready():
+                    # Use ML calibration model for accurate premium
+                    premium_dollars, explanation = edition_estimator.estimate_premium(
+                        normalized_isbn,
+                        baseline_price
+                    )
+                    delta.delta = premium_dollars
+                    # Could add explanation to delta if needed
+                elif delta.delta < 0:
+                    # Fall back to conservative 3% boost if model not available
+                    delta.delta = round(baseline_price * 0.03, 2)
 
         # Calculate profit scenarios
         # Assume purchase cost is $0 for now (user owns the book)

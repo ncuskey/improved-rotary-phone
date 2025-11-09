@@ -15,10 +15,14 @@ import joblib
 import numpy as np
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.linear_model import Ridge, RidgeCV
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, mean_absolute_percentage_error
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+# Check Python version for XGBoost/OpenMP compatibility
+from shared.python_version_check import check_python_version
+check_python_version()
 
 
 def train_meta_model():
@@ -90,6 +94,8 @@ def train_meta_model():
     test_rmse = np.sqrt(mean_squared_error(y_test, y_test_pred))
     train_r2 = r2_score(y_train, y_train_pred)
     test_r2 = r2_score(y_test, y_test_pred)
+    train_mape = mean_absolute_percentage_error(y_train, y_train_pred) * 100
+    test_mape = mean_absolute_percentage_error(y_test, y_test_pred) * 100
 
     print("\n" + "=" * 80)
     print("META-MODEL PERFORMANCE")
@@ -98,11 +104,13 @@ def train_meta_model():
     print(f"  MAE:  ${train_mae:.2f}")
     print(f"  RMSE: ${train_rmse:.2f}")
     print(f"  R²:   {train_r2:.3f}")
+    print(f"  MAPE: {train_mape:.1f}%")
 
     print(f"\nTest Metrics:")
     print(f"  MAE:  ${test_mae:.2f}")
     print(f"  RMSE: ${test_rmse:.2f}")
     print(f"  R²:   {test_r2:.3f}")
+    print(f"  MAPE: {test_mape:.1f}%")
 
     # Comparison with individual models (using test set)
     print("\n" + "=" * 80)
@@ -144,8 +152,9 @@ def train_meta_model():
     # Save metadata
     metadata = {
         'model_type': 'Ridge',
+        'version': 'v2_with_mape',
         'alpha': float(best_alpha),
-        'n_features': 3,
+        'n_features': 6,
         'feature_names': feature_names,
         'coefficients': {name: float(coef) for name, coef in zip(feature_names, model.coef_)},
         'intercept': float(model.intercept_),
@@ -157,6 +166,8 @@ def train_meta_model():
         'test_rmse': float(test_rmse),
         'train_r2': float(train_r2),
         'test_r2': float(test_r2),
+        'train_mape': float(train_mape),
+        'test_mape': float(test_mape),
         'ebay_test_mae': float(ebay_test_mae),
         'abebooks_test_mae': float(abebooks_test_mae),
         'amazon_test_mae': float(amazon_test_mae),
@@ -173,8 +184,9 @@ def train_meta_model():
     print("META-MODEL TRAINING COMPLETE")
     print("=" * 80)
     print(f"\nStacking ensemble:")
-    print(f"  Test MAE: ${test_mae:.2f}")
-    print(f"  Test R²:  {test_r2:.3f}")
+    print(f"  Test MAE:  ${test_mae:.2f}")
+    print(f"  Test MAPE: {test_mape:.1f}%")
+    print(f"  Test R²:   {test_r2:.3f}")
     print(f"  Improvement: {improvement:.1f}% over best specialist")
     print("=" * 80 + "\n")
 

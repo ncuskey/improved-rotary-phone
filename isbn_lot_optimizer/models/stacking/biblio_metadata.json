@@ -7,9 +7,7 @@
     "bookfinder_has_signed",
     "bookfinder_signed_lowest",
     "bookfinder_first_edition_count",
-    "bookfinder_has_first_edition",
     "bookfinder_first_ed_lowest",
-    "bookfinder_oldworld_count",
     "bookfinder_avg_desc_length",
     "bookfinder_detailed_pct",
     "bookfinder_lowest_price",
@@ -21,88 +19,90 @@
     "log_ratings",
     "rating",
     "is_hardcover",
-    "is_paperback",
     "is_signed",
     "is_first_edition",
     "is_new",
+    "is_like_new",
     "is_very_good",
-    "is_good"
+    "is_good",
+    "is_acceptable",
+    "is_poor"
   ],
-  "training_samples": 102,
-  "test_samples": 26,
-  "train_mae": 0.11497817304062465,
-  "test_mae": 1.9166058364532026,
-  "train_rmse": 0.1540196673434389,
-  "test_rmse": 3.472817639633274,
-  "train_r2": 0.9974413225668998,
-  "test_r2": 0.2736226408307556,
+  "training_samples": 508,
+  "test_samples": 126,
+  "train_mae": 0.4051714387258319,
+  "test_mae": 1.4159090611860685,
+  "train_rmse": 0.8533417484394455,
+  "test_rmse": 3.412576957350061,
+  "train_r2": 0.9032596624498268,
+  "test_r2": 0.2555506485626631,
   "feature_importance": {
-    "bookfinder_signed_count": 0.0010240402935807235,
-    "bookfinder_has_signed": 0.0001521913046896221,
-    "bookfinder_signed_lowest": 0.0024796950473676576,
-    "bookfinder_first_edition_count": 0.03194329881833139,
-    "bookfinder_has_first_edition": 5.858905262974483e-05,
-    "bookfinder_first_ed_lowest": 0.016641977786256,
-    "bookfinder_oldworld_count": 0.0,
-    "bookfinder_avg_desc_length": 0.03465896796414254,
-    "bookfinder_detailed_pct": 0.025884745264388116,
-    "bookfinder_lowest_price": 0.294546570112533,
-    "bookfinder_avg_price": 0.06316125059828244,
-    "bookfinder_source_count": 0.046957333259777786,
-    "bookfinder_price_volatility": 0.0919430265263389,
-    "page_count": 0.038739897549165125,
-    "age_years": 0.01621448613557469,
-    "log_ratings": 0.22901128046657665,
-    "rating": 0.004268029421111067,
+    "bookfinder_signed_count": 0.0035481729677974525,
+    "bookfinder_has_signed": 0.0004739401971613842,
+    "bookfinder_signed_lowest": 0.016057677154178315,
+    "bookfinder_first_edition_count": 0.05484380788371463,
+    "bookfinder_first_ed_lowest": 0.03967848122674557,
+    "bookfinder_avg_desc_length": 0.0879183196815448,
+    "bookfinder_detailed_pct": 0.12063691139266115,
+    "bookfinder_lowest_price": 0.4169132161783086,
+    "bookfinder_avg_price": 0.09160715072281597,
+    "bookfinder_source_count": 0.013522175702055293,
+    "bookfinder_price_volatility": 0.09545028457922197,
+    "page_count": 0.0,
+    "age_years": 0.059349862313794834,
+    "log_ratings": 0.0,
+    "rating": 0.0,
     "is_hardcover": 0.0,
-    "is_paperback": 0.0,
     "is_signed": 0.0,
     "is_first_edition": 0.0,
     "is_new": 0.0,
-    "is_very_good": 0.0631800389505187,
-    "is_good": 0.03913458144873593
+    "is_like_new": 0.0,
+    "is_very_good": 0.0,
+    "is_good": 0.0,
+    "is_acceptable": 0.0,
+    "is_poor": 0.0
   },
   "top_features": [
     [
       "bookfinder_lowest_price",
-      0.294546570112533
+      0.4169132161783086
     ],
     [
-      "log_ratings",
-      0.22901128046657665
+      "bookfinder_detailed_pct",
+      0.12063691139266115
     ],
     [
       "bookfinder_price_volatility",
-      0.0919430265263389
-    ],
-    [
-      "is_very_good",
-      0.0631800389505187
+      0.09545028457922197
     ],
     [
       "bookfinder_avg_price",
-      0.06316125059828244
-    ],
-    [
-      "bookfinder_source_count",
-      0.046957333259777786
-    ],
-    [
-      "is_good",
-      0.03913458144873593
-    ],
-    [
-      "page_count",
-      0.038739897549165125
+      0.09160715072281597
     ],
     [
       "bookfinder_avg_desc_length",
-      0.03465896796414254
+      0.0879183196815448
+    ],
+    [
+      "age_years",
+      0.059349862313794834
     ],
     [
       "bookfinder_first_edition_count",
-      0.03194329881833139
+      0.05484380788371463
+    ],
+    [
+      "bookfinder_first_ed_lowest",
+      0.03967848122674557
+    ],
+    [
+      "bookfinder_signed_lowest",
+      0.016057677154178315
+    ],
+    [
+      "bookfinder_source_count",
+      0.013522175702055293
     ]
   ],
-  "trained_at": "2025-11-01T23:57:15.688429"
+  "trained_at": "2025-11-09T09:55:25.302201"
 }

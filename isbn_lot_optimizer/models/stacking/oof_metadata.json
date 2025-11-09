@@ -1,5 +1,5 @@
 {
-  "n_samples": 756,
+  "n_samples": 11134,
   "n_features": 6,
   "feature_names": [
     "ebay_pred",
@@ -11,62 +11,62 @@
   ],
   "ebay_metadata": {
     "platform": "ebay",
-    "n_samples": 756,
+    "n_samples": 11134,
     "n_folds": 5,
-    "oof_mae": 7.031180487552798,
-    "oof_rmse": 17.037915104276927,
-    "oof_r2": -0.12746290162521,
-    "target_mean": 11.553802910052909,
-    "target_std": 16.04594575224552
+    "oof_mae": 10.297466975820068,
+    "oof_rmse": 40.17304240937219,
+    "oof_r2": -0.01540180132879887,
+    "target_mean": 16.686713557571405,
+    "target_std": 39.86720216856999
   },
   "abebooks_metadata": {
     "platform": "abebooks",
-    "n_samples": 575,
+    "n_samples": 1231,
     "n_folds": 5,
-    "oof_mae": 0.9967145808301892,
-    "oof_rmse": 9.819143536193371,
-    "oof_r2": 0.616483074760855,
-    "target_mean": 8.93264347826087,
-    "target_std": 15.855551082900192
+    "oof_mae": 6.229762539303187,
+    "oof_rmse": 82.12097695598715,
+    "oof_r2": 0.16095783830890642,
+    "target_mean": 13.534760357432981,
+    "target_std": 89.65246087682569
   },
   "amazon_metadata": {
     "platform": "amazon",
-    "n_samples": 593,
+    "n_samples": 8726,
     "n_folds": 5,
-    "oof_mae": 6.7746962116041365,
-    "oof_rmse": 20.04791019656268,
-    "oof_r2": -0.0240949991902093,
-    "target_mean": 14.13300168634064,
-    "target_std": 19.81066187368614
+    "oof_mae": 0.5723441767023232,
+    "oof_rmse": 23.55622094910103,
+    "oof_r2": 0.8914963459942516,
+    "target_mean": 20.58027045610818,
+    "target_std": 71.51274312357333
   },
   "biblio_metadata": {
     "platform": "biblio",
-    "n_samples": 135,
+    "n_samples": 611,
     "n_folds": 5,
-    "oof_mae": 3.039046523986325,
-    "oof_rmse": 9.113705064931949,
-    "oof_r2": 0.04900810814408174,
-    "target_mean": 6.71362962962963,
-    "target_std": 9.345586528759416
+    "oof_mae": 1.8368440185621964,
+    "oof_rmse": 8.270121125211526,
+    "oof_r2": 0.1290800035970463,
+    "target_mean": 6.463027823240589,
+    "target_std": 8.861816221330331
   },
   "alibris_metadata": {
     "platform": "alibris",
-    "n_samples": 137,
+    "n_samples": 613,
     "n_folds": 5,
-    "oof_mae": 5.8223740099403525,
-    "oof_rmse": 9.164333006495983,
-    "oof_r2": -0.14023149260613033,
-    "target_mean": 11.092335766423359,
-    "target_std": 8.582312932661115
+    "oof_mae": 3.9159950757533943,
+    "oof_rmse": 8.404175917357463,
+    "oof_r2": 0.21637324156231796,
+    "target_mean": 10.169608482871128,
+    "target_std": 9.493809342601303
   },
   "zvab_metadata": {
     "platform": "zvab",
-    "n_samples": 108,
+    "n_samples": 513,
     "n_folds": 5,
-    "oof_mae": 4.80522154906269,
-    "oof_rmse": 10.911901486135585,
-    "oof_r2": 0.05337742589814709,
-    "target_mean": 8.482222222222223,
-    "target_std": 11.215328740854282
+    "oof_mae": 2.896830383494561,
+    "oof_rmse": 9.359121221057741,
+    "oof_r2": 0.3021412976726314,
+    "target_mean": 8.006120857699806,
+    "target_std": 11.203438206296918
   }
 }

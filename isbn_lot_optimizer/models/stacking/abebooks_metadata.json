@@ -1,7 +1,8 @@
 {
   "platform": "abebooks",
   "model_type": "XGBRegressor",
-  "n_features": 20,
+  "version": "v2_log_target_groupkfold",
+  "n_features": 24,
   "feature_names": [
     "abebooks_min_price",
     "abebooks_avg_price",
@@ -17,32 +18,39 @@
     "age_years",
     "log_ratings",
     "rating",
+    "is_new",
+    "is_like_new",
     "is_very_good",
     "is_good",
+    "is_acceptable",
+    "is_poor",
     "is_hardcover",
     "is_mass_market",
     "is_signed",
     "is_first_edition"
   ],
-  "training_samples": 596,
-  "test_samples": 149,
-  "train_mae": 0.07250925667333921,
-  "test_mae": 0.08747963527705045,
-  "train_rmse": 0.7657399942015661,
-  "test_rmse": 0.21126486977859602,
-  "train_r2": 0.990176446522403,
-  "test_r2": 0.9989527739998483,
-  "cv_mae": 0.24180939753894679,
+  "training_samples": 1004,
+  "test_samples": 250,
+  "train_mae": 1.4527109068608381,
+  "test_mae": 3.08482623878479,
+  "train_rmse": 4.998364555849388,
+  "test_rmse": 14.513699191190037,
+  "train_r2": 0.9349650288937953,
+  "test_r2": 0.2755334333689008,
+  "test_mape": 17.743621156451322,
+  "cv_mae": 0.22081573709505053,
+  "use_log_target": true,
+  "use_groupkfold": true,
   "hyperparameters": {
-    "subsample": 0.9,
-    "reg_lambda": 10,
+    "subsample": 0.6,
+    "reg_lambda": 1,
     "reg_alpha": 0.01,
-    "n_estimators": 300,
-    "min_child_weight": 1,
+    "n_estimators": 400,
+    "min_child_weight": 3,
     "max_depth": 5,
-    "learning_rate": 0.05,
-    "gamma": 0.2,
-    "colsample_bytree": 0.9
+    "learning_rate": 0.2,
+    "gamma": 0.1,
+    "colsample_bytree": 0.7
   },
   "optimization": {
     "method": "RandomizedSearchCV",
@@ -51,22 +59,26 @@
     "scoring": "neg_mean_absolute_error"
   },
   "feature_importance": {
-    "abebooks_min_price": 0.07543221861124039,
-    "abebooks_avg_price": 0.4802541732788086,
-    "abebooks_seller_count": 0.002632219111546874,
-    "abebooks_condition_spread": 0.0004809050296898931,
-    "abebooks_has_new": 0.0,
-    "abebooks_hardcover_premium": 0.00030991152743808925,
-    "abebooks_scaled_estimate": 0.05186598002910614,
-    "abebooks_competitive_estimate": 0.009148663841187954,
-    "abebooks_avg_estimate": 0.37691566348075867,
-    "is_collectible_market": 0.0,
-    "page_count": 0.0012289931764826179,
-    "age_years": 0.0004304775793571025,
-    "log_ratings": 0.0004903926746919751,
-    "rating": 0.0008103881846182048,
+    "abebooks_min_price": 0.10766616463661194,
+    "abebooks_avg_price": 0.057956136763095856,
+    "abebooks_seller_count": 0.009216787293553352,
+    "abebooks_condition_spread": 0.026863157749176025,
+    "abebooks_has_new": 0.48605334758758545,
+    "abebooks_hardcover_premium": 0.005916581489145756,
+    "abebooks_scaled_estimate": 0.04098087176680565,
+    "abebooks_competitive_estimate": 0.01633385568857193,
+    "abebooks_avg_estimate": 0.05924157425761223,
+    "is_collectible_market": 0.18390576541423798,
+    "page_count": 0.0,
+    "age_years": 0.005865741986781359,
+    "log_ratings": 0.0,
+    "rating": 0.0,
+    "is_new": 0.0,
+    "is_like_new": 0.0,
     "is_very_good": 0.0,
     "is_good": 0.0,
+    "is_acceptable": 0.0,
+    "is_poor": 0.0,
     "is_hardcover": 0.0,
     "is_mass_market": 0.0,
     "is_signed": 0.0,
@@ -74,45 +86,45 @@
   },
   "top_features": [
     [
-      "abebooks_avg_price",
-      0.4802541732788086
+      "abebooks_has_new",
+      0.48605334758758545
     ],
     [
-      "abebooks_avg_estimate",
-      0.37691566348075867
+      "is_collectible_market",
+      0.18390576541423798
     ],
     [
       "abebooks_min_price",
-      0.07543221861124039
+      0.10766616463661194
+    ],
+    [
+      "abebooks_avg_estimate",
+      0.05924157425761223
+    ],
+    [
+      "abebooks_avg_price",
+      0.057956136763095856
     ],
     [
       "abebooks_scaled_estimate",
-      0.05186598002910614
-    ],
-    [
-      "abebooks_competitive_estimate",
-      0.009148663841187954
-    ],
-    [
-      "abebooks_seller_count",
-      0.002632219111546874
-    ],
-    [
-      "page_count",
-      0.0012289931764826179
-    ],
-    [
-      "rating",
-      0.0008103881846182048
-    ],
-    [
-      "log_ratings",
-      0.0004903926746919751
+      0.04098087176680565
     ],
     [
       "abebooks_condition_spread",
-      0.0004809050296898931
+      0.026863157749176025
+    ],
+    [
+      "abebooks_competitive_estimate",
+      0.01633385568857193
+    ],
+    [
+      "abebooks_seller_count",
+      0.009216787293553352
+    ],
+    [
+      "abebooks_hardcover_premium",
+      0.005916581489145756
     ]
   ],
-  "trained_at": "2025-11-04T19:08:28.945718"
+  "trained_at": "2025-11-09T09:46:45.128758"
 }

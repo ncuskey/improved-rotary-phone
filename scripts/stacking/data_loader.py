@@ -52,12 +52,14 @@ class PlatformDataLoader:
         catalog_books = self._load_catalog_books()
         training_books = self._load_training_books()  # Legacy
         cache_books = self._load_cache_books()  # Amazon pricing
+        bookfinder_books = self._load_bookfinder_books()  # NEW: BookFinder vendor pricing
 
         print(f"\nRaw data loaded:")
         print(f"  Unified Training DB: {len(unified_training_books)} books (in_training=1)")
         print(f"  Catalog:             {len(catalog_books)} books")
         print(f"  Legacy Training:     {len(training_books)} books")
         print(f"  Amazon Pricing:      {len(cache_books)} books")
+        print(f"  BookFinder Vendors:  {len(bookfinder_books)} books")
 
         # Organize by platform
         ebay_data = []
@@ -140,6 +142,24 @@ class PlatformDataLoader:
 
             if book.get('ebay_target'):
                 ebay_data.append((book, book['ebay_target']))
+
+        # Process BookFinder vendor books (NEW: AbeBooks, Alibris, Biblio, Zvab)
+        for book in bookfinder_books:
+            if book.get('metadata') and 'title' in book['metadata']:
+                if is_lot(book['metadata']['title']):
+                    continue
+
+            if book.get('abebooks_target'):
+                abebooks_data.append((book, book['abebooks_target']))
+
+            if book.get('alibris_target'):
+                alibris_data.append((book, book['alibris_target']))
+
+            if book.get('biblio_target'):
+                biblio_data.append((book, book['biblio_target']))
+
+            if book.get('zvab_target'):
+                zvab_data.append((book, book['zvab_target']))
 
         print(f"\nPlatform-specific data after lot filtering:")
         print(f"  eBay:     {len(ebay_data)} books")
@@ -401,7 +421,16 @@ class PlatformDataLoader:
             cover_type,
             signed,
             printing,
-            sold_comps_count
+            sold_comps_count,
+            abebooks_enr_count,
+            abebooks_enr_min,
+            abebooks_enr_median,
+            abebooks_enr_avg,
+            abebooks_enr_max,
+            abebooks_enr_spread,
+            abebooks_enr_has_new,
+            abebooks_enr_has_used,
+            abebooks_enr_hc_premium
         FROM cached_books
         WHERE last_enrichment_at IS NOT NULL
           AND sold_comps_count >= 5
@@ -417,7 +446,10 @@ class PlatformDataLoader:
         for row in rows:
             (isbn, title, authors, publisher, pub_year, binding, page_count,
              sold_comps_median, market_json, bookscouter_json,
-             cover_type, signed, printing, sold_comps_count) = row
+             cover_type, signed, printing, sold_comps_count,
+             abe_enr_count, abe_enr_min, abe_enr_median, abe_enr_avg,
+             abe_enr_max, abe_enr_spread, abe_enr_has_new, abe_enr_has_used,
+             abe_enr_hc_premium) = row
 
             # Parse JSONs
             market_dict = json.loads(market_json) if market_json else {}
@@ -433,6 +465,19 @@ class PlatformDataLoader:
                 'binding': binding,
             }
 
+            # Build AbeBooks enriched dict (if data available)
+            abebooks_dict = None
+            if abe_enr_count and abe_enr_count > 0:
+                abebooks_dict = {
+                    'abebooks_min_price': abe_enr_min,
+                    'abebooks_avg_price': abe_enr_avg,
+                    'abebooks_seller_count': abe_enr_count,
+                    'abebooks_condition_spread': abe_enr_spread,
+                    'abebooks_has_new': abe_enr_has_new,
+                    'abebooks_has_used': abe_enr_has_used,
+                    'abebooks_hardcover_premium': abe_enr_hc_premium,
+                }
+
             book = {
                 'isbn': isbn,
                 'metadata': metadata_dict,
@@ -442,10 +487,14 @@ class PlatformDataLoader:
                 'cover_type': cover_type,
                 'signed': signed,
                 'printing': printing,
-                'abebooks': None,
+                'abebooks': abebooks_dict,
                 'ebay_target': sold_comps_median,
                 'sold_comps_count': sold_comps_count,
             }
+
+            # Add AbeBooks target if enriched data available
+            if abe_enr_median and abe_enr_median > 0:
+                book['abebooks_target'] = abe_enr_median
 
             books.append(book)
 
@@ -568,6 +617,114 @@ class PlatformDataLoader:
 
                 books.append(book)
 
+        return books
+
+    def _load_bookfinder_books(self) -> List[dict]:
+        """
+        Load books from BookFinder vendor pricing (catalog.db bookfinder_offers).
+
+        Similar to _load_cache_books(), this queries bookfinder_offers for vendor pricing
+        and joins with metadata_cache.db for book metadata.
+        """
+        if not self.catalog_db.exists():
+            print(f"Warning: {self.catalog_db} not found")
+            return []
+
+        if not self.cache_db.exists():
+            print(f"Warning: {self.cache_db} not found")
+            return []
+
+        # Connect to catalog.db for BookFinder offers
+        catalog_conn = sqlite3.connect(self.catalog_db)
+
+        # Query vendor pricing: MIN(price + shipping) per ISBN per vendor
+        catalog_cursor = catalog_conn.cursor()
+        catalog_cursor.execute("""
+            SELECT
+                isbn,
+                vendor,
+                MIN(price + COALESCE(shipping, 0)) as min_price
+            FROM bookfinder_offers
+            GROUP BY isbn, vendor
+            HAVING min_price > 0
+        """)
+
+        # Build dict: isbn -> {vendor: price}
+        isbn_vendor_prices = {}
+        for row in catalog_cursor.fetchall():
+            isbn, vendor, price = row
+            if isbn not in isbn_vendor_prices:
+                isbn_vendor_prices[isbn] = {}
+            isbn_vendor_prices[isbn][vendor] = price
+
+        catalog_conn.close()
+
+        # Now query metadata for these ISBNs from metadata_cache.db
+        cache_conn = sqlite3.connect(self.cache_db)
+        cache_cursor = cache_conn.cursor()
+
+        # Get metadata for ISBNs that have BookFinder offers
+        books = []
+        for isbn, vendor_prices in isbn_vendor_prices.items():
+            # Query metadata for this ISBN
+            cache_cursor.execute("""
+                SELECT
+                    title,
+                    authors,
+                    publisher,
+                    publication_year,
+                    binding,
+                    page_count
+                FROM cached_books
+                WHERE isbn = ?
+            """, (isbn,))
+
+            row = cache_cursor.fetchone()
+            if not row:
+                continue  # Skip ISBNs without metadata
+
+            title, authors, publisher, pub_year, binding, page_count = row
+
+            # Build metadata dict
+            metadata_dict = {
+                'title': title,
+                'authors': authors,
+                'publisher': publisher,
+                'published_year': pub_year,
+                'page_count': page_count,
+            }
+
+            # Create book record with vendor-specific targets
+            book = {
+                'isbn': isbn,
+                'metadata': metadata_dict,
+                'market': {},
+                'bookscouter': {},
+                'condition': 'Good',
+                'cover_type': binding,
+                'signed': False,
+                'printing': None,
+                'abebooks': None,
+            }
+
+            # Set vendor-specific targets based on available pricing
+            if 'AbeBooks' in vendor_prices and vendor_prices['AbeBooks'] > 0:
+                book['abebooks_target'] = vendor_prices['AbeBooks']
+
+            if 'Alibris' in vendor_prices and vendor_prices['Alibris'] > 0:
+                book['alibris_target'] = vendor_prices['Alibris']
+
+            if 'Biblio' in vendor_prices and vendor_prices['Biblio'] > 0:
+                book['biblio_target'] = vendor_prices['Biblio']
+
+            if 'Zvab' in vendor_prices and vendor_prices['Zvab'] > 0:
+                book['zvab_target'] = vendor_prices['Zvab']
+
+            # Only add book if it has at least one vendor target
+            if any(k.endswith('_target') for k in book.keys()):
+                books.append(book)
+
+        cache_conn.close()
         return books
 
 

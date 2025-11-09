@@ -767,6 +767,273 @@ def load_platform_training_data() -> Dict[str, Tuple[List[dict], List[float]]]:
     return loader.load_all_data()
 
 
+def load_unified_cross_platform_data() -> Tuple[List[dict], List[float]]:
+    """
+    Load unified training dataset with eBay sold prices as targets,
+    and all platform listing prices as features.
+
+    This approach:
+    - Uses real eBay sold prices as ground truth (no synthetic targets)
+    - Treats Amazon, AbeBooks, Alibris, etc. listings as FEATURES
+    - Allows model to learn cross-platform relationships from data
+    - Validates against real sold prices (statistically sound)
+
+    Returns:
+        Tuple of (records, targets) where:
+        - records: List of book dicts with multi-platform features
+        - targets: eBay sold prices (ground truth)
+
+    Example record structure:
+        {
+            'isbn': '9780143039983',
+            'target': 8.62,  # eBay sold price (ground truth)
+            'target_type': 'sold',
+            'timestamp': '2025-01-15T10:30:00Z',
+
+            # eBay features
+            'ebay_listing_median': 12.86,
+            'ebay_listing_count': 15,
+            'ebay_active_vs_sold_ratio': 1.49,
+
+            # Amazon features (signals)
+            'amazon_fbm_median': 40.11,
+            'amazon_fbm_count': 8,
+
+            # AbeBooks features (signals)
+            'abebooks_median': 6.75,
+            'abebooks_count': 12,
+
+            # Cross-platform ratios (learned features)
+            'amazon_to_ebay_ratio': 3.12,
+            'abebooks_to_ebay_ratio': 0.52,
+
+            # Other metadata, market stats, etc.
+            'metadata': {...},
+            'market': {...},
+            'bookscouter': {...},
+        }
+    """
+    print("=" * 80)
+    print("LOADING UNIFIED CROSS-PLATFORM TRAINING DATA")
+    print("=" * 80)
+
+    cache_db = Path.home() / '.isbn_lot_optimizer' / 'metadata_cache.db'
+    catalog_db = Path.home() / '.isbn_lot_optimizer' / 'catalog.db'
+
+    if not cache_db.exists():
+        print(f"Error: {cache_db} not found")
+        return [], []
+
+    conn = sqlite3.connect(cache_db)
+    cursor = conn.cursor()
+
+    # Query all books with eBay sold prices (ground truth requirement)
+    # Also fetch Amazon, AbeBooks, and other platform listings as features
+    query = """
+    SELECT
+        c.isbn,
+        c.title,
+        c.authors,
+        c.publisher,
+        c.publication_year,
+        c.binding,
+        c.page_count,
+        c.sold_comps_median,
+        c.sold_comps_count,
+        c.sold_comps_min,
+        c.sold_comps_max,
+        c.amazon_fbm_median,
+        c.amazon_fbm_count,
+        c.amazon_fbm_min,
+        c.amazon_fbm_max,
+        c.amazon_fbm_avg_rating,
+        c.abebooks_enr_median,
+        c.abebooks_enr_count,
+        c.abebooks_enr_min,
+        c.abebooks_enr_max,
+        c.abebooks_enr_spread,
+        c.abebooks_enr_has_new,
+        c.abebooks_enr_has_used,
+        c.abebooks_enr_hc_premium,
+        c.last_enrichment_at,
+        c.market_fetched_at,
+        c.amazon_fbm_collected_at,
+        c.abebooks_enr_collected_at,
+        c.market_json,
+        c.bookscouter_json,
+        c.cover_type,
+        c.signed,
+        c.printing
+    FROM cached_books c
+    WHERE c.sold_comps_median IS NOT NULL
+      AND c.sold_comps_median >= 3.0
+      AND c.sold_comps_count >= 5
+    ORDER BY c.sold_comps_count DESC, c.sold_comps_median DESC
+    """
+
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    # Also query eBay active listings from ebay_active_listings table (aggregate by ISBN)
+    cursor_ebay = conn.cursor()
+    cursor_ebay.execute("""
+        SELECT
+            isbn,
+            COUNT(*) as listing_count,
+            MIN(price) as listing_min,
+            MAX(price) as listing_max,
+            AVG(price) as listing_avg,
+            CAST(AVG(price) AS REAL) as listing_median
+        FROM ebay_active_listings
+        WHERE price IS NOT NULL AND price > 0
+        GROUP BY isbn
+    """)
+    ebay_active_dict = {row[0]: {
+        'listing_count': row[1],
+        'listing_min': row[2],
+        'listing_max': row[3],
+        'listing_avg': row[4],
+        'listing_median': row[5]  # Using avg as proxy for median (SQLite doesn't have median)
+    } for row in cursor_ebay.fetchall()}
+
+    conn.close()
+
+    print(f"\nLoaded {len(rows)} books with eBay sold prices (ground truth)")
+    print(f"Loaded {len(ebay_active_dict)} books with eBay active listings")
+
+    records = []
+    targets = []
+
+    for row in rows:
+        (isbn, title, authors, publisher, pub_year, binding, page_count,
+         sold_comps_median, sold_comps_count, sold_comps_min, sold_comps_max,
+         amazon_fbm_median, amazon_fbm_count, amazon_fbm_min, amazon_fbm_max, amazon_fbm_avg_rating,
+         abe_enr_median, abe_enr_count, abe_enr_min, abe_enr_max, abe_enr_spread,
+         abe_enr_has_new, abe_enr_has_used, abe_enr_hc_premium,
+         last_enrichment_at, market_fetched_at, amazon_fbm_collected_at, abebooks_enr_collected_at,
+         market_json, bookscouter_json, cover_type, signed, printing) = row
+
+        # Skip lots
+        if title and is_lot(title):
+            continue
+
+        # Parse JSONs
+        market_dict = json.loads(market_json) if market_json else {}
+        bookscouter_dict = json.loads(bookscouter_json) if bookscouter_json else {}
+
+        # Build metadata dict
+        metadata_dict = {
+            'title': title,
+            'authors': authors,
+            'publisher': publisher,
+            'published_year': pub_year,
+            'page_count': page_count,
+            'binding': binding,
+        }
+
+        # Get eBay active listings if available
+        ebay_active = ebay_active_dict.get(isbn, {})
+
+        # Build unified record
+        record = {
+            'isbn': isbn,
+            'metadata': metadata_dict,
+            'market': market_dict,
+            'bookscouter': bookscouter_dict,
+            'condition': 'Good',  # Default condition
+            'cover_type': cover_type,
+            'signed': signed,
+            'printing': printing,
+
+            # eBay sold (ground truth target)
+            'ebay_sold_median': sold_comps_median,
+            'ebay_sold_count': sold_comps_count,
+            'ebay_sold_min': sold_comps_min,
+            'ebay_sold_max': sold_comps_max,
+
+            # eBay listings (feature)
+            'ebay_listing_median': ebay_active.get('listing_median'),
+            'ebay_listing_count': ebay_active.get('listing_count'),
+            'ebay_listing_min': ebay_active.get('listing_min'),
+            'ebay_listing_max': ebay_active.get('listing_max'),
+
+            # Amazon FBM (feature)
+            'amazon_fbm_median': amazon_fbm_median,
+            'amazon_fbm_count': amazon_fbm_count,
+            'amazon_fbm_min': amazon_fbm_min,
+            'amazon_fbm_max': amazon_fbm_max,
+            'amazon_fbm_avg_rating': amazon_fbm_avg_rating,
+
+            # AbeBooks (feature)
+            'abebooks_median': abe_enr_median,
+            'abebooks_count': abe_enr_count,
+            'abebooks_min': abe_enr_min,
+            'abebooks_max': abe_enr_max,
+            'abebooks_spread': abe_enr_spread,
+            'abebooks_has_new': abe_enr_has_new,
+            'abebooks_has_used': abe_enr_has_used,
+            'abebooks_hc_premium': abe_enr_hc_premium,
+
+            # Cross-platform ratios (let model learn these)
+            'amazon_to_ebay_ratio': None,
+            'abebooks_to_ebay_ratio': None,
+            'amazon_to_abebooks_ratio': None,
+
+            # Timestamps for temporal weighting
+            'timestamp': market_fetched_at or last_enrichment_at,
+            'ebay_timestamp': last_enrichment_at,
+            'amazon_timestamp': amazon_fbm_collected_at,
+            'abebooks_timestamp': abebooks_enr_collected_at,
+
+            # Price type classification (for quick wins weighting)
+            'target_type': 'sold',  # eBay sold price = ground truth
+            'ebay_price_type': 'sold',
+            'amazon_price_type': 'listing' if amazon_fbm_median else None,
+            'abebooks_price_type': 'listing' if abe_enr_median else None,
+        }
+
+        # Calculate cross-platform ratios
+        ebay_listing = ebay_active.get('listing_median')
+        if ebay_listing and ebay_listing > 0:
+            if amazon_fbm_median:
+                record['amazon_to_ebay_ratio'] = amazon_fbm_median / ebay_listing
+            if abe_enr_median:
+                record['abebooks_to_ebay_ratio'] = abe_enr_median / ebay_listing
+
+        if amazon_fbm_median and abe_enr_median and abe_enr_median > 0:
+            record['amazon_to_abebooks_ratio'] = amazon_fbm_median / abe_enr_median
+
+        # Calculate eBay listing/sold ratio (seller optimism metric)
+        if ebay_listing and sold_comps_median > 0:
+            record['ebay_listing_to_sold_ratio'] = ebay_listing / sold_comps_median
+
+        records.append(record)
+        targets.append(sold_comps_median)
+
+    print(f"\nUnified dataset created:")
+    print(f"  Total records: {len(records)}")
+    print(f"  Target (eBay sold) range: ${min(targets):.2f} - ${max(targets):.2f}")
+    print(f"  Target mean: ${sum(targets) / len(targets):.2f}")
+
+    # Feature coverage stats
+    amazon_count = sum(1 for r in records if r['amazon_fbm_median'])
+    abebooks_count = sum(1 for r in records if r['abebooks_median'])
+    ebay_listing_count = sum(1 for r in records if r['ebay_listing_median'])
+    amazon_ratio_count = sum(1 for r in records if r['amazon_to_ebay_ratio'])
+    abebooks_ratio_count = sum(1 for r in records if r['abebooks_to_ebay_ratio'])
+
+    print(f"\nFeature coverage:")
+    print(f"  Amazon FBM:           {amazon_count} ({amazon_count/len(records)*100:.1f}%)")
+    print(f"  AbeBooks:             {abebooks_count} ({abebooks_count/len(records)*100:.1f}%)")
+    print(f"  eBay listings:        {ebay_listing_count} ({ebay_listing_count/len(records)*100:.1f}%)")
+    print(f"  Amazon/eBay ratios:   {amazon_ratio_count} ({amazon_ratio_count/len(records)*100:.1f}%)")
+    print(f"  AbeBooks/eBay ratios: {abebooks_ratio_count} ({abebooks_ratio_count/len(records)*100:.1f}%)")
+
+    print("\n" + "=" * 80)
+
+    return records, targets
+
+
 if __name__ == "__main__":
     # Test the data loader
     print("\n" + "=" * 80)

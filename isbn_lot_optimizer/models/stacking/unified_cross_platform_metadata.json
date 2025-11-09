@@ -1,0 +1,228 @@
+{
+  "model_type": "UnifiedCrossPlatform",
+  "algorithm": "XGBRegressor",
+  "version": "v1_unified_ebay_sold_target",
+  "description": "Unified model using eBay sold prices as target, all platform listings as features",
+  "n_features": 39,
+  "feature_names": [
+    "ebay_sold_count",
+    "ebay_sold_min",
+    "ebay_sold_max",
+    "ebay_sold_spread",
+    "ebay_listing_median",
+    "ebay_listing_count",
+    "ebay_listing_min",
+    "ebay_listing_max",
+    "ebay_listing_spread",
+    "ebay_listing_to_sold_ratio",
+    "amazon_median",
+    "amazon_count",
+    "amazon_min",
+    "amazon_max",
+    "amazon_rating",
+    "amazon_spread",
+    "abebooks_median",
+    "abebooks_count",
+    "abebooks_min",
+    "abebooks_max",
+    "abebooks_spread",
+    "abebooks_has_new",
+    "abebooks_has_used",
+    "abebooks_hc_premium",
+    "amazon_to_ebay_ratio",
+    "abebooks_to_ebay_ratio",
+    "amazon_to_abebooks_ratio",
+    "has_amazon",
+    "has_abebooks",
+    "has_ebay_listing",
+    "platform_consensus",
+    "platform_spread_pct",
+    "platform_agreement",
+    "page_count",
+    "age_years",
+    "is_hardcover",
+    "is_paperback",
+    "is_mass_market",
+    "is_signed"
+  ],
+  "training_samples": 2134,
+  "test_samples": 533,
+  "train_mae": 1.1039160343007495,
+  "test_mae": 2.057949214992559,
+  "train_rmse": 2.1049294764692026,
+  "test_rmse": 3.6520712550624443,
+  "train_r2": 0.9364023848084528,
+  "test_r2": 0.7547696822721501,
+  "test_mape": 20.06289674614338,
+  "cv_mae": 0.4065488666657215,
+  "use_log_target": true,
+  "use_groupkfold": true,
+  "use_temporal_weighting": true,
+  "use_price_type_weighting": true,
+  "quick_wins": {
+    "temporal_decay_days": 365.0,
+    "sold_weight_multiplier": 3.0,
+    "enabled": true
+  },
+  "hyperparameters": {
+    "subsample": 0.8,
+    "reg_lambda": 100,
+    "reg_alpha": 1,
+    "n_estimators": 500,
+    "min_child_weight": 5,
+    "max_depth": 5,
+    "learning_rate": 0.15,
+    "gamma": 0,
+    "colsample_bytree": 1.0
+  },
+  "optimization": {
+    "method": "RandomizedSearchCV",
+    "n_iter": 50,
+    "cv_folds": 3,
+    "scoring": "neg_mean_absolute_error"
+  },
+  "feature_importance": {
+    "ebay_sold_count": 0.0,
+    "ebay_sold_min": 0.4057823121547699,
+    "ebay_sold_max": 0.07365807145833969,
+    "ebay_sold_spread": 0.014882816933095455,
+    "ebay_listing_median": 0.033082835376262665,
+    "ebay_listing_count": 0.00974587444216013,
+    "ebay_listing_min": 0.008187053725123405,
+    "ebay_listing_max": 0.01814756914973259,
+    "ebay_listing_spread": 0.008230620063841343,
+    "ebay_listing_to_sold_ratio": 0.026890132576227188,
+    "amazon_median": 0.023776955902576447,
+    "amazon_count": 0.015140756964683533,
+    "amazon_min": 0.023762619122862816,
+    "amazon_max": 0.014366337098181248,
+    "amazon_rating": 0.013360635377466679,
+    "amazon_spread": 0.013280948624014854,
+    "abebooks_median": 0.01923074573278427,
+    "abebooks_count": 0.014938566833734512,
+    "abebooks_min": 0.008273668587207794,
+    "abebooks_max": 0.009106692858040333,
+    "abebooks_spread": 0.015351722948253155,
+    "abebooks_has_new": 0.01486043818295002,
+    "abebooks_has_used": 0.0,
+    "abebooks_hc_premium": 0.021675745025277138,
+    "amazon_to_ebay_ratio": 0.011886194348335266,
+    "abebooks_to_ebay_ratio": 0.00986525509506464,
+    "amazon_to_abebooks_ratio": 0.010014032945036888,
+    "has_amazon": 0.0,
+    "has_abebooks": 0.0,
+    "has_ebay_listing": 0.0,
+    "platform_consensus": 0.04447520524263382,
+    "platform_spread_pct": 0.011068823747336864,
+    "platform_agreement": 0.015624229796230793,
+    "page_count": 0.018835946917533875,
+    "age_years": 0.017902817577123642,
+    "is_hardcover": 0.016429277136921883,
+    "is_paperback": 0.03816523030400276,
+    "is_mass_market": 0.0,
+    "is_signed": 0.0
+  },
+  "top_features": [
+    [
+      "ebay_sold_min",
+      0.4057823121547699
+    ],
+    [
+      "ebay_sold_max",
+      0.07365807145833969
+    ],
+    [
+      "platform_consensus",
+      0.04447520524263382
+    ],
+    [
+      "is_paperback",
+      0.03816523030400276
+    ],
+    [
+      "ebay_listing_median",
+      0.033082835376262665
+    ],
+    [
+      "ebay_listing_to_sold_ratio",
+      0.026890132576227188
+    ],
+    [
+      "amazon_median",
+      0.023776955902576447
+    ],
+    [
+      "amazon_min",
+      0.023762619122862816
+    ],
+    [
+      "abebooks_hc_premium",
+      0.021675745025277138
+    ],
+    [
+      "abebooks_median",
+      0.01923074573278427
+    ],
+    [
+      "page_count",
+      0.018835946917533875
+    ],
+    [
+      "ebay_listing_max",
+      0.01814756914973259
+    ],
+    [
+      "age_years",
+      0.017902817577123642
+    ],
+    [
+      "is_hardcover",
+      0.016429277136921883
+    ],
+    [
+      "platform_agreement",
+      0.015624229796230793
+    ],
+    [
+      "abebooks_spread",
+      0.015351722948253155
+    ],
+    [
+      "amazon_count",
+      0.015140756964683533
+    ],
+    [
+      "abebooks_count",
+      0.014938566833734512
+    ],
+    [
+      "ebay_sold_spread",
+      0.014882816933095455
+    ],
+    [
+      "abebooks_has_new",
+      0.01486043818295002
+    ]
+  ],
+  "cross_platform_features": [
+    "platform_consensus",
+    "ebay_listing_to_sold_ratio",
+    "amazon_median",
+    "amazon_min",
+    "abebooks_hc_premium",
+    "abebooks_median",
+    "platform_agreement",
+    "abebooks_spread",
+    "amazon_count",
+    "abebooks_count",
+    "abebooks_has_new"
+  ],
+  "trained_at": "2025-11-09T14:26:06.490347",
+  "target_source": "ebay_sold_comps_median",
+  "feature_sources": [
+    "ebay_listings",
+    "amazon_fbm",
+    "abebooks",
+    "metadata"
+  ]
+}

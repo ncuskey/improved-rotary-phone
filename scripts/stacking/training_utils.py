@@ -83,14 +83,14 @@ def group_train_test_split(X: np.ndarray, y: np.ndarray, isbns: List[str],
     return X_train, X_test, y_train, y_test
 
 
-def calculate_temporal_weights(timestamps: List[datetime], decay_days: float = 365.0) -> np.ndarray:
+def calculate_temporal_weights(timestamps: List, decay_days: float = 365.0) -> np.ndarray:
     """
     Calculate exponential time decay weights for training samples.
 
     Best practice: Weight recent sales higher than old sales to capture market shifts.
 
     Args:
-        timestamps: List of timestamps for each sample
+        timestamps: List of timestamps (datetime objects or ISO strings)
         decay_days: Half-life for exponential decay (default: 1 year)
 
     Returns:
@@ -99,14 +99,58 @@ def calculate_temporal_weights(timestamps: List[datetime], decay_days: float = 3
     if not timestamps or len(timestamps) == 0:
         return None
 
+    # Convert timestamp strings to datetime objects
+    datetime_objects = []
+    for ts in timestamps:
+        if ts is None:
+            continue
+        if isinstance(ts, str):
+            try:
+                datetime_objects.append(datetime.fromisoformat(ts.replace('Z', '+00:00')))
+            except:
+                continue
+        elif isinstance(ts, datetime):
+            datetime_objects.append(ts)
+
+    if len(datetime_objects) == 0:
+        return None
+
     # Find most recent timestamp
-    most_recent = max(timestamps)
+    most_recent = max(datetime_objects)
 
     # Calculate days since most recent
-    days_old = np.array([(most_recent - ts).days for ts in timestamps])
+    days_old = np.array([(most_recent - ts).days for ts in datetime_objects])
 
     # Exponential decay: weight = exp(-days_old * ln(2) / decay_days)
     weights = np.exp(-days_old * np.log(2) / decay_days)
+
+    # Normalize so mean weight = 1.0
+    weights = weights / weights.mean()
+
+    return weights
+
+
+def calculate_price_type_weights(price_types: List[str], sold_weight: float = 3.0) -> np.ndarray:
+    """
+    Calculate sample weights based on price type (sold vs listing).
+
+    Best practice: Weight SOLD prices higher than LISTING prices since sold prices
+    are ground truth (actual market value) while listing prices are just asking prices.
+
+    Args:
+        price_types: List of price types ('sold' or 'listing')
+        sold_weight: Weight multiplier for sold prices (default: 3.0)
+
+    Returns:
+        Array of weights (sold prices weighted 3x higher than listing prices)
+    """
+    if not price_types or len(price_types) == 0:
+        return np.ones(0)
+
+    weights = np.ones(len(price_types))
+    for i, price_type in enumerate(price_types):
+        if price_type == 'sold':
+            weights[i] = sold_weight
 
     # Normalize so mean weight = 1.0
     weights = weights / weights.mean()

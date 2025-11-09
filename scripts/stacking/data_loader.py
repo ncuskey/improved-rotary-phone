@@ -430,7 +430,11 @@ class PlatformDataLoader:
             abebooks_enr_spread,
             abebooks_enr_has_new,
             abebooks_enr_has_used,
-            abebooks_enr_hc_premium
+            abebooks_enr_hc_premium,
+            last_enrichment_at,
+            market_fetched_at,
+            amazon_fbm_collected_at,
+            abebooks_enr_collected_at
         FROM cached_books
         WHERE last_enrichment_at IS NOT NULL
           AND sold_comps_count >= 5
@@ -449,7 +453,8 @@ class PlatformDataLoader:
              cover_type, signed, printing, sold_comps_count,
              abe_enr_count, abe_enr_min, abe_enr_median, abe_enr_avg,
              abe_enr_max, abe_enr_spread, abe_enr_has_new, abe_enr_has_used,
-             abe_enr_hc_premium) = row
+             abe_enr_hc_premium, last_enrichment_at, market_fetched_at,
+             amazon_fbm_collected_at, abebooks_enr_collected_at) = row
 
             # Parse JSONs
             market_dict = json.loads(market_json) if market_json else {}
@@ -490,11 +495,21 @@ class PlatformDataLoader:
                 'abebooks': abebooks_dict,
                 'ebay_target': sold_comps_median,
                 'sold_comps_count': sold_comps_count,
+                # Timestamps for temporal weighting
+                'timestamp': market_fetched_at or last_enrichment_at,  # Prefer market_fetched (most complete)
+                'ebay_timestamp': last_enrichment_at,
+                'amazon_timestamp': amazon_fbm_collected_at,
+                'abebooks_timestamp': abebooks_enr_collected_at,
             }
 
             # Add AbeBooks target if enriched data available
             if abe_enr_median and abe_enr_median > 0:
                 book['abebooks_target'] = abe_enr_median
+                book['abebooks_price_type'] = 'listing'  # AbeBooks = asking prices
+
+            # Mark eBay target as SOLD price (ground truth)
+            if sold_comps_median:
+                book['ebay_price_type'] = 'sold'
 
             books.append(book)
 
@@ -529,7 +544,10 @@ class PlatformDataLoader:
             c.sold_comps_count,
             c.sold_comps_min,
             c.sold_comps_median,
-            c.sold_comps_max
+            c.sold_comps_max,
+            c.amazon_fbm_collected_at,
+            c.last_enrichment_at,
+            c.market_fetched_at
         FROM cached_books c
         LEFT JOIN amazon_pricing p ON c.isbn = p.isbn
         WHERE (p.median_used_good IS NOT NULL OR p.median_used_very_good IS NOT NULL)
@@ -546,7 +564,8 @@ class PlatformDataLoader:
             (isbn, title, authors, publisher, pub_year, binding, page_count,
              price_good, price_vg, offer_count,
              fbm_count, fbm_min, fbm_median, fbm_max, fbm_avg_rating,
-             sold_comps_count, sold_comps_min, sold_comps_median, sold_comps_max) = row
+             sold_comps_count, sold_comps_min, sold_comps_median, sold_comps_max,
+             amazon_fbm_collected_at, last_enrichment_at, market_fetched_at) = row
 
             # Create minimal metadata
             metadata_dict = {
@@ -608,12 +627,18 @@ class PlatformDataLoader:
                     'abebooks': None,
                     'amazon_fbm': amazon_fbm_dict,
                     'sold_comps': sold_comps_dict,
+                    # Timestamps for temporal weighting
+                    'timestamp': market_fetched_at or amazon_fbm_collected_at or last_enrichment_at,
+                    'amazon_timestamp': amazon_fbm_collected_at,
+                    'ebay_timestamp': last_enrichment_at,
                 }
 
                 if amazon_target:
                     book['amazon_target'] = amazon_target
+                    book['amazon_price_type'] = 'listing'  # Amazon FBM = listed prices
                 if ebay_target:
                     book['ebay_target'] = ebay_target
+                    book['ebay_price_type'] = 'sold'  # eBay sold comps = actual sales
 
                 books.append(book)
 

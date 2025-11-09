@@ -214,6 +214,43 @@ print(f'Price types: {set(price_types)}')
 
 ---
 
+## Validation Results
+
+### eBay Model Retraining (November 9, 2025)
+
+**Setup:**
+- Integrated temporal weighting (365-day half-life)
+- Integrated price type weighting (3x for sold prices)
+- Modified `train_ebay_model.py` to extract timestamps and price_types
+- Modified `calculate_temporal_weights()` to maintain array length
+
+**Results:**
+- Baseline (v2): Test MAE $1.62, Test MAPE 11.9%, R² 0.788
+- Quick Wins (v3): Test MAE $1.63, Test MAPE 11.9%, R² 0.788
+- **No improvement observed**
+
+**Root Cause Analysis:**
+1. **Temporal weighting ineffective**: Weight range 0.9948-1.0005 (nearly uniform)
+   - All eBay timestamps are very recent (within days of each other)
+   - Exponential decay has minimal effect when data is homogeneous in time
+
+2. **Price type weighting ineffective**: Mean sold weight 1.00x (should be 3.00x)
+   - ALL eBay samples are already 'sold' prices (100% ground truth)
+   - No 'listing' prices to downweight
+   - Normalization results in uniform weight=1.0 for all samples
+
+**Key Insight:**
+eBay model already has good performance (11.9% MAPE) BECAUSE it uses 100% SOLD prices. This validates the hypothesis that sold vs listing price distinction is critical.
+
+**Next Steps:**
+The quick wins will likely have MUCH BIGGER impact on models that use LISTING prices:
+- Amazon model (currently 0.8% MAPE, but circular - predicting listings from listings)
+- AbeBooks model (17.7% MAPE, uses listing prices)
+- Alibris model (27.1% MAPE, uses listing prices)
+- Other models using BookFinder data (mixed sold/listing)
+
+---
+
 ## Next Steps
 
 ### Immediate (Ready to Use)

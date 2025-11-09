@@ -95,22 +95,26 @@ def calculate_temporal_weights(timestamps: List, decay_days: float = 365.0) -> n
 
     Returns:
         Array of weights (1.0 = most recent, decays exponentially with age)
+        Missing timestamps receive weight=1.0 (neutral)
     """
     if not timestamps or len(timestamps) == 0:
         return None
 
-    # Convert timestamp strings to datetime objects
+    # Convert timestamp strings to datetime objects, track indices
     datetime_objects = []
-    for ts in timestamps:
+    valid_indices = []
+    for i, ts in enumerate(timestamps):
         if ts is None:
             continue
         if isinstance(ts, str):
             try:
                 datetime_objects.append(datetime.fromisoformat(ts.replace('Z', '+00:00')))
+                valid_indices.append(i)
             except:
                 continue
         elif isinstance(ts, datetime):
             datetime_objects.append(ts)
+            valid_indices.append(i)
 
     if len(datetime_objects) == 0:
         return None
@@ -122,7 +126,12 @@ def calculate_temporal_weights(timestamps: List, decay_days: float = 365.0) -> n
     days_old = np.array([(most_recent - ts).days for ts in datetime_objects])
 
     # Exponential decay: weight = exp(-days_old * ln(2) / decay_days)
-    weights = np.exp(-days_old * np.log(2) / decay_days)
+    valid_weights = np.exp(-days_old * np.log(2) / decay_days)
+
+    # Create full weight array with 1.0 for missing timestamps
+    weights = np.ones(len(timestamps))
+    for i, valid_idx in enumerate(valid_indices):
+        weights[valid_idx] = valid_weights[i]
 
     # Normalize so mean weight = 1.0
     weights = weights / weights.mean()

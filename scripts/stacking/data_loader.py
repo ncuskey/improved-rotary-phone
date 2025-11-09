@@ -129,7 +129,7 @@ class PlatformDataLoader:
             if book.get('ebay_target'):
                 ebay_data.append((book, book['ebay_target']))
 
-        # Process cache books (Amazon only)
+        # Process cache books (Amazon and eBay sold_comps)
         for book in cache_books:
             if book.get('metadata') and 'title' in book['metadata']:
                 if is_lot(book['metadata']['title']):
@@ -137,6 +137,9 @@ class PlatformDataLoader:
 
             if book.get('amazon_target'):
                 amazon_data.append((book, book['amazon_target']))
+
+            if book.get('ebay_target'):
+                ebay_data.append((book, book['ebay_target']))
 
         print(f"\nPlatform-specific data after lot filtering:")
         print(f"  eBay:     {len(ebay_data)} books")
@@ -449,7 +452,7 @@ class PlatformDataLoader:
         return books
 
     def _load_cache_books(self) -> List[dict]:
-        """Load books from metadata_cache.db (Amazon pricing + FBM data)."""
+        """Load books from metadata_cache.db (Amazon pricing + FBM data + eBay sold comps)."""
         if not self.cache_db.exists():
             print(f"Warning: {self.cache_db} not found")
             return []
@@ -473,11 +476,16 @@ class PlatformDataLoader:
             c.amazon_fbm_min,
             c.amazon_fbm_median,
             c.amazon_fbm_max,
-            c.amazon_fbm_avg_rating
+            c.amazon_fbm_avg_rating,
+            c.sold_comps_count,
+            c.sold_comps_min,
+            c.sold_comps_median,
+            c.sold_comps_max
         FROM cached_books c
         LEFT JOIN amazon_pricing p ON c.isbn = p.isbn
         WHERE (p.median_used_good IS NOT NULL OR p.median_used_very_good IS NOT NULL)
            OR c.amazon_fbm_median IS NOT NULL
+           OR c.sold_comps_median IS NOT NULL
         """
 
         cursor.execute(query)
@@ -488,7 +496,8 @@ class PlatformDataLoader:
         for row in rows:
             (isbn, title, authors, publisher, pub_year, binding, page_count,
              price_good, price_vg, offer_count,
-             fbm_count, fbm_min, fbm_median, fbm_max, fbm_avg_rating) = row
+             fbm_count, fbm_min, fbm_median, fbm_max, fbm_avg_rating,
+             sold_comps_count, sold_comps_min, sold_comps_median, sold_comps_max) = row
 
             # Create minimal metadata
             metadata_dict = {
@@ -510,16 +519,34 @@ class PlatformDataLoader:
                     'amazon_fbm_avg_rating': fbm_avg_rating,
                 }
 
-            # Use FBM median as primary target, fallback to old pricing
-            target_price = None
-            if fbm_median and fbm_median > 0:
-                target_price = fbm_median
-            elif price_good and price_good > 0:
-                target_price = price_good
-            elif price_vg and price_vg > 0:
-                target_price = price_vg
+            # Build eBay sold_comps dict if data available
+            sold_comps_dict = None
+            if sold_comps_median or sold_comps_count:
+                sold_comps_dict = {
+                    'sold_comps_count': sold_comps_count,
+                    'sold_comps_min': sold_comps_min,
+                    'sold_comps_median': sold_comps_median,
+                    'sold_comps_max': sold_comps_max,
+                }
 
-            if target_price and target_price > 0:
+            # Determine targets for each platform
+            amazon_target = None
+            ebay_target = None
+
+            # Amazon: Use FBM median as primary target, fallback to old pricing
+            if fbm_median and fbm_median > 0:
+                amazon_target = fbm_median
+            elif price_good and price_good > 0:
+                amazon_target = price_good
+            elif price_vg and price_vg > 0:
+                amazon_target = price_vg
+
+            # eBay: Use sold_comps_median as target
+            if sold_comps_median and sold_comps_median > 0:
+                ebay_target = sold_comps_median
+
+            # Add book if it has at least one valid target
+            if amazon_target or ebay_target:
                 book = {
                     'isbn': isbn,
                     'metadata': metadata_dict,
@@ -531,8 +558,14 @@ class PlatformDataLoader:
                     'printing': None,
                     'abebooks': None,
                     'amazon_fbm': amazon_fbm_dict,
-                    'amazon_target': target_price,
+                    'sold_comps': sold_comps_dict,
                 }
+
+                if amazon_target:
+                    book['amazon_target'] = amazon_target
+                if ebay_target:
+                    book['ebay_target'] = ebay_target
+
                 books.append(book)
 
         return books

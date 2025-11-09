@@ -170,6 +170,7 @@ class FeatureExtractor:
         sold_listings: Optional[Dict] = None,
         author_aggregates: Optional[Dict] = None,
         amazon_fbm: Optional[Dict] = None,
+        sold_comps: Optional[Dict] = None,
     ) -> FeatureVector:
         """
         Extract features from book data.
@@ -264,16 +265,39 @@ class FeatureExtractor:
             features["amazon_fbm_avg_rating"] = 0
             missing.extend(["amazon_fbm_median", "amazon_fbm_count"])
 
-        if market:
-            features["ebay_sold_count"] = market.sold_count if market.sold_count is not None else 0
-            features["ebay_active_count"] = market.active_count if market.active_count else 0
-            features["ebay_active_median"] = market.active_median_price if market.active_median_price else 0
-            features["sell_through_rate"] = market.sell_through_rate if market.sell_through_rate else 0
+        if market or sold_comps:
+            # Use market data if available, fallback to sold_comps enrichment data
+            if market:
+                features["ebay_sold_count"] = market.sold_count if market.sold_count is not None else 0
+                features["ebay_active_count"] = market.active_count if market.active_count else 0
+                features["ebay_active_median"] = market.active_median_price if market.active_median_price else 0
+                features["sell_through_rate"] = market.sell_through_rate if market.sell_through_rate else 0
 
-            # eBay sold comps pricing features (Phase 2: specialist model improvements)
-            features["ebay_sold_min"] = market.sold_comps_min if hasattr(market, 'sold_comps_min') and market.sold_comps_min else 0
-            features["ebay_sold_median"] = market.sold_comps_median if hasattr(market, 'sold_comps_median') and market.sold_comps_median else 0
-            features["ebay_sold_max"] = market.sold_comps_max if hasattr(market, 'sold_comps_max') and market.sold_comps_max else 0
+                # eBay sold comps pricing features (Phase 2: specialist model improvements)
+                features["ebay_sold_min"] = market.sold_comps_min if hasattr(market, 'sold_comps_min') and market.sold_comps_min else 0
+                features["ebay_sold_median"] = market.sold_comps_median if hasattr(market, 'sold_comps_median') and market.sold_comps_median else 0
+                features["ebay_sold_max"] = market.sold_comps_max if hasattr(market, 'sold_comps_max') and market.sold_comps_max else 0
+            else:
+                features["ebay_sold_count"] = 0
+                features["ebay_active_count"] = 0
+                features["ebay_active_median"] = 0
+                features["sell_through_rate"] = 0
+                features["ebay_sold_min"] = 0
+                features["ebay_sold_median"] = 0
+                features["ebay_sold_max"] = 0
+
+            # Use sold_comps enrichment data as fallback/supplement (Phase 5: enrichment integration)
+            if sold_comps:
+                # Use enriched data if market data is missing
+                if not features["ebay_sold_min"] and sold_comps.get('sold_comps_min'):
+                    features["ebay_sold_min"] = sold_comps['sold_comps_min']
+                if not features["ebay_sold_median"] and sold_comps.get('sold_comps_median'):
+                    features["ebay_sold_median"] = sold_comps['sold_comps_median']
+                if not features["ebay_sold_max"] and sold_comps.get('sold_comps_max'):
+                    features["ebay_sold_max"] = sold_comps['sold_comps_max']
+                # Use sold_comps_count if ebay_sold_count is missing
+                if not features["ebay_sold_count"] and sold_comps.get('sold_comps_count'):
+                    features["ebay_sold_count"] = sold_comps['sold_comps_count']
 
             # Derived pricing features
             if features["ebay_sold_max"] and features["ebay_sold_min"]:
@@ -287,10 +311,11 @@ class FeatureExtractor:
             else:
                 features["ebay_active_vs_sold_ratio"] = 0
 
-            if market.sold_count is None or market.sold_count == 0:
-                missing.append("ebay_sold_count")
-            if not market.active_median_price:
-                missing.append("ebay_active_median")
+            if market:
+                if market.sold_count is None or market.sold_count == 0:
+                    missing.append("ebay_sold_count")
+                if not market.active_median_price:
+                    missing.append("ebay_active_median")
             if not features["ebay_sold_median"]:
                 missing.append("ebay_sold_median")
         else:
@@ -899,6 +924,7 @@ class PlatformFeatureExtractor(FeatureExtractor):
         bookfinder: Optional[Dict] = None,
         sold_listings: Optional[Dict] = None,
         amazon_fbm: Optional[Dict] = None,
+        sold_comps: Optional[Dict] = None,
     ) -> FeatureVector:
         """
         Extract platform-specific features.
@@ -913,12 +939,13 @@ class PlatformFeatureExtractor(FeatureExtractor):
             bookfinder: BookFinder aggregator data
             sold_listings: Sold listings data from Serper
             amazon_fbm: Amazon FBM (Fulfilled by Merchant) pricing data
+            sold_comps: eBay sold comps enrichment data
 
         Returns:
             FeatureVector with platform-specific features only
         """
         # First extract all features
-        full_features = self.extract(metadata, market, bookscouter, condition, abebooks, bookfinder, sold_listings, author_aggregates=None, amazon_fbm=amazon_fbm)
+        full_features = self.extract(metadata, market, bookscouter, condition, abebooks, bookfinder, sold_listings, author_aggregates=None, amazon_fbm=amazon_fbm, sold_comps=sold_comps)
 
         # Get platform-specific feature subset
         if platform.lower() == 'ebay':

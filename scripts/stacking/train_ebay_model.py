@@ -102,7 +102,8 @@ def extract_features(records, targets, extractor, catalog_db_path):
             bookscouter=bookscouter,
             condition=record.get('condition', 'Good'),
             abebooks=record.get('abebooks'),
-            bookfinder=bookfinder_data
+            bookfinder=bookfinder_data,
+            sold_comps=record.get('sold_comps')
         )
 
         X.append(features.values)

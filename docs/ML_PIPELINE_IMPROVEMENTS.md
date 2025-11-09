@@ -402,6 +402,175 @@ Generated 5-fold cross-validation predictions for meta-model training:
 
 ---
 
-**Document Version:** 2.0
+---
+
+## Operational Best Practices for ML System Maintenance
+
+### Validation Protocol (Run Before Production Deploy)
+
+1. **GroupKFold Leakage Protection**
+   - ✅ Always re-validate on new datasets
+   - Check: No ISBN appears in both train and test sets
+   - Command: Verify with `print(f"Unique ISBNs in train: {len(set(isbn_groups[train_idx]))}")"`
+   - Expected: Train ISBNs ∩ Test ISBNs = ∅
+
+2. **MAPE vs Sample Size Analysis**
+   - ✅ Run plots to anticipate diminishing returns
+   - Monitor: Performance gains as dataset grows
+   - Expected: MAPE decreases logarithmically with sample growth
+   - Action: Use to justify data collection efforts
+
+3. **Temporal Weighting Consistency**
+   - ✅ Ensure weights remain consistent after retraining
+   - Check: `weights.mean() ≈ 1.0` and distribution is smooth
+   - Monitor: Verify most recent data gets highest weight
+   - Note: Currently using placeholders; activate after timestamp extraction
+
+4. **Per-Platform Residual Drift Monitoring**
+   - ✅ Monitor monthly for each specialist model
+   - Threshold: Retrain if drift >15%
+   - Metrics to track:
+     - MAE drift: `|current_MAE - baseline_MAE| / baseline_MAE`
+     - MAPE drift: `|current_MAPE - baseline_MAPE| / baseline_MAPE`
+     - R² degradation: `baseline_R² - current_R²`
+   - Store baseline in model metadata
+
+5. **Reproducible Experiment Tracking**
+   - ✅ Maintain tags for all experiments
+   - Required metadata:
+     - `model_id`: Unique identifier (e.g., "ebay_v2_log_groupkfold")
+     - `train_hash`: SHA256 of training data
+     - `data_hash`: SHA256 of feature configuration
+     - `git_commit`: Git commit hash at training time
+     - `trained_at`: ISO timestamp
+   - Storage: Save in model metadata JSON
+
+### Continuous Improvement Targets
+
+**Dataset Expansion Strategy:**
+
+```
+Current State:
+- Amazon: 14,449 samples → 0.8% MAPE
+- eBay: 11,022 samples → 11.9% MAPE
+- Small platforms: <2K samples → 15-27% MAPE
+
+Expected Growth Impact (logarithmic):
+- 2x data → ~25% MAPE reduction
+- 5x data → ~40% MAPE reduction
+- 10x data → ~50% MAPE reduction (diminishing returns)
+
+Target Sample Sizes for <10% MAPE:
+- Main model: 20,000+ samples
+- Small platforms: 5,000+ samples each
+```
+
+**Feature Refinement Roadmap:**
+
+1. **Dynamic Time Features** (High Priority)
+   - Add `days_since_last_sale`: Recency of market activity
+   - Add `median_competitor_price`: Current market positioning
+   - Add `price_volatility_30d`: Recent price instability
+   - Expected Impact: 5-10% MAPE improvement
+
+2. **Market Context Features** (Medium Priority)
+   - Add `seasonal_demand_factor`: Time-of-year effects
+   - Add `platform_market_share`: Platform popularity trends
+   - Add `author_popularity_trend`: Author demand changes
+   - Expected Impact: 3-5% MAPE improvement
+
+3. **Condition-Specific Modeling** (Medium Priority)
+   - Separate models for New vs Used vs Collectible
+   - Expected Impact: 10-15% MAPE improvement for each segment
+
+**Hybrid Architecture Potential:**
+
+```
+Current: Gradient Boosting + Ridge Ensemble
+Future (when >1M examples available):
+  → Text embedding (BERT/transformer) + Ensemble
+  → Captures title/description semantics
+  → Expected: 20-30% additional MAPE improvement
+  → Requirements:
+    - 1M+ training examples
+    - GPU infrastructure
+    - Text preprocessing pipeline
+```
+
+### Retrain Triggers (Automated Monitoring)
+
+**Mandatory Retrain Conditions:**
+
+1. **Performance Drift** (Check Weekly)
+   - Trigger: MAE increases >15% from baseline
+   - Trigger: MAPE increases >15% from baseline
+   - Trigger: R² decreases >0.05 from baseline
+   - Action: Immediate retrain with recent data
+
+2. **New Data Source Integration** (Check Monthly)
+   - Trigger: New platform added (e.g., Biblio → Thrift Books)
+   - Trigger: New feature source (e.g., Google Books API)
+   - Action: Retrain affected specialist models
+
+3. **Data Volume Growth** (Check Monthly)
+   - Trigger: Training data increases >10%
+   - Trigger: Platform coverage improves >20%
+   - Action: Retrain to capitalize on new information
+
+4. **Market Regime Change** (Check Quarterly)
+   - Trigger: Overall market prices shift >20%
+   - Trigger: New competitor enters market
+   - Trigger: Platform policy changes (e.g., new fees)
+   - Action: Retrain with temporal weighting emphasis on recent data
+
+**Retrain Schedule:**
+
+```
+Daily:    Monitor performance metrics
+Weekly:   Check for drift (automated alerts)
+Monthly:  Evaluate data volume growth
+Quarterly: Full pipeline audit and retrain if needed
+Annually: Complete revalidation and architecture review
+```
+
+**Production Deployment Checklist:**
+
+```
+Before deploying retrained models:
+
+[ ] GroupKFold validation passed (no ISBN leakage)
+[ ] MAPE improved or within 5% of baseline
+[ ] Test set R² within expected range
+[ ] Feature importance makes business sense
+[ ] Model metadata saved with all tracking tags
+[ ] A/B test prepared (old model vs new model)
+[ ] Rollback plan documented
+[ ] Performance monitoring dashboard updated
+[ ] Git commit tagged (e.g., "model_deploy_v2.1")
+[ ] Documentation updated with changes
+```
+
+### Expected Performance Evolution
+
+**Year 1 (Current):**
+- Amazon: 0.8% MAPE (mature)
+- eBay: 11.9% MAPE (good)
+- Others: 15-27% MAPE (needs improvement)
+
+**Year 2 (With data growth + features):**
+- Amazon: 0.5% MAPE (target: 50% improvement)
+- eBay: 8% MAPE (target: 33% improvement)
+- Others: 10-15% MAPE (target: 40% improvement)
+
+**Year 3 (With hybrid architecture):**
+- Amazon: 0.3% MAPE (diminishing returns)
+- eBay: 6% MAPE
+- Others: 8-10% MAPE
+- Overall: Production-grade accuracy across all platforms
+
+---
+
+**Document Version:** 2.1
 **Last Updated:** 2025-11-09
 **Author:** ML Pipeline Improvement Project
+**Operational Guidelines Added:** 2025-11-09

@@ -363,6 +363,10 @@ POST /api/v1/books/{isbn}/estimate_price
 - [Decodo Collection Status](DECODO_COLLECTION_STATUS.md)
 - [eBay API Fix](EBAY_API_FIX.md)
 
+### Experiments
+- [Experiment Log](EXPERIMENT_LOG.md) - All ML experiments with outcomes
+- [Text Embeddings Experiment](TEXT_EMBEDDINGS_EXPERIMENT.md) - Failed experiment (Nov 9, 2025)
+
 ### Analysis
 - [Platform Pricing Analysis](../../docs/analysis/PLATFORM_PRICING_ANALYSIS.md)
 - [Platform Scaling Analysis](../../docs/analysis/PLATFORM_SCALING_ANALYSIS.md)

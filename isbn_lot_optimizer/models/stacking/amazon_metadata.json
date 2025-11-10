@@ -33,12 +33,15 @@
   ],
   "training_samples": 11560,
   "test_samples": 2889,
-  "train_mae": 0.17073255161558187,
-  "test_mae": 0.18326123342484835,
-  "train_rmse": 3.018622211110162,
-  "test_rmse": 2.786108914575332,
-  "train_r2": 0.9949562992355195,
-  "test_r2": 0.9956329944255988,
+  "train_mae": 0.17142959409736222,
+  "test_mae": 0.1838859964754791,
+  "train_rmse": 3.019366879146744,
+  "test_rmse": 2.7870354430974946,
+  "train_r2": 0.9949538104537147,
+  "test_r2": 0.995630089422151,
+  "test_mape": 0.7587170671225454,
+  "use_temporal_weighting": true,
+  "use_groupkfold": true,
   "feature_importance": {
     "log_amazon_rank": 0.0,
     "amazon_count": 0.0,
@@ -46,13 +49,13 @@
     "amazon_trade_in_price": 0.0,
     "amazon_price_per_rank": 0.0,
     "amazon_competitive_density": 0.0,
-    "amazon_fbm_median": 0.5106315402630699,
-    "amazon_fbm_count": 0.0028910477284744642,
-    "amazon_fbm_price_spread": 5.671873462427259e-05,
-    "amazon_fbm_vs_rank": 0.4819192613938794,
-    "amazon_fbm_avg_rating": 0.004270408612216228,
-    "page_count": 0.00013453284800727636,
-    "age_years": 9.649041972862528e-05,
+    "amazon_fbm_median": 0.4702633638866062,
+    "amazon_fbm_count": 0.006652822991197804,
+    "amazon_fbm_price_spread": 6.397220454190557e-05,
+    "amazon_fbm_vs_rank": 0.5190612232234941,
+    "amazon_fbm_avg_rating": 0.0037323296695998677,
+    "page_count": 0.00011295198518876767,
+    "age_years": 0.00011333603937124296,
     "log_ratings": 0.0,
     "rating": 0.0,
     "is_new": 0.0,
@@ -70,32 +73,32 @@
   },
   "top_features": [
     [
-      "amazon_fbm_median",
-      0.5106315402630699
-    ],
-    [
       "amazon_fbm_vs_rank",
-      0.4819192613938794
+      0.5190612232234941
     ],
     [
-      "amazon_fbm_avg_rating",
-      0.004270408612216228
+      "amazon_fbm_median",
+      0.4702633638866062
     ],
     [
       "amazon_fbm_count",
-      0.0028910477284744642
+      0.006652822991197804
     ],
     [
-      "page_count",
-      0.00013453284800727636
+      "amazon_fbm_avg_rating",
+      0.0037323296695998677
     ],
     [
       "age_years",
-      9.649041972862528e-05
+      0.00011333603937124296
+    ],
+    [
+      "page_count",
+      0.00011295198518876767
     ],
     [
       "amazon_fbm_price_spread",
-      5.671873462427259e-05
+      6.397220454190557e-05
     ],
     [
       "log_amazon_rank",
@@ -110,5 +113,5 @@
       0.0
     ]
   ],
-  "trained_at": "2025-11-09T09:55:34.609929"
+  "trained_at": "2025-11-09T19:52:58.206496"
 }

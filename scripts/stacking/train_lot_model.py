@@ -28,6 +28,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from shared.python_version_check import check_python_version
 check_python_version()
 
+from scripts.stacking.training_utils import calculate_temporal_weights
+
 
 def load_lot_training_data():
     """Load lot training data from series_lot_comps table with completion percentage."""
@@ -65,7 +67,8 @@ def load_lot_training_data():
         condition,
         price,
         is_sold,
-        price_per_book
+        price_per_book,
+        scraped_at
     FROM series_lot_comps
     WHERE price IS NOT NULL
       AND price >= 2.0  -- Minimum reasonable price
@@ -80,6 +83,7 @@ def load_lot_training_data():
 
     records = []
     targets = []
+    timestamps = []
 
     for row in rows:
         series_id = row[0]
@@ -96,13 +100,15 @@ def load_lot_training_data():
             'price': row[6],
             'is_sold': bool(row[7]),
             'price_per_book': row[8],
+            'scraped_at': row[9],
             'inferred_series_size': inferred_series_size,
             'completion_pct': lot_size / inferred_series_size if inferred_series_size > 0 else 0,
         }
         records.append(record)
         targets.append(row[6])  # price
+        timestamps.append(row[9])  # scraped_at
 
-    return records, np.array(targets)
+    return records, np.array(targets), timestamps
 
 
 def extract_lot_features(records):
@@ -200,7 +206,7 @@ def train_lot_model():
 
     # Load data
     print("\n1. Loading lot training data...")
-    records, targets = load_lot_training_data()
+    records, targets, timestamps = load_lot_training_data()
 
     print(f"\n   Loaded {len(records)} lot listings")
     print(f"   Target range: ${min(targets):.2f} - ${max(targets):.2f}")
@@ -215,19 +221,46 @@ def train_lot_model():
     feature_names = get_feature_names()
     print(f"   Features extracted: {len(feature_names)} features")
 
+    # Calculate temporal weights
+    print("\n   Calculating temporal weights...")
+    temporal_weights = calculate_temporal_weights(timestamps, decay_days=365.0)
+
+    if temporal_weights is not None:
+        print(f"   ✓ Temporal weighting: weight range {temporal_weights.min():.4f}-{temporal_weights.max():.4f}")
+    else:
+        print(f"   ⚠ Temporal weights unavailable, proceeding without weighting")
+
     # Remove outliers
     print("\n3. Removing outliers...")
-    X_clean, y_clean = remove_outliers(X, y)
+    z_scores = np.abs((y - np.mean(y)) / np.std(y))
+    outlier_mask = z_scores < 3.0
+
+    X_clean = X[outlier_mask]
+    y_clean = y[outlier_mask]
+
+    # Apply same mask to weights if available
+    if temporal_weights is not None:
+        temporal_weights = temporal_weights[outlier_mask]
+
     print(f"   Removed {len(X) - len(X_clean)} outliers ({(len(X) - len(X_clean)) / len(X) * 100:.1f}%)")
     print(f"   Training samples: {len(X_clean)}")
 
     # Split data
     print("\n4. Splitting train/test (80/20)...")
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_clean, y_clean, test_size=0.2, random_state=42
-    )
-    print(f"   Train: {len(X_train)} samples")
-    print(f"   Test:  {len(X_test)} samples")
+    if temporal_weights is not None:
+        X_train, X_test, y_train, y_test, train_weights, test_weights = train_test_split(
+            X_clean, y_clean, temporal_weights, test_size=0.2, random_state=42
+        )
+        print(f"   Train: {len(X_train)} samples (weights: {train_weights.min():.4f}-{train_weights.max():.4f})")
+        print(f"   Test:  {len(X_test)} samples (weights: {test_weights.min():.4f}-{test_weights.max():.4f})")
+    else:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_clean, y_clean, test_size=0.2, random_state=42
+        )
+        train_weights = None
+        test_weights = None
+        print(f"   Train: {len(X_train)} samples")
+        print(f"   Test:  {len(X_test)} samples")
 
     # Scale features
     print("\n5. Scaling features...")
@@ -270,7 +303,11 @@ def train_lot_model():
         verbose=1
     )
 
-    random_search.fit(X_train_scaled, y_train)
+    if train_weights is not None:
+        print(f"   Using temporal sample weighting during hyperparameter search")
+        random_search.fit(X_train_scaled, y_train, sample_weight=train_weights)
+    else:
+        random_search.fit(X_train_scaled, y_train)
     model = random_search.best_estimator_
     best_params = random_search.best_params_
     cv_mae = -random_search.best_score_
@@ -350,6 +387,8 @@ def train_lot_model():
         'train_r2': float(train_r2),
         'test_r2': float(test_r2),
         'cv_mae': float(cv_mae),
+        'use_temporal_weighting': train_weights is not None,
+        'use_groupkfold': False,
         'hyperparameters': {k: v for k, v in best_params.items()},
         'optimization': {
             'method': 'RandomizedSearchCV',

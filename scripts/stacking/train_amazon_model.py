@@ -31,7 +31,8 @@ from scripts.stacking.training_utils import (
     inverse_log_transform,
     group_train_test_split,
     compute_metrics,
-    remove_outliers
+    remove_outliers,
+    calculate_temporal_weights
 )
 from isbn_lot_optimizer.ml.feature_extractor import PlatformFeatureExtractor
 
@@ -85,6 +86,7 @@ def extract_features(records, targets, extractor, catalog_db_path):
     y = []
     isbns = []
     completeness_scores = []
+    timestamps = []
 
     for record, target in zip(records, targets):
         metadata, market, bookscouter = create_simple_objects(record)
@@ -108,7 +110,10 @@ def extract_features(records, targets, extractor, catalog_db_path):
         isbns.append(record['isbn'])
         completeness_scores.append(features.completeness)
 
-    return np.array(X), np.array(y), isbns, completeness_scores
+        # Extract timestamp for temporal weighting
+        timestamps.append(record.get('amazon_timestamp'))
+
+    return np.array(X), np.array(y), isbns, completeness_scores, timestamps
 
 
 def train_amazon_model():
@@ -129,21 +134,55 @@ def train_amazon_model():
     # Extract features
     print("\n2. Extracting Amazon-specific features...")
     extractor = PlatformFeatureExtractor()
-    X, y, isbns, completeness = extract_features(amazon_records, amazon_targets, extractor, Path.home() / '.isbn_lot_optimizer' / 'catalog.db')
+    X, y, isbns, completeness, timestamps = extract_features(amazon_records, amazon_targets, extractor, Path.home() / '.isbn_lot_optimizer' / 'catalog.db')
 
     feature_names = PlatformFeatureExtractor.get_platform_feature_names('amazon')
     print(f"   Features extracted: {len(feature_names)} features")
     print(f"   Average completeness: {np.mean(completeness):.1%}")
 
-    # Remove outliers
+    # Calculate temporal weights
+    print("\n   Calculating temporal weights...")
+    temporal_weights = calculate_temporal_weights(timestamps, decay_days=365.0)
+
+    if temporal_weights is not None:
+        print(f"   ✓ Temporal weighting: weight range {temporal_weights.min():.4f}-{temporal_weights.max():.4f}")
+    else:
+        print(f"   ⚠ Temporal weights unavailable, proceeding without weighting")
+
+    # Remove outliers (need to track indices for weights)
     print("\n3. Removing outliers...")
-    X_clean, y_clean, isbns_clean = remove_outliers(X, y, isbns, threshold=3.0)
+    z_scores = np.abs((y - np.mean(y)) / np.std(y))
+    outlier_mask = z_scores < 3.0
+
+    X_clean = X[outlier_mask]
+    y_clean = y[outlier_mask]
+    isbns_clean = [isbn for i, isbn in enumerate(isbns) if outlier_mask[i]]
+
+    # Apply same mask to weights if available
+    if temporal_weights is not None:
+        temporal_weights = temporal_weights[outlier_mask]
+
     print(f"   Removed {len(X) - len(X_clean)} outliers ({(len(X) - len(X_clean)) / len(X) * 100:.1f}%)")
     print(f"   Training samples: {len(X_clean)}")
 
     # Split data using GroupKFold by ISBN (prevents leakage)
     print("\n4. Splitting train/test with GroupKFold by ISBN...")
     X_train, X_test, y_train, y_test = group_train_test_split(X_clean, y_clean, isbns_clean, n_splits=5)
+
+    # Split weights for train/test
+    if temporal_weights is not None:
+        # Need to map train/test indices from group_train_test_split
+        from sklearn.model_selection import GroupKFold
+        gkf = GroupKFold(n_splits=5)
+        isbn_groups = np.array(isbns_clean)
+        train_idx, test_idx = list(gkf.split(X_clean, y_clean, groups=isbn_groups))[-1]
+
+        train_weights = temporal_weights[train_idx]
+        test_weights = temporal_weights[test_idx]
+        print(f"   ✓ Train weights range: {train_weights.min():.4f}-{train_weights.max():.4f}")
+    else:
+        train_weights = None
+        test_weights = None
 
     # Apply log transform (best practice)
     print("\n5. Applying log transform to target...")
@@ -169,8 +208,13 @@ def train_amazon_model():
         verbose=0
     )
 
-    # Fit on log-transformed targets
-    model.fit(X_train_scaled, y_train_log)
+    # Fit on log-transformed targets with sample weighting
+    if train_weights is not None:
+        print(f"   Using temporal sample weighting")
+        model.fit(X_train_scaled, y_train_log, sample_weight=train_weights)
+    else:
+        print(f"   Training without sample weighting")
+        model.fit(X_train_scaled, y_train_log)
     print("   Training complete!")
 
     # Evaluate
@@ -251,6 +295,9 @@ def train_amazon_model():
         'test_rmse': float(test_rmse),
         'train_r2': float(train_r2),
         'test_r2': float(test_r2),
+        'test_mape': float(test_mape),
+        'use_temporal_weighting': train_weights is not None,
+        'use_groupkfold': True,
         'feature_importance': {name: float(imp) for name, imp in importance.items()},
         'top_features': [(name, float(imp)) for name, imp in top_features],
         'trained_at': datetime.now().isoformat(),

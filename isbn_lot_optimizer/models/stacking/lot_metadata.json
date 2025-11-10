@@ -28,6 +28,8 @@
   "train_r2": 0.9996246949183336,
   "test_r2": 0.9803694301777088,
   "cv_mae": 1.2736508491301803,
+  "use_temporal_weighting": true,
+  "use_groupkfold": false,
   "hyperparameters": {
     "subsample": 0.6,
     "reg_lambda": 1,
@@ -104,5 +106,5 @@
       0.001188825350254774
     ]
   ],
-  "trained_at": "2025-11-08T16:52:44.987408"
+  "trained_at": "2025-11-09T20:06:42.955330"
 }

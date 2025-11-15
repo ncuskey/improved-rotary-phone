@@ -319,7 +319,11 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let condition: String?
     let edition: String?
     let quantity: Int?
+
+    // ML-predicted resale value (what you'll sell the book for)
     let estimatedPrice: Double?
+    let estimatedSalePrice: Double?  // Clearer alias for estimatedPrice
+
     let probabilityScore: Double?
     let probabilityLabel: String?
     let justification: [String]?
@@ -342,6 +346,11 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
 
     var id: String { isbn }
 
+    // Computed property for clarity - both fields should have same value
+    var salePrice: Double? {
+        estimatedSalePrice ?? estimatedPrice
+    }
+
     enum CodingKeys: String, CodingKey {
         case isbn
         case originalIsbn = "original_isbn"
@@ -349,6 +358,7 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
         case edition
         case quantity
         case estimatedPrice = "estimated_price"
+        case estimatedSalePrice = "estimated_sale_price"
         case probabilityScore = "probability_score"
         case probabilityLabel = "probability_label"
         case justification
@@ -1373,6 +1383,9 @@ struct EstimatePriceResponse: Codable {
     let estimatedPrice: Double
     let baselinePrice: Double
     let confidence: Double
+    let priceLower: Double
+    let priceUpper: Double
+    let confidencePercent: Double
     let deltas: [AttributeDelta]
     let modelVersion: String
     let profitScenarios: [ProfitScenario]?
@@ -1381,6 +1394,9 @@ struct EstimatePriceResponse: Codable {
         case estimatedPrice = "estimated_price"
         case baselinePrice = "baseline_price"
         case confidence
+        case priceLower = "price_lower"
+        case priceUpper = "price_upper"
+        case confidencePercent = "confidence_percent"
         case deltas
         case modelVersion = "model_version"
         case profitScenarios = "profit_scenarios"

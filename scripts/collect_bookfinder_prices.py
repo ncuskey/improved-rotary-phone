@@ -786,18 +786,22 @@ def update_progress(isbn: str, status: str, offer_count: int = 0, error_message:
     conn.close()
 
 
-async def main(limit: Optional[int] = None, source: str = 'catalog'):
+async def main(limit: Optional[int] = None, source: str = 'catalog', isbn_file: Optional[str] = None):
     """
     Main scraper function.
 
     Args:
         limit: Optional limit on number of ISBNs to scrape (for testing)
         source: Data source - 'catalog' (760 ISBNs), 'metadata_cache' (19,249 ISBNs), or 'all'
+        isbn_file: Optional path to file containing ISBNs (one per line)
     """
 
     print("=" * 80)
     print("BOOKFINDER.COM PRODUCTION SCRAPER")
-    print(f"SOURCE: {source.upper()}")
+    if isbn_file:
+        print(f"SOURCE: ISBN FILE ({isbn_file})")
+    else:
+        print(f"SOURCE: {source.upper()}")
     if limit:
         print(f"TEST MODE: Limiting to {limit} ISBNs")
     print("=" * 80)
@@ -825,8 +829,33 @@ async def main(limit: Optional[int] = None, source: str = 'catalog'):
     if stats['completed'] > 0:
         logger.info(f"Average offers per ISBN: {stats['avg_offers_per_isbn']:.1f}")
 
-    # Load ISBNs to scrape based on source
-    if source == 'catalog':
+    # Load ISBNs to scrape based on source or ISBN file
+    if isbn_file:
+        # Load ISBNs from file
+        from pathlib import Path
+        isbn_path = Path(isbn_file)
+        if not isbn_path.exists():
+            logger.error(f"ISBN file not found: {isbn_file}")
+            return 1
+
+        with open(isbn_path, 'r') as f:
+            isbns = [line.strip() for line in f if line.strip()]
+
+        logger.info(f"Loaded {len(isbns)} ISBNs from {isbn_file}")
+
+        # Filter out ISBNs that are already completed
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT isbn FROM bookfinder_progress WHERE status = 'completed'")
+        completed_isbns = {row[0] for row in cursor.fetchall()}
+        conn.close()
+
+        original_count = len(isbns)
+        isbns = [isbn for isbn in isbns if isbn not in completed_isbns]
+
+        if original_count > len(isbns):
+            logger.info(f"Filtered out {original_count - len(isbns)} already-completed ISBNs")
+    elif source == 'catalog':
         isbns = load_catalog_isbns()
     elif source == 'metadata_cache':
         isbns = load_metadata_cache_isbns()
@@ -1061,6 +1090,7 @@ if __name__ == '__main__':
     parser.add_argument('--source', type=str, default='catalog',
                         choices=['catalog', 'metadata_cache', 'all'],
                         help='Data source: catalog (760 ISBNs), metadata_cache (19,249 ISBNs), or all (default: catalog)')
+    parser.add_argument('--isbn-file', type=str, help='Path to file containing ISBNs (one per line)')
 
     args = parser.parse_args()
 
@@ -1068,4 +1098,4 @@ if __name__ == '__main__':
     if args.test:
         limit = 5
 
-    sys.exit(asyncio.run(main(limit=limit, source=args.source)))
+    sys.exit(asyncio.run(main(limit=limit, source=args.source, isbn_file=args.isbn_file)))

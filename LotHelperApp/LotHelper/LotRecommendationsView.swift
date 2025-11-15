@@ -836,6 +836,7 @@ struct LotDetailView: View {
                         edition: nil,
                         quantity: 1,
                         estimatedPrice: 18.0,
+                        estimatedSalePrice: 18.0,
                         probabilityScore: 0.82,
                         probabilityLabel: "High",
                         justification: ["First edition", "Recent sales trending upward"],

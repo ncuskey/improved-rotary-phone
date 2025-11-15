@@ -981,6 +981,7 @@ struct BookDetailView: View {
                 edition: nil,
                 quantity: 2,
                 estimatedPrice: 18.5,
+                estimatedSalePrice: 18.5,
                 probabilityScore: 0.82,
                 probabilityLabel: "High",
                 justification: ["Strong demand in recent sales", "Complete series"],

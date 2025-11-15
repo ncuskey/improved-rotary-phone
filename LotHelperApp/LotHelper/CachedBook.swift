@@ -251,6 +251,7 @@ final class CachedBook {
             edition: edition,
             quantity: quantity,
             estimatedPrice: estimatedPrice,
+            estimatedSalePrice: estimatedPrice,
             probabilityScore: probabilityScore,
             probabilityLabel: probabilityLabel,
             justification: justificationJSON?.jsonDecoded(),

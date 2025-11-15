@@ -2025,70 +2025,32 @@ struct ScannerReviewView: View {
     // MARK: - Actions
 
     private func handleScan(_ code: String) {
-        // If we have an existing evaluation (from a previous scan), handle it
-        // For BUY: auto-accept and add to catalog
-        // For DON'T BUY: auto-reject and log
+        // If we have an existing evaluation (from a previous scan),
+        // treat scanning next book as implicit REJECT
+        // This captures ML training data even when user disagrees with "BUY" recommendation
         if let existingEval = evaluation, let isbn = scannedCode {
             Task {
                 let decision = makeBuyDecision(existingEval, using: thresholds)
                 let location = locationManager.locationData
 
-                if decision.shouldBuy {
-                    // Auto-accept BUY books
-                    print("✅ Auto-accepting previous BUY: \(isbn)")
-                    _ = try? await BookAPI.acceptBook(
-                        isbn: isbn,
-                        condition: bookAttributes.condition,
-                        edition: bookAttributes.editionNotes,
-                        locationName: location.name,
-                        locationLatitude: location.latitude,
-                        locationLongitude: location.longitude,
-                        locationAccuracy: location.accuracy,
-                        deviceId: UIDevice.current.identifierForVendor?.uuidString,
-                        appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
-                    )
-                    // Proactively refresh Books and Lots tabs in background
-                    let context = modelContext
-                    Task.detached {
-                        // Fetch fresh books list (includes the newly accepted book)
-                        do {
-                            let books = try await BookAPI.fetchAllBooks()
-                            await MainActor.run {
-                                CacheManager(modelContext: context).saveBooks(books)
-                                UserDefaults.standard.set(Date(), forKey: "lastBooksSync")
-                                print("✅ Refreshed books cache: \(books.count) books")
-                            }
-                        } catch {
-                            print("⚠️ Failed to refresh books cache: \(error)")
-                        }
+                // Scanning next book = implicit reject (regardless of recommendation)
+                // Only explicit Accept button press should add to catalog
+                let wasRecommendedBuy = decision.shouldBuy
+                print("📝 Logging implicit reject: \(isbn) (was recommended: \(wasRecommendedBuy ? "BUY" : "DON'T BUY"))")
 
-                        // Fetch fresh lots list (includes updated lot compositions)
-                        do {
-                            let lots = try await BookAPI.fetchAllLots()
-                            await MainActor.run {
-                                CacheManager(modelContext: context).saveLots(lots)
-                                UserDefaults.standard.set(Date(), forKey: "lastLotsSync")
-                                print("✅ Refreshed lots cache: \(lots.count) lots")
-                            }
-                        } catch {
-                            print("⚠️ Failed to refresh lots cache: \(error)")
-                        }
-                    }
-                } else {
-                    // Auto-reject DON'T BUY books
-                    print("❌ Auto-rejecting previous DON'T BUY: \(isbn)")
-                    try? await BookAPI.logScan(
-                        isbn: isbn,
-                        decision: "REJECT",
-                        locationName: location.name,
-                        locationLatitude: location.latitude,
-                        locationLongitude: location.longitude,
-                        locationAccuracy: location.accuracy,
-                        deviceId: UIDevice.current.identifierForVendor?.uuidString,
-                        appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
-                        notes: "Auto-rejected (scanned next book)"
-                    )
-                }
+                try? await BookAPI.logScan(
+                    isbn: isbn,
+                    decision: "REJECT",
+                    locationName: location.name,
+                    locationLatitude: location.latitude,
+                    locationLongitude: location.longitude,
+                    locationAccuracy: location.accuracy,
+                    deviceId: UIDevice.current.identifierForVendor?.uuidString,
+                    appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+                    notes: wasRecommendedBuy
+                        ? "Implicit reject (scanned next - system recommended BUY)"
+                        : "Implicit reject (scanned next - system recommended DON'T BUY)"
+                )
             }
         }
 

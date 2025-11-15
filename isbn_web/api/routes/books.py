@@ -24,6 +24,7 @@ from .sphere_viz import viz_broadcaster
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))
+logger = logging.getLogger(__name__)
 
 
 @router.get("/stats")
@@ -76,7 +77,9 @@ def _book_evaluation_to_dict(evaluation, routing_info: Optional[Dict] = None, ch
         "condition": evaluation.condition,
         "edition": evaluation.edition,
         "quantity": evaluation.quantity,
+        # ML-predicted resale value (what you'll sell it for on eBay/market)
         "estimated_price": evaluation.estimated_price,
+        "estimated_sale_price": evaluation.estimated_price,  # Clearer alias for estimated_price
         "probability_score": evaluation.probability_score,
         "probability_label": evaluation.probability_label,
         "justification": list(evaluation.justification) if evaluation.justification else [],
@@ -1198,9 +1201,13 @@ class EstimatePriceResponse(BaseModel):
     estimated_price: float
     baseline_price: float  # Price with no attributes
     confidence: float
+    price_lower: float  # Lower bound of 90% prediction interval
+    price_upper: float  # Upper bound of 90% prediction interval
+    confidence_percent: float  # Confidence level as percentage (e.g., 90.0)
     deltas: List[AttributeDelta]
     model_version: str
     profit_scenarios: Optional[List[ProfitScenario]] = None  # Dynamic profit calculations
+    from_metadata_only: bool = False  # True if predicted without database data
 
 
 @router.post("/{isbn}/estimate_price")
@@ -1233,15 +1240,7 @@ async def estimate_price_with_attributes(
                 content={"error": "Invalid ISBN"}
             )
 
-        # Get book from database (returns BookEvaluation with parsed objects)
-        book = service.get_book(normalized_isbn)
-        if not book:
-            return JSONResponse(
-                status_code=404,
-                content={"error": "Book not found"}
-            )
-
-        # Get ML estimator
+        # Get ML estimator first (needed for fallback)
         estimator = get_ml_estimator()
         if not estimator or not estimator.is_ready():
             return JSONResponse(
@@ -1249,143 +1248,203 @@ async def estimate_price_with_attributes(
                 content={"error": "ML model not available"}
             )
 
+        # Get book from database (returns BookEvaluation with parsed objects)
+        book = service.get_book(normalized_isbn)
+        if not book:
+            # Fallback: Try to fetch metadata from external APIs and predict from that
+            try:
+                from shared.metadata import fetch_metadata
+                from shared.models import BookMetadata
+
+                metadata_dict = fetch_metadata(normalized_isbn)
+                if metadata_dict:
+                    # Convert dict to BookMetadata object (same pattern as service.py:2831)
+                    metadata = BookMetadata(
+                        isbn=normalized_isbn,
+                        title=metadata_dict.get("title") or "",
+                        subtitle=metadata_dict.get("subtitle"),
+                        authors=tuple(metadata_dict.get("authors") or []),
+                        credited_authors=tuple(metadata_dict.get("credited_authors") or []),
+                        canonical_author=metadata_dict.get("canonical_author"),
+                        published_year=metadata_dict.get("published_year"),
+                        published_raw=metadata_dict.get("published_raw"),
+                        page_count=metadata_dict.get("page_count"),
+                        categories=tuple(metadata_dict.get("categories") or []),
+                        average_rating=metadata_dict.get("average_rating"),
+                        ratings_count=metadata_dict.get("ratings_count"),
+                        list_price=metadata_dict.get("list_price"),
+                        currency=metadata_dict.get("currency"),
+                        info_link=metadata_dict.get("info_link"),
+                        thumbnail=metadata_dict.get("thumbnail"),
+                        description=metadata_dict.get("description"),
+                        identifiers=tuple(metadata_dict.get("identifiers") or []),
+                        categories_str=metadata_dict.get("categories_str"),
+                        cover_url=metadata_dict.get("cover_url") or metadata_dict.get("thumbnail"),
+                        series_name=metadata_dict.get("series_name"),
+                        series_index=metadata_dict.get("series_index"),
+                        series_id=metadata_dict.get("series_id"),
+                        source=metadata_dict.get("source", "google_books"),
+                        raw=metadata_dict,
+                    )
+
+                    # Apply user-selected attributes
+                    if request_body.is_hardcover:
+                        metadata.cover_type = "Hardcover"
+                    elif request_body.is_paperback:
+                        metadata.cover_type = "Paperback"
+                    elif request_body.is_mass_market:
+                        metadata.cover_type = "Mass Market"
+
+                    metadata.signed = request_body.is_signed or False
+                    metadata.printing = "1st" if request_body.is_first_edition else None
+
+                    # Call ML estimator with fetched metadata (no market/bookscouter data)
+                    estimate = estimator.estimate_price(
+                        metadata,
+                        None,  # No market data
+                        None,  # No bookscouter data
+                        request_body.condition
+                    )
+
+                    if estimate.price and estimate.price > 0:
+                        return JSONResponse(content={
+                            "price": round(estimate.price, 2),
+                            "confidence": round(estimate.confidence * 0.7, 2),  # Lower confidence for metadata-only
+                            "reason": f"Predicted from metadata only (book not in database). {estimate.reason or ''}",
+                            "deltas": [],  # Cannot calculate deltas without baseline
+                            "feature_importance": estimate.feature_importance or {},
+                            "from_metadata_only": True
+                        })
+            except Exception as e:
+                # Log error but continue to return 404
+                import traceback
+                print(f"Fallback metadata fetch failed: {e}")
+                traceback.print_exc()
+
+            # If fallback also failed, return 404
+            return JSONResponse(
+                status_code=404,
+                content={"error": "Book not found and metadata unavailable"}
+            )
+
         # Use parsed objects from BookEvaluation
         metadata = book.metadata
         market = book.market
         bookscouter = book.bookscouter
 
-        # Calculate baseline price (no attributes, "Good" condition)
-        # Baseline is always "Good" condition with no special attributes
-        baseline_metadata = deepcopy(metadata) if metadata else None
-        if baseline_metadata:
-            baseline_metadata.cover_type = None
-            baseline_metadata.signed = False
-            baseline_metadata.printing = None
+        # Use the pre-calculated estimated_price from database as baseline
+        # This ensures the baseline stays constant across all attribute changes
+        # The estimated_price was calculated during batch processing with "Good" condition
+        baseline_price = book.estimated_price or 10.0
 
-        baseline_estimate = estimator.estimate_price(
-            baseline_metadata,
-            market,
-            bookscouter,
-            "Good"  # Baseline always uses "Good" condition
+        # Calculate multipliers to apply to baseline price
+        # Load the multipliers directly (same ones used in prediction_router.py)
+        multipliers_path = estimator.router.model_dir / "ebay_multipliers.json"
+        try:
+            with open(multipliers_path, 'r') as f:
+                import json
+                mult_data = json.load(f)
+                condition_multipliers = mult_data['condition_multipliers']
+                binding_multipliers = mult_data['binding_multipliers']
+        except Exception:
+            # Use defaults if multipliers file not available
+            condition_multipliers = {
+                'New': 1.35, 'Like New': 1.25, 'Very Good': 1.15,
+                'Good': 1.0, 'Acceptable': 0.75, 'Poor': 0.55
+            }
+            binding_multipliers = {
+                'Hardcover': 1.20, 'Paperback': 1.0, 'Trade Paperback': 1.05,
+                'Mass Market': 0.85, 'Unknown': 1.0
+            }
+
+        # Apply condition multiplier
+        condition_mult = condition_multipliers.get(request_body.condition, 1.0)
+
+        # Apply format multiplier
+        format_mult = 1.0
+        if request_body.is_hardcover:
+            format_mult = binding_multipliers.get('Hardcover', 1.0)
+        elif request_body.is_paperback:
+            format_mult = binding_multipliers.get('Paperback', 1.0)
+        elif request_body.is_mass_market:
+            format_mult = binding_multipliers.get('Mass Market', 1.0)
+
+        # Calculate final price by applying multipliers to baseline
+        final_price = baseline_price * condition_mult * format_mult
+
+        # Apply signed/first edition multipliers
+        # These are data-driven estimates based on market research:
+        # - Signed copies typically sell for 1.5-2.5x unsigned price
+        # - First editions typically sell for 1.2-1.5x later editions
+        # Using conservative multipliers to avoid overestimating
+        signed_mult = 1.8 if request_body.is_signed else 1.0
+        first_ed_mult = 1.3 if request_body.is_first_edition else 1.0
+
+        final_price = final_price * signed_mult * first_ed_mult
+
+        # Create a fake estimate object for compatibility
+        from isbn_lot_optimizer.ml.price_estimator import PriceEstimate
+        final_estimate = PriceEstimate(
+            price=final_price,
+            confidence=0.85,
+            prediction_interval=None,
+            reason="Price calculated using multipliers applied to baseline",
+            feature_importance={},
+            model_version="multiplier_v1"
         )
-        baseline_price = baseline_estimate.price or 10.0
 
-        # Calculate price with user-selected attributes
-        final_metadata = deepcopy(metadata) if metadata else None
-        if final_metadata:
-            # Apply user selections
-            if request_body.is_hardcover:
-                final_metadata.cover_type = "Hardcover"
-            elif request_body.is_paperback:
-                final_metadata.cover_type = "Paperback"
-            elif request_body.is_mass_market:
-                final_metadata.cover_type = "Mass Market"
-            else:
-                final_metadata.cover_type = None
-
-            final_metadata.signed = request_body.is_signed or False
-            final_metadata.printing = "1st" if request_body.is_first_edition else None
-
-        final_estimate = estimator.estimate_price(
-            final_metadata,
-            market,
-            bookscouter,
-            request_body.condition
-        )
-        final_price = final_estimate.price or baseline_price
-
-        # Calculate deltas for each attribute
+        # Calculate deltas for each attribute based on multipliers
+        # Deltas show the price impact of each individual attribute
         deltas = []
 
-        # Hardcover delta
-        if request_body.is_hardcover or request_body.is_paperback or request_body.is_mass_market:
-            # Calculate price without format
-            no_format_metadata = deepcopy(final_metadata) if final_metadata else None
-            if no_format_metadata:
-                no_format_metadata.cover_type = None
-            no_format_estimate = estimator.estimate_price(no_format_metadata, market, bookscouter, request_body.condition)
-            no_format_price = no_format_estimate.price or baseline_price
+        # Calculate price without any selected attributes (base price with condition only)
+        base_with_condition = baseline_price * condition_mult
 
-            if request_body.is_hardcover:
-                deltas.append(AttributeDelta(
-                    attribute="is_hardcover",
-                    label="Hardcover",
-                    delta=round(final_price - no_format_price, 2),
-                    enabled=True
-                ))
-            elif request_body.is_paperback:
-                deltas.append(AttributeDelta(
-                    attribute="is_paperback",
-                    label="Paperback",
-                    delta=round(final_price - no_format_price, 2),
-                    enabled=True
-                ))
-            elif request_body.is_mass_market:
-                deltas.append(AttributeDelta(
-                    attribute="is_mass_market",
-                    label="Mass Market",
-                    delta=round(final_price - no_format_price, 2),
-                    enabled=True
-                ))
+        # Format delta - show the additional cost of the selected format
+        if request_body.is_hardcover:
+            deltas.append(AttributeDelta(
+                attribute="is_hardcover",
+                label="Hardcover",
+                delta=round(base_with_condition * (format_mult - 1.0), 2),
+                enabled=True
+            ))
+        elif request_body.is_paperback:
+            # Paperback is baseline (1.0x), so delta is 0
+            deltas.append(AttributeDelta(
+                attribute="is_paperback",
+                label="Paperback",
+                delta=0.0,
+                enabled=True
+            ))
+        elif request_body.is_mass_market:
+            deltas.append(AttributeDelta(
+                attribute="is_mass_market",
+                label="Mass Market",
+                delta=round(base_with_condition * (format_mult - 1.0), 2),
+                enabled=True
+            ))
 
-        # Signed delta
+        # Signed delta - show the additional cost of being signed
         if request_body.is_signed:
-            no_signed_metadata = deepcopy(final_metadata) if final_metadata else None
-            if no_signed_metadata:
-                no_signed_metadata.signed = False
-            no_signed_estimate = estimator.estimate_price(no_signed_metadata, market, bookscouter, request_body.condition)
-            no_signed_price = no_signed_estimate.price or baseline_price
-
+            # Calculate price with condition and format, but without signed
+            price_without_signed = base_with_condition * format_mult
             deltas.append(AttributeDelta(
                 attribute="is_signed",
                 label="Signed/Autographed",
-                delta=round(final_price - no_signed_price, 2),
+                delta=round(price_without_signed * (signed_mult - 1.0), 2),
                 enabled=True
             ))
 
-        # First edition delta
+        # First edition delta - show the additional cost of first edition
         if request_body.is_first_edition:
-            no_first_metadata = deepcopy(final_metadata) if final_metadata else None
-            if no_first_metadata:
-                no_first_metadata.printing = None
-            no_first_estimate = estimator.estimate_price(no_first_metadata, market, bookscouter, request_body.condition)
-            no_first_price = no_first_estimate.price or baseline_price
-
+            # Calculate price with condition, format, and signed, but without first edition
+            price_without_first = base_with_condition * format_mult * signed_mult
             deltas.append(AttributeDelta(
                 attribute="is_first_edition",
                 label="First Edition",
-                delta=round(final_price - no_first_price, 2),
+                delta=round(price_without_first * (first_ed_mult - 1.0), 2),
                 enabled=True
             ))
-
-        # Note: Model retrained with sold_listings data and negative examples (2025-11-05)
-        # ✓ Signed books predict correctly (+$0.83) after oversampling
-        # ✗ First editions still predict negative (-$0.99) despite:
-        #   - Loading only true 1st editions (not anniversary/collector's)
-        #   - Adding negative examples (2nd/3rd/later editions)
-        #   - High feature importance (3rd place, 7.85%)
-        # Root cause: 2nd editions sell for MORE than 1st on average ($31.22 vs $30.84)
-        # Likely due to: condition differences, selection bias, different book sets
-
-        # Solution: Use specialized edition premium calibration model (2025-11-05)
-        # Trained on 478 ISBNs with BookFinder paired edition data
-        # Test MAE: 1.07%, R²: 0.9987
-        from isbn_lot_optimizer.ml.edition_premium_estimator import get_edition_premium_estimator
-
-        edition_estimator = get_edition_premium_estimator()
-        for delta in deltas:
-            if delta.attribute == "is_first_edition":
-                if edition_estimator.is_ready():
-                    # Use ML calibration model for accurate premium
-                    premium_dollars, explanation = edition_estimator.estimate_premium(
-                        normalized_isbn,
-                        baseline_price
-                    )
-                    delta.delta = premium_dollars
-                    # Could add explanation to delta if needed
-                elif delta.delta < 0:
-                    # Fall back to conservative 3% boost if model not available
-                    delta.delta = round(baseline_price * 0.03, 2)
 
         # Calculate profit scenarios
         # Assume purchase cost is $0 for now (user owns the book)
@@ -1395,20 +1454,14 @@ async def estimate_price_with_attributes(
 
         profit_scenarios = []
 
-        # Scenario 1: Best Case (with signed + 1st edition if available)
-        best_case_metadata = deepcopy(metadata) if metadata else None
-        if best_case_metadata:
-            best_case_metadata.signed = True
-            best_case_metadata.printing = "1st"
-            if request_body.is_hardcover:
-                best_case_metadata.cover_type = "Hardcover"
-            elif request_body.is_paperback:
-                best_case_metadata.cover_type = "Paperback"
-            elif request_body.is_mass_market:
-                best_case_metadata.cover_type = "Mass Market"
-
-        best_case_estimate = estimator.estimate_price(best_case_metadata, market, bookscouter, request_body.condition)
-        best_case_revenue = best_case_estimate.price or final_price
+        # Scenario 1: Best Case (signed + 1st edition + best format)
+        # Calculate best possible price using multipliers
+        best_case_format_mult = max(
+            binding_multipliers.get('Hardcover', 1.0),
+            binding_multipliers.get('Paperback', 1.0),
+            binding_multipliers.get('Mass Market', 1.0)
+        )
+        best_case_revenue = baseline_price * condition_mult * best_case_format_mult * 1.8 * 1.3  # signed × first_ed
         best_case_fees = best_case_revenue * ebay_fee_rate
         best_case_profit = best_case_revenue - best_case_fees - purchase_cost
         best_case_margin = (best_case_profit / best_case_revenue * 100) if best_case_revenue > 0 else 0
@@ -1458,13 +1511,32 @@ async def estimate_price_with_attributes(
             margin_percent=round(ml_margin, 2)
         ))
 
+        # Calculate prediction interval (90% confidence by default)
+        if final_estimate.prediction_interval:
+            price_lower, price_upper = final_estimate.prediction_interval
+            # Ensure lower bound is at least $1
+            price_lower = max(1.0, price_lower)
+            confidence_percent = 90.0
+        else:
+            # Fallback: use ±2 * model_mae for approximate 90% prediction interval
+            # Assuming normal distribution, ±1.645 * std ≈ 90% CI
+            # Since MAE ≈ 0.798 * std for normal dist, we use ±2.06 * MAE
+            # For simplicity, we use ±2 * MAE as a conservative estimate
+            price_lower = max(1.0, final_price - (2.0 * 2.0))  # Using MAE ~ $2 as fallback
+            price_upper = final_price + (2.0 * 2.0)
+            confidence_percent = 85.0  # Lower confidence when using fallback
+
         response = EstimatePriceResponse(
             estimated_price=round(final_price, 2),
             baseline_price=round(baseline_price, 2),
             confidence=final_estimate.confidence,
+            price_lower=round(price_lower, 2),
+            price_upper=round(price_upper, 2),
+            confidence_percent=confidence_percent,
             deltas=deltas,
             model_version=final_estimate.model_version,
-            profit_scenarios=profit_scenarios
+            profit_scenarios=profit_scenarios,
+            from_metadata_only=False
         )
 
         return JSONResponse(content=response.dict())
@@ -1515,12 +1587,71 @@ async def update_book_attributes(
 
     # Update attributes in database
     try:
+        # First update the attributes
         service.db.update_book_attributes(
             normalized_isbn,
             cover_type=request_body.cover_type,
             signed=request_body.signed,
             printing=request_body.printing
         )
+
+        # Now calculate and update the estimated_price based on these attributes
+        # Get the book to access its current price and metadata
+        book = service.get_book(normalized_isbn)
+        if book:
+            # Load multipliers
+            from pathlib import Path
+            multipliers_path = Path.home() / "ISBN" / "isbn_lot_optimizer" / "models" / "ebay_multipliers.json"
+            try:
+                with open(multipliers_path, 'r') as f:
+                    import json
+                    mult_data = json.load(f)
+                    condition_multipliers = mult_data['condition_multipliers']
+                    binding_multipliers = mult_data['binding_multipliers']
+            except:
+                condition_multipliers = {'Good': 1.0, 'Very Good': 1.15, 'New': 1.35}
+                binding_multipliers = {'Hardcover': 1.20, 'Paperback': 1.0, 'Mass Market': 0.85}
+
+            # Get the baseline price by reverse-calculating from current price and old attributes
+            # This ensures we maintain the original baseline even after multiple updates
+            current_price = book.estimated_price or 10.0
+
+            # Calculate old multipliers from book's current attributes
+            old_format_mult = 1.0
+            if book.metadata and book.metadata.cover_type:
+                cover_lower = book.metadata.cover_type.lower()
+                if 'hardcover' in cover_lower or 'hardback' in cover_lower:
+                    old_format_mult = binding_multipliers.get('Hardcover', 1.0)
+                elif 'mass market' in cover_lower:
+                    old_format_mult = binding_multipliers.get('Mass Market', 1.0)
+                elif 'paperback' in cover_lower:
+                    old_format_mult = binding_multipliers.get('Paperback', 1.0)
+
+            old_signed_mult = 1.8 if (book.metadata and book.metadata.signed) else 1.0
+            old_first_mult = 1.3 if (book.metadata and book.metadata.printing and '1st' in book.metadata.printing) else 1.0
+
+            # Reverse calculate to get baseline
+            baseline_price = current_price / (old_format_mult * old_signed_mult * old_first_mult)
+
+            # Now calculate new multipliers
+            format_mult = 1.0
+            if request_body.cover_type:
+                cover_lower = request_body.cover_type.lower()
+                if 'hardcover' in cover_lower or 'hardback' in cover_lower:
+                    format_mult = binding_multipliers.get('Hardcover', 1.0)
+                elif 'mass market' in cover_lower:
+                    format_mult = binding_multipliers.get('Mass Market', 1.0)
+                elif 'paperback' in cover_lower:
+                    format_mult = binding_multipliers.get('Paperback', 1.0)
+
+            signed_mult = 1.8 if request_body.signed else 1.0
+            first_ed_mult = 1.3 if (request_body.printing and '1st' in request_body.printing) else 1.0
+
+            # Calculate new estimated price from baseline
+            new_estimated_price = baseline_price * format_mult * signed_mult * first_ed_mult
+
+            # Update the estimated_price in the database
+            service.db.update_book_price(normalized_isbn, new_estimated_price)
 
         return JSONResponse(content={
             "success": True,

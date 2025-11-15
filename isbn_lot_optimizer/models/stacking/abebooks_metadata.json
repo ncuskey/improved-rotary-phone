@@ -1,7 +1,7 @@
 {
   "platform": "abebooks",
   "model_type": "XGBRegressor",
-  "version": "v2_log_target_groupkfold",
+  "version": "v3_quick_wins_temporal_price_type",
   "n_features": 24,
   "feature_names": [
     "abebooks_min_price",
@@ -41,6 +41,13 @@
   "cv_mae": 0.22081573709505053,
   "use_log_target": true,
   "use_groupkfold": true,
+  "use_temporal_weighting": true,
+  "use_price_type_weighting": true,
+  "quick_wins": {
+    "temporal_decay_days": 365.0,
+    "sold_weight_multiplier": 3.0,
+    "enabled": true
+  },
   "hyperparameters": {
     "subsample": 0.6,
     "reg_lambda": 1,
@@ -126,5 +133,5 @@
       0.005916581489145756
     ]
   ],
-  "trained_at": "2025-11-09T09:46:45.128758"
+  "trained_at": "2025-11-09T13:25:57.482310"
 }

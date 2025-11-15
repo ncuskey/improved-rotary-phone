@@ -1,7 +1,7 @@
 {
   "platform": "ebay",
   "model_type": "XGBRegressor",
-  "version": "v2_log_target_groupkfold",
+  "version": "v3_quick_wins_temporal_price_type",
   "n_features": 24,
   "feature_names": [
     "ebay_sold_count",
@@ -31,16 +31,23 @@
   ],
   "training_samples": 8818,
   "test_samples": 2204,
-  "train_mae": 1.7252271979962055,
-  "test_mae": 1.624896041736845,
-  "train_rmse": 6.711061180103655,
-  "test_rmse": 6.725682233737847,
-  "train_r2": 0.7904191200234516,
-  "test_r2": 0.7883328152780179,
-  "test_mape": 11.901224658884978,
-  "cv_mae": 0.16356335577441464,
+  "train_mae": 1.7294113119380168,
+  "test_mae": 1.6280303355959493,
+  "train_rmse": 6.720406956823217,
+  "test_rmse": 6.735807933846336,
+  "train_r2": 0.7898349918536798,
+  "test_r2": 0.7876949939408922,
+  "test_mape": 11.9089438589471,
+  "cv_mae": 0.16402753628588077,
   "use_log_target": true,
   "use_groupkfold": true,
+  "use_temporal_weighting": true,
+  "use_price_type_weighting": true,
+  "quick_wins": {
+    "temporal_decay_days": 365.0,
+    "sold_weight_multiplier": 3.0,
+    "enabled": true
+  },
   "hyperparameters": {
     "subsample": 0.6,
     "reg_lambda": 100,
@@ -61,13 +68,13 @@
   "feature_importance": {
     "ebay_sold_count": 0.0,
     "ebay_active_median": 0.0,
-    "ebay_sold_min": 0.20747756958007812,
-    "ebay_sold_median": 0.6980177760124207,
-    "ebay_sold_max": 0.02217545546591282,
-    "ebay_sold_price_spread": 0.015460412949323654,
+    "ebay_sold_min": 0.20255301892757416,
+    "ebay_sold_median": 0.6899657249450684,
+    "ebay_sold_max": 0.02250366099178791,
+    "ebay_sold_price_spread": 0.015362531878054142,
     "ebay_active_vs_sold_ratio": 0.0,
     "page_count": 0.0,
-    "age_years": 0.03028135560452938,
+    "age_years": 0.02837257832288742,
     "log_ratings": 0.0,
     "rating": 0.0,
     "is_new": 0.0,
@@ -78,36 +85,40 @@
     "is_poor": 0.0,
     "is_hardcover": 0.0,
     "is_mass_market": 0.0,
-    "is_signed": 0.0,
+    "is_signed": 0.013655666261911392,
     "is_first_edition": 0.0,
     "is_textbook": 0.0,
     "is_fiction": 0.0,
-    "demand_score": 0.026587482541799545
+    "demand_score": 0.02758677490055561
   },
   "top_features": [
     [
       "ebay_sold_median",
-      0.6980177760124207
+      0.6899657249450684
     ],
     [
       "ebay_sold_min",
-      0.20747756958007812
+      0.20255301892757416
     ],
     [
       "age_years",
-      0.03028135560452938
+      0.02837257832288742
     ],
     [
       "demand_score",
-      0.026587482541799545
+      0.02758677490055561
     ],
     [
       "ebay_sold_max",
-      0.02217545546591282
+      0.02250366099178791
     ],
     [
       "ebay_sold_price_spread",
-      0.015460412949323654
+      0.015362531878054142
+    ],
+    [
+      "is_signed",
+      0.013655666261911392
     ],
     [
       "ebay_sold_count",
@@ -120,11 +131,7 @@
     [
       "ebay_active_vs_sold_ratio",
       0.0
-    ],
-    [
-      "page_count",
-      0.0
     ]
   ],
-  "trained_at": "2025-11-09T09:54:02.043647"
+  "trained_at": "2025-11-09T17:47:26.236511"
 }

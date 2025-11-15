@@ -27,10 +27,14 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Development databases (use ~/.isbn_lot_optimizer/ instead)
+# Development databases
+# Official databases MUST be in ~/.isbn_lot_optimizer/ (NOT in project directory)
+# See docs/DATABASE_STRUCTURE.md for official database locations
+# Cleaned up 10 duplicate databases Nov 2025 - do not commit new ones
 books.db
 *.db
 *.sqlite
+!isbn_lot_optimizer/models/stacking/*.db  # ML model metadata (OK to commit if small)
 
 # Large data files (see data/README.md for regeneration)
 bookseries_complete.json

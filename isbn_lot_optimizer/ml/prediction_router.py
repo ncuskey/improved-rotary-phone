@@ -5,6 +5,7 @@ Routes predictions to specialist models when appropriate data is available,
 falling back to unified model when necessary.
 """
 
+import json
 import logging
 from pathlib import Path
 from typing import Optional, Dict, Tuple
@@ -70,6 +71,26 @@ class PredictionRouter:
         except Exception as e:
             logger.warning(f"Could not load eBay specialist: {e}")
             self.has_ebay_specialist = False
+
+        # Load eBay condition/format multipliers
+        try:
+            multipliers_path = self.model_dir / "ebay_multipliers.json"
+            with open(multipliers_path, 'r') as f:
+                mult_data = json.load(f)
+                self.condition_multipliers = mult_data['condition_multipliers']
+                self.binding_multipliers = mult_data['binding_multipliers']
+            logger.info("eBay condition/format multipliers loaded successfully")
+        except Exception as e:
+            logger.warning(f"Could not load eBay multipliers: {e}")
+            # Use reasonable defaults
+            self.condition_multipliers = {
+                'New': 1.35, 'Like New': 1.25, 'Very Good': 1.15,
+                'Good': 1.0, 'Acceptable': 0.75, 'Poor': 0.55
+            }
+            self.binding_multipliers = {
+                'Hardcover': 1.20, 'Paperback': 1.0, 'Trade Paperback': 1.05,
+                'Mass Market': 0.85, 'Unknown': 1.0
+            }
 
         # Track routing statistics
         self.stats = {
@@ -314,14 +335,14 @@ class PredictionRouter:
         bookfinder: Optional[Dict],
         sold_listings: Optional[Dict],
     ) -> float:
-        """Predict using eBay specialist model."""
+        """Predict using eBay specialist model with condition/format multipliers."""
         # Extract platform-specific features
         features = self.extractor.extract_for_platform(
             platform='ebay',
             metadata=metadata,
             market=market,
             bookscouter=bookscouter,
-            condition=condition,
+            condition='Good',  # Model trained on "Good" baseline
             abebooks=abebooks,
             bookfinder=bookfinder,
             sold_listings=sold_listings,
@@ -333,9 +354,29 @@ class PredictionRouter:
         # Build feature vector
         X = np.array([features.values])
 
-        # Scale and predict
+        # Scale and predict baseline (Good condition, generic format)
         X_scaled = self.ebay_scaler.transform(X)
-        prediction = self.ebay_model.predict(X_scaled)[0]
+        base_prediction = self.ebay_model.predict(X_scaled)[0]
+
+        # Apply condition multiplier
+        condition_mult = self.condition_multipliers.get(condition, 1.0)
+
+        # Apply format multiplier if metadata available
+        format_mult = 1.0
+        if metadata and hasattr(metadata, 'cover_type') and metadata.cover_type:
+            cover_type = metadata.cover_type
+            # Normalize cover_type
+            if 'mass market' in cover_type.lower():
+                format_mult = self.binding_multipliers.get('Mass Market', 1.0)
+            elif 'hardcover' in cover_type.lower() or 'hardback' in cover_type.lower():
+                format_mult = self.binding_multipliers.get('Hardcover', 1.0)
+            elif 'paperback' in cover_type.lower():
+                format_mult = self.binding_multipliers.get('Paperback', 1.0)
+            elif 'trade' in cover_type.lower():
+                format_mult = self.binding_multipliers.get('Trade Paperback', 1.0)
+
+        # Calculate final prediction with multipliers
+        prediction = base_prediction * condition_mult * format_mult
 
         return max(0.01, prediction)  # Ensure positive price
 

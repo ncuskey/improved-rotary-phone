@@ -16,16 +16,30 @@ struct BookDetailViewRedesigned: View {
     @Environment(\.dismiss) private var dismiss
 
     // Interactive attributes state
-    @State private var selectedCondition: String = "Good"
+    // Initialize with record's condition, fallback to "Good" if not available
+    @State private var selectedCondition: String
     @State private var isHardcover: Bool = false
     @State private var isPaperback: Bool = false
     @State private var isMassMarket: Bool = false
     @State private var isSigned: Bool = false
     @State private var isFirstEdition: Bool = false
+
+    // Custom initializer to set selectedCondition from record
+    init(record: BookEvaluationRecord, lots: [LotSuggestionDTO] = []) {
+        self.record = record
+        _lots = State(initialValue: lots)
+        // Initialize selectedCondition with record's condition or default to "Good"
+        let condition = record.condition ?? "Good"
+        print("💰 Initializing with condition: \(condition), estimatedPrice: \(record.estimatedPrice ?? 0)")
+        _selectedCondition = State(initialValue: condition)
+    }
     @State private var dynamicEstimate: Double? = nil
     @State private var attributeDeltas: [AttributeDelta] = []
     @State private var isUpdatingPrice: Bool = false
     @State private var dynamicProfitScenarios: [ProfitScenario]? = nil
+    @State private var priceLower: Double? = nil
+    @State private var priceUpper: Double? = nil
+    @State private var confidencePercent: Double? = nil
 
     // Dynamic routing info (fetched from API if missing)
     @State private var dynamicRoutingInfo: MLRoutingInfo? = nil
@@ -93,14 +107,13 @@ struct BookDetailViewRedesigned: View {
                     isSigned: $isSigned,
                     isFirstEdition: $isFirstEdition,
                     priceEstimate: dynamicEstimate ?? record.estimatedPrice ?? 0.0,
+                    priceLower: priceLower,
+                    priceUpper: priceUpper,
+                    confidencePercent: confidencePercent,
                     deltas: attributeDeltas,
                     onAttributeChanged: {
                         Task {
                             await updatePriceEstimate()
-                        }
-                    },
-                    onSave: {
-                        Task {
                             await saveAttributes()
                         }
                     }
@@ -148,6 +161,8 @@ struct BookDetailViewRedesigned: View {
         .task { await loadPriceVariants() }
         .task { await loadSoldStatistics() }
         .task { await fetchRoutingInfoIfNeeded() }
+        // Don't automatically update price estimate on load - only when user changes attributes
+        // This preserves the original estimate from the record
         .sheet(isPresented: $showingEbayWizard) {
             let book = CachedBook(from: record)
             EbayListingWizardView(book: book) { response in
@@ -190,7 +205,10 @@ struct BookDetailViewRedesigned: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if let series = record.metadata?.seriesName {
+                // Only show series if it's different from the title (prevents bug where title = series)
+                if let series = record.metadata?.seriesName,
+                   let title = record.metadata?.title,
+                   series.lowercased() != title.lowercased() {
                     HStack(spacing: 4) {
                         Image(systemName: "books.vertical.fill")
                             .font(.caption)
@@ -213,6 +231,9 @@ struct BookDetailViewRedesigned: View {
                 }
                 if let condition = record.condition {
                     statBadge(condition, color: .blue)
+                }
+                if let rarity = record.rarity, rarity > 0 {
+                    statBadge(rarityLabel(for: rarity), color: rarityColor(for: rarity))
                 }
                 if let quantity = record.quantity, quantity > 1 {
                     statBadge("Qty: \(quantity)", color: .orange)
@@ -291,6 +312,7 @@ struct BookDetailViewRedesigned: View {
         let price: Double?
         let icon: String
         let color: Color
+        let valueLabel: String?  // Optional value assessment (e.g., "Good Value", "Fair")
     }
 
     private var sortedPrices: [PriceItem] {
@@ -299,25 +321,29 @@ struct BookDetailViewRedesigned: View {
                 label: "eBay Median",
                 price: record.market?.soldCompsMedian,
                 icon: "bag.fill",
-                color: .primary
+                color: .primary,
+                valueLabel: nil
             ),
             PriceItem(
                 label: "Vendor Best",
                 price: record.bookscouter?.bestPrice,
                 icon: "arrow.2.circlepath",
-                color: .green
+                color: .green,
+                valueLabel: record.bookscouterValueLabel
             ),
             PriceItem(
                 label: "Amazon Low",
                 price: record.bookscouter?.amazonLowestPrice,
                 icon: "cart.fill",
-                color: .orange
+                color: .orange,
+                valueLabel: nil
             ),
             PriceItem(
                 label: "Estimated",
-                price: record.estimatedPrice,
+                price: dynamicEstimate ?? record.estimatedPrice,  // Use dynamic estimate if available
                 icon: "chart.bar.fill",
-                color: .blue
+                color: .blue,
+                valueLabel: nil
             )
         ]
 
@@ -334,27 +360,60 @@ struct BookDetailViewRedesigned: View {
 
     @ViewBuilder
     private func priceListRow(_ item: PriceItem) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: item.icon)
-                .font(.body)
-                .foregroundStyle(item.color)
-                .frame(width: 24)
-
-            Text(item.label)
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-
-            Spacer()
-
-            if let price = item.price {
-                Text(formattedCurrency(price))
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+        VStack(spacing: 4) {
+            HStack(spacing: 12) {
+                Image(systemName: item.icon)
+                    .font(.body)
                     .foregroundStyle(item.color)
-            } else {
-                Text("N/A")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.label)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+
+                    // Show value label badge if available
+                    if let valueLabel = item.valueLabel {
+                        Text(valueLabel)
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .foregroundStyle(valueLabelColor(for: valueLabel))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(valueLabelColor(for: valueLabel).opacity(0.15))
+                            .cornerRadius(4)
+                    }
+                }
+
+                Spacer()
+
+                if let price = item.price {
+                    Text(formattedCurrency(price))
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(item.color)
+                } else {
+                    Text("N/A")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Show prediction range for Estimated price if available
+            if item.label == "Estimated", let lower = priceLower, let upper = priceUpper, let confidence = confidencePercent {
+                HStack(spacing: 4) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                    Text("\(String(format: "%.0f%%", confidence)) range:")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text("\(formattedCurrency(lower)) – \(formattedCurrency(upper))")
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.orange)
+                }
+                .padding(.leading, 36)
             }
         }
         .padding(.vertical, 8)
@@ -430,16 +489,8 @@ struct BookDetailViewRedesigned: View {
                     )
                 }
 
-                // Estimated: ML prediction
-                if let estimatedPrice = record.estimatedPrice, estimatedPrice > 0 {
-                    profitScenarioCard(
-                        title: "ML Estimate",
-                        salePrice: soldMedian,
-                        cost: estimatedPrice,
-                        badge: "Predicted",
-                        badgeColor: .blue
-                    )
-                }
+                // NOTE: estimatedPrice is ML-predicted SALE price, not acquisition cost
+                // It should be compared to soldMedian, not used as a cost for profit calc
 
                 // Summary comparison
                 if let vendorPrice = record.bookscouter?.bestPrice,
@@ -903,22 +954,44 @@ struct BookDetailViewRedesigned: View {
     private func justificationPanel(_ reasons: [String]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "list.bullet.clipboard.fill")
+                Image(systemName: "brain.head.profile")
                     .foregroundStyle(.blue)
-                Text("Evaluation Factors")
+                Text("ML Model Reasoning")
                     .font(.headline)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
+            // Explanatory subtitle
+            Text("Our machine learning model analyzed these factors to estimate this book's value:")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(Array(reasons.enumerated()), id: \.offset) { index, reason in
-                    HStack(alignment: .top, spacing: 8) {
-                        Text("\(index + 1).")
+                    HStack(alignment: .top, spacing: 10) {
+                        // Icon based on reason content
+                        Image(systemName: reasonIcon(for: reason))
                             .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 20, alignment: .leading)
-                        Text(reason)
-                            .font(.caption)
-                            .fixedSize(horizontal: false, vertical: true)
+                            .foregroundStyle(reasonColor(for: reason))
+                            .frame(width: 20)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(reason)
+                                .font(.subheadline)
+                                .fixedSize(horizontal: false, vertical: true)
+
+                            // Add contextual explanation for certain factors
+                            if let context = reasonContext(for: reason) {
+                                Text(context)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                    .italic()
+                            }
+                        }
+                    }
+
+                    if index < reasons.count - 1 {
+                        Divider()
+                            .padding(.leading, 30)
                     }
                 }
             }
@@ -972,12 +1045,57 @@ struct BookDetailViewRedesigned: View {
 
     // MARK: - Helpers
     private var coverURL: URL? {
-        if let thumbnail = record.metadata?.thumbnail, !thumbnail.isEmpty, let url = URL(string: thumbnail) {
-            return url
+        // Priority 1: Upgrade thumbnail if available
+        if let thumbnail = record.metadata?.thumbnail, !thumbnail.isEmpty {
+            var urlString = thumbnail
+            print("📷 Original thumbnail URL: \(thumbnail)")
+
+            // Upgrade Google Books thumbnail quality
+            if urlString.contains("books.google.com") {
+                // Remove zoom parameter if present and add high-res version
+                if let range = urlString.range(of: "&zoom=") {
+                    urlString = String(urlString[..<range.lowerBound])
+                }
+                urlString += "&zoom=1"  // Larger images
+
+                // Prefer higher resolution if edge/printsec parameters exist
+                if !urlString.contains("&imgmax=") {
+                    urlString += "&imgmax=800"  // Request 800px max dimension
+                }
+                print("📷 Upgraded Google Books URL: \(urlString)")
+            }
+            // Upgrade Amazon image quality
+            else if urlString.contains("amazon.com/images") || urlString.contains("media-amazon.com/images") {
+                // Replace _SL75_ (75px), _SX75_ (75px width), etc. with larger sizes
+                // Amazon supports: _SL500_, _SX500_, etc.
+                urlString = urlString.replacingOccurrences(of: "_SL75_", with: "_SL500_")
+                urlString = urlString.replacingOccurrences(of: "_SX75_", with: "_SX500_")
+                urlString = urlString.replacingOccurrences(of: "_SY75_", with: "_SY500_")
+                urlString = urlString.replacingOccurrences(of: "_SL100_", with: "_SL500_")
+                urlString = urlString.replacingOccurrences(of: "_SX100_", with: "_SX500_")
+                urlString = urlString.replacingOccurrences(of: "_SY100_", with: "_SY500_")
+                urlString = urlString.replacingOccurrences(of: "_SL150_", with: "_SL500_")
+                urlString = urlString.replacingOccurrences(of: "_SX150_", with: "_SX500_")
+                urlString = urlString.replacingOccurrences(of: "_SY150_", with: "_SY500_")
+                urlString = urlString.replacingOccurrences(of: "_SL200_", with: "_SL500_")
+                urlString = urlString.replacingOccurrences(of: "_SX200_", with: "_SX500_")
+                urlString = urlString.replacingOccurrences(of: "_SY200_", with: "_SY500_")
+                print("📷 Upgraded Amazon URL: \(urlString)")
+            }
+
+            if let url = URL(string: urlString) {
+                return url
+            }
         }
+
+        // Priority 2: Open Library with highest quality
         if !record.isbn.isEmpty {
-            return URL(string: "https://covers.openlibrary.org/b/isbn/\(record.isbn)-L.jpg")
+            // Try largest size (-L), which is typically 400px+
+            let fallbackURL = "https://covers.openlibrary.org/b/isbn/\(record.isbn)-L.jpg"
+            print("📷 Using Open Library fallback: \(fallbackURL)")
+            return URL(string: fallbackURL)
         }
+
         return nil
     }
 
@@ -1052,6 +1170,101 @@ struct BookDetailViewRedesigned: View {
         default:
             return .gray
         }
+    }
+
+    private func rarityLabel(for score: Double) -> String {
+        if score >= 0.9 {
+            return "RARE"
+        } else if score >= 0.7 {
+            return "UNCOMMON"
+        } else if score >= 0.3 {
+            return "COMMON"
+        } else {
+            return "ABUNDANT"
+        }
+    }
+
+    private func rarityColor(for score: Double) -> Color {
+        if score >= 0.9 {
+            return .purple
+        } else if score >= 0.7 {
+            return .indigo
+        } else if score >= 0.3 {
+            return .gray
+        } else {
+            return .gray.opacity(0.6)
+        }
+    }
+
+    private func valueLabelColor(for label: String) -> Color {
+        let lowercased = label.lowercased()
+        if lowercased.contains("good") || lowercased.contains("great") || lowercased.contains("excellent") {
+            return .green
+        } else if lowercased.contains("fair") || lowercased.contains("okay") || lowercased.contains("moderate") {
+            return .orange
+        } else if lowercased.contains("poor") || lowercased.contains("bad") || lowercased.contains("low") {
+            return .red
+        } else {
+            return .gray
+        }
+    }
+
+    // MARK: - ML Justification Helpers
+
+    private func reasonIcon(for reason: String) -> String {
+        let lowercased = reason.lowercased()
+        if lowercased.contains("market") || lowercased.contains("demand") || lowercased.contains("sell") {
+            return "chart.line.uptrend.xyaxis"
+        } else if lowercased.contains("rarity") || lowercased.contains("rare") || lowercased.contains("uncommon") {
+            return "star.fill"
+        } else if lowercased.contains("author") || lowercased.contains("writer") {
+            return "person.fill"
+        } else if lowercased.contains("series") || lowercased.contains("collection") {
+            return "books.vertical.fill"
+        } else if lowercased.contains("condition") || lowercased.contains("quality") {
+            return "sparkles"
+        } else if lowercased.contains("price") || lowercased.contains("value") || lowercased.contains("cost") {
+            return "dollarsign.circle.fill"
+        } else if lowercased.contains("category") || lowercased.contains("genre") {
+            return "tag.fill"
+        } else if lowercased.contains("year") || lowercased.contains("published") || lowercased.contains("edition") {
+            return "calendar"
+        } else {
+            return "checkmark.circle.fill"
+        }
+    }
+
+    private func reasonColor(for reason: String) -> Color {
+        let lowercased = reason.lowercased()
+        if lowercased.contains("strong") || lowercased.contains("high") || lowercased.contains("excellent") {
+            return .green
+        } else if lowercased.contains("moderate") || lowercased.contains("average") || lowercased.contains("fair") {
+            return .orange
+        } else if lowercased.contains("weak") || lowercased.contains("low") || lowercased.contains("poor") {
+            return .red
+        } else {
+            return .blue
+        }
+    }
+
+    private func reasonContext(for reason: String) -> String? {
+        let lowercased = reason.lowercased()
+
+        if lowercased.contains("sell through") || lowercased.contains("sell-through") {
+            return "This measures how quickly books sell relative to available inventory"
+        } else if lowercased.contains("rarity score") {
+            return "Higher rarity scores indicate fewer copies available in the market"
+        } else if lowercased.contains("amazon sales rank") {
+            return "Lower ranks indicate stronger sales performance on Amazon"
+        } else if lowercased.contains("vendor offers") {
+            return "Number of buyback vendors interested in purchasing this book"
+        } else if lowercased.contains("signed listings") {
+            return "Presence of signed copies can indicate collectible demand"
+        } else if lowercased.contains("lot listings") {
+            return "Books frequently sold in lots may have different pricing dynamics"
+        }
+
+        return nil
     }
 
     @ViewBuilder
@@ -1237,9 +1450,7 @@ struct BookDetailViewRedesigned: View {
             scenarios.append(("Amazon", soldMedian - amazonPrice))
         }
 
-        if let estimatedPrice = record.estimatedPrice, estimatedPrice > 0 {
-            scenarios.append(("ML Estimate", soldMedian - estimatedPrice))
-        }
+        // NOTE: Removed ML Estimate - it's a sale price prediction, not acquisition cost
 
         return scenarios.max(by: { $0.margin < $1.margin })?.name ?? "Unknown"
     }
@@ -1315,6 +1526,11 @@ struct BookDetailViewRedesigned: View {
         isUpdatingPrice = true
         defer { isUpdatingPrice = false }
 
+        print("📡 Calling estimate_price with:")
+        print("  condition: \(selectedCondition)")
+        print("  hardcover: \(isHardcover), paperback: \(isPaperback), mass market: \(isMassMarket)")
+        print("  signed: \(isSigned), first edition: \(isFirstEdition)")
+
         do {
             let response = try await BookAPI.estimatePrice(
                 isbn: record.isbn,
@@ -1329,8 +1545,14 @@ struct BookDetailViewRedesigned: View {
             dynamicEstimate = response.estimatedPrice
             attributeDeltas = response.deltas
             dynamicProfitScenarios = response.profitScenarios
+            priceLower = response.priceLower
+            priceUpper = response.priceUpper
+            confidencePercent = response.confidencePercent
+
+            print("✅ Price estimate updated: $\(String(format: "%.2f", response.estimatedPrice))")
+            print("  Deltas received: \(response.deltas.count) attributes")
         } catch {
-            print("Failed to update price estimate: \(error.localizedDescription)")
+            print("❌ Failed to update price estimate: \(error.localizedDescription)")
         }
     }
 
@@ -1579,10 +1801,12 @@ struct AttributesView: View {
     @Binding var isSigned: Bool
     @Binding var isFirstEdition: Bool
     let priceEstimate: Double
+    let priceLower: Double?
+    let priceUpper: Double?
+    let confidencePercent: Double?
 
     let deltas: [AttributeDelta]
     let onAttributeChanged: () -> Void
-    let onSave: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -1604,7 +1828,10 @@ struct AttributesView: View {
                     Text("Poor").tag("Poor")
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: condition) { _ in onAttributeChanged() }
+                .onChange(of: condition) { newValue in
+                    print("📝 Condition changed to: \(newValue)")
+                    onAttributeChanged()
+                }
             }
 
             // Format (mutually exclusive)
@@ -1676,27 +1903,52 @@ struct AttributesView: View {
                 )
             }
 
-            // Price Display
-            HStack {
-                Text("Estimated Price:")
-                    .font(.headline)
-                Spacer()
-                Text("$\(String(format: "%.2f", priceEstimate))")
-                    .font(.title2)
-                    .bold()
-                    .foregroundColor(.green)
+            // Price Display with Prediction Range
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Estimated Price:")
+                        .font(.headline)
+                    Spacer()
+                    Text("$\(String(format: "%.2f", priceEstimate))")
+                        .font(.title2)
+                        .bold()
+                        .foregroundColor(.green)
+                }
+
+                // Show prediction interval if available
+                if let lower = priceLower, let upper = priceUpper, let confidence = confidencePercent {
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                            Text("\(String(format: "%.0f%%", confidence)) Confidence Range")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        HStack(spacing: 4) {
+                            Text("$\(String(format: "%.2f", lower))")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                            Text("–")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("$\(String(format: "%.2f", upper))")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                        .padding(.leading, 20)
+                    }
+                }
             }
             .padding(.vertical, 8)
             .padding(.horizontal)
             .background(Color.green.opacity(0.1))
             .cornerRadius(8)
-
-            // Save Button
-            Button(action: onSave) {
-                Text("Save Attributes")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
         }
         .padding()
         .background(Color(.systemBackground))
@@ -1714,7 +1966,10 @@ struct AttributeToggle: View {
     var body: some View {
         HStack {
             Toggle(label, isOn: $isOn)
-                .onChange(of: isOn) { _ in onToggle() }
+                .onChange(of: isOn) { newValue in
+                    print("📝 AttributeToggle '\(label)' changed to: \(newValue)")
+                    onToggle()
+                }
 
             if let delta = delta, delta != 0 {
                 Text(delta > 0 ? "+$\(String(format: "%.2f", delta))" : "$\(String(format: "%.2f", delta))")
@@ -1738,7 +1993,9 @@ struct FormatToggle: View {
     var body: some View {
         VStack(spacing: 4) {
             Button(action: {
+                print("📝 FormatToggle '\(label)' button pressed, current: \(isSelected)")
                 isSelected.toggle()
+                print("📝 FormatToggle '\(label)' now: \(isSelected)")
                 onToggle()
             }) {
                 Text(label)

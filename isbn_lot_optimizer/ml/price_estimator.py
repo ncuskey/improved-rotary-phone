@@ -146,7 +146,7 @@ class MLPriceEstimator:
             PriceEstimate with prediction and confidence
         """
         # Try platform-specific routing if enabled and data available
-        if self.router and abebooks and abebooks.get('abebooks_avg_price', 0) > 0:
+        if self.router:
             try:
                 price, model_used, routing_info = self.router.predict(
                     metadata=metadata,
@@ -161,7 +161,7 @@ class MLPriceEstimator:
                 # Return result with routing metadata
                 return PriceEstimate(
                     price=round(price, 2),
-                    confidence=0.95 if model_used == 'abebooks_specialist' else 0.75,
+                    confidence=0.95 if model_used == 'abebooks_specialist' else 0.85 if model_used == 'ebay_specialist' else 0.70,
                     prediction_interval=None,
                     reason=f"Routed to {model_used} (MAE: ${routing_info['model_mae']:.2f})",
                     feature_importance={},

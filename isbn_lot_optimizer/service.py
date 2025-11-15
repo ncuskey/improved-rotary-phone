@@ -394,6 +394,33 @@ class BookService:
         Args:
             status: Book status - "REJECT" (default) or "ACCEPT"
         """
+        # Run unified enrichment before evaluation to ensure fresh data
+        from isbn_lot_optimizer.enrichment_coordinator import enrich_with_coordination
+
+        # Normalize ISBN for enrichment
+        normalized = normalise_isbn(raw_isbn.strip())
+        if normalized:
+            try:
+                enrichment_result = enrich_with_coordination(
+                    isbn=normalized,
+                    collect_metadata_data=include_market,
+                    collect_marketplace=include_market,
+                    collect_ebay=include_market,
+                    collect_amazon=include_market,
+                    wait_for_in_progress=True,
+                )
+                # Log enrichment results for debugging
+                if enrichment_result.success:
+                    logger.info(
+                        f"Enriched {normalized}: "
+                        f"eBay active={enrichment_result.ebay_active_count}, "
+                        f"Amazon FBM={enrichment_result.amazon_fbm_count}, "
+                        f"AbeBooks={enrichment_result.abebooks_count}"
+                    )
+            except Exception as e:
+                # Don't fail scan if enrichment fails
+                logger.warning(f"Enrichment failed for {normalized}: {e}")
+
         # Evaluate the book without persisting
         evaluation = self.evaluate_isbn(
             raw_isbn,

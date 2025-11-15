@@ -1,0 +1,137 @@
+{
+  "description": "Curated list of collectible authors whose signed first editions command premium prices",
+  "authors": [
+    {
+      "name": "Tom Clancy",
+      "notable_books": [
+        "The Hunt for Red October",
+        "Red Storm Rising",
+        "Patriot Games",
+        "Clear and Present Danger",
+        "The Sum of All Fears",
+        "Without Remorse",
+        "Rainbow Six"
+      ],
+      "search_terms": [
+        "Tom Clancy signed first edition",
+        "Tom Clancy autographed first printing"
+      ]
+    },
+    {
+      "name": "Stephen King",
+      "notable_books": [
+        "Carrie",
+        "The Shining",
+        "The Stand",
+        "It",
+        "Misery",
+        "The Dark Tower",
+        "Pet Sematary"
+      ],
+      "search_terms": [
+        "Stephen King signed first edition",
+        "Stephen King autographed first printing"
+      ]
+    },
+    {
+      "name": "J.K. Rowling",
+      "notable_books": [
+        "Harry Potter and the Philosopher's Stone",
+        "Harry Potter and the Chamber of Secrets",
+        "Harry Potter and the Prisoner of Azkaban",
+        "Harry Potter and the Goblet of Fire"
+      ],
+      "search_terms": [
+        "J.K. Rowling signed first edition",
+        "Harry Potter signed Rowling"
+      ]
+    },
+    {
+      "name": "Cormac McCarthy",
+      "notable_books": [
+        "Blood Meridian",
+        "All the Pretty Horses",
+        "No Country for Old Men",
+        "The Road"
+      ],
+      "search_terms": [
+        "Cormac McCarthy signed first edition",
+        "Cormac McCarthy autographed"
+      ]
+    },
+    {
+      "name": "John Grisham",
+      "notable_books": [
+        "A Time to Kill",
+        "The Firm",
+        "The Pelican Brief",
+        "The Client"
+      ],
+      "search_terms": [
+        "John Grisham signed first edition",
+        "John Grisham autographed first printing"
+      ]
+    },
+    {
+      "name": "Michael Crichton",
+      "notable_books": [
+        "Jurassic Park",
+        "The Andromeda Strain",
+        "Sphere",
+        "Congo",
+        "Rising Sun"
+      ],
+      "search_terms": [
+        "Michael Crichton signed first edition",
+        "Michael Crichton autographed"
+      ]
+    },
+    {
+      "name": "James Patterson",
+      "notable_books": [
+        "Along Came a Spider",
+        "Kiss the Girls",
+        "1st to Die"
+      ],
+      "search_terms": [
+        "James Patterson signed first edition"
+      ]
+    },
+    {
+      "name": "Dan Brown",
+      "notable_books": [
+        "The Da Vinci Code",
+        "Angels & Demons",
+        "Digital Fortress"
+      ],
+      "search_terms": [
+        "Dan Brown signed first edition",
+        "Da Vinci Code signed"
+      ]
+    },
+    {
+      "name": "Lee Child",
+      "notable_books": [
+        "Killing Floor",
+        "Die Trying",
+        "Tripwire"
+      ],
+      "search_terms": [
+        "Lee Child signed first edition",
+        "Jack Reacher signed"
+      ]
+    },
+    {
+      "name": "Gillian Flynn",
+      "notable_books": [
+        "Gone Girl",
+        "Sharp Objects",
+        "Dark Places"
+      ],
+      "search_terms": [
+        "Gillian Flynn signed first edition",
+        "Gone Girl signed"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "condition_multipliers": {
+    "Good": 1.0,
+    "New": 1.4172413793103447,
+    "Like New": 1.2327302631578947,
+    "Very Good": 1.0618397635015318,
+    "Acceptable": 0.9168771043771045,
+    "Poor": 0.55
+  },
+  "binding_multipliers": {
+    "Paperback": 1.0,
+    "Unknown": 1.0,
+    "Hardcover": 1.1713947990543734,
+    "Trade Paperback": 1.05,
+    "Mass Market": 0.85
+  },
+  "baseline_condition": "Good",
+  "baseline_binding": "Paperback",
+  "note": "Derived from eBay active listings analysis"
+}

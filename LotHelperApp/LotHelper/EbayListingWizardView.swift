@@ -1246,6 +1246,7 @@ struct FinalReviewEditStepView: View {
         edition: nil,
         quantity: 1,
         estimatedPrice: 12.99,
+        estimatedSalePrice: 12.99,
         probabilityScore: 0.75,
         probabilityLabel: "PROFIT",
         justification: ["Popular series", "High demand"],

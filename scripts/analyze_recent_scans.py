@@ -70,17 +70,25 @@ class RecentScansAnalyzer:
         normalized_title = self._normalize_for_matching(book_title)
 
         # Strategy 1: Try exact match on book title in series_books
+        # Use INSTR to check if scanned title contains the database entry
+        # This handles cases like "The Lincoln Lawyer: A Novel" matching "lincoln lawyer"
+        # Prefer specific series over universe series by checking if book title is in series name
         query = """
         SELECT
             s.id as series_id,
             s.title as series_name,
-            sb.series_position
+            sb.series_position,
+            INSTR(LOWER(s.title), sb.book_title_normalized) as title_in_series
         FROM series_books sb
         JOIN series s ON sb.series_id = s.id
-        WHERE sb.book_title_normalized LIKE ?
+        WHERE INSTR(?, sb.book_title_normalized) > 0
+        ORDER BY
+            LENGTH(sb.book_title_normalized) DESC,
+            title_in_series DESC,
+            LENGTH(s.title) ASC
         LIMIT 1
         """
-        cursor = self.conn.execute(query, (f'%{normalized_title}%',))
+        cursor = self.conn.execute(query, (normalized_title,))
         row = cursor.fetchone()
         if row:
             return dict(row)

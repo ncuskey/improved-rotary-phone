@@ -35,6 +35,10 @@ class RecentScansAnalyzer:
         self.conn = sqlite3.connect(str(self.db_path))
         self.conn.row_factory = sqlite3.Row
 
+        # Attach metadata_cache.db for series_lot_stats table
+        metadata_cache_path = Path.home() / ".isbn_lot_optimizer" / "metadata_cache.db"
+        self.conn.execute(f"ATTACH DATABASE '{metadata_cache_path}' AS metadata")
+
     def _normalize_for_matching(self, text: str) -> str:
         """Normalize text for fuzzy matching."""
         if not text:
@@ -128,7 +132,7 @@ class RecentScansAnalyzer:
             total_lots_found,
             has_complete_sets,
             enrichment_quality_score
-        FROM series_lot_stats
+        FROM metadata.series_lot_stats
         WHERE LOWER(series_title) LIKE ?
             AND median_price_per_book IS NOT NULL
         LIMIT 1

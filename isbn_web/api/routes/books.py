@@ -435,6 +435,18 @@ async def get_book_evaluation_json(
         logger = logging.getLogger(__name__)
         logger.warning(f"Failed to get channel recommendation: {e}")
 
+    # Trigger background series lot market data enrichment if this is a series book
+    if book.metadata and hasattr(book.metadata, 'series_id') and book.metadata.series_id:
+        try:
+            from isbn_lot_optimizer.series_lot_enrichment_task import enrich_series_lot_data_background
+            enrich_series_lot_data_background(
+                series_id=book.metadata.series_id,
+                series_title=book.metadata.series_name or "Unknown Series",
+                author_name=book.metadata.canonical_author
+            )
+        except Exception as e:
+            logger.debug(f"Failed to queue series lot enrichment: {e}")
+
     result_dict = _book_evaluation_to_dict(book, routing_info=routing_info, channel_recommendation=channel_recommendation)
     print(f"DEBUG: Result dict - condition={result_dict.get('condition')!r}, edition={result_dict.get('edition')!r}")
     return JSONResponse(content=result_dict)

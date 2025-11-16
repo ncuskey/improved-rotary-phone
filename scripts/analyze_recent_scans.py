@@ -158,6 +158,7 @@ class RecentScansAnalyzer:
                 scan['series_position'] = None
 
             # Look up canonical series name from series database
+            # ONLY use series database - don't trust raw metadata alone
             canonical_series = self._get_canonical_series(scan['title'], scan['authors'], raw_series_name)
             if canonical_series:
                 scan['series_name'] = canonical_series['series_name']
@@ -166,9 +167,11 @@ class RecentScansAnalyzer:
                 if canonical_series.get('series_position'):
                     scan['series_position'] = canonical_series['series_position']
             else:
-                # Fall back to raw metadata
-                scan['series_name'] = raw_series_name
+                # No match in series database = not a series book
+                # (Google Books often incorrectly sets series_name to book title)
+                scan['series_name'] = None
                 scan['series_id'] = None
+                scan['series_position'] = None
 
             # Filter if series_only requested
             if series_only and not scan['series_name']:

@@ -1361,56 +1361,57 @@ async def estimate_price_with_attributes(
         market = book.market
         bookscouter = book.bookscouter
 
-        # Use baseline_price (immutable) for calculations instead of estimated_price
-        # baseline_price is the original ML prediction without attribute adjustments
-        # estimated_price gets updated when user changes attributes
-        # First check if baseline_price exists, fall back to estimated_price for older records
-        baseline_price = getattr(book, 'baseline_price', None) or book.estimated_price or 10.0
+        # Use build_book_evaluation to get consistent pricing with scan flow
+        # This handles all multipliers (condition, format, collectible) correctly
+        from shared.probability import build_book_evaluation
 
-        # Calculate multipliers to apply to baseline price
-        # Load the multipliers directly (same ones used in prediction_router.py)
-        multipliers_path = estimator.router.model_dir / "ebay_multipliers.json"
-        try:
-            with open(multipliers_path, 'r') as f:
-                import json
-                mult_data = json.load(f)
-                condition_multipliers = mult_data['condition_multipliers']
-                binding_multipliers = mult_data['binding_multipliers']
-        except Exception:
-            # Use defaults if multipliers file not available
-            condition_multipliers = {
-                'New': 1.35, 'Like New': 1.25, 'Very Good': 1.15,
-                'Good': 1.0, 'Acceptable': 0.75, 'Poor': 0.55
-            }
-            binding_multipliers = {
-                'Hardcover': 1.20, 'Paperback': 1.0, 'Trade Paperback': 1.05,
-                'Mass Market': 0.85, 'Unknown': 1.0
-            }
-
-        # Apply condition multiplier
-        condition_mult = condition_multipliers.get(request_body.condition, 1.0)
-
-        # Apply format multiplier
-        format_mult = 1.0
+        # Set cover_type based on user selection
+        cover_type = None
         if request_body.is_hardcover:
-            format_mult = binding_multipliers.get('Hardcover', 1.0)
+            cover_type = "Hardcover"
         elif request_body.is_paperback:
-            format_mult = binding_multipliers.get('Paperback', 1.0)
+            cover_type = "Paperback"
         elif request_body.is_mass_market:
-            format_mult = binding_multipliers.get('Mass Market', 1.0)
+            cover_type = "Mass Market"
 
-        # Calculate final price by applying multipliers to baseline
-        final_price = baseline_price * condition_mult * format_mult
+        # Apply cover_type to metadata if selected
+        metadata_copy = deepcopy(metadata)
+        if cover_type:
+            metadata_copy.cover_type = cover_type
 
-        # Apply signed/first edition multipliers
-        # These are data-driven estimates based on market research:
-        # - Signed copies typically sell for 1.5-2.5x unsigned price
-        # - First editions typically sell for 1.2-1.5x later editions
-        # Using conservative multipliers to avoid overestimating
-        signed_mult = 1.8 if request_body.is_signed else 1.0
-        first_ed_mult = 1.3 if request_body.is_first_edition else 1.0
+        # Build evaluation with user-selected attributes
+        evaluation_with_attrs = build_book_evaluation(
+            isbn=book.isbn,
+            original_isbn=book.original_isbn,
+            metadata=metadata_copy,
+            market=market,
+            condition=request_body.condition,
+            edition=None,  # Don't use string edition
+            amazon_rank=bookscouter.amazon_sales_rank if bookscouter and hasattr(bookscouter, 'amazon_sales_rank') else None,
+            bookscouter=bookscouter,
+            signed=request_body.is_signed,
+            first_edition=request_body.is_first_edition,
+            abebooks_data=None
+        )
 
-        final_price = final_price * signed_mult * first_ed_mult
+        final_price = evaluation_with_attrs.estimated_price
+
+        # Also get baseline (Good condition, no special attributes) for delta calculation
+        baseline_evaluation = build_book_evaluation(
+            isbn=book.isbn,
+            original_isbn=book.original_isbn,
+            metadata=metadata,  # Original metadata without cover_type
+            market=market,
+            condition="Good",
+            edition=None,
+            amazon_rank=bookscouter.amazon_sales_rank if bookscouter and hasattr(bookscouter, 'amazon_sales_rank') else None,
+            bookscouter=bookscouter,
+            signed=False,
+            first_edition=False,
+            abebooks_data=None
+        )
+
+        baseline_price = baseline_evaluation.estimated_price
 
         # Create a fake estimate object for compatibility
         from isbn_lot_optimizer.ml.price_estimator import PriceEstimate
@@ -1418,61 +1419,75 @@ async def estimate_price_with_attributes(
             price=final_price,
             confidence=0.85,
             prediction_interval=None,
-            reason="Price calculated using multipliers applied to baseline",
+            reason="Price calculated using build_book_evaluation with selected attributes",
             feature_importance={},
-            model_version="multiplier_v1"
+            model_version="build_evaluation_v1"
         )
 
-        # Calculate deltas for each attribute based on multipliers
-        # Deltas show the price impact of each individual attribute
+        # Calculate deltas by comparing prices with/without each attribute
+        # This shows the incremental value of each attribute
         deltas = []
 
-        # Calculate price without any selected attributes (base price with condition only)
-        base_with_condition = baseline_price * condition_mult
+        # Get price with just condition (no format, no signed, no first edition)
+        eval_condition_only = build_book_evaluation(
+            isbn=book.isbn, original_isbn=book.original_isbn, metadata=metadata,
+            market=market, condition=request_body.condition, edition=None,
+            amazon_rank=bookscouter.amazon_sales_rank if bookscouter and hasattr(bookscouter, 'amazon_sales_rank') else None,
+            bookscouter=bookscouter, signed=False, first_edition=False, abebooks_data=None
+        )
+        price_condition_only = eval_condition_only.estimated_price
 
-        # Format delta - show the additional cost of the selected format
-        if request_body.is_hardcover:
-            deltas.append(AttributeDelta(
-                attribute="is_hardcover",
-                label="Hardcover",
-                delta=round(base_with_condition * (format_mult - 1.0), 2),
-                enabled=True
-            ))
-        elif request_body.is_paperback:
-            # Paperback is baseline (1.0x), so delta is 0
-            deltas.append(AttributeDelta(
-                attribute="is_paperback",
-                label="Paperback",
-                delta=0.0,
-                enabled=True
-            ))
-        elif request_body.is_mass_market:
-            deltas.append(AttributeDelta(
-                attribute="is_mass_market",
-                label="Mass Market",
-                delta=round(base_with_condition * (format_mult - 1.0), 2),
-                enabled=True
-            ))
+        # Format delta
+        if request_body.is_hardcover or request_body.is_paperback or request_body.is_mass_market:
+            # Get price with condition + format (no signed, no first edition)
+            metadata_with_format = deepcopy(metadata)
+            if cover_type:
+                metadata_with_format.cover_type = cover_type
+            eval_with_format = build_book_evaluation(
+                isbn=book.isbn, original_isbn=book.original_isbn, metadata=metadata_with_format,
+                market=market, condition=request_body.condition, edition=None,
+                amazon_rank=bookscouter.amazon_sales_rank if bookscouter and hasattr(bookscouter, 'amazon_sales_rank') else None,
+                bookscouter=bookscouter, signed=False, first_edition=False, abebooks_data=None
+            )
+            price_with_format = eval_with_format.estimated_price
 
-        # Signed delta - show the additional cost of being signed
+            label = cover_type if cover_type else "Format"
+            deltas.append(AttributeDelta(
+                attribute=f"is_{cover_type.lower().replace(' ', '_')}" if cover_type else "format",
+                label=label,
+                delta=round(price_with_format - price_condition_only, 2),
+                enabled=True
+            ))
+        else:
+            price_with_format = price_condition_only
+
+        # Signed delta
         if request_body.is_signed:
-            # Calculate price with condition and format, but without signed
-            price_without_signed = base_with_condition * format_mult
+            # Get price with condition + format + signed (no first edition)
+            eval_with_signed = build_book_evaluation(
+                isbn=book.isbn, original_isbn=book.original_isbn, metadata=metadata_copy,
+                market=market, condition=request_body.condition, edition=None,
+                amazon_rank=bookscouter.amazon_sales_rank if bookscouter and hasattr(bookscouter, 'amazon_sales_rank') else None,
+                bookscouter=bookscouter, signed=True, first_edition=False, abebooks_data=None
+            )
+            price_with_signed = eval_with_signed.estimated_price
+
             deltas.append(AttributeDelta(
                 attribute="is_signed",
                 label="Signed/Autographed",
-                delta=round(price_without_signed * (signed_mult - 1.0), 2),
+                delta=round(price_with_signed - price_with_format, 2),
                 enabled=True
             ))
+        else:
+            price_with_signed = price_with_format
 
-        # First edition delta - show the additional cost of first edition
+        # First edition delta
         if request_body.is_first_edition:
-            # Calculate price with condition, format, and signed, but without first edition
-            price_without_first = base_with_condition * format_mult * signed_mult
+            # Final price already includes first edition, so delta is difference from signed price
             deltas.append(AttributeDelta(
                 attribute="is_first_edition",
                 label="First Edition",
-                delta=round(price_without_first * (first_ed_mult - 1.0), 2),
+                delta=round(final_price - price_with_signed, 2),
                 enabled=True
             ))
 
@@ -1484,14 +1499,18 @@ async def estimate_price_with_attributes(
 
         profit_scenarios = []
 
-        # Scenario 1: Best Case (signed + 1st edition + best format)
-        # Calculate best possible price using multipliers
-        best_case_format_mult = max(
-            binding_multipliers.get('Hardcover', 1.0),
-            binding_multipliers.get('Paperback', 1.0),
-            binding_multipliers.get('Mass Market', 1.0)
+        # Scenario 1: Best Case (signed + 1st edition + hardcover)
+        # Calculate best possible price using build_book_evaluation
+        best_case_metadata = deepcopy(metadata)
+        best_case_metadata.cover_type = "Hardcover"  # Assume hardcover for best case
+
+        best_case_evaluation = build_book_evaluation(
+            isbn=book.isbn, original_isbn=book.original_isbn, metadata=best_case_metadata,
+            market=market, condition=request_body.condition, edition=None,
+            amazon_rank=bookscouter.amazon_sales_rank if bookscouter and hasattr(bookscouter, 'amazon_sales_rank') else None,
+            bookscouter=bookscouter, signed=True, first_edition=True, abebooks_data=None
         )
-        best_case_revenue = baseline_price * condition_mult * best_case_format_mult * 1.8 * 1.3  # signed × first_ed
+        best_case_revenue = best_case_evaluation.estimated_price
         best_case_fees = best_case_revenue * ebay_fee_rate
         best_case_profit = best_case_revenue - best_case_fees - purchase_cost
         best_case_margin = (best_case_profit / best_case_revenue * 100) if best_case_revenue > 0 else 0

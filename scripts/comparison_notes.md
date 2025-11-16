@@ -2039,5 +2039,130 @@ This fix (punctuation stripping) prevents:
 
 ---
 
-**Last Updated:** 2025-11-16 (Fixed punctuation bug in author name normalization, adjusted Tom Clancy multiplier)
+### Book 14: Rural Hours - Susan Fenimore Cooper (9781409942399)
+**Date:** 2025-11-16
+
+**Book Details:**
+- Title: Rural Hours
+- Author: Cooper, Susan Fenimore
+- Condition: Very Good
+- Edition: 2008 Dodo Press reprint (NOT signed, NOT first edition)
+- ISBN: 9781409942399
+- **Category: Niche scholarly/academic demand**
+
+**System Evaluation:**
+- Predicted Price: $10.02
+- Probability Score: 4/100 (VERY LOW)
+- Decision: REJECT
+- Reasoning: "No completed sales found; limited market data"
+- No eBay market data, no buyback data
+
+**Manual Evaluation:**
+- Manual Price: $27.00
+- Decision: BUY
+- Reasoning: "Similarly valued comps"
+- Cost Basis: $0 (free)
+- Manual Profit: $23.12
+
+**Price Difference:**
+- System undervalued by $16.98 (169.5% error)
+- Profit difference: $14.73
+- **Moderate undervaluation on scholarly reprint**
+
+**Key Insights:**
+
+1. **DIFFERENT PATTERN: Not a Famous Signature Case**
+   - This is a 2008 paperback reprint, NOT the valuable 1850 first edition
+   - Unsigned, not a first edition
+   - Adding Susan Fenimore Cooper to famous_people.json would NOT help
+   - Fame multipliers only apply to signed books or first editions
+   - **This is a base ML model pricing issue, not collectible detection**
+
+2. **Susan Fenimore Cooper Historical Significance**
+   - Daughter of James Fenimore Cooper (Last of the Mohicans author)
+   - Pioneer of American nature writing
+   - "Rural Hours" (1850) preceded Thoreau's Walden by 4 years
+   - First major environmental literature by American woman
+   - Praised by Charles Darwin, mentioned in Thoreau's journals
+
+3. **Niche Scholarly Demand Not Captured**
+   - Academic/scholarly market interest
+   - Women's history collectors
+   - Environmental literature niche
+   - American literary history
+   - Cross-category appeal: environmental + women's + literature
+
+4. **Why Manual Found $27 Comps:**
+   - University bookstores/academic buyers may pay premium
+   - Out-of-print Dodo Press editions have niche demand
+   - Literary significance creates collector interest beyond typical reprints
+   - Scholarly interest in early American nature writing
+
+5. **ML Model Limitation: Niche Academic Reprints**
+   - System saw: "2008 reprint, no sales data, low Amazon rank"
+   - Reality: "Historically significant text, niche scholarly demand"
+   - ML model doesn't recognize academic/scholarly value signals
+   - No way to detect "important reprint" vs "generic reprint"
+
+6. **Why Famous People Database Won't Help**
+   - Susan F. Cooper is significant but not a "signature collectible" author
+   - Modern reprints of her work don't command signature premiums
+   - The 1850 first edition (rare) is valuable ($500-1000+)
+   - 2008 reprint valuable only for scholarly/reading purposes (~$25-30)
+
+7. **Market Data Gap**
+   - System: "No eBay market data available"
+   - This is accurate - obscure 2008 reprint has thin market
+   - Manual comp research found niche buyers
+   - Thin markets = ML model performs poorly
+
+8. **Pattern vs Previous 13 Books:**
+   - Books 1-13: Collectible detection fixes (signatures, first editions)
+   - **Book 14: Base model pricing issue (no collectible features)**
+   - Different category of miss entirely
+   - Requires different solution approach
+
+**Expected Results:**
+- Cannot fix with famous_people.json (book is unsigned, not first edition)
+- Cannot fix with collectible detection (no collectible features present)
+- **Would require ML model to recognize scholarly/academic demand signals**
+- Possible signals: author historical significance, subject matter, publisher reputation
+
+**Decision: No Fix to Implement**
+- This is a base ML pricing limitation
+- System correctly identified: no collectible features
+- $10 → $27 gap is scholarly niche demand
+- Not addressable through famous_people.json or collectible detection
+- Would require entirely different feature engineering (author significance, subject categorization, academic market signals)
+
+**Total Missed Value So Far (14 books):**
+- Book 2 (Frank Herbert): $1,089
+- Book 7 (Martin Scorsese): $991
+- Book 12 (Allen Ginsberg): $194
+- Book 9 (Buzz Aldrin): $175
+- Book 13 (Tom Clancy): $140
+- Book 6 (Liz Goldwyn): $104
+- Book 3 (Demi Moore): $53
+- Book 5 (Doris Goodwin): $50
+- Book 8 (Harry Potter): $31
+- Book 10 (Louise Erdrich): $21
+- **Book 14 (Susan F. Cooper): $17** ← NEW (different category)
+- **TOTAL: $2,865 from 14 books**
+- **Average miss: $205 per book**
+
+**Pattern Recognition:**
+- Books 1-13: All fixable via collectible detection (signatures, first editions)
+- Book 14: First case of "niche academic demand" miss
+- This represents a **different limitation** of the ML system
+- **Not addressable through current collectible detection approach**
+
+**Recommendation:**
+- Continue collecting valuations to identify more fixable patterns
+- Note "niche scholarly demand" as a separate category
+- Focus fixes on collectible detection (signatures, first editions) where ROI is highest
+- Academic reprint pricing would require major ML model redesign
+
+---
+
+**Last Updated:** 2025-11-16 (Added Book 14 - First "niche scholarly demand" case, different from collectible detection fixes)
 

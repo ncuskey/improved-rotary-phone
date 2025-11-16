@@ -82,6 +82,7 @@ class RecentScansAnalyzer:
         FROM series_books sb
         JOIN series s ON sb.series_id = s.id
         WHERE INSTR(?, sb.book_title_normalized) > 0
+            AND LENGTH(sb.book_title_normalized) > 0
         ORDER BY
             LENGTH(sb.book_title_normalized) DESC,
             title_in_series DESC,

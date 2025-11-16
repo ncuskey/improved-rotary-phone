@@ -72,4 +72,25 @@ tonight_*.json
 # Experiment/test scripts (keep in scripts/experiments/)
 scripts/test_*.py
 scripts/analyze_*.py
+
+# iOS Build Artifacts
+LotHelperApp/build/
+LotHelperApp/*.xcuserstate
 *.xcuserstate
+
+# Large marketplace data collection results
+*_results_full.json
+abebooks_results_full.json
+alibris_results_full.json
+biblio_results_full.json
+zvab_results_full.json
+
+# Backup directories
+backups/
+isbn_lot_optimizer/models/backups/
+
+# Training data cache
+isbn_lot_optimizer/data/
+
+# Large ML documentation PDFs
+docs/ml/*.pdf

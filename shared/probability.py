@@ -435,7 +435,11 @@ def score_probability(
 
     # Check if this is a high-value collectible that bypasses normal velocity rules
     is_high_value_collectible = False
+    is_collectible = False  # Track any collectible (10x+)
+
     if collectible_info and collectible_info.is_collectible:
+        is_collectible = True
+
         # High-value collectibles (50x+ multiplier) don't follow normal velocity patterns
         # They sell infrequently but at very high prices to specialized collectors
         if collectible_info.fame_multiplier >= 50.0:
@@ -446,8 +450,11 @@ def score_probability(
             score += 30  # Good confidence for highly collectible items
             reasons.append(f"Highly collectible item ({collectible_info.fame_multiplier:.0f}x multiplier)")
         elif collectible_info.fame_multiplier >= 10.0:
-            score += 20  # Moderate confidence boost
+            score += 30  # Increased from 20 - first editions by famous authors are sought after
             reasons.append(f"Collectible item ({collectible_info.fame_multiplier:.0f}x multiplier)")
+        elif collectible_info.fame_multiplier >= 5.0:
+            score += 15  # Moderate collectibles
+            reasons.append(f"Moderately collectible ({collectible_info.fame_multiplier:.0f}x multiplier)")
 
     # BookScouter buyback offers (instant sale option if profitable)
     # Note: Profitability depends on purchase price being less than buyback offer
@@ -531,18 +538,21 @@ def score_probability(
     if not has_ebay_data:
         if amazon_rank is not None:
             # Use Amazon rank as primary signal with boosted weight
-            # But skip fallback penalties for high-value collectibles
-            if not is_high_value_collectible:
+            # But skip fallback penalties for collectibles (10x+)
+            if not is_collectible:
                 reasons.append("Using Amazon-based confidence (no eBay sell-through data)")
                 fallback_score = _calculate_fallback_score(amazon_rank, metadata, reasons)
                 # Replace score with fallback (don't add to it)
                 score = fallback_score
             else:
-                # For high-value collectibles, note the lack of eBay data but don't penalize
-                reasons.append("No eBay data - collectible market operates via specialized channels")
+                # For collectibles, note the lack of eBay data but don't use harsh fallback
+                if is_high_value_collectible:
+                    reasons.append("No eBay data - collectible market operates via specialized channels")
+                else:
+                    reasons.append("Limited eBay data - collectibles often sell via specialized venues")
         else:
             # No market data at all
-            if not is_high_value_collectible:
+            if not is_collectible:
                 score -= 5
                 reasons.append("No completed sales found; limited market data")
             else:

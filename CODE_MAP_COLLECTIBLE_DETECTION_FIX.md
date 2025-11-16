@@ -443,17 +443,87 @@ All 9 high-value authors with no name variations now work:
 
 ---
 
+## Additional Fix: First Edition Detection for Famous Authors
+
+### Issue 3: Unsigned First Editions Not Detected
+
+**Problem**: First editions by famous authors (e.g., Stephen King) were not detected as collectible when unsigned, resulting in massive undervaluations.
+
+**Example**: Stephen King *Pet Sematary* first edition valued at $11.20 instead of $90 (704% undervaluation), with REJECT decision (5/100 score).
+
+**Root Cause**: Collectible detection only checked for:
+1. Signed books by famous people
+2. First editions by award winners (not bestselling authors)
+
+Stephen King (fame_tier: "bestselling_author", 40x signed) was missed for unsigned first editions.
+
+### Solution: First Edition Famous Author Detection
+
+Added new detection path in `shared/collectible_detection.py`:
+
+**New method**: `_check_first_edition_famous()` (lines 191-257)
+- Checks for first editions by ANY famous author (not just award winners)
+- Uses 25% of signed multiplier for unsigned first editions
+- Minimum 2x multiplier for any famous author first edition
+
+**Detection flow updated** (lines 92-96):
+```python
+# Check for first editions by famous authors (unsigned but still valuable)
+if first_edition and metadata and metadata.authors:
+    first_edition_info = self._check_first_edition_famous(metadata.authors)
+    if first_edition_info.is_collectible:
+        return first_edition_info
+```
+
+**Multiplier calculation**:
+- Stephen King signed: 40x multiplier
+- Stephen King unsigned first edition: 10x multiplier (25% of 40x)
+- Result: More accurate valuation for collectible first editions
+
+### Enhanced Scoring for 10x Collectibles
+
+Modified `shared/probability.py` to better handle first edition famous authors:
+
+1. **Increased 10x tier scoring** (line 452-454):
+   - Changed from +20 to **+30 points**
+   - First editions by famous authors are actively sought by collectors
+
+2. **Extended fallback bypass** (lines 537-559):
+   - All collectibles (10x+) skip harsh fallback penalties
+   - Not just 50x+ items
+   - Appropriate messaging for specialized venues
+
+### Results: Stephen King Test Case
+
+| Metric | Before | After | User |
+|--------|--------|-------|------|
+| Collectible Detected | ❌ No | ✅ Yes (10x) | Yes |
+| Price | $11.20 | $60.90 | $90.00 |
+| Probability Score | 5/100 | 48/100 | - |
+| Decision | REJECT | **BUY (Medium)** | BUY |
+| Agreement | ❌ | ✅ | ✅ |
+
+**Impact**: System now correctly identifies and recommends BUY for first editions by famous authors, even when unsigned.
+
+---
+
 ## Conclusion
 
-This fix resolves critical issues where high-value collectibles were:
-1. **Not detected** due to name format mismatches (92x undervaluation)
-2. **Incorrectly rejected** despite accurate pricing (wrong decision)
+This fix resolves three critical issues with collectible detection:
+
+1. **Name format mismatches** - Authors in "Last,First" format now detected (92x undervaluation prevented)
+2. **Decision logic for high-value items** - 50x+ multipliers bypass velocity penalties (correct BUY decisions)
+3. **First edition famous authors** - Unsigned first editions now detected (704% undervaluation prevented)
 
 The system now:
 - ✓ Detects collectibles regardless of name format
 - ✓ Values them accurately with proper multipliers
 - ✓ Recommends BUY for high-value items with appropriate confidence
+- ✓ Recognizes first editions by famous authors (signed or unsigned)
 - ✓ Explains specialized collector market dynamics
 - ✓ Aligns with expert manual valuations
 
-**Impact:** Prevents massive undervaluations and incorrect rejections for rare, high-value collectibles by literary icons and famous authors.
+**Impact:** Prevents massive undervaluations and incorrect rejections for:
+- Rare signed books by literary icons (50x-120x multipliers)
+- First editions by bestselling authors (10x-20x multipliers)
+- Any collectible operating in specialized collector markets

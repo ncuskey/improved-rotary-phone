@@ -89,6 +89,12 @@ class CollectibleDetector:
             if signed_info.is_collectible:
                 return signed_info
 
+        # Check for first editions by famous authors (unsigned but still valuable)
+        if first_edition and metadata and metadata.authors:
+            first_edition_info = self._check_first_edition_famous(metadata.authors)
+            if first_edition_info.is_collectible:
+                return first_edition_info
+
         # Check for award winners (even unsigned first editions can be collectible)
         if first_edition and metadata and metadata.title:
             award_info = self._check_award_winner(metadata.title, metadata.authors)
@@ -174,6 +180,74 @@ class CollectibleDetector:
                             famous_person=canonical,
                             fame_tier=person_data.get("fame_tier"),
                             notes=person_data.get("notes")
+                        )
+
+        return CollectibleInfo(
+            is_collectible=False,
+            collectible_type="none",
+            fame_multiplier=1.0
+        )
+
+    def _check_first_edition_famous(self, authors: Tuple[str, ...]) -> CollectibleInfo:
+        """
+        Check if book is a first edition by a famous author.
+
+        First editions by famous authors (even unsigned) have collectible value.
+        Uses a fraction of the signed multiplier to reflect market reality.
+        """
+        if not authors:
+            return CollectibleInfo(
+                is_collectible=False,
+                collectible_type="none",
+                fame_multiplier=1.0
+            )
+
+        for author in authors:
+            # Generate name variations (handles "Last,First" format)
+            name_variations = self._normalize_author_name(author)
+
+            # Try each variation
+            for author_variant in name_variations:
+                # Check direct match
+                if author_variant in self.famous_people:
+                    person_data = self.famous_people[author_variant]
+                    signed_mult = person_data.get("signed_multiplier", 5.0)
+
+                    # First edition unsigned typically worth 20-30% of signed value
+                    # Use 25% as reasonable market estimate
+                    first_edition_mult = signed_mult * 0.25
+
+                    # Minimum 2x multiplier for any famous author first edition
+                    first_edition_mult = max(first_edition_mult, 2.0)
+
+                    return CollectibleInfo(
+                        is_collectible=True,
+                        collectible_type="first_edition_famous",
+                        fame_multiplier=first_edition_mult,
+                        famous_person=author,
+                        fame_tier=person_data.get("fame_tier"),
+                        notes=f"First edition by {person_data.get('fame_tier', 'famous author')}"
+                    )
+
+                # Check name variations database
+                canonical = self.name_to_canonical.get(author_variant)
+                if canonical:
+                    canonical_lower = canonical.lower()
+                    if canonical_lower in self.famous_people:
+                        person_data = self.famous_people[canonical_lower]
+                        signed_mult = person_data.get("signed_multiplier", 5.0)
+
+                        # First edition unsigned = 25% of signed value
+                        first_edition_mult = signed_mult * 0.25
+                        first_edition_mult = max(first_edition_mult, 2.0)
+
+                        return CollectibleInfo(
+                            is_collectible=True,
+                            collectible_type="first_edition_famous",
+                            fame_multiplier=first_edition_mult,
+                            famous_person=canonical,
+                            fame_tier=person_data.get("fame_tier"),
+                            notes=f"First edition by {person_data.get('fame_tier', 'famous author')}"
                         )
 
         return CollectibleInfo(

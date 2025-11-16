@@ -30,7 +30,7 @@ class RecentScansAnalyzer:
     def __init__(self, db_path: Optional[str] = None):
         """Initialize with database connection."""
         if db_path is None:
-            db_path = Path.home() / ".isbn_lot_optimizer" / "books.db"
+            db_path = Path.home() / ".isbn_lot_optimizer" / "catalog.db"
         self.db_path = Path(db_path)
         self.conn = sqlite3.connect(str(self.db_path))
         self.conn.row_factory = sqlite3.Row
@@ -41,33 +41,31 @@ class RecentScansAnalyzer:
         since_date: Optional[str] = None,
         series_only: bool = False
     ) -> List[Dict]:
-        """Get recent scans from scan_history."""
+        """Get recent scans from books table (ordered by created_at)."""
         query = """
         SELECT
-            scan_history.id,
-            scan_history.isbn,
-            scan_history.scanned_at,
-            scan_history.decision,
-            scan_history.title,
-            scan_history.authors,
-            scan_history.estimated_price,
-            scan_history.probability_label,
-            scan_history.probability_score,
-            books.metadata_json,
-            books.estimated_price as current_price,
-            books.status as current_status
-        FROM scan_history
-        LEFT JOIN books ON scan_history.isbn = books.isbn
+            isbn,
+            title,
+            authors,
+            created_at as scanned_at,
+            status as decision,
+            estimated_price,
+            probability_label,
+            probability_score,
+            metadata_json,
+            estimated_price as current_price,
+            status as current_status
+        FROM books
         WHERE 1=1
         """
 
         params = []
 
         if since_date:
-            query += " AND scan_history.scanned_at >= ?"
+            query += " AND created_at >= ?"
             params.append(since_date)
 
-        query += " ORDER BY scan_history.scanned_at DESC"
+        query += " ORDER BY created_at DESC"
 
         if limit:
             query += " LIMIT ?"

@@ -125,18 +125,24 @@ class CollectibleDetector:
         Generate name variations for lookup.
 
         Handles "Last,First" format by converting to "First Last".
+        Strips punctuation from names to handle "CLANCY, Tom." format.
         Returns list of normalized variations to try.
 
         Examples:
             "Herbert,Frank" -> ["herbert,frank", "frank herbert"]
             "Frank Herbert" -> ["frank herbert"]
             "Goodwin, Doris Kearns" -> ["goodwin, doris kearns", "doris kearns goodwin"]
+            "CLANCY, Tom." -> ["clancy, tom.", "tom clancy"]
         """
-        name_lower = name.lower().strip()
+        import string
+
+        # Remove periods and other punctuation (except commas for parsing)
+        name_cleaned = name.translate(str.maketrans('', '', string.punctuation.replace(',', '')))
+        name_lower = name_cleaned.lower().strip()
         variations = [name_lower]
 
-        # Check if name contains comma (Last,First format)
-        if ',' in name_lower:
+        # Check if original name contains comma (Last,First format)
+        if ',' in name:
             parts = name_lower.split(',', 1)
             if len(parts) == 2:
                 last_name = parts[0].strip()

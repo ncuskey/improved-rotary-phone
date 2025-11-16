@@ -330,16 +330,17 @@
     "Tom Clancy": {
       "type": "author",
       "fame_tier": "bestselling_author",
-      "signed_multiplier": 20,
+      "signed_multiplier": 15,
       "genres": [
         "thriller",
         "military"
       ],
       "notable_works": [
         "The Hunt for Red October",
-        "Patriot Games"
+        "Patriot Games",
+        "Clear and Present Danger"
       ],
-      "notes": "Techno-thriller pioneer, deceased 2013"
+      "notes": "Techno-thriller pioneer, Jack Ryan series creator, deceased 2013. Similar collectibility to John Grisham."
     },
     "Michael Crichton": {
       "type": "author",

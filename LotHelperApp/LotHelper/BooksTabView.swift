@@ -192,7 +192,24 @@ struct BooksTabView: View {
                     List {
                         ForEach(filteredAndSortedBooks) { book in
                             NavigationLink(value: book) {
-                                BookCardView(book: book.cardModel)
+                                ZStack(alignment: .topTrailing) {
+                                    BookCardView(book: book.cardModel)
+
+                                    // Value uplift badge
+                                    if let uplift = book.potentialValueUplift, uplift > 0 {
+                                        Text("+$\(Int(uplift))")
+                                            .font(.caption2)
+                                            .fontWeight(.bold)
+                                            .foregroundStyle(.white)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(
+                                                Capsule()
+                                                    .fill(Color.green)
+                                            )
+                                            .padding(8)
+                                    }
+                                }
                             }
                             .buttonStyle(.plain)
                             .listRowBackground(DS.Color.background)

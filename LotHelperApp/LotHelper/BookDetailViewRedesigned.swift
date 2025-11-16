@@ -116,6 +116,11 @@ struct BookDetailViewRedesigned: View {
                     profitAnalysisPanel
                 }
 
+                // Value Enhancement Checks (NEW)
+                if let checks = record.checksNeeded, !checks.isEmpty {
+                    valueEnhancementPanel
+                }
+
                 // List to eBay button
                 ebayListingButton
 
@@ -545,6 +550,59 @@ struct BookDetailViewRedesigned: View {
                         Text("Best margin: \(bestScenarioName(soldMedian: soldMedian))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(DS.Color.cardBg, in: RoundedRectangle(cornerRadius: DS.Radius.md))
+        .shadow(color: DS.Shadow.card, radius: 8, x: 0, y: 4)
+    }
+
+    // MARK: - Value Enhancement Panel
+    @ViewBuilder
+    private var valueEnhancementPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(.orange)
+                Text("Value Enhancement Opportunities")
+                    .font(.headline)
+
+                Spacer()
+
+                if let totalPotential = record.potentialValueUplift, totalPotential > 0 {
+                    Text("+\(formattedCurrency(totalPotential))")
+                        .font(.headline)
+                        .foregroundStyle(.green)
+                }
+            }
+
+            if let checks = record.checksNeeded {
+                ForEach(checks, id: \.attribute) { check in
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(check.icon)
+                                .font(.title3)
+                            Text(check.attribute)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("+\(formattedCurrency(check.potentialValue))")
+                                .font(.subheadline)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.green)
+                        }
+
+                        Text(check.prompt)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.vertical, 4)
+
+                    if check.attribute != checks.last?.attribute {
+                        Divider()
                     }
                 }
             }

@@ -1712,3 +1712,209 @@ IF ALSO signed:
 ---
 
 **Last Updated:** 2025-11-15 (Post-collectible detection fixes)
+### Book 12: White Shroud - Allen Ginsberg (9780060157142)
+**Date:** 2025-11-16
+
+**Book Details:**
+- Title: White Shroud: Poems, 1980-1985
+- Author: GINSBERG, ALlen (Beat Generation icon)
+- Condition: Good
+- Edition: Signed, First Edition
+- ISBN: 9780060157142
+- **Category: Poetry by major literary figure**
+
+**System Evaluation (BEFORE FIX):**
+- Predicted Price: $5.78
+- Probability Score: -33.0/100 (NEGATIVE!)
+- Decision: LOW confidence (strong REJECT)
+- Amazon Rank: #7,169,665 (very poor)
+- System Profit: $4.71
+
+**Manual Evaluation:**
+- Manual Price: $200.00
+- Decision: BUY
+- Reasoning: "Similarly valued comps"
+- Cost Basis: $0 (free)
+- Manual Profit: $173.20
+
+**Price Difference (BEFORE FIX):**
+- System undervalued by $194.22 (3360% error!!!)
+- Profit difference: $168.49
+- **34x undervaluation on signed Beat Generation poet**
+
+**Key Insights:**
+
+1. **NEW CATEGORY: Beat Generation Literature**
+   - Allen Ginsberg = defining Beat Generation poet
+   - National Book Award, Pulitzer Prize finalist
+   - "Howl" author - cultural icon of 1960s counterculture
+   - Beat Generation highly collectible (Ginsberg, Kerouac, Burroughs)
+   - **System had NO Beat authors in database**
+
+2. **Poetry Collectibility Underestimated:**
+   - Signed poetry by major poets extremely valuable
+   - Poetry collections have small print runs
+   - Literary/academic collectors seek signed poetry
+   - System treating as generic niche book
+   - **ACTION:** Poetry category premium for major poets
+
+3. **Cultural Movement Recognition:**
+   - Beat Generation = significant literary movement
+   - Like Harlem Renaissance, Modernism, etc.
+   - Movement participants highly collectible
+   - First editions of Beat works especially valuable
+   - **ACTION:** Literary movement detection
+
+4. **Amazon Rank Completely Misleading (Poetry):**
+   - Rank #7,169,665 = "very niche/stale"
+   - System gave -33/100 confidence (NEGATIVE!)
+   - But poetry doesn't sell on Amazon
+   - Sold through specialty dealers, poetry societies, university libraries
+   - **ACTION:** Ignore rank for poetry by major authors
+
+5. **National Book Award / Pulitzer Finalist:**
+   - Ginsberg = major award winner/finalist
+   - Beat Generation poetry historically significant
+   - System has no award detection for poets
+   - Poetry awards: Pulitzer, National Book Award, Ruth Lilly Prize
+   - **ACTION:** Add poetry award database
+
+6. **Signed Poetry Premium:**
+   - Poetry readings = common signing venues
+   - Poets sign at universities, bookstores, literary events
+   - Signed poetry rarer than signed fiction (smaller print runs)
+   - $200 for signed Ginsberg appropriate market price
+   - **System completely missed poetry + signature value**
+
+7. **Comparison to Other Famous Authors:**
+   - Similar to Frank Herbert (sci-fi icon): 100x error
+   - Similar to Martin Scorsese (film icon): 128x error
+   - Allen Ginsberg (literary icon): 34x error
+   - Pattern: Cultural icons in their fields massively undervalued
+   - Poetry slightly less valuable than prose, but still highly collectible
+
+8. **"Under $10" Rule Catastrophic (Again):**
+   - System saw $5.78 → negative score
+   - Actually worth $200 for signed Beat poetry
+   - This rule has now caused 5+ major failures
+   - **CRITICAL: Disable for poetry by major authors**
+
+**System Evaluation (AFTER FIX):**
+- Allen Ginsberg added to famous_people.json
+- Signed multiplier: 40x (matches market reality)
+- Fame tier: "literary_icon"
+- Genres: ["poetry", "literature"]
+
+**Expected Results After Fix:**
+- Predicted Price: $5.78 × 40 = $231.20
+- Collectible Type: signed_famous
+- Decision: BUY (High confidence)
+- Score: 70-80/100 (estimated)
+- **System should now agree with manual decision**
+
+**Beat Generation Authors Added (6 total):**
+1. **Allen Ginsberg** (40x) - "Howl" poet, National Book Award
+2. **Jack Kerouac** (50x) - "On the Road", died 1969 (rare signatures)
+3. **William S. Burroughs** (45x) - "Naked Lunch", postmodern pioneer
+4. **Lawrence Ferlinghetti** (30x) - City Lights Books founder
+5. **Gregory Corso** (35x) - "Gasoline", "Bomb" poet
+6. **Gary Snyder** (25x) - Pulitzer Prize winner
+
+**Manual Heuristic Discovered:**
+```
+IF signed_first_edition
+   AND beat_generation_author (Ginsberg, Kerouac, Burroughs, etc.)
+   AND poetry_or_literary_work
+   AND cultural_historical_significance
+THEN:
+   ignore_poor_amazon_rank (poetry doesn't sell on Amazon)
+   route_to_specialty_book_dealers
+   check_abebooks_poetry_collectibles
+   apply_beat_generation_premium = 30x-50x
+   apply_poetry_scarcity_premium = additional 1.2x
+   expected_value = $150-$500+ (signed Beat poetry)
+```
+
+**Algorithm Improvements Needed:**
+1. [X] **Build Beat Generation author database** ✅ COMPLETED
+   - Added 6 major Beat authors to famous_people.json
+   - Multipliers: 25x-50x based on significance
+   - All in "authors_literature" category
+
+2. [X] **Poetry category detection** ✅ IMPLIED
+   - Genres field includes "poetry"
+   - System can now identify poetry vs prose
+   - Premium for signed poetry by major authors
+
+3. [X] **Literary movement recognition** ✅ PARTIALLY
+   - Beat Generation authors grouped together
+   - Notes include movement context
+   - Can be expanded to other movements
+
+4. [ ] Poetry awards database (future)
+   - Pulitzer Prize for Poetry
+   - National Book Award for Poetry
+   - Ruth Lilly Poetry Prize, etc.
+
+5. [X] **Name normalization verified** ✅ WORKING
+   - "GINSBERG, ALlen" → "Allen Ginsberg" ✓
+   - Tested with all variations
+   - All formats correctly detected
+
+6. [ ] Specialty marketplace routing (future)
+   - Poetry-specific dealers
+   - University press bookstores
+   - Literary society marketplaces
+
+**Why This Matters:**
+- Beat Generation = one of most collectible literary movements
+- Poetry collections small print runs = higher scarcity
+- Signed poetry by major poets = museum/archive quality
+- $200 book valued at $5.78 = catastrophic miss
+- Easy to identify: Beat author names well-known
+
+**Pattern Validation:**
+- 12th book continues famous person signature pattern
+- Expands to poetry (previously prose/film/photography)
+- Beat Generation = new collectible category detected
+- 6 related authors added simultaneously
+- **Most comprehensive author addition so far**
+
+**Testing Validation:**
+✅ Name normalization: "GINSBERG, ALlen" detected correctly
+✅ Signed famous detection: 40x multiplier applied
+✅ First edition famous: 10x multiplier (if unsigned)
+✅ All name variations working (Allen Ginsberg, Ginsberg, Allen, etc.)
+✅ Expected price: $231.20 (slightly high but acceptable)
+
+**Impact:**
+- Database growth: 89 → 95 authors (+6.7%)
+- Beat Generation now fully represented
+- Poetry collectibility now recognized
+- Literary icons properly valued
+- Prevents $200+ missed opportunities
+
+**Total Missed Value So Far (12 books):**
+- Book 2 (Frank Herbert): $1,089
+- Book 7 (Martin Scorsese): $991
+- Book 12 (Allen Ginsberg): $194
+- Book 9 (Buzz Aldrin): $175
+- Book 6 (Liz Goldwyn): $104
+- Book 3 (Demi Moore): $53
+- Book 5 (Doris Goodwin): $50
+- Book 8 (Harry Potter): $31
+- Book 10 (Louise Erdrich): $21
+- **TOTAL: $2,708 from 12 books**
+- **Average miss: $226 per collectible book**
+
+**Critical Success:**
+This single fix (adding Beat authors) prevents:
+- Allen Ginsberg undervaluations: ~$200 per book
+- Jack Kerouac undervaluations: ~$250-500 per book (rarer, died 1969)
+- William S. Burroughs: ~$225 per book
+- **Total potential: $150-500 per Beat book found**
+
+---
+
+**Last Updated:** 2025-11-16 (Added Beat Generation authors)
+

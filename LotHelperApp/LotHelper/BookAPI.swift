@@ -485,7 +485,8 @@ struct LotSuggestionDTO: Codable, Identifiable, Hashable {
 }
 
 enum BookAPI {
-    static let baseURLString = "https://lothelper.clevergirl.app"
+    // static let baseURLString = "http://localhost:8000"  // Local development
+    static let baseURLString = "https://lothelper.clevergirl.app"  // Production
 
     private static let session: URLSession = {
         let configuration = URLSessionConfiguration.default
@@ -1041,6 +1042,10 @@ enum BookAPI {
         isbn: String,
         condition: String = "Good",
         edition: String? = nil,
+        coverType: String? = nil,
+        signed: Bool? = nil,
+        firstEdition: Bool? = nil,
+        printing: String? = nil,
         locationName: String? = nil,
         locationLatitude: Double? = nil,
         locationLongitude: Double? = nil,
@@ -1058,6 +1063,22 @@ enum BookAPI {
 
         if let edition = edition, !edition.isEmpty {
             payload["edition"] = edition
+        }
+
+        if let coverType = coverType, coverType != "Unknown" {
+            payload["cover_type"] = coverType
+        }
+
+        if let signed = signed {
+            payload["signed"] = signed
+        }
+
+        if let firstEdition = firstEdition {
+            payload["first_edition"] = firstEdition
+        }
+
+        if let printing = printing, !printing.isEmpty {
+            payload["printing"] = printing
         }
 
         let jsonData = try JSONSerialization.data(withJSONObject: payload)

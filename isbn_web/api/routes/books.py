@@ -598,12 +598,21 @@ async def get_sold_statistics(
     return JSONResponse(content=result)
 
 
+class AcceptBookRequest(BaseModel):
+    """Request body for accepting a book with attributes."""
+    condition: Optional[str] = "Good"
+    edition: Optional[str] = None
+    cover_type: Optional[str] = None
+    signed: Optional[bool] = None
+    first_edition: Optional[bool] = None
+    printing: Optional[str] = None
+
+
 @router.post("/{isbn}/accept")
 async def accept_book(
     isbn: str,
+    request: AcceptBookRequest,
     background_tasks: BackgroundTasks,
-    condition: Optional[str] = None,
-    edition: Optional[str] = None,
     service: BookService = Depends(get_book_service),
 ) -> JSONResponse:
     """
@@ -619,6 +628,10 @@ async def accept_book(
         isbn: The ISBN to accept
         condition: Book condition (default: "Good")
         edition: Edition notes (optional)
+        cover_type: Cover type (Hardcover, Paperback, Mass Market, etc.)
+        signed: Whether the book is signed/autographed
+        first_edition: Whether the book is a first edition
+        printing: Printing information (e.g., "First Printing")
 
     Returns:
         JSON with the accepted book's full evaluation data
@@ -635,8 +648,12 @@ async def accept_book(
         # Accept book WITHOUT lot regeneration (returns immediately)
         book = service.accept_book(
             normalized_isbn,
-            condition=condition or "Good",
-            edition=edition,
+            condition=request.condition or "Good",
+            edition=request.edition,
+            cover_type=request.cover_type,
+            signed=request.signed,
+            first_edition=request.first_edition,
+            printing=request.printing,
             recalc_lots=False,  # Don't block - regenerate in background
         )
 

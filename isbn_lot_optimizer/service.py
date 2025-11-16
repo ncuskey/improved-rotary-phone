@@ -455,6 +455,10 @@ class BookService:
         *,
         condition: str = "Good",
         edition: Optional[str] = None,
+        cover_type: Optional[str] = None,
+        signed: Optional[bool] = None,
+        first_edition: Optional[bool] = None,
+        printing: Optional[str] = None,
         recalc_lots: bool = True,
     ) -> BookEvaluation:
         """
@@ -466,6 +470,10 @@ class BookService:
             isbn: The ISBN to accept
             condition: Book condition
             edition: Edition notes
+            cover_type: Cover type (Hardcover, Paperback, Mass Market, etc.)
+            signed: Whether the book is signed/autographed
+            first_edition: Whether the book is a first edition
+            printing: Printing information
             recalc_lots: Whether to recalculate lots after accepting
 
         Returns:
@@ -479,11 +487,20 @@ class BookService:
         existing = self.get_book(normalized)
 
         if existing:
-            # Book exists - just update status to ACCEPT
-            self.db.update_book_record(
-                normalized,
-                columns={"status": "ACCEPT"}
-            )
+            # Book exists - update status to ACCEPT and save attributes
+            update_columns = {"status": "ACCEPT"}
+
+            # Add attributes to update if provided
+            if cover_type is not None:
+                update_columns["cover_type"] = cover_type
+            if signed is not None:
+                update_columns["signed"] = signed
+            if first_edition is not None:
+                update_columns["first_edition"] = first_edition
+            if printing is not None:
+                update_columns["printing"] = printing
+
+            self.db.update_book_record(normalized, columns=update_columns)
 
             # Log the accept decision
             try:
@@ -494,10 +511,11 @@ class BookService:
             if recalc_lots:
                 self.recalculate_lots()
 
-            return existing
+            # Fetch updated book to return
+            return self.get_book(normalized)
         else:
             # Book doesn't exist - evaluate and persist with ACCEPT status
-            return self.scan_isbn(
+            evaluation = self.scan_isbn(
                 isbn,
                 condition=condition,
                 edition=edition,
@@ -505,6 +523,25 @@ class BookService:
                 recalc_lots=recalc_lots,
                 status="ACCEPT",
             )
+
+            # Update attributes after initial scan if provided
+            if any([cover_type, signed, first_edition, printing]):
+                update_columns = {}
+                if cover_type is not None:
+                    update_columns["cover_type"] = cover_type
+                if signed is not None:
+                    update_columns["signed"] = signed
+                if first_edition is not None:
+                    update_columns["first_edition"] = first_edition
+                if printing is not None:
+                    update_columns["printing"] = printing
+
+                self.db.update_book_record(normalized, columns=update_columns)
+
+                # Fetch updated evaluation
+                evaluation = self.get_book(normalized)
+
+            return evaluation
 
     def import_csv(
         self,

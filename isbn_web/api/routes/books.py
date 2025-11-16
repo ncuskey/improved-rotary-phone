@@ -52,6 +52,21 @@ async def get_database_statistics(
         )
 
 
+def _convert_to_json_serializable(obj: Any) -> Any:
+    """Convert numpy types and other non-JSON-serializable types to Python natives."""
+    import numpy as np
+
+    if isinstance(obj, (np.integer, np.floating)):
+        return obj.item()  # Convert numpy types to Python int/float
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, dict):
+        return {key: _convert_to_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_convert_to_json_serializable(item) for item in obj]
+    return obj
+
+
 def _book_evaluation_to_dict(evaluation, routing_info: Optional[Dict] = None, channel_recommendation: Optional[Dict] = None) -> Dict[str, Any]:
     """Serialize a BookEvaluation into JSON-friendly dict.
 
@@ -151,6 +166,9 @@ def _book_evaluation_to_dict(evaluation, routing_info: Optional[Dict] = None, ch
     created_at = getattr(evaluation, "created_at", None)
     if created_at is not None:
         result["created_at"] = _format_timestamp(created_at)
+
+    # Convert any numpy types to JSON-serializable Python types
+    result = _convert_to_json_serializable(result)
 
     return result
 

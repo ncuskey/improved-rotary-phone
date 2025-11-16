@@ -155,6 +155,7 @@ class DatabaseManager:
             self._ensure_bookscouter_fetched_at(conn)
             self._ensure_api_fetch_timestamps(conn)
             self._ensure_status_column(conn)
+            self._ensure_sold_comps_columns(conn)
 
     def _get_connection(self) -> sqlite3.Connection:
         """
@@ -248,6 +249,41 @@ class DatabaseManager:
                 CREATE INDEX IF NOT EXISTS idx_books_status
                 ON books(status)
             """)
+
+    def _ensure_sold_comps_columns(self, conn: sqlite3.Connection) -> None:
+        """
+        Ensure sold comparables and time-to-sell columns exist.
+
+        These columns track sold listing statistics from eBay market data:
+        - time_to_sell_days: Average days to sell (from listing to sale)
+        - sold_comps_count: Number of sold listings found
+        - sold_comps_min/median/max: Price statistics from sold listings
+        - sold_comps_is_estimate: Whether prices are estimated or actual
+        - sold_comps_source: Data source (e.g., 'ebay_api', 'serper')
+        """
+        cursor = conn.execute("PRAGMA table_info(books)")
+        columns = {row[1] for row in cursor.fetchall()}
+
+        if "time_to_sell_days" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN time_to_sell_days REAL")
+
+        if "sold_comps_count" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN sold_comps_count INTEGER")
+
+        if "sold_comps_min" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN sold_comps_min REAL")
+
+        if "sold_comps_median" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN sold_comps_median REAL")
+
+        if "sold_comps_max" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN sold_comps_max REAL")
+
+        if "sold_comps_is_estimate" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN sold_comps_is_estimate INTEGER")
+
+        if "sold_comps_source" not in columns:
+            conn.execute("ALTER TABLE books ADD COLUMN sold_comps_source TEXT")
 
     # ------------------------------------------------------------------
     # Book persistence helpers

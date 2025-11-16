@@ -2736,54 +2736,53 @@ Expanded `should_bypass_bundle_rule()` in `shared/collectible_detection.py:line:
 **Impact:**
 Prevents score destruction for ALL collectible types. No more -20 penalties destroying valuable book evaluations.
 
-### Fix #3: Buyback Floor for Any Positive Offer ✅ COMPLETED (Extended)
+### Fix #3: Buyback = 100% Confidence ✅ COMPLETED (Refined)
 
-**Initial Commit:** d5bc8f6 (Strong buyback floor)
-**Extended Commit:** 05ce385 (Any positive buyback)
+**Evolution:**
+- **Initial:** d5bc8f6 (Strong buyback floor: $10+/3+ vendors → 45 min)
+- **Extended:** 05ce385 (Any buyback floor: $1+/1+ vendor → 30 min)
+- **Refined:** 8a37119 (Any buyback → 100/100 confidence)
 
 **Problem Identified:**
-Books with buyback offers not triggering BUY recommendation:
+Books with buyback offers not getting appropriate confidence:
 - **Book 18** (ISBN 9781285459028): $13.03 buyback from 8 vendors → 23/100 (REJECT)
 - **Book 19** (ISBN 9780765807410): $1.09 buyback from 2 vendors → 0/100 (REJECT)
-- Reality: ANY positive buyback on free book = guaranteed profit → Should be BUY
+- Reality: ANY positive buyback on free book = **guaranteed profit with ZERO risk**
 
 **Root Cause:**
-- System gave buyback bonus points but other penalties dragged scores below BUY threshold
-- Hidden penalties (Amazon rank, etc.) prevented reaching minimum confidence
-- For FREE books, even $1 buyback is profitable (net $1 gain per book)
+- System treated buyback as a bonus factor among many
+- Penalties from Amazon rank, lack of eBay data, etc. dragged scores down
+- Failed to recognize: **This system evaluates FREE donated books**
+- For zero-cost books, ANY buyback = 100% guaranteed profit opportunity
 
-**Solution Implemented (Two-Tier Floor):**
-Added "buyback floor" logic in `shared/probability.py:line:639`:
+**Final Solution (Maximum Confidence):**
+`shared/probability.py:line:639`:
 
 ```python
-# Tier 1: Strong buyback floor
-if bookscouter.best_price >= 10.0 and vendor_count >= 3:
-    if score < 45:
-        score = 45  # Ensure at least Medium confidence
-
-# Tier 2: Any positive buyback floor
-elif bookscouter.best_price >= 1.0 and vendor_count >= 1:
-    if score < 30:
-        score = 30  # Ensure at least Low confidence (BUY)
+# Buyback floor: For FREE books, ANY buyback = 100% guaranteed profit
+# This system is designed for evaluating donated books (zero cost basis)
+if bookscouter.best_price >= 0.50 and vendor_count >= 1:
+    score = 100
+    reasons.append("Buyback guarantee: ${best_price:.2f} from {vendor_count} vendor(s) = 100% confidence on free books")
 ```
 
-**Thresholds Rationale:**
-
-**Tier 1 - Strong Buyback ($10+, 3+ vendors) → Minimum 45 (Medium):**
-- $10 covers shipping (~$4-6), ensures meaningful profit
-- 3+ vendors = competitive demand validates reliable market
-
-**Tier 2 - Any Buyback ($1+, 1+ vendor) → Minimum 30 (Low/BUY):**
-- Even $1.09 is profit on $0 cost (Book 19 example)
-- 1+ vendor validates legitimate offer
-- Prevents total rejection (0/100) of profitable books
+**Rationale:**
+- **Zero cost + Any buyback = Zero risk**
+- No amount is "too small" when cost is $0
+- $1.09 profit = 100% return on $0 investment = infinite ROI
+- $13.03 profit = same logic, just higher absolute gain
+- Complexity of other scoring irrelevant when profit is guaranteed
 
 **Impact:**
-Textbooks and other books with ANY buyback offer now properly recommended:
-- **Book 18:** $13.03 from 8 vendors → Minimum 45 (Medium) - Strong buyback tier
-- **Book 19:** $1.09 from 2 vendors → Minimum 30 (Low/BUY) - Any buyback tier
-- System recognizes ALL profitable opportunities, even small buybacks
-- No more 0/100 rejections for books with guaranteed profit
+ANY book with buyback offer now gets maximum confidence:
+- **Book 18:** $13.03 from 8 vendors → **100/100** (was 23)
+- **Book 19:** $1.09 from 2 vendors → **100/100** (was 0)
+- **ANY book:** $0.50+ from 1+ vendor → **100/100** (BUY)
+
+**User Feedback Implementation:**
+> "If the book is free, any buyback at all should be a 100/100"
+
+This change implements that requirement exactly. System now recognizes that guaranteed profit on free books deserves maximum confidence, regardless of other market factors.
 
 ### Testing Validation
 
@@ -2868,17 +2867,16 @@ The system gave this book 0/100 score (REJECT) despite having:
 
 The buyback floor logic only triggered for buybacks >= $10 with 3+ vendors, missing this smaller but still profitable opportunity.
 
-**Fix Implemented (Commit 05ce385):**
-Extended buyback floor logic with two tiers:
-1. **Strong buyback** ($10+, 3+ vendors) → Minimum 45 points (Medium)
-2. **ANY buyback** ($1+, 1+ vendor) → Minimum 30 points (Low/BUY)
+**Fix Implemented (Commit 8a37119):**
+ANY buyback on free books = 100/100 confidence:
+- **$0.50+** from **1+ vendor** → **100 points (High confidence)**
 
-**Rationale:** ANY positive buyback on free books = guaranteed profit. Even $1.09 is worth picking up when cost is $0.
+**Rationale:** Zero cost + Any buyback = Zero risk, guaranteed profit. For FREE books, $1.09 is infinite ROI.
 
 **Expected Result After Fix:**
-- Score: 30/100 minimum (Low confidence)
-- Decision: BUY (was REJECT)
-- Reasoning: "Buyback floor: Any positive buyback ($1.09) ensures Low confidence minimum (guaranteed profit on free books)"
+- Score: **100/100** (High confidence)
+- Decision: **BUY** (was REJECT)
+- Reasoning: "Buyback guarantee: $1.09 from 2 vendor(s) = 100% confidence on free books (zero-risk guaranteed profit)"
 
 **Secondary Issue - Price Undervaluation:**
 System also undervalued by 22% ($26.21 vs $32 manual):

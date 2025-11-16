@@ -15,6 +15,7 @@ import time
 
 from isbn_lot_optimizer.ml.feature_extractor import PlatformFeatureExtractor
 from shared.models import BookMetadata, EbayMarketStats, BookScouterResult
+from shared.collectible_detection import detect_collectible, CollectibleInfo
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,8 @@ class PredictionRouter:
         abebooks: Optional[Dict] = None,
         bookfinder: Optional[Dict] = None,
         sold_listings: Optional[Dict] = None,
+        signed: bool = False,
+        first_edition: bool = False,
     ) -> Tuple[float, str, Dict]:
         """
         Predict book price using best available model.
@@ -121,6 +124,8 @@ class PredictionRouter:
             abebooks: AbeBooks pricing data
             bookfinder: BookFinder aggregator data
             sold_listings: Sold listings data
+            signed: Whether book is signed
+            first_edition: Whether book is a first edition
 
         Returns:
             Tuple of (predicted_price, model_used, routing_info)
@@ -130,13 +135,25 @@ class PredictionRouter:
 
         self.stats['total_predictions'] += 1
 
+        # Detect if book is collectible
+        collectible_info = detect_collectible(
+            metadata=metadata,
+            signed=signed,
+            first_edition=first_edition,
+            abebooks_data=abebooks
+        )
+
         # Check if we can route to AbeBooks specialist
         if self._can_use_abebooks(abebooks):
             try:
-                price = self._predict_abebooks(
+                base_price = self._predict_abebooks(
                     metadata, market, bookscouter, condition,
                     abebooks, bookfinder, sold_listings
                 )
+
+                # Apply collectible multiplier
+                price = base_price * collectible_info.fame_multiplier
+
                 self.stats['abebooks_routed'] += 1
 
                 routing_info = {
@@ -149,6 +166,11 @@ class PredictionRouter:
                     'confidence_score': 0.95,  # Numerical confidence (0-1)
                     'routing_reason': 'High-quality AbeBooks pricing data available',
                     'coverage': '98.4% of catalog',
+                    'collectible_detected': collectible_info.is_collectible,
+                    'collectible_type': collectible_info.collectible_type,
+                    'collectible_multiplier': collectible_info.fame_multiplier,
+                    'famous_person': collectible_info.famous_person,
+                    'base_price': base_price,
                 }
 
                 # Log to monitor if available
@@ -174,10 +196,14 @@ class PredictionRouter:
         # Check if we can route to eBay specialist
         if self._can_use_ebay(market):
             try:
-                price = self._predict_ebay(
+                base_price = self._predict_ebay(
                     metadata, market, bookscouter, condition,
                     abebooks, bookfinder, sold_listings
                 )
+
+                # Apply collectible multiplier
+                price = base_price * collectible_info.fame_multiplier
+
                 self.stats['ebay_routed'] += 1
 
                 routing_info = {
@@ -190,6 +216,11 @@ class PredictionRouter:
                     'confidence_score': 0.85,  # Numerical confidence (0-1)
                     'routing_reason': 'eBay market data available (active listings or sold comps)',
                     'coverage': '72% of catalog',
+                    'collectible_detected': collectible_info.is_collectible,
+                    'collectible_type': collectible_info.collectible_type,
+                    'collectible_multiplier': collectible_info.fame_multiplier,
+                    'famous_person': collectible_info.famous_person,
+                    'base_price': base_price,
                 }
 
                 # Log to monitor if available
@@ -213,10 +244,14 @@ class PredictionRouter:
                 logger.warning(f"eBay specialist failed, falling back to unified: {e}")
 
         # Fallback to unified model
-        price = self._predict_unified(
+        base_price = self._predict_unified(
             metadata, market, bookscouter, condition,
             abebooks, bookfinder, sold_listings
         )
+
+        # Apply collectible multiplier
+        price = base_price * collectible_info.fame_multiplier
+
         self.stats['unified_fallback'] += 1
 
         routing_info = {
@@ -229,6 +264,11 @@ class PredictionRouter:
             'confidence_score': 0.70,  # Numerical confidence (0-1)
             'routing_reason': 'No platform-specific data available, using general model',
             'coverage': '100% of catalog (fallback)',
+            'collectible_detected': collectible_info.is_collectible,
+            'collectible_type': collectible_info.collectible_type,
+            'collectible_multiplier': collectible_info.fame_multiplier,
+            'famous_person': collectible_info.famous_person,
+            'base_price': base_price,
         }
 
         # Log to monitor if available

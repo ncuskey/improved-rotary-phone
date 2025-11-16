@@ -199,6 +199,8 @@ class BookService:
         condition: str = "Good",
         edition: Optional[str] = None,
         include_market: bool = True,
+        signed: bool = False,
+        first_edition: bool = False,
     ) -> BookEvaluation:
         """
         Evaluate a book WITHOUT persisting to database.
@@ -211,6 +213,8 @@ class BookService:
             condition: Book condition (default: "Good")
             edition: Edition notes
             include_market: Whether to fetch market data (default: True)
+            signed: Whether book is signed
+            first_edition: Whether book is first edition
 
         Returns:
             BookEvaluation with all data populated but not persisted
@@ -343,6 +347,9 @@ class BookService:
             edition=edition,
             amazon_rank=amazon_rank,
             bookscouter=bookscouter_result,
+            signed=signed,
+            first_edition=first_edition,
+            abebooks_data=None,  # TODO: Pass AbeBooks data when available
         )
         evaluation.quantity = max(1, existing_quantity)
 

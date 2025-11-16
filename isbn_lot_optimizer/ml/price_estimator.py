@@ -129,6 +129,8 @@ class MLPriceEstimator:
         abebooks: Optional[Dict] = None,
         bookfinder: Optional[Dict] = None,
         sold_listings: Optional[Dict] = None,
+        signed: bool = False,
+        first_edition: bool = False,
     ) -> PriceEstimate:
         """
         Estimate book price using ML model with intelligent routing.
@@ -141,6 +143,8 @@ class MLPriceEstimator:
             abebooks: AbeBooks pricing data (optional, enables specialist routing)
             bookfinder: BookFinder aggregator data (optional)
             sold_listings: Sold listings data (optional)
+            signed: Whether book is signed
+            first_edition: Whether book is first edition
 
         Returns:
             PriceEstimate with prediction and confidence
@@ -156,6 +160,8 @@ class MLPriceEstimator:
                     abebooks=abebooks,
                     bookfinder=bookfinder,
                     sold_listings=sold_listings,
+                    signed=signed,
+                    first_edition=first_edition,
                 )
 
                 # Return result with routing metadata

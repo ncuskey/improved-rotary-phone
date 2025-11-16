@@ -1,0 +1,301 @@
+{
+  "_metadata": {
+    "version": "1.0",
+    "last_updated": "2025-11-15",
+    "description": "Database of famous people whose signatures make books significantly more valuable",
+    "multipliers": "Base multiplier for signed books. Unsigned first editions use 0.3-0.5x of this."
+  },
+
+  "authors_literary_icons": {
+    "Frank Herbert": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 100,
+      "genres": ["science fiction"],
+      "notable_works": ["Dune"],
+      "notes": "Sci-fi masterwork author, highly collectible"
+    },
+    "Isaac Asimov": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 80,
+      "genres": ["science fiction"],
+      "notable_works": ["Foundation"],
+      "notes": "Prolific sci-fi author"
+    },
+    "Ursula K. Le Guin": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 70,
+      "genres": ["science fiction", "fantasy"],
+      "notable_works": ["The Left Hand of Darkness", "Earthsea"],
+      "notes": "Award-winning sci-fi/fantasy author"
+    },
+    "Ray Bradbury": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 90,
+      "genres": ["science fiction"],
+      "notable_works": ["Fahrenheit 451"],
+      "notes": "Classic American sci-fi author"
+    },
+    "Philip K. Dick": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 120,
+      "genres": ["science fiction"],
+      "notable_works": ["Do Androids Dream of Electric Sheep?"],
+      "notes": "Influential sci-fi, many film adaptations"
+    },
+    "J.K. Rowling": {
+      "type": "author",
+      "fame_tier": "cultural_phenomenon",
+      "signed_multiplier": 150,
+      "genres": ["fantasy", "young adult"],
+      "notable_works": ["Harry Potter"],
+      "notes": "Best-selling author of all time, early editions extremely valuable"
+    },
+    "Stephen King": {
+      "type": "author",
+      "fame_tier": "bestselling_author",
+      "signed_multiplier": 40,
+      "genres": ["horror", "thriller"],
+      "notable_works": ["The Shining", "IT"],
+      "notes": "Prolific horror author, early works most valuable"
+    },
+    "Cormac McCarthy": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 85,
+      "genres": ["literary fiction"],
+      "notable_works": ["Blood Meridian", "The Road"],
+      "notes": "Pulitzer winner, reclusive author increases value"
+    },
+    "Toni Morrison": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 75,
+      "genres": ["literary fiction"],
+      "notable_works": ["Beloved"],
+      "awards": ["Pulitzer Prize", "Nobel Prize"],
+      "notes": "Nobel laureate"
+    },
+    "Elmore Leonard": {
+      "type": "author",
+      "fame_tier": "genre_master",
+      "signed_multiplier": 4,
+      "genres": ["crime fiction", "thriller"],
+      "notable_works": ["Get Shorty", "Out of Sight", "Rum Punch"],
+      "notes": "Collectible crime fiction author, signed firsts valued 3-5x base"
+    }
+  },
+
+  "authors_award_winners": {
+    "Doris Kearns Goodwin": {
+      "type": "author",
+      "fame_tier": "award_winner",
+      "signed_multiplier": 6,
+      "genres": ["history", "biography"],
+      "notable_works": ["Team of Rivals"],
+      "awards": ["Pulitzer Prize"],
+      "notes": "Presidential historian"
+    },
+    "Louise Erdrich": {
+      "type": "author",
+      "fame_tier": "award_winner",
+      "signed_multiplier": 5,
+      "genres": ["literary fiction"],
+      "notable_works": ["The Night Watchman"],
+      "awards": ["Pulitzer Prize", "National Book Award"],
+      "notes": "Contemporary Native American author"
+    },
+    "Colson Whitehead": {
+      "type": "author",
+      "fame_tier": "award_winner",
+      "signed_multiplier": 8,
+      "genres": ["literary fiction"],
+      "awards": ["Pulitzer Prize"],
+      "notes": "Two-time Pulitzer winner"
+    }
+  },
+
+  "celebrities": {
+    "Demi Moore": {
+      "type": "celebrity",
+      "fame_tier": "hollywood_star",
+      "signed_multiplier": 5,
+      "profession": "actor",
+      "notable_works": ["Ghost", "G.I. Jane"],
+      "notes": "A-list Hollywood actress, memoirs collectible"
+    },
+    "Arnold Schwarzenegger": {
+      "type": "celebrity",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 10,
+      "profession": "actor, politician",
+      "notable_works": ["Terminator", "Governor of California"],
+      "notes": "Action star, bodybuilder, politician"
+    },
+    "Barack Obama": {
+      "type": "celebrity",
+      "fame_tier": "historical_figure",
+      "signed_multiplier": 50,
+      "profession": "president",
+      "notable_works": ["44th President"],
+      "notes": "Presidential signatures extremely valuable"
+    },
+    "Michelle Obama": {
+      "type": "celebrity",
+      "fame_tier": "public_figure",
+      "signed_multiplier": 15,
+      "profession": "first lady, author",
+      "notable_works": ["Becoming"],
+      "notes": "Best-selling memoir author"
+    }
+  },
+
+  "film_directors": {
+    "Martin Scorsese": {
+      "type": "director",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 128,
+      "profession": "film director",
+      "notable_works": ["Taxi Driver", "Goodfellas", "The Departed"],
+      "awards": ["Academy Award", "AFI Life Achievement"],
+      "notes": "Legendary director, film books by him museum-quality"
+    },
+    "Stanley Kubrick": {
+      "type": "director",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 200,
+      "profession": "film director",
+      "notable_works": ["2001", "The Shining", "Dr. Strangelove"],
+      "notes": "Reclusive genius director, rarely signed"
+    },
+    "Steven Spielberg": {
+      "type": "director",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 60,
+      "profession": "film director",
+      "notable_works": ["Jaws", "E.T.", "Schindler's List"],
+      "notes": "Most commercially successful director"
+    },
+    "Alfred Hitchcock": {
+      "type": "director",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 180,
+      "profession": "film director",
+      "notable_works": ["Psycho", "Vertigo", "Rear Window"],
+      "notes": "Master of suspense, deceased"
+    }
+  },
+
+  "photographers_artists": {
+    "Liz Goldwyn": {
+      "type": "photographer",
+      "fame_tier": "specialty_artist",
+      "signed_multiplier": 5,
+      "profession": "photographer, filmmaker",
+      "notable_works": ["Pretty Things"],
+      "notes": "Samuel Goldwyn granddaughter, cultural photography"
+    },
+    "Annie Leibovitz": {
+      "type": "photographer",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 25,
+      "profession": "photographer",
+      "notable_works": ["Rolling Stone covers"],
+      "notes": "Iconic celebrity photographer"
+    },
+    "Ansel Adams": {
+      "type": "photographer",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 100,
+      "profession": "photographer",
+      "notable_works": ["Yosemite"],
+      "notes": "Legendary landscape photographer, deceased"
+    },
+    "Andy Warhol": {
+      "type": "artist",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 150,
+      "profession": "artist",
+      "notable_works": ["Pop Art"],
+      "notes": "Pop art icon, anything signed extremely valuable"
+    }
+  },
+
+  "astronauts_explorers": {
+    "Buzz Aldrin": {
+      "type": "astronaut",
+      "fame_tier": "historical_figure",
+      "signed_multiplier": 18,
+      "profession": "astronaut",
+      "notable_works": ["Apollo 11 - moonwalker"],
+      "notes": "Second person to walk on moon"
+    },
+    "Neil Armstrong": {
+      "type": "astronaut",
+      "fame_tier": "historical_icon",
+      "signed_multiplier": 300,
+      "profession": "astronaut",
+      "notable_works": ["Apollo 11 - first moonwalker"],
+      "notes": "Rarely signed, deceased, first human on moon"
+    },
+    "John Glenn": {
+      "type": "astronaut",
+      "fame_tier": "historical_figure",
+      "signed_multiplier": 15,
+      "profession": "astronaut, senator",
+      "notable_works": ["First American in orbit"],
+      "notes": "Mercury astronaut, senator"
+    },
+    "Sally Ride": {
+      "type": "astronaut",
+      "fame_tier": "historical_figure",
+      "signed_multiplier": 30,
+      "profession": "astronaut",
+      "notable_works": ["First American woman in space"],
+      "notes": "Trailblazer, deceased"
+    }
+  },
+
+  "musicians": {
+    "Bob Dylan": {
+      "type": "musician",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 80,
+      "profession": "musician, poet",
+      "notable_works": ["Like a Rolling Stone"],
+      "awards": ["Nobel Prize in Literature"],
+      "notes": "Nobel laureate, rarely signs"
+    },
+    "Paul McCartney": {
+      "type": "musician",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 70,
+      "profession": "musician",
+      "notable_works": ["The Beatles"],
+      "notes": "Beatles member, legendary"
+    },
+    "Johnny Cash": {
+      "type": "musician",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 50,
+      "profession": "musician",
+      "notable_works": ["Man in Black"],
+      "notes": "Country music legend, deceased"
+    }
+  },
+
+  "name_variations": {
+    "J.K. Rowling": ["Joanne Rowling", "J. K. Rowling", "JK Rowling", "Rowling, J.K.", "Rowling,J.K."],
+    "Martin Scorsese": ["Scorsese, Martin", "Scorsese,Martin", "Martin Charles Scorsese"],
+    "Buzz Aldrin": ["Aldrin, Buzz", "Aldrin,Buzz", "Edwin Aldrin", "Edwin Eugene Aldrin Jr."],
+    "Stephen King": ["King, Stephen", "Stephen Edwin King"],
+    "Doris Kearns Goodwin": ["Goodwin, Doris Kearns", "Doris Kearns", "Goodwin,Doris Kearns"],
+    "Louise Erdrich": ["Erdrich, Louise", "ERDRICH, LOUISE"],
+    "Demi Moore": ["Moore, Demi", "Demetria Gene Guynes", "MOORE, DEMI"],
+    "Elmore Leonard": ["Leonard, Elmore", "Elmore, Leonard", "Leonard,Elmore"]
+  }
+}

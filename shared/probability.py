@@ -402,6 +402,7 @@ def score_probability(
     edition: Optional[str],
     amazon_rank: Optional[int] = None,
     bookscouter: Optional[BookScouterResult] = None,
+    collectible_info = None,
 ) -> Tuple[float, str, List[str], bool]:
     score = 0.0
     reasons: List[str] = []
@@ -502,9 +503,22 @@ def score_probability(
         score += 8
         reasons.append(f"Sale price above minimum threshold (${price_baseline:.2f})")
     else:
-        score -= 20
-        suppress_single = True
-        reasons.append("Single-item resale under $10; recommend bundling")
+        # Check if collectible - bypass bundle rule for collectibles
+        if collectible_info and collectible_info.is_collectible:
+            # Collectible books under $10 base can still be valuable
+            from shared.collectible_detection import CollectibleDetector
+            detector = CollectibleDetector()
+            if detector.should_bypass_bundle_rule(collectible_info, price_baseline):
+                score += 5  # Modest boost for collectible
+                reasons.append(f"Collectible book ({collectible_info.collectible_type}) - not bundling despite ${price_baseline:.2f} base price")
+            else:
+                score -= 20
+                suppress_single = True
+                reasons.append("Single-item resale under $10; recommend bundling")
+        else:
+            score -= 20
+            suppress_single = True
+            reasons.append("Single-item resale under $10; recommend bundling")
 
     condition = condition or "Good"
     weight = CONDITION_WEIGHTS.get(condition, 0.9)
@@ -934,9 +948,26 @@ def build_book_evaluation(
     edition: Optional[str],
     amazon_rank: Optional[int] = None,
     bookscouter: Optional[BookScouterResult] = None,
+    signed: bool = False,
+    first_edition: bool = False,
+    abebooks_data = None,
 ) -> BookEvaluation:
+    # Detect if book is collectible
+    from shared.collectible_detection import detect_collectible
+    collectible_info = detect_collectible(
+        metadata=metadata,
+        signed=signed,
+        first_edition=first_edition,
+        abebooks_data=abebooks_data
+    )
+
     # Pass condition, edition, and bookscouter to get attribute-specific price estimate
     estimated_price = estimate_price(metadata, market, condition, edition, bookscouter)
+
+    # Apply collectible multiplier if detected
+    if collectible_info.is_collectible:
+        estimated_price = estimated_price * collectible_info.fame_multiplier
+
     rarity = compute_rarity(market)
     tts = compute_time_to_sell(market)
 
@@ -948,7 +979,18 @@ def build_book_evaluation(
         edition=edition,
         amazon_rank=amazon_rank,
         bookscouter=bookscouter,
+        collectible_info=collectible_info,
     )
+
+    # Add collectible info to reasons if detected
+    if collectible_info.is_collectible:
+        collectible_reason = f"COLLECTIBLE: {collectible_info.collectible_type}"
+        if collectible_info.famous_person:
+            collectible_reason += f" by {collectible_info.famous_person}"
+        collectible_reason += f" (${collectible_info.fame_multiplier:.1f}x multiplier)"
+        if collectible_info.notes:
+            collectible_reason += f" - {collectible_info.notes}"
+        reasons.insert(0, collectible_reason)  # Put at top of reasons
 
     # Add TTS to justification reasons with velocity context
     if tts is not None:

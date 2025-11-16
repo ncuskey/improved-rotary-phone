@@ -261,6 +261,30 @@ def estimate_price(
         base = max(base, amazon_estimate)
 
     base = max(base, 3.0)
+
+    # Apply condition and format multipliers from eBay multipliers file
+    # These are market-researched multipliers that apply regardless of sold comps data
+    try:
+        from pathlib import Path
+        import json
+        multipliers_path = Path.home() / "ISBN" / "isbn_lot_optimizer" / "models" / "ebay_multipliers.json"
+        with open(multipliers_path, 'r') as f:
+            mult_data = json.load(f)
+            condition_multipliers = mult_data.get('condition_multipliers', {})
+            binding_multipliers = mult_data.get('binding_multipliers', {})
+
+        # Apply condition multiplier
+        if condition and condition in condition_multipliers:
+            base = base * condition_multipliers[condition]
+
+        # Apply format/binding multiplier based on metadata.cover_type
+        if metadata.cover_type and metadata.cover_type in binding_multipliers:
+            base = base * binding_multipliers[metadata.cover_type]
+
+    except Exception as e:
+        # If multipliers file not available, continue without them
+        pass
+
     return round(base, 2)
 
 

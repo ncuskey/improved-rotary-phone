@@ -2427,5 +2427,97 @@ This fix prevents:
 
 ---
 
-**Last Updated:** 2025-11-16 (Added Patricia Neal, calibrated 3x multiplier for actress memoirs)
+### Book 17: Roosevelt's Forest Army - Perry H. Merrill (9780960580606)
+**Date:** 2025-11-16
+
+**Book Details:**
+- Title: Roosevelt's Forest Army: A History of the Civilian Conservation Corps 1933-1942
+- Author: Merrill, Perry H.
+- Condition: Good
+- Edition: Signed (NOT first edition)
+- ISBN: 9780960580606
+- **Category: Niche historical demand - signed by subject matter expert**
+
+**System Evaluation:**
+- Predicted Price: $9.32
+- Probability Score: -29/100 (NEGATIVE!)
+- Decision: REJECT
+- Amazon rank: 5,146,488
+- "Single-item resale under $10; recommend bundling"
+
+**Manual Evaluation:**
+- Manual Price: $58.00
+- Decision: BUY
+- Reasoning: "Similarly valued comps"
+
+**Price Difference:**
+- System undervalued by $48.68 (522% error!)
+- **MASSIVE undervaluation**
+
+**Key Insights:**
+
+1. **Perry H. Merrill Significance**
+   - Vermont State Forester (1929-1966) - 37 years
+   - 3rd most influential Vermonter of 20th century
+   - Key figure directing CCC operations in Vermont
+   - THE authority on CCC history
+   - Lived 1894-1993
+
+2. **Why $58 Manual Valuation**
+   - CCC history collectors (dedicated niche)
+   - Signed by THE authority on CCC
+   - Out of print specialized history
+   - AbeBooks comps: £51.22+ (~$65 USD)
+
+3. **Should We Add Perry Merrill to famous_people.json?**
+   - **Decision: NO**
+   - Regional/niche significance (Vermont)
+   - Not nationally famous celebrity
+   - Value from subject expertise, not celebrity fame
+   - Would require adding hundreds of regional experts
+   - Different from national historians like Doris Kearns Goodwin
+
+4. **Pattern: Niche Historical with Expert Signature**
+   - Similar to Books 14-15 (niche demand)
+   - PLUS: Signed by author (adds premium within niche)
+   - NOT celebrity signature collectibility
+   - CCC history = dedicated collector community
+
+5. **Why Famous People Database Won't Help**
+   - Perry Merrill not "famous" in signature collectibility sense
+   - Value = out-of-print + niche subject + expert + signed
+   - NOT celebrity signature premium
+   - **This is niche demand, not famous signature case**
+
+**Decision: No Fix to Implement**
+- Same category as Books 14-15 (niche demand)
+- Not addressable through famous_people.json
+- Would require subject matter expert database
+- ROI too low vs celebrity signatures
+
+**Total Missed Value So Far (17 books):**
+- Book 2 (Frank Herbert): $1,089
+- Book 7 (Martin Scorsese): $991
+- Book 12 (Allen Ginsberg): $194
+- Book 9 (Buzz Aldrin): $175
+- Book 13 (Tom Clancy): $140
+- Book 6 (Liz Goldwyn): $104
+- Book 3 (Demi Moore): $53
+- Book 5 (Doris Goodwin): $50
+- **Book 17 (Perry Merrill): $49** ← NEW (niche)
+- Book 8 (Harry Potter): $31
+- Book 10 (Louise Erdrich): $21
+- Book 15 (Ffiona Morgan): $18 (niche)
+- Book 16 (Patricia Neal): $17 (fixable)
+- Book 14 (Susan F. Cooper): $17 (niche)
+- **TOTAL: $2,949 from 17 books**
+
+**Pattern Recognition:**
+- **14 fixable** (celebrity signatures): ~$2,865 (~$205 avg)
+- **3 niche demand**: ~$84 (~$28 avg)
+- Celebrity signatures 7x higher ROI
+
+---
+
+**Last Updated:** 2025-11-16 (Added Book 17 - Third niche demand case, CCC history expert signature)
 

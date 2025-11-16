@@ -2736,42 +2736,54 @@ Expanded `should_bypass_bundle_rule()` in `shared/collectible_detection.py:line:
 **Impact:**
 Prevents score destruction for ALL collectible types. No more -20 penalties destroying valuable book evaluations.
 
-### Fix #3: Buyback Floor for Strong Offers ✅ COMPLETED
+### Fix #3: Buyback Floor for Any Positive Offer ✅ COMPLETED (Extended)
 
-**Commit:** d5bc8f6
+**Initial Commit:** d5bc8f6 (Strong buyback floor)
+**Extended Commit:** 05ce385 (Any positive buyback)
 
 **Problem Identified:**
-Books with strong buyback offers not triggering BUY recommendation:
-- ISBN 9781285459028: $13.03 buyback from 8 vendors
-- Score: 23/100 (Low confidence) → REJECT
-- Reality: Guaranteed $13 profit on free book → Should be BUY
+Books with buyback offers not triggering BUY recommendation:
+- **Book 18** (ISBN 9781285459028): $13.03 buyback from 8 vendors → 23/100 (REJECT)
+- **Book 19** (ISBN 9780765807410): $1.09 buyback from 2 vendors → 0/100 (REJECT)
+- Reality: ANY positive buyback on free book = guaranteed profit → Should be BUY
 
 **Root Cause:**
-- Buyback profitability depends on purchase price (unknown during evaluation)
-- System gave +35 points for strong buyback but other penalties dragged score down
-- Hidden penalties (Amazon rank, etc.) prevented reaching 45-point "Medium" threshold
-- For FREE books with $10+ buyback, decision should always be BUY
+- System gave buyback bonus points but other penalties dragged scores below BUY threshold
+- Hidden penalties (Amazon rank, etc.) prevented reaching minimum confidence
+- For FREE books, even $1 buyback is profitable (net $1 gain per book)
 
-**Solution Implemented:**
+**Solution Implemented (Two-Tier Floor):**
 Added "buyback floor" logic in `shared/probability.py:line:639`:
 
 ```python
-if bookscouter and bookscouter.best_price >= 10.0:
-    vendor_count = len([o for o in bookscouter.offers if o.price > 0])
-    if vendor_count >= 3:
-        if score < 45:
-            score = 45  # Ensure at least Medium confidence
+# Tier 1: Strong buyback floor
+if bookscouter.best_price >= 10.0 and vendor_count >= 3:
+    if score < 45:
+        score = 45  # Ensure at least Medium confidence
+
+# Tier 2: Any positive buyback floor
+elif bookscouter.best_price >= 1.0 and vendor_count >= 1:
+    if score < 30:
+        score = 30  # Ensure at least Low confidence (BUY)
 ```
 
-**Thresholds Chosen:**
-- **$10 minimum:** Covers shipping (~$4-6), ensures meaningful profit
-- **3+ vendors:** Competitive demand validates reliable market (not data error)
+**Thresholds Rationale:**
+
+**Tier 1 - Strong Buyback ($10+, 3+ vendors) → Minimum 45 (Medium):**
+- $10 covers shipping (~$4-6), ensures meaningful profit
+- 3+ vendors = competitive demand validates reliable market
+
+**Tier 2 - Any Buyback ($1+, 1+ vendor) → Minimum 30 (Low/BUY):**
+- Even $1.09 is profit on $0 cost (Book 19 example)
+- 1+ vendor validates legitimate offer
+- Prevents total rejection (0/100) of profitable books
 
 **Impact:**
-Textbooks and other books with strong buyback offers now properly recommended:
-- $13.03 from 8 vendors → Medium confidence (was Low/REJECT)
-- System recognizes guaranteed profit opportunity
-- User gets BUY recommendation for buyback arbitrage
+Textbooks and other books with ANY buyback offer now properly recommended:
+- **Book 18:** $13.03 from 8 vendors → Minimum 45 (Medium) - Strong buyback tier
+- **Book 19:** $1.09 from 2 vendors → Minimum 30 (Low/BUY) - Any buyback tier
+- System recognizes ALL profitable opportunities, even small buybacks
+- No more 0/100 rejections for books with guaranteed profit
 
 ### Testing Validation
 
@@ -2818,6 +2830,64 @@ Textbooks and other books with strong buyback offers now properly recommended:
 - Re-scan historical rejections to find previously missed collectibles
 - System will now detect books that were rejected due to bundle penalty
 - Potential recovery of hundreds of dollars in missed opportunities
+
+---
+
+## Book 19: The Courage to Fail (9780765807410)
+**Date:** 2025-11-16
+**ISBN:** 9780765807410
+**Title:** The Courage to Fail: A Social View of Organ Transplants and Dialysis
+**Author:** Swazey, Judith P.
+**Condition:** Good
+**Signed:** No
+**First Edition:** No
+
+### System Evaluation
+- **ML Price:** $26.21
+- **Score:** 0/100 (Low/REJECT)
+- **eBay Data:** None available
+- **Buyback:** $1.09 (2 vendors)
+- **Amazon Rank:** #2,844,980 (very niche/stale)
+- **Amazon FBM Lowest:** $39.42
+
+### Manual Evaluation
+- **Manual Price:** $32.00
+- **Decision:** BUY
+- **Notes:** "Similarly valued comps"
+
+### Analysis
+**Price Difference:** $5.79 (22.1% undervaluation)
+
+**Issue Category:** BUYBACK FLOOR BUG ✅ FIXED
+
+**Root Cause:**
+The system gave this book 0/100 score (REJECT) despite having:
+- **$1.09 guaranteed buyback** from 2 vendors
+- **$0 cost** (free book)
+- **$1.09 guaranteed profit** on every copy
+
+The buyback floor logic only triggered for buybacks >= $10 with 3+ vendors, missing this smaller but still profitable opportunity.
+
+**Fix Implemented (Commit 05ce385):**
+Extended buyback floor logic with two tiers:
+1. **Strong buyback** ($10+, 3+ vendors) → Minimum 45 points (Medium)
+2. **ANY buyback** ($1+, 1+ vendor) → Minimum 30 points (Low/BUY)
+
+**Rationale:** ANY positive buyback on free books = guaranteed profit. Even $1.09 is worth picking up when cost is $0.
+
+**Expected Result After Fix:**
+- Score: 30/100 minimum (Low confidence)
+- Decision: BUY (was REJECT)
+- Reasoning: "Buyback floor: Any positive buyback ($1.09) ensures Low confidence minimum (guaranteed profit on free books)"
+
+**Secondary Issue - Price Undervaluation:**
+System also undervalued by 22% ($26.21 vs $32 manual):
+- Academic sociology book (niche specialty)
+- Very niche Amazon rank (#2,844,980)
+- No eBay market data for calibration
+- This is a base ML limitation, NOT fixable via collectible detection
+
+**Decision:** ✅ FIXED - Buyback floor now catches all profitable opportunities, regardless of ML price accuracy.
 
 ---
 

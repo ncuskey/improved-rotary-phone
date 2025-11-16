@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from datetime import datetime, timezone
+import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -14,9 +15,11 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from isbn_lot_optimizer.service import BookService
+from isbn_lot_optimizer.ml.edition_premium_estimator import EditionPremiumEstimator
 from shared.metadata import fetch_metadata, create_http_session
 from shared.utils import normalise_isbn
 from shared.series_integration import enrich_evaluation_with_series, match_and_attach_series
+from shared.collectible_detection import CollectibleDetector
 
 from ..dependencies import get_book_service
 from ...config import settings
@@ -25,6 +28,23 @@ from .sphere_viz import viz_broadcaster
 router = APIRouter()
 templates = Jinja2Templates(directory=str(settings.TEMPLATE_DIR))
 logger = logging.getLogger(__name__)
+
+# Initialize uplift calculation components
+_edition_estimator = EditionPremiumEstimator()
+_collectible_detector = CollectibleDetector()
+
+# Load eBay condition/format multipliers
+_multipliers = {}
+try:
+    multipliers_path = Path(__file__).parent.parent.parent / "isbn_lot_optimizer" / "models" / "ebay_multipliers.json"
+    with open(multipliers_path, 'r') as f:
+        _multipliers = json.load(f)
+except Exception as e:
+    logger.warning(f"Failed to load ebay_multipliers.json: {e}")
+    _multipliers = {
+        "condition_multipliers": {"Good": 1.0, "Very Good": 1.06, "Like New": 1.23, "New": 1.42},
+        "binding_multipliers": {"Paperback": 1.0, "Hardcover": 1.17}
+    }
 
 
 @router.get("/stats")
@@ -65,6 +85,214 @@ def _convert_to_json_serializable(obj: Any) -> Any:
     elif isinstance(obj, (list, tuple)):
         return [_convert_to_json_serializable(item) for item in obj]
     return obj
+
+
+def calculate_uplift_potential(evaluation) -> Dict[str, Any]:
+    """
+    Calculate potential value uplift from checking book attributes.
+
+    For each attribute type (first edition, signed, condition, format), calculates
+    the potential value gain if the book has better attributes than currently known.
+
+    Args:
+        evaluation: BookEvaluation object with metadata and pricing
+
+    Returns:
+        Dict with:
+        - total_potential: float (total $ potential gain from all checks)
+        - checks_needed: List[Dict] with:
+            - attribute: str (e.g., "First Edition", "Signed", "Condition: New", "Format: Hardcover")
+            - prompt: str (user-facing prompt like "Check if this is a first edition")
+            - potential_value: float ($ gain if check confirms positive)
+            - icon: str (emoji for UI display)
+    """
+    checks = []
+
+    # Extract current book state
+    metadata = evaluation.metadata
+    if not metadata:
+        return {"total_potential": 0.0, "checks_needed": []}
+
+    current_price = evaluation.estimated_price
+    if not current_price or current_price <= 0:
+        return {"total_potential": 0.0, "checks_needed": []}
+
+    current_condition = evaluation.condition or "Good"
+    current_format = getattr(metadata, 'cover_type', None) or "Paperback"
+    is_signed = getattr(metadata, 'signed', None)
+    is_first_edition = getattr(metadata, 'first_edition', None)
+
+    # 1. Check First Edition potential (if not already confirmed)
+    if is_first_edition is not True:
+        # Use edition premium estimator for realistic first edition premium
+        if _edition_estimator.is_ready():
+            try:
+                premium_dollars, explanation = _edition_estimator.estimate_premium(
+                    isbn=evaluation.isbn,
+                    baseline_price=current_price
+                )
+
+                # Also check if this is a famous author (adds collectible value)
+                collectible_info = _collectible_detector.detect(
+                    metadata=metadata,
+                    signed=False,
+                    first_edition=True
+                )
+
+                # If it's a famous author first edition, use the fame multiplier
+                if collectible_info.is_collectible:
+                    fame_premium = current_price * (collectible_info.fame_multiplier - 1.0)
+                    # Use the higher of ML model or fame-based estimate
+                    premium_dollars = max(premium_dollars, fame_premium)
+
+                if premium_dollars > 0.50:  # Show checks with >$0.50 potential
+                    # Create detailed prompt with publisher-specific guidance
+                    publisher = getattr(metadata, 'publisher', '') or ''
+                    identification_guide = (
+                        "Look at copyright page:\n"
+                        "• Number line with '1' present (e.g., '1 2 3 4 5' or '10 9 8 7...2 1') = First printing\n"
+                        "• 'First Edition' or 'First Printing' statement\n"
+                    )
+
+                    # Add publisher-specific guidance
+                    if 'Random House' in publisher:
+                        identification_guide += "• Random House (1970s-2003): 'First Edition' + number line starting with 2\n"
+                    elif 'HarperCollins' in publisher or 'Harper' in publisher:
+                        identification_guide += "• HarperCollins: 'First Edition' stated with number row\n"
+                    elif 'Simon' in publisher or 'Schuster' in publisher:
+                        identification_guide += "• Simon & Schuster: Look for 'First Edition' statement (since 1952)\n"
+                    elif 'Macmillan' in publisher:
+                        identification_guide += "• Macmillan: 'First printing' statement (since mid-1936)\n"
+                    elif 'Doubleday' in publisher:
+                        identification_guide += "• Doubleday: 'First edition' on copyright page\n"
+                    elif 'Knopf' in publisher:
+                        identification_guide += "• Knopf: 'First Edition' statement (since 1933-1934)\n"
+
+                    checks.append({
+                        "attribute": "First Edition",
+                        "prompt": identification_guide.strip(),
+                        "potential_value": round(premium_dollars, 2),
+                        "icon": "⭐"
+                    })
+            except Exception as e:
+                logger.warning(f"Edition premium estimation failed for {evaluation.isbn}: {e}")
+        else:
+            # Fallback: 3% heuristic if model not available
+            premium_dollars = current_price * 0.03
+            if premium_dollars > 0.50:
+                # Create detailed prompt with publisher-specific guidance
+                publisher = getattr(metadata, 'publisher', '') or ''
+                identification_guide = (
+                    "Look at copyright page:\n"
+                    "• Number line with '1' present (e.g., '1 2 3 4 5' or '10 9 8 7...2 1') = First printing\n"
+                    "• 'First Edition' or 'First Printing' statement\n"
+                )
+
+                # Add publisher-specific guidance
+                if 'Random House' in publisher:
+                    identification_guide += "• Random House (1970s-2003): 'First Edition' + number line starting with 2\n"
+                elif 'HarperCollins' in publisher or 'Harper' in publisher:
+                    identification_guide += "• HarperCollins: 'First Edition' stated with number row\n"
+                elif 'Simon' in publisher or 'Schuster' in publisher:
+                    identification_guide += "• Simon & Schuster: Look for 'First Edition' statement (since 1952)\n"
+                elif 'Macmillan' in publisher:
+                    identification_guide += "• Macmillan: 'First printing' statement (since mid-1936)\n"
+                elif 'Doubleday' in publisher:
+                    identification_guide += "• Doubleday: 'First edition' on copyright page\n"
+                elif 'Knopf' in publisher:
+                    identification_guide += "• Knopf: 'First Edition' statement (since 1933-1934)\n"
+
+                checks.append({
+                    "attribute": "First Edition",
+                    "prompt": identification_guide.strip(),
+                    "potential_value": round(premium_dollars, 2),
+                    "icon": "⭐"
+                })
+
+    # 2. Check Signed potential (if not already confirmed)
+    if is_signed is not True:
+        # Use collectible detector to check if author is famous
+        collectible_info = _collectible_detector.detect(
+            metadata=metadata,
+            signed=True,
+            first_edition=False
+        )
+
+        if collectible_info.is_collectible:
+            # Signed multiplier calculation: (multiplier - 1.0) * current_price
+            fame_multiplier = collectible_info.fame_multiplier
+            signed_premium = current_price * (fame_multiplier - 1.0)
+
+            if signed_premium > 0.50:
+                famous_person = collectible_info.famous_person or "this author"
+                checks.append({
+                    "attribute": "Signed",
+                    "prompt": f"Check if signed by {famous_person}",
+                    "potential_value": round(signed_premium, 2),
+                    "icon": "✍️"
+                })
+
+    # 3. Check Condition upgrade potential
+    condition_multipliers = _multipliers.get("condition_multipliers", {})
+    if condition_multipliers:
+        current_mult = condition_multipliers.get(current_condition, 1.0)
+
+        # Check each better condition
+        better_conditions = []
+        for cond, mult in condition_multipliers.items():
+            if mult > current_mult:
+                better_conditions.append((cond, mult))
+
+        # Sort by multiplier (best first)
+        better_conditions.sort(key=lambda x: x[1], reverse=True)
+
+        # Add top 2 condition upgrades (New and Like New are usually most relevant)
+        for cond, mult in better_conditions[:2]:
+            upgrade_value = current_price * (mult / current_mult - 1.0)
+            if upgrade_value > 0.50:
+                checks.append({
+                    "attribute": f"Condition: {cond}",
+                    "prompt": f"Check if condition is actually {cond}",
+                    "potential_value": round(upgrade_value, 2),
+                    "icon": "✨"
+                })
+
+    # 4. Check Format upgrade potential (e.g., if current is Paperback, check Hardcover)
+    binding_multipliers = _multipliers.get("binding_multipliers", {})
+    if binding_multipliers:
+        current_binding = current_format if current_format in binding_multipliers else "Paperback"
+        current_mult = binding_multipliers.get(current_binding, 1.0)
+
+        # Find better formats
+        better_formats = []
+        for fmt, mult in binding_multipliers.items():
+            if mult > current_mult:
+                better_formats.append((fmt, mult))
+
+        # Sort by multiplier (best first)
+        better_formats.sort(key=lambda x: x[1], reverse=True)
+
+        # Add top format upgrade
+        for fmt, mult in better_formats[:1]:
+            upgrade_value = current_price * (mult / current_mult - 1.0)
+            if upgrade_value > 0.50:
+                checks.append({
+                    "attribute": f"Format: {fmt}",
+                    "prompt": f"Check if format is actually {fmt}",
+                    "potential_value": round(upgrade_value, 2),
+                    "icon": "📖"
+                })
+
+    # Sort checks by potential value (highest first)
+    checks.sort(key=lambda x: x["potential_value"], reverse=True)
+
+    # Calculate total potential
+    total_potential = sum(check["potential_value"] for check in checks)
+
+    return {
+        "total_potential": round(total_potential, 2),
+        "checks_needed": checks
+    }
 
 
 def _book_evaluation_to_dict(evaluation, routing_info: Optional[Dict] = None, channel_recommendation: Optional[Dict] = None) -> Dict[str, Any]:
@@ -166,6 +394,16 @@ def _book_evaluation_to_dict(evaluation, routing_info: Optional[Dict] = None, ch
     created_at = getattr(evaluation, "created_at", None)
     if created_at is not None:
         result["created_at"] = _format_timestamp(created_at)
+
+    # Calculate value uplift potential from attribute checks
+    try:
+        uplift_data = calculate_uplift_potential(evaluation)
+        result["potential_value_uplift"] = uplift_data["total_potential"]
+        result["checks_needed"] = uplift_data["checks_needed"]
+    except Exception as e:
+        logger.warning(f"Failed to calculate uplift potential for {evaluation.isbn}: {e}")
+        result["potential_value_uplift"] = 0.0
+        result["checks_needed"] = []
 
     # Convert any numpy types to JSON-serializable Python types
     result = _convert_to_json_serializable(result)

@@ -87,6 +87,10 @@ final class CachedBook {
     var remoteCreatedAt: String?
     var timeToSellDays: Int?
 
+    // Value uplift potential
+    var potentialValueUplift: Double?
+    var checksNeededJSON: String? // Store checks as JSON string
+
     var lastUpdated: Date
 
     init(from record: BookEvaluationRecord) {
@@ -167,6 +171,13 @@ final class CachedBook {
         self.bookscouterValueRatio = record.bookscouterValueRatio
         self.rarity = record.rarity
         self.timeToSellDays = record.timeToSellDays
+
+        // Store value uplift potential
+        self.potentialValueUplift = record.potentialValueUplift
+        if let checks = record.checksNeeded {
+            self.checksNeededJSON = try? JSONEncoder().encode(checks).base64EncodedString()
+        }
+
         let now = Date()
         if let updated = record.updatedAt {
             self.remoteUpdatedAt = updated
@@ -260,6 +271,13 @@ final class CachedBook {
             )
         }
 
+        // Decode checks from JSON
+        var checks: [AttributeCheck]?
+        if let checksJSON = checksNeededJSON,
+           let data = Data(base64Encoded: checksJSON) {
+            checks = try? JSONDecoder().decode([AttributeCheck].self, from: data)
+        }
+
         return BookEvaluationRecord(
             isbn: isbn,
             originalIsbn: originalIsbn,
@@ -284,7 +302,9 @@ final class CachedBook {
             createdAt: remoteCreatedAt,
             timeToSellDays: timeToSellDays,
             routingInfo: nil,
-            channelRecommendation: nil
+            channelRecommendation: nil,
+            potentialValueUplift: potentialValueUplift,
+            checksNeeded: checks
         )
     }
 }

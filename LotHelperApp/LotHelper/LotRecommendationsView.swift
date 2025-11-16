@@ -866,7 +866,9 @@ struct LotDetailView: View {
                         createdAt: "2025-01-14T00:00:00Z",
                         timeToSellDays: nil,
                         routingInfo: nil,
-                        channelRecommendation: nil
+                        channelRecommendation: nil,
+                        potentialValueUplift: nil,
+                        checksNeeded: nil
                     )
                 ],
                 marketJson: nil,

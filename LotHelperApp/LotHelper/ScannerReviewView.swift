@@ -221,7 +221,7 @@ struct ScannerReviewView: View {
                             }
 
                             // Interactive Attributes Panel (always visible when evaluation exists)
-                            if let evaluation {
+                            if evaluation != nil {
                                 interactiveAttributesPanel()
                                     .padding(.horizontal)
                             }

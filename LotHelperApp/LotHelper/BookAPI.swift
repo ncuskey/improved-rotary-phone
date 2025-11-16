@@ -359,6 +359,21 @@ struct ChannelRecommendation: Codable, Hashable {
     }
 }
 
+// MARK: - Value Uplift Potential
+struct AttributeCheck: Codable, Hashable {
+    let attribute: String
+    let prompt: String
+    let potentialValue: Double
+    let icon: String
+
+    enum CodingKeys: String, CodingKey {
+        case attribute
+        case prompt
+        case potentialValue = "potential_value"
+        case icon
+    }
+}
+
 struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     let isbn: String
     let originalIsbn: String?
@@ -389,6 +404,10 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
     // NEW: ML model routing and channel recommendation
     let routingInfo: MLRoutingInfo?
     let channelRecommendation: ChannelRecommendation?
+
+    // NEW: Value uplift potential from attribute checks
+    let potentialValueUplift: Double?
+    let checksNeeded: [AttributeCheck]?
 
     var id: String { isbn }
 
@@ -422,6 +441,8 @@ struct BookEvaluationRecord: Codable, Identifiable, Hashable {
         case timeToSellDays = "time_to_sell_days"
         case routingInfo = "routing_info"
         case channelRecommendation = "channel_recommendation"
+        case potentialValueUplift = "potential_value_uplift"
+        case checksNeeded = "checks_needed"
     }
 }
 

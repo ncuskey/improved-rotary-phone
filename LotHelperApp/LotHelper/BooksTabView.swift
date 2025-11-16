@@ -26,6 +26,7 @@ struct BooksTabView: View {
         case vendorAscending = "Lowest Vendor Price"
         case amazonDescending = "Highest Amazon Price"
         case amazonAscending = "Lowest Amazon Price"
+        case valueUpliftDescending = "Highest Value Potential"
 
         var id: String { rawValue }
     }
@@ -141,6 +142,11 @@ struct BooksTabView: View {
                 if price1 == nil { return false }
                 if price2 == nil { return true }
                 if price1 != price2 { return price1! < price2! }
+                return index1 < index2
+            case .valueUpliftDescending:
+                let uplift1 = book1.potentialValueUplift ?? 0
+                let uplift2 = book2.potentialValueUplift ?? 0
+                if uplift1 != uplift2 { return uplift1 > uplift2 }
                 return index1 < index2
             }
         }
@@ -1072,7 +1078,9 @@ struct BookDetailView: View {
                 createdAt: "2025-01-10T12:00:00Z",
                 timeToSellDays: nil,
                 routingInfo: nil,
-                channelRecommendation: nil
+                channelRecommendation: nil,
+                potentialValueUplift: nil,
+                checksNeeded: nil
             )
         )
     }

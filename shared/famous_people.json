@@ -615,6 +615,24 @@
       ],
       "notes": "Action star, bodybuilder, politician"
     },
+    "Patricia Neal": {
+      "type": "celebrity",
+      "fame_tier": "award_winner",
+      "signed_multiplier": 3,
+      "profession": "actress",
+      "notable_works": [
+        "Hud",
+        "The Day the Earth Stood Still",
+        "Breakfast at Tiffany's"
+      ],
+      "awards": [
+        "Academy Award (Best Actress)",
+        "Golden Globe",
+        "Tony Award",
+        "2 BAFTA Awards"
+      ],
+      "notes": "Oscar-winning actress, major star of 1950s-60s, inspirational stroke recovery story, deceased 2010. Signed memoirs modest premium."
+    },
     "Barack Obama": {
       "type": "celebrity",
       "fame_tier": "historical_figure",
@@ -1279,6 +1297,10 @@
     "Johnny Cash": [
       "Cash, Johnny",
       "Cash,Johnny"
+    ],
+    "Patricia Neal": [
+      "Neal, Patricia",
+      "Neal,Patricia"
     ]
   },
   "authors_bestselling": {

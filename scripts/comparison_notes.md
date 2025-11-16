@@ -2302,5 +2302,130 @@ This fix (punctuation stripping) prevents:
 
 ---
 
-**Last Updated:** 2025-11-16 (Added Book 15 - Second niche demand case, out-of-print spiritual book)
+### Book 16: As I Am - Patricia Neal (9780671625016)
+**Date:** 2025-11-16
+
+**Book Details:**
+- Title: As I Am: An Autobiography
+- Author: Neal, Patricia (Oscar-winning actress)
+- Condition: Very Good
+- Edition: Signed, First Edition
+- ISBN: 9780671625016
+- **Category: Famous signature - actress memoir**
+
+**System Evaluation (BEFORE FIX):**
+- Predicted Price: $10.62
+- Probability Score: 20/100 (LOW confidence)
+- Decision: REJECT (Low confidence)
+- Reasoning: "Average Amazon velocity (rank 758,323)"
+- "Older title may have limited demand"
+- **Root Cause: Patricia Neal not in famous_people.json**
+
+**Manual Evaluation:**
+- Manual Price: $28.00
+- Decision: BUY
+- Reasoning: "Similarly valued comps"
+- Cost Basis: $0 (free)
+- Manual Profit: $23.99
+
+**Price Difference (BEFORE FIX):**
+- System undervalued by $17.38 (163.7% error)
+- Profit difference: $15.08
+- **Moderate undervaluation on signed Oscar winner memoir**
+
+**Key Insights:**
+
+1. **BACK TO PATTERN: Famous Signature Detection**
+   - This IS a collectible detection case (unlike Books 14-15)
+   - Signed first edition by famous person
+   - Patricia Neal not in famous_people.json
+   - **Fixable through our standard approach**
+
+2. **Patricia Neal Significance**
+   - Academy Award winner (Best Actress for "Hud", 1963)
+   - Golden Globe, Tony Award, 2 BAFTA Awards
+   - Major star of 1950s-60s Hollywood
+   - Inspirational stroke recovery story
+   - Deceased 2010 (signatures finite)
+
+3. **Important Lesson: Autobiography Multipliers Different**
+   - Initial guess: 15x (based on Oscar winner status)
+   - Result with 15x: $159.30 (468% overvalued!)
+   - Manual comp: $28.00
+   - **Correct multiplier: 3x** ($31.86, within 14% of $28)
+
+4. **Why Autobiography Multipliers Are Lower**
+   - Author first editions: High multipliers (literary value)
+   - Actor memoirs: Lower multipliers (less collectible as books)
+   - Demi Moore memoir: 5x
+   - **Patricia Neal memoir: 3x** (similar tier)
+   - Even Oscar winners get modest premiums on signed memoirs
+
+5. **Calibration Learning**
+   - Fame in acting ≠ same collectibility as authors
+   - Signed actor autobiographies command modest premiums
+   - $28 for signed Oscar winner memoir is realistic
+   - Not in same tier as signed literary first editions ($100-500+)
+
+6. **Testing Validation**
+   - ✅ "Neal, Patricia" → Detected after fix
+   - ✅ 3x multiplier → $31.86 vs manual $28 (13.8% difference)
+   - ✅ Within 20% tolerance - good calibration
+
+7. **Pattern: Celebrity Memoirs vs Literary Works**
+   - Literary authors (Ginsberg, Kerouac): 40-50x
+   - Bestselling authors (Clancy, Grisham): 15x
+   - Film directors (Scorsese): 128x (books about their craft rare)
+   - **Actor memoirs (Neal, Moore): 3-5x** ← New tier identified
+
+8. **Database Growth**
+   - Added Patricia Neal to celebrities category
+   - First actress with major awards in database
+   - Expands coverage: Hollywood Golden Age stars
+   - 3x multiplier appropriate for Oscar winner memoirs
+
+**Expected Results After Fix:**
+- Base price: $10.62
+- With 3x multiplier (signed famous): $31.86
+- **Within 14% of manual $28 valuation ✓**
+
+**Pattern Recognition:**
+- Books 1-13: Famous signature fixes
+- Books 14-15: Niche demand (not fixable)
+- **Book 16: Famous signature fix** ← Back to addressable pattern!
+- Learned: Actor memoirs need lower multipliers than literary works
+
+**Impact:**
+- Patricia Neal signed memoirs now detected
+- 3x multiplier calibrated for actress memoirs
+- Similar actors (Golden Age Hollywood) should use 3-5x range
+- Prevents $17-20 missed opportunities on signed actor biographies
+
+**Total Missed Value So Far (16 books):**
+- Book 2 (Frank Herbert): $1,089
+- Book 7 (Martin Scorsese): $991
+- Book 12 (Allen Ginsberg): $194
+- Book 9 (Buzz Aldrin): $175
+- Book 13 (Tom Clancy): $140
+- Book 6 (Liz Goldwyn): $104
+- Book 3 (Demi Moore): $53
+- Book 5 (Doris Goodwin): $50
+- Book 8 (Harry Potter): $31
+- Book 10 (Louise Erdrich): $21
+- Book 15 (Ffiona Morgan): $18 (niche spiritual)
+- **Book 16 (Patricia Neal): $17** ← NEW (fixable)
+- Book 14 (Susan F. Cooper): $17 (niche scholarly)
+- **TOTAL: $2,900 from 16 books**
+- **Average miss: $181 per book**
+
+**Critical Success:**
+This fix prevents:
+- Patricia Neal signed memoir undervaluations: ~$17-20 per book
+- Similar Oscar-winning actress memoirs
+- Golden Age Hollywood star signatures
+- Calibrated multiplier tier for actor autobiographies
+
+---
+
+**Last Updated:** 2025-11-16 (Added Patricia Neal, calibrated 3x multiplier for actress memoirs)
 

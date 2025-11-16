@@ -35,6 +35,74 @@ class RecentScansAnalyzer:
         self.conn = sqlite3.connect(str(self.db_path))
         self.conn.row_factory = sqlite3.Row
 
+    def _normalize_for_matching(self, text: str) -> str:
+        """Normalize text for fuzzy matching."""
+        if not text:
+            return ""
+        import re
+        text = text.lower()
+        # Remove content in parentheses (often series info or author names)
+        text = re.sub(r'\([^)]*\)', ' ', text)
+        # Remove special chars
+        text = re.sub(r'[^\w\s]', ' ', text)
+        # Collapse whitespace
+        text = re.sub(r'\s+', ' ', text)
+        return text.strip()
+
+    def _get_canonical_series(
+        self,
+        book_title: str,
+        authors: str,
+        raw_series_name: Optional[str]
+    ) -> Optional[Dict]:
+        """
+        Look up canonical series name from series database.
+
+        Tries multiple strategies:
+        1. Match book title against series_books table
+        2. Match raw series name against series table
+        3. Fuzzy match using normalized titles
+        """
+        if not book_title:
+            return None
+
+        # Normalize book title for matching
+        normalized_title = self._normalize_for_matching(book_title)
+
+        # Strategy 1: Try exact match on book title in series_books
+        query = """
+        SELECT
+            s.id as series_id,
+            s.title as series_name,
+            sb.series_position
+        FROM series_books sb
+        JOIN series s ON sb.series_id = s.id
+        WHERE sb.book_title_normalized LIKE ?
+        LIMIT 1
+        """
+        cursor = self.conn.execute(query, (f'%{normalized_title}%',))
+        row = cursor.fetchone()
+        if row:
+            return dict(row)
+
+        # Strategy 2: If we have a raw series name, try fuzzy matching against series table
+        if raw_series_name:
+            normalized_series = self._normalize_for_matching(raw_series_name)
+            query = """
+            SELECT
+                s.id as series_id,
+                s.title as series_name
+            FROM series s
+            WHERE s.title_normalized LIKE ?
+            LIMIT 1
+            """
+            cursor = self.conn.execute(query, (f'%{normalized_series}%',))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+
+        return None
+
     def get_recent_scans(
         self,
         limit: Optional[int] = None,
@@ -78,17 +146,29 @@ class RecentScansAnalyzer:
             scan = dict(row)
 
             # Parse metadata to extract series info
+            raw_series_name = None
             if scan['metadata_json']:
                 try:
                     metadata = json.loads(scan['metadata_json'])
-                    scan['series_name'] = metadata.get('series_name') or metadata.get('series')
+                    raw_series_name = metadata.get('series_name') or metadata.get('series')
                     scan['series_position'] = metadata.get('series_index')
                 except:
-                    scan['series_name'] = None
                     scan['series_position'] = None
             else:
-                scan['series_name'] = None
                 scan['series_position'] = None
+
+            # Look up canonical series name from series database
+            canonical_series = self._get_canonical_series(scan['title'], scan['authors'], raw_series_name)
+            if canonical_series:
+                scan['series_name'] = canonical_series['series_name']
+                scan['series_id'] = canonical_series['series_id']
+                # Update position if found in series_books table
+                if canonical_series.get('series_position'):
+                    scan['series_position'] = canonical_series['series_position']
+            else:
+                # Fall back to raw metadata
+                scan['series_name'] = raw_series_name
+                scan['series_id'] = None
 
             # Filter if series_only requested
             if series_only and not scan['series_name']:

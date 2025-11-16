@@ -2519,5 +2519,141 @@ This fix prevents:
 
 ---
 
-**Last Updated:** 2025-11-16 (Added Book 17 - Third niche demand case, CCC history expert signature)
+### Book 18: Sense and Nonsense About Crime - Walker (9781285459028)
+**Date:** 2025-11-16
+
+**Book Details:**
+- Title: Sense and Nonsense About Crime, Drugs, and Communities
+- Author: Walker, Samuel
+- Condition: Good
+- Edition: NOT signed, NOT first edition (textbook)
+- ISBN: 9781285459028
+- **Category: System OVERVALUATION - Textbook buyback arbitrage**
+
+**System Evaluation:**
+- Predicted Price: $26.26
+- Probability Score: 23/100 (LOW confidence)
+- Decision: REJECT (Low confidence)
+- Best Buyback: **$13.03 from TextbookManiac**
+- 8 vendors bidding (competitive demand)
+- Amazon rank: 884,370
+- Amazon FBM lowest: $39.49
+
+**Manual Evaluation (Initial):**
+- Manual Price: $15.99
+- Decision: REJECT
+- Reasoning: (no notes initially)
+- **Then reconsidered to BUY due to buyback offer**
+
+**Price Difference:**
+- System OVERVALUED by $10.27 (39% higher than manual)
+- System profit: $22.48
+- Manual profit: $13.57
+- **BUT: Buyback arbitrage available**
+
+**Key Insights:**
+
+1. **FIRST OVERVALUATION CASE**
+   - Books 1-17: All system undervaluations
+   - **Book 18: System overvalued by 39%**
+   - Different pattern entirely
+   - System predicted $26.26, you valued $15.99
+
+2. **Textbook Buyback Arbitrage Opportunity**
+   - Best buyback: $13.03 (TextbookManiac)
+   - 8 vendors bidding (competitive)
+   - Free book (cost $0) → Sell for $13.03 = $13.03 profit
+   - **This changes decision from REJECT to BUY**
+
+3. **Why Manual $15.99 vs System $26.26?**
+   - Manual: Realistic eBay/Amazon pricing
+   - System: May be inflated by Amazon FBM $39.49 anchor
+   - System saw: Average Amazon velocity, competitive buybacks
+   - Reality: $15.99 more realistic market price
+
+4. **Decision Logic Shift**
+   - **Without buyback:** REJECT (not worth $15.99 resale effort)
+   - **With buyback:** BUY ($13.03 guaranteed, no listing effort)
+   - Buyback arbitrage bypasses pricing uncertainty
+   - Free book + competitive buyback = always profitable
+
+5. **System's Recommendation Logic**
+   - System said REJECT despite $26.26 prediction
+   - Reasoning: "Low confidence" (23/100)
+   - "Sale price trending near $26.26"
+   - System recognized uncertainty, correctly rejected
+
+6. **User's Better Analysis**
+   - Initial: REJECT at $15.99 manual pricing
+   - Reconsidered: BUY for $13.03 buyback
+   - **Buyback arbitrage is the real opportunity**
+   - Manual pricing more conservative/realistic than system
+
+7. **Not a Collectible Detection Issue**
+   - No famous signature
+   - No first edition
+   - Not rare or collectible
+   - Standard textbook
+   - **This is buyback arbitrage, not valuation gap**
+
+8. **Pattern: System Overvaluation**
+   - First case of system pricing too high
+   - System: $26.26 (overconfident?)
+   - Manual: $15.99 (realistic market assessment)
+   - Both agreed REJECT for resale
+   - But buyback changes calculus
+
+**Expected Results:**
+- Not a fixable issue (system overvalued, not undervalued)
+- Both system and user initially rejected resale
+- Buyback arbitrage is separate decision logic
+- User's reconsideration shows better analysis than system
+
+**Decision: No Fix Needed**
+- System correctly recommended REJECT (low confidence)
+- User correctly identified buyback opportunity
+- System overvaluation is less problematic than undervaluation
+- Buyback arbitrage requires different decision logic
+
+**No Missed Value:**
+- System said REJECT
+- User said REJECT (then reconsidered for buyback)
+- Both agreed: Not worth resale effort
+- Buyback is guaranteed profit, different calculation
+- **No valuation gap that needs fixing**
+
+**Total Missed Value So Far (17 books):**
+- Book 2 (Frank Herbert): $1,089
+- Book 7 (Martin Scorsese): $991
+- Book 12 (Allen Ginsberg): $194
+- Book 9 (Buzz Aldrin): $175
+- Book 13 (Tom Clancy): $140
+- Book 6 (Liz Goldwyn): $104
+- Book 3 (Demi Moore): $53
+- Book 5 (Doris Goodwin): $50
+- Book 17 (Perry Merrill): $49 (niche)
+- Book 8 (Harry Potter): $31
+- Book 10 (Louise Erdrich): $21
+- Book 15 (Ffiona Morgan): $18 (niche)
+- Book 16 (Patricia Neal): $17 (fixable)
+- Book 14 (Susan F. Cooper): $17 (niche)
+- **Book 18: $0** (system overvalued, both rejected resale)
+- **TOTAL: $2,949 from 17 undervaluation cases**
+
+**Pattern Recognition:**
+- Books 1-17: System undervaluations (collectible + niche)
+- **Book 18: System overvaluation (textbook)**
+- 14 fixable (celebrity signatures)
+- 3 niche demand (not fixable)
+- 1 overvaluation (not a problem)
+
+**Key Learning:**
+- System overvaluation less critical than undervaluation
+- Buyback arbitrage = different decision logic
+- User's reconsideration shows good analysis
+- Focus remains on undervaluation fixes (Books 1-17)
+
+---
+
+**Last Updated:** 2025-11-16 (Added Book 18 - First overvaluation case, textbook buyback arbitrage)
 

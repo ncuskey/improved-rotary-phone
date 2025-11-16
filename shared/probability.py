@@ -433,6 +433,22 @@ def score_probability(
     suppress_single = False
     has_ebay_data = False
 
+    # Check if this is a high-value collectible that bypasses normal velocity rules
+    is_high_value_collectible = False
+    if collectible_info and collectible_info.is_collectible:
+        # High-value collectibles (50x+ multiplier) don't follow normal velocity patterns
+        # They sell infrequently but at very high prices to specialized collectors
+        if collectible_info.fame_multiplier >= 50.0:
+            is_high_value_collectible = True
+            score += 45  # Strong base confidence for literary icons
+            reasons.append(f"High-value collectible ({collectible_info.fame_multiplier:.0f}x) - specialized collector market")
+        elif collectible_info.fame_multiplier >= 20.0:
+            score += 30  # Good confidence for highly collectible items
+            reasons.append(f"Highly collectible item ({collectible_info.fame_multiplier:.0f}x multiplier)")
+        elif collectible_info.fame_multiplier >= 10.0:
+            score += 20  # Moderate confidence boost
+            reasons.append(f"Collectible item ({collectible_info.fame_multiplier:.0f}x multiplier)")
+
     # BookScouter buyback offers (instant sale option if profitable)
     # Note: Profitability depends on purchase price being less than buyback offer
     if bookscouter and bookscouter.best_price > 0:
@@ -481,6 +497,7 @@ def score_probability(
             reasons.append(f"Weak historical sell-through ({sell_through:.0%})")
 
     # Amazon Sales Rank scoring (velocity/demand indicator)
+    # Skip velocity penalties for high-value collectibles (they sell to specialized markets)
     if amazon_rank is not None:
         if amazon_rank < 50_000:
             score += 15
@@ -498,26 +515,50 @@ def score_probability(
             # Neutral - no points added or subtracted
             reasons.append(f"Average Amazon velocity (rank {amazon_rank:,})")
         elif amazon_rank < 2_000_000:
-            score -= 5
-            reasons.append(f"Slow Amazon velocity (rank {amazon_rank:,})")
+            if not is_high_value_collectible:
+                score -= 5
+                reasons.append(f"Slow Amazon velocity (rank {amazon_rank:,})")
+            else:
+                reasons.append(f"Slow Amazon velocity (rank {amazon_rank:,}) - acceptable for rare collectibles")
         else:
-            score -= 10
-            reasons.append(f"Very niche/stale on Amazon (rank {amazon_rank:,})")
+            if not is_high_value_collectible:
+                score -= 10
+                reasons.append(f"Very niche/stale on Amazon (rank {amazon_rank:,})")
+            else:
+                reasons.append(f"Low Amazon velocity (rank {amazon_rank:,}) - expected for rare collectibles")
 
     # If no eBay data, use fallback scoring with heavier Amazon weight
     if not has_ebay_data:
         if amazon_rank is not None:
             # Use Amazon rank as primary signal with boosted weight
-            reasons.append("Using Amazon-based confidence (no eBay sell-through data)")
-            score = _calculate_fallback_score(amazon_rank, metadata, reasons)
+            # But skip fallback penalties for high-value collectibles
+            if not is_high_value_collectible:
+                reasons.append("Using Amazon-based confidence (no eBay sell-through data)")
+                fallback_score = _calculate_fallback_score(amazon_rank, metadata, reasons)
+                # Replace score with fallback (don't add to it)
+                score = fallback_score
+            else:
+                # For high-value collectibles, note the lack of eBay data but don't penalize
+                reasons.append("No eBay data - collectible market operates via specialized channels")
         else:
-            # No market data at all - very conservative
-            score -= 5
-            reasons.append("No completed sales found; limited market data")
+            # No market data at all
+            if not is_high_value_collectible:
+                score -= 5
+                reasons.append("No completed sales found; limited market data")
+            else:
+                reasons.append("Limited market data - collectible sales occur in specialized venues")
 
     price_anchor = market.sold_avg_price or market.sold_median_price if market else None
     price_baseline = price_anchor or estimated_price
-    if price_baseline >= 30:
+
+    # Enhanced price scoring with collectible-aware thresholds
+    if price_baseline >= 500:
+        score += 35
+        reasons.append(f"High-value item: ${price_baseline:.2f}")
+    elif price_baseline >= 100:
+        score += 30
+        reasons.append(f"Premium price point: ${price_baseline:.2f}")
+    elif price_baseline >= 30:
         score += 24
         reasons.append(f"Average sale price around ${price_baseline:.2f}")
     elif price_baseline >= 20:

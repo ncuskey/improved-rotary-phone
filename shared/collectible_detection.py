@@ -114,38 +114,67 @@ class CollectibleDetector:
             fame_multiplier=1.0
         )
 
+    def _normalize_author_name(self, name: str) -> List[str]:
+        """
+        Generate name variations for lookup.
+
+        Handles "Last,First" format by converting to "First Last".
+        Returns list of normalized variations to try.
+
+        Examples:
+            "Herbert,Frank" -> ["herbert,frank", "frank herbert"]
+            "Frank Herbert" -> ["frank herbert"]
+            "Goodwin, Doris Kearns" -> ["goodwin, doris kearns", "doris kearns goodwin"]
+        """
+        name_lower = name.lower().strip()
+        variations = [name_lower]
+
+        # Check if name contains comma (Last,First format)
+        if ',' in name_lower:
+            parts = name_lower.split(',', 1)
+            if len(parts) == 2:
+                last_name = parts[0].strip()
+                first_name = parts[1].strip()
+                # Add "First Last" variation
+                normalized = f"{first_name} {last_name}"
+                variations.append(normalized)
+
+        return variations
+
     def _check_signed_famous(self, authors: Tuple[str, ...]) -> CollectibleInfo:
         """Check if book is signed by a famous person."""
         for author in authors:
-            # Normalize name for lookup
-            author_lower = author.lower().strip()
+            # Generate name variations (handles "Last,First" format)
+            name_variations = self._normalize_author_name(author)
 
-            # Check direct match
-            if author_lower in self.famous_people:
-                person_data = self.famous_people[author_lower]
-                return CollectibleInfo(
-                    is_collectible=True,
-                    collectible_type="signed_famous",
-                    fame_multiplier=person_data.get("signed_multiplier", 5.0),
-                    famous_person=author,
-                    fame_tier=person_data.get("fame_tier"),
-                    notes=person_data.get("notes")
-                )
-
-            # Check name variations (handle comma-separated names)
-            canonical = self.name_to_canonical.get(author_lower)
-            if canonical:
-                canonical_lower = canonical.lower()
-                if canonical_lower in self.famous_people:
-                    person_data = self.famous_people[canonical_lower]
+            # Try each variation
+            for author_variant in name_variations:
+                # Check direct match
+                if author_variant in self.famous_people:
+                    person_data = self.famous_people[author_variant]
                     return CollectibleInfo(
                         is_collectible=True,
                         collectible_type="signed_famous",
                         fame_multiplier=person_data.get("signed_multiplier", 5.0),
-                        famous_person=canonical,
+                        famous_person=author,
                         fame_tier=person_data.get("fame_tier"),
                         notes=person_data.get("notes")
                     )
+
+                # Check name variations database
+                canonical = self.name_to_canonical.get(author_variant)
+                if canonical:
+                    canonical_lower = canonical.lower()
+                    if canonical_lower in self.famous_people:
+                        person_data = self.famous_people[canonical_lower]
+                        return CollectibleInfo(
+                            is_collectible=True,
+                            collectible_type="signed_famous",
+                            fame_multiplier=person_data.get("signed_multiplier", 5.0),
+                            famous_person=canonical,
+                            fame_tier=person_data.get("fame_tier"),
+                            notes=person_data.get("notes")
+                        )
 
         return CollectibleInfo(
             is_collectible=False,
@@ -183,21 +212,24 @@ class CollectibleDetector:
         # Check if author is in award_winners category
         if authors:
             for author in authors:
-                author_lower = author.lower().strip()
-                canonical = self.name_to_canonical.get(author_lower, author_lower)
-                canonical_lower = canonical.lower()
+                # Use name normalization to handle "Last,First" format
+                name_variations = self._normalize_author_name(author)
 
-                if canonical_lower in self.famous_people:
-                    person_data = self.famous_people[canonical_lower]
-                    if person_data.get("fame_tier") == "award_winner":
-                        awards = person_data.get("awards", [])
-                        return CollectibleInfo(
-                            is_collectible=True,
-                            collectible_type="award_winner",
-                            fame_multiplier=person_data.get("signed_multiplier", 2.0) * 0.3,  # Unsigned = 30% of signed value
-                            awards=awards,
-                            notes=f"First edition by {', '.join(awards)} winner"
-                        )
+                for author_variant in name_variations:
+                    canonical = self.name_to_canonical.get(author_variant, author_variant)
+                    canonical_lower = canonical.lower()
+
+                    if canonical_lower in self.famous_people:
+                        person_data = self.famous_people[canonical_lower]
+                        if person_data.get("fame_tier") == "award_winner":
+                            awards = person_data.get("awards", [])
+                            return CollectibleInfo(
+                                is_collectible=True,
+                                collectible_type="award_winner",
+                                fame_multiplier=person_data.get("signed_multiplier", 2.0) * 0.3,  # Unsigned = 30% of signed value
+                                awards=awards,
+                                notes=f"First edition by {', '.join(awards)} winner"
+                            )
 
         return CollectibleInfo(
             is_collectible=False,

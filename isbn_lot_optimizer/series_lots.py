@@ -157,8 +157,16 @@ def build_series_lots_enhanced(
             else:
                 strategy = "series_incomplete"
 
+            # Clean up redundant prefixes from series names
+            clean_series_title = series_title
+            # Remove redundant prefixes like "Chronological Order of", "Publication Order of", etc.
+            for prefix in ["Chronological Order of ", "Publication Order of ", "Order of "]:
+                if clean_series_title.startswith(prefix):
+                    clean_series_title = clean_series_title[len(prefix):]
+                    break
+
             # Standardized naming convention: "Series Name (X/Y Books)"
-            lot_name = f"{series_title} ({len(have_positions)}/{book_count} Books)"
+            lot_name = f"{clean_series_title} ({len(have_positions)}/{book_count} Books)"
 
             # Create lot suggestion
             lot = LotSuggestion(

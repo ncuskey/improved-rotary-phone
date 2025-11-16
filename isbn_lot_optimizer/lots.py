@@ -202,22 +202,24 @@ def generate_lot_suggestions(
                 suggestion.canonical_series = key
                 suggestions.append(suggestion)
 
-    # Fallback: bundle low-value singles by top category
-    low_value = [book for book in books if book.suppress_single]
-    if len(low_value) >= 2:
-        suggestion = _compose_lot(
-            name="Value Bundle",
-            strategy="value",
-            books=low_value,
-            justification=[
-                "Combines sub-$10 books to exceed listing threshold",
-                f"Aggregate estimated value ${_sum_price(low_value):.2f}",
-                _probability_summary(low_value),
-            ],
-            fetch_pricing=fetch_pricing,
-        )
-        if suggestion:
-            suggestions.append(suggestion)
+    # Disabled: Value bundles create hodgepodge mixes of unrelated items that don't make sense
+    # and would never sell. Low-value books should be handled individually or through
+    # author/series-specific lots.
+    # low_value = [book for book in books if book.suppress_single]
+    # if len(low_value) >= 2:
+    #     suggestion = _compose_lot(
+    #         name="Value Bundle",
+    #         strategy="value",
+    #         books=low_value,
+    #         justification=[
+    #             "Combines sub-$10 books to exceed listing threshold",
+    #             f"Aggregate estimated value ${_sum_price(low_value):.2f}",
+    #             _probability_summary(low_value),
+    #         ],
+    #         fetch_pricing=fetch_pricing,
+    #     )
+    #     if suggestion:
+    #         suggestions.append(suggestion)
 
     # Sort lots by probability then value
     suggestions.sort(key=lambda lot: (lot.probability_score, lot.estimated_value), reverse=True)

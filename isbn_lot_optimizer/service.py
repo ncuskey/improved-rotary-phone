@@ -1959,11 +1959,25 @@ class BookService:
             candidate.canonical_author = canonical_author_value or candidate.canonical_author
             # Don't overwrite names for enhanced series lots (they already have completion info)
             if suggestion.strategy not in ['series_complete', 'series_incomplete']:
-                if candidate.series_name:
-                    label_tail = f" — {display_author_label}" if display_author_label else ""
-                    candidate.name = f"{candidate.series_name}{label_tail}"
-                elif display_author_label:
-                    candidate.name = f"{display_author_label} Collection"
+                # Only use series_name for actual series strategy lots
+                if suggestion.strategy == 'series' and candidate.series_name:
+                    # For series lots, use series name without author suffix
+                    candidate.name = candidate.series_name
+                elif display_author_label or canonical_author_value:
+                    # For author/value lots, use clean author name + descriptive suffix
+                    # Prefer canonical_author (nicely formatted) over credited name
+                    if canonical_author_value:
+                        # Title case the canonical author for better readability
+                        clean_author = canonical_author_value.title()
+                    else:
+                        # Fallback: extract from display_author_label
+                        clean_author = display_author_label.split('(')[0].split('+aliases')[0].strip().rstrip(' —,')
+
+                    # Use different suffix for value lots vs regular author lots
+                    if suggestion.strategy == 'value':
+                        candidate.name = f"{clean_author} Value Bundle"
+                    else:
+                        candidate.name = f"{clean_author} Collection"
             candidates.append(candidate)
 
         candidates.extend(self._build_incomplete_series_candidates(candidates))
@@ -2739,8 +2753,8 @@ class BookService:
             )
             candidate.display_author_label = display_author_label
             if candidate.series_name:
-                label_tail = f" — {display_author_label}" if display_author_label else ""
-                candidate.name = f"Incomplete {candidate.series_name}{label_tail}"
+                # Use clean series name without author suffix
+                candidate.name = f"Incomplete {candidate.series_name}"
 
             # Check if ISBNs are already covered by an enhanced series lot
             candidate_isbns = set(book_isbns)

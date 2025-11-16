@@ -178,7 +178,9 @@ async def get_all_lots_json(
             row = service.db.fetch_book(isbn)
             if row:
                 # Check status column (default to 'ACCEPT' for backward compatibility)
-                status = row.get('status', 'ACCEPT')
+                # sqlite3.Row doesn't have .get(), use dict() or bracket notation
+                row_dict = dict(row)
+                status = row_dict.get('status', 'ACCEPT')
                 if status == 'ACCEPT':
                     accepted_isbns.append(isbn)
 

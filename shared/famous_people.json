@@ -16,361 +16,591 @@
     ],
     "coverage": "Expanded to 90+ famous people across 7 categories with comprehensive name variation support"
   },
-
   "authors_literary_icons": {
     "Frank Herbert": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 100,
-      "genres": ["science fiction"],
-      "notable_works": ["Dune"],
+      "genres": [
+        "science fiction"
+      ],
+      "notable_works": [
+        "Dune"
+      ],
       "notes": "Sci-fi masterwork author, highly collectible"
     },
     "Isaac Asimov": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 80,
-      "genres": ["science fiction"],
-      "notable_works": ["Foundation"],
+      "genres": [
+        "science fiction"
+      ],
+      "notable_works": [
+        "Foundation"
+      ],
       "notes": "Prolific sci-fi author"
     },
     "Ursula K. Le Guin": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 70,
-      "genres": ["science fiction", "fantasy"],
-      "notable_works": ["The Left Hand of Darkness", "Earthsea"],
+      "genres": [
+        "science fiction",
+        "fantasy"
+      ],
+      "notable_works": [
+        "The Left Hand of Darkness",
+        "Earthsea"
+      ],
       "notes": "Award-winning sci-fi/fantasy author"
     },
     "Ray Bradbury": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 90,
-      "genres": ["science fiction"],
-      "notable_works": ["Fahrenheit 451"],
+      "genres": [
+        "science fiction"
+      ],
+      "notable_works": [
+        "Fahrenheit 451"
+      ],
       "notes": "Classic American sci-fi author"
     },
     "Philip K. Dick": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 120,
-      "genres": ["science fiction"],
-      "notable_works": ["Do Androids Dream of Electric Sheep?"],
+      "genres": [
+        "science fiction"
+      ],
+      "notable_works": [
+        "Do Androids Dream of Electric Sheep?"
+      ],
       "notes": "Influential sci-fi, many film adaptations"
     },
     "J.K. Rowling": {
       "type": "author",
       "fame_tier": "cultural_phenomenon",
       "signed_multiplier": 150,
-      "genres": ["fantasy", "young adult"],
-      "notable_works": ["Harry Potter"],
+      "genres": [
+        "fantasy",
+        "young adult"
+      ],
+      "notable_works": [
+        "Harry Potter"
+      ],
       "notes": "Best-selling author of all time, early editions extremely valuable"
     },
     "Stephen King": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 40,
-      "genres": ["horror", "thriller"],
-      "notable_works": ["The Shining", "IT"],
+      "genres": [
+        "horror",
+        "thriller"
+      ],
+      "notable_works": [
+        "The Shining",
+        "IT"
+      ],
       "notes": "Prolific horror author, early works most valuable"
     },
     "Cormac McCarthy": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 85,
-      "genres": ["literary fiction"],
-      "notable_works": ["Blood Meridian", "The Road"],
+      "genres": [
+        "literary fiction"
+      ],
+      "notable_works": [
+        "Blood Meridian",
+        "The Road"
+      ],
       "notes": "Pulitzer winner, reclusive author increases value"
     },
     "Toni Morrison": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 75,
-      "genres": ["literary fiction"],
-      "notable_works": ["Beloved"],
-      "awards": ["Pulitzer Prize", "Nobel Prize"],
+      "genres": [
+        "literary fiction"
+      ],
+      "notable_works": [
+        "Beloved"
+      ],
+      "awards": [
+        "Pulitzer Prize",
+        "Nobel Prize"
+      ],
       "notes": "Nobel laureate"
     },
     "Elmore Leonard": {
       "type": "author",
       "fame_tier": "genre_master",
       "signed_multiplier": 4,
-      "genres": ["crime fiction", "thriller"],
-      "notable_works": ["Get Shorty", "Out of Sight", "Rum Punch"],
+      "genres": [
+        "crime fiction",
+        "thriller"
+      ],
+      "notable_works": [
+        "Get Shorty",
+        "Out of Sight",
+        "Rum Punch"
+      ],
       "notes": "Collectible crime fiction author, signed firsts valued 3-5x base"
     },
     "Kurt Vonnegut": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 95,
-      "genres": ["literary fiction", "science fiction"],
-      "notable_works": ["Slaughterhouse-Five", "Cat's Cradle"],
+      "genres": [
+        "literary fiction",
+        "science fiction"
+      ],
+      "notable_works": [
+        "Slaughterhouse-Five",
+        "Cat's Cradle"
+      ],
       "notes": "Satirical author, highly collectible, deceased 2007"
     },
     "Hunter S. Thompson": {
       "type": "author",
       "fame_tier": "cultural_icon",
       "signed_multiplier": 110,
-      "genres": ["journalism", "counterculture"],
-      "notable_works": ["Fear and Loathing in Las Vegas"],
+      "genres": [
+        "journalism",
+        "counterculture"
+      ],
+      "notable_works": [
+        "Fear and Loathing in Las Vegas"
+      ],
       "notes": "Gonzo journalism founder, highly collectible, deceased 2005"
     },
     "Ernest Hemingway": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 200,
-      "genres": ["literary fiction"],
-      "notable_works": ["The Old Man and the Sea", "For Whom the Bell Tolls"],
+      "genres": [
+        "literary fiction"
+      ],
+      "notable_works": [
+        "The Old Man and the Sea",
+        "For Whom the Bell Tolls"
+      ],
       "notes": "Nobel Prize winner, American literary icon, deceased 1961"
     },
     "J.R.R. Tolkien": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 500,
-      "genres": ["fantasy"],
-      "notable_works": ["The Lord of the Rings", "The Hobbit"],
+      "genres": [
+        "fantasy"
+      ],
+      "notable_works": [
+        "The Lord of the Rings",
+        "The Hobbit"
+      ],
       "notes": "Father of modern fantasy, extremely rare signatures, deceased 1973"
     },
     "George R.R. Martin": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 30,
-      "genres": ["fantasy"],
-      "notable_works": ["A Song of Ice and Fire"],
+      "genres": [
+        "fantasy"
+      ],
+      "notable_works": [
+        "A Song of Ice and Fire"
+      ],
       "notes": "Game of Thrones author, very collectible"
     },
     "Neil Gaiman": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 25,
-      "genres": ["fantasy", "graphic novels"],
-      "notable_works": ["American Gods", "Sandman"],
+      "genres": [
+        "fantasy",
+        "graphic novels"
+      ],
+      "notable_works": [
+        "American Gods",
+        "Sandman"
+      ],
       "notes": "Popular fantasy author, actively signs"
     },
     "Terry Pratchett": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 60,
-      "genres": ["fantasy", "satire"],
-      "notable_works": ["Discworld series"],
+      "genres": [
+        "fantasy",
+        "satire"
+      ],
+      "notable_works": [
+        "Discworld series"
+      ],
       "notes": "Beloved satirical fantasy author, deceased 2015"
     },
     "Douglas Adams": {
       "type": "author",
       "fame_tier": "cultural_icon",
       "signed_multiplier": 85,
-      "genres": ["science fiction", "humor"],
-      "notable_works": ["The Hitchhiker's Guide to the Galaxy"],
+      "genres": [
+        "science fiction",
+        "humor"
+      ],
+      "notable_works": [
+        "The Hitchhiker's Guide to the Galaxy"
+      ],
       "notes": "Cult classic author, deceased 2001"
     },
     "Margaret Atwood": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 35,
-      "genres": ["literary fiction", "dystopian"],
-      "notable_works": ["The Handmaid's Tale"],
+      "genres": [
+        "literary fiction",
+        "dystopian"
+      ],
+      "notable_works": [
+        "The Handmaid's Tale"
+      ],
       "notes": "Multiple award winner, highly acclaimed"
     },
     "Haruki Murakami": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 50,
-      "genres": ["literary fiction", "magical realism"],
-      "notable_works": ["Norwegian Wood", "1Q84"],
+      "genres": [
+        "literary fiction",
+        "magical realism"
+      ],
+      "notable_works": [
+        "Norwegian Wood",
+        "1Q84"
+      ],
       "notes": "International bestseller, surrealist fiction"
     },
     "John Steinbeck": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 150,
-      "genres": ["literary fiction"],
-      "notable_works": ["The Grapes of Wrath", "Of Mice and Men"],
-      "awards": ["Nobel Prize", "Pulitzer Prize"],
+      "genres": [
+        "literary fiction"
+      ],
+      "notable_works": [
+        "The Grapes of Wrath",
+        "Of Mice and Men"
+      ],
+      "awards": [
+        "Nobel Prize",
+        "Pulitzer Prize"
+      ],
       "notes": "American literary icon, deceased 1968"
     },
     "F. Scott Fitzgerald": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 250,
-      "genres": ["literary fiction"],
-      "notable_works": ["The Great Gatsby"],
+      "genres": [
+        "literary fiction"
+      ],
+      "notable_works": [
+        "The Great Gatsby"
+      ],
       "notes": "Jazz Age icon, extremely rare, deceased 1940"
     },
     "William Faulkner": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 180,
-      "genres": ["literary fiction"],
-      "notable_works": ["The Sound and the Fury"],
-      "awards": ["Nobel Prize", "Pulitzer Prize"],
+      "genres": [
+        "literary fiction"
+      ],
+      "notable_works": [
+        "The Sound and the Fury"
+      ],
+      "awards": [
+        "Nobel Prize",
+        "Pulitzer Prize"
+      ],
       "notes": "Southern Gothic master, deceased 1962"
     },
     "Tom Clancy": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 20,
-      "genres": ["thriller", "military"],
-      "notable_works": ["The Hunt for Red October", "Patriot Games"],
+      "genres": [
+        "thriller",
+        "military"
+      ],
+      "notable_works": [
+        "The Hunt for Red October",
+        "Patriot Games"
+      ],
       "notes": "Techno-thriller pioneer, deceased 2013"
     },
     "Michael Crichton": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 35,
-      "genres": ["science fiction", "thriller"],
-      "notable_works": ["Jurassic Park", "The Andromeda Strain"],
+      "genres": [
+        "science fiction",
+        "thriller"
+      ],
+      "notable_works": [
+        "Jurassic Park",
+        "The Andromeda Strain"
+      ],
       "notes": "Techno-thriller author, many film adaptations, deceased 2008"
     },
     "John Grisham": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 15,
-      "genres": ["legal thriller"],
-      "notable_works": ["The Firm", "A Time to Kill"],
+      "genres": [
+        "legal thriller"
+      ],
+      "notable_works": [
+        "The Firm",
+        "A Time to Kill"
+      ],
       "notes": "Legal thriller master, prolific signer"
     },
     "James Patterson": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 8,
-      "genres": ["thriller", "mystery"],
-      "notable_works": ["Alex Cross series"],
+      "genres": [
+        "thriller",
+        "mystery"
+      ],
+      "notable_works": [
+        "Alex Cross series"
+      ],
       "notes": "Extremely prolific, frequently signs"
     }
   },
-
   "authors_award_winners": {
     "Doris Kearns Goodwin": {
       "type": "author",
       "fame_tier": "award_winner",
       "signed_multiplier": 6,
-      "genres": ["history", "biography"],
-      "notable_works": ["Team of Rivals"],
-      "awards": ["Pulitzer Prize"],
+      "genres": [
+        "history",
+        "biography"
+      ],
+      "notable_works": [
+        "Team of Rivals"
+      ],
+      "awards": [
+        "Pulitzer Prize"
+      ],
       "notes": "Presidential historian"
     },
     "Louise Erdrich": {
       "type": "author",
       "fame_tier": "award_winner",
       "signed_multiplier": 5,
-      "genres": ["literary fiction"],
-      "notable_works": ["The Night Watchman"],
-      "awards": ["Pulitzer Prize", "National Book Award"],
+      "genres": [
+        "literary fiction"
+      ],
+      "notable_works": [
+        "The Night Watchman"
+      ],
+      "awards": [
+        "Pulitzer Prize",
+        "National Book Award"
+      ],
       "notes": "Contemporary Native American author"
     },
     "Colson Whitehead": {
       "type": "author",
       "fame_tier": "award_winner",
       "signed_multiplier": 8,
-      "genres": ["literary fiction"],
-      "awards": ["Pulitzer Prize"],
+      "genres": [
+        "literary fiction"
+      ],
+      "awards": [
+        "Pulitzer Prize"
+      ],
       "notes": "Two-time Pulitzer winner"
     },
     "Michael Connelly": {
       "type": "author",
       "fame_tier": "genre_master",
       "signed_multiplier": 12,
-      "genres": ["crime fiction", "thriller"],
-      "notable_works": ["Harry Bosch series", "The Lincoln Lawyer"],
+      "genres": [
+        "crime fiction",
+        "thriller"
+      ],
+      "notable_works": [
+        "Harry Bosch series",
+        "The Lincoln Lawyer"
+      ],
       "notes": "Bestselling crime author, Edgar Award winner"
     },
     "James Lee Burke": {
       "type": "author",
       "fame_tier": "genre_master",
       "signed_multiplier": 10,
-      "genres": ["crime fiction", "mystery"],
-      "notable_works": ["Dave Robicheaux series"],
+      "genres": [
+        "crime fiction",
+        "mystery"
+      ],
+      "notable_works": [
+        "Dave Robicheaux series"
+      ],
       "notes": "Literary crime fiction, Edgar Awards"
     },
     "Patricia Cornwell": {
       "type": "author",
       "fame_tier": "genre_master",
       "signed_multiplier": 12,
-      "genres": ["crime fiction", "forensics"],
-      "notable_works": ["Kay Scarpetta series"],
+      "genres": [
+        "crime fiction",
+        "forensics"
+      ],
+      "notable_works": [
+        "Kay Scarpetta series"
+      ],
       "notes": "Pioneer of forensic crime fiction"
     },
     "Dennis Lehane": {
       "type": "author",
       "fame_tier": "genre_master",
       "signed_multiplier": 10,
-      "genres": ["crime fiction", "thriller"],
-      "notable_works": ["Mystic River", "Gone Baby Gone"],
+      "genres": [
+        "crime fiction",
+        "thriller"
+      ],
+      "notable_works": [
+        "Mystic River",
+        "Gone Baby Gone"
+      ],
       "notes": "Literary crime fiction, many film adaptations"
     },
     "Carl Hiaasen": {
       "type": "author",
       "fame_tier": "genre_master",
       "signed_multiplier": 8,
-      "genres": ["crime fiction", "satire"],
-      "notable_works": ["Tourist Season", "Skinny Dip"],
+      "genres": [
+        "crime fiction",
+        "satire"
+      ],
+      "notable_works": [
+        "Tourist Season",
+        "Skinny Dip"
+      ],
       "notes": "Florida noir, satirical crime fiction"
     },
     "Sue Grafton": {
       "type": "author",
       "fame_tier": "genre_master",
       "signed_multiplier": 15,
-      "genres": ["mystery", "detective"],
-      "notable_works": ["Alphabet series (A is for Alibi)"],
+      "genres": [
+        "mystery",
+        "detective"
+      ],
+      "notable_works": [
+        "Alphabet series (A is for Alibi)"
+      ],
       "notes": "Mystery series icon, deceased 2017"
     },
     "Agatha Christie": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 300,
-      "genres": ["mystery", "detective"],
-      "notable_works": ["Murder on the Orient Express", "And Then There Were None"],
+      "genres": [
+        "mystery",
+        "detective"
+      ],
+      "notable_works": [
+        "Murder on the Orient Express",
+        "And Then There Were None"
+      ],
       "notes": "Queen of Mystery, best-selling novelist of all time, deceased 1976"
     },
     "Raymond Chandler": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 200,
-      "genres": ["crime fiction", "noir"],
-      "notable_works": ["The Big Sleep", "Farewell, My Lovely"],
+      "genres": [
+        "crime fiction",
+        "noir"
+      ],
+      "notable_works": [
+        "The Big Sleep",
+        "Farewell, My Lovely"
+      ],
       "notes": "Noir fiction pioneer, deceased 1959"
     },
     "Dashiell Hammett": {
       "type": "author",
       "fame_tier": "literary_icon",
       "signed_multiplier": 250,
-      "genres": ["crime fiction", "noir"],
-      "notable_works": ["The Maltese Falcon", "The Thin Man"],
+      "genres": [
+        "crime fiction",
+        "noir"
+      ],
+      "notable_works": [
+        "The Maltese Falcon",
+        "The Thin Man"
+      ],
       "notes": "Hard-boiled detective fiction pioneer, deceased 1961"
     },
     "Lee Child": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 12,
-      "genres": ["thriller", "action"],
-      "notable_works": ["Jack Reacher series"],
+      "genres": [
+        "thriller",
+        "action"
+      ],
+      "notable_works": [
+        "Jack Reacher series"
+      ],
       "notes": "Action thriller bestseller"
     },
     "Gillian Flynn": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 18,
-      "genres": ["thriller", "psychological"],
-      "notable_works": ["Gone Girl", "Sharp Objects"],
+      "genres": [
+        "thriller",
+        "psychological"
+      ],
+      "notable_works": [
+        "Gone Girl",
+        "Sharp Objects"
+      ],
       "notes": "Psychological thriller phenomenon"
     },
     "Stieg Larsson": {
       "type": "author",
       "fame_tier": "bestselling_author",
       "signed_multiplier": 40,
-      "genres": ["crime fiction", "thriller"],
-      "notable_works": ["The Girl with the Dragon Tattoo"],
+      "genres": [
+        "crime fiction",
+        "thriller"
+      ],
+      "notable_works": [
+        "The Girl with the Dragon Tattoo"
+      ],
       "notes": "Millennium trilogy author, deceased 2004, rare signatures"
     }
   },
-
   "celebrities": {
     "Demi Moore": {
       "type": "celebrity",
       "fame_tier": "hollywood_star",
       "signed_multiplier": 5,
       "profession": "actor",
-      "notable_works": ["Ghost", "G.I. Jane"],
+      "notable_works": [
+        "Ghost",
+        "G.I. Jane"
+      ],
       "notes": "A-list Hollywood actress, memoirs collectible"
     },
     "Arnold Schwarzenegger": {
@@ -378,7 +608,10 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 10,
       "profession": "actor, politician",
-      "notable_works": ["Terminator", "Governor of California"],
+      "notable_works": [
+        "Terminator",
+        "Governor of California"
+      ],
       "notes": "Action star, bodybuilder, politician"
     },
     "Barack Obama": {
@@ -386,7 +619,9 @@
       "fame_tier": "historical_figure",
       "signed_multiplier": 50,
       "profession": "president",
-      "notable_works": ["44th President"],
+      "notable_works": [
+        "44th President"
+      ],
       "notes": "Presidential signatures extremely valuable"
     },
     "Michelle Obama": {
@@ -394,7 +629,9 @@
       "fame_tier": "public_figure",
       "signed_multiplier": 15,
       "profession": "first lady, author",
-      "notable_works": ["Becoming"],
+      "notable_works": [
+        "Becoming"
+      ],
       "notes": "Best-selling memoir author"
     },
     "Bill Clinton": {
@@ -402,7 +639,9 @@
       "fame_tier": "historical_figure",
       "signed_multiplier": 30,
       "profession": "president",
-      "notable_works": ["42nd President"],
+      "notable_works": [
+        "42nd President"
+      ],
       "notes": "Presidential signatures highly valuable"
     },
     "Hillary Clinton": {
@@ -410,7 +649,9 @@
       "fame_tier": "public_figure",
       "signed_multiplier": 20,
       "profession": "secretary of state, author",
-      "notable_works": ["What Happened"],
+      "notable_works": [
+        "What Happened"
+      ],
       "notes": "Political figure, frequently signs"
     },
     "Oprah Winfrey": {
@@ -418,7 +659,9 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 25,
       "profession": "media mogul, author",
-      "notable_works": ["What I Know For Sure"],
+      "notable_works": [
+        "What I Know For Sure"
+      ],
       "notes": "Media icon, book club influential"
     },
     "Malcolm Gladwell": {
@@ -426,7 +669,10 @@
       "fame_tier": "bestselling_author",
       "signed_multiplier": 12,
       "profession": "journalist, author",
-      "notable_works": ["Outliers", "The Tipping Point"],
+      "notable_works": [
+        "Outliers",
+        "The Tipping Point"
+      ],
       "notes": "Popular nonfiction author"
     },
     "Anthony Bourdain": {
@@ -434,7 +680,9 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 45,
       "profession": "chef, author",
-      "notable_works": ["Kitchen Confidential"],
+      "notable_works": [
+        "Kitchen Confidential"
+      ],
       "notes": "Culinary icon, deceased 2018, collectible"
     },
     "Ruth Bader Ginsburg": {
@@ -442,7 +690,9 @@
       "fame_tier": "historical_figure",
       "signed_multiplier": 50,
       "profession": "supreme court justice",
-      "notable_works": ["My Own Words"],
+      "notable_works": [
+        "My Own Words"
+      ],
       "notes": "Supreme Court icon, deceased 2020"
     },
     "Jimmy Carter": {
@@ -450,7 +700,9 @@
       "fame_tier": "historical_figure",
       "signed_multiplier": 25,
       "profession": "president",
-      "notable_works": ["39th President"],
+      "notable_works": [
+        "39th President"
+      ],
       "notes": "Presidential signatures, Nobel Peace Prize"
     },
     "Bruce Springsteen": {
@@ -458,7 +710,9 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 30,
       "profession": "musician, author",
-      "notable_works": ["Born to Run (autobiography)"],
+      "notable_works": [
+        "Born to Run (autobiography)"
+      ],
       "notes": "Rock icon, autobiography collectible"
     },
     "Keith Richards": {
@@ -466,7 +720,9 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 35,
       "profession": "musician, author",
-      "notable_works": ["Life (autobiography)"],
+      "notable_works": [
+        "Life (autobiography)"
+      ],
       "notes": "Rolling Stones, autobiography highly collectible"
     },
     "Patti Smith": {
@@ -474,20 +730,30 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 20,
       "profession": "musician, poet, author",
-      "notable_works": ["Just Kids"],
-      "awards": ["National Book Award"],
+      "notable_works": [
+        "Just Kids"
+      ],
+      "awards": [
+        "National Book Award"
+      ],
       "notes": "Punk poet, acclaimed memoirs"
     }
   },
-
   "film_directors": {
     "Martin Scorsese": {
       "type": "director",
       "fame_tier": "cultural_icon",
       "signed_multiplier": 128,
       "profession": "film director",
-      "notable_works": ["Taxi Driver", "Goodfellas", "The Departed"],
-      "awards": ["Academy Award", "AFI Life Achievement"],
+      "notable_works": [
+        "Taxi Driver",
+        "Goodfellas",
+        "The Departed"
+      ],
+      "awards": [
+        "Academy Award",
+        "AFI Life Achievement"
+      ],
       "notes": "Legendary director, film books by him museum-quality"
     },
     "Stanley Kubrick": {
@@ -495,7 +761,11 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 200,
       "profession": "film director",
-      "notable_works": ["2001", "The Shining", "Dr. Strangelove"],
+      "notable_works": [
+        "2001",
+        "The Shining",
+        "Dr. Strangelove"
+      ],
       "notes": "Reclusive genius director, rarely signed"
     },
     "Steven Spielberg": {
@@ -503,7 +773,11 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 60,
       "profession": "film director",
-      "notable_works": ["Jaws", "E.T.", "Schindler's List"],
+      "notable_works": [
+        "Jaws",
+        "E.T.",
+        "Schindler's List"
+      ],
       "notes": "Most commercially successful director"
     },
     "Alfred Hitchcock": {
@@ -511,7 +785,11 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 180,
       "profession": "film director",
-      "notable_works": ["Psycho", "Vertigo", "Rear Window"],
+      "notable_works": [
+        "Psycho",
+        "Vertigo",
+        "Rear Window"
+      ],
       "notes": "Master of suspense, deceased 1980"
     },
     "Quentin Tarantino": {
@@ -519,7 +797,10 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 50,
       "profession": "film director",
-      "notable_works": ["Pulp Fiction", "Kill Bill"],
+      "notable_works": [
+        "Pulp Fiction",
+        "Kill Bill"
+      ],
       "notes": "Cult director, screenplays collectible"
     },
     "Francis Ford Coppola": {
@@ -527,7 +808,10 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 70,
       "profession": "film director",
-      "notable_works": ["The Godfather", "Apocalypse Now"],
+      "notable_works": [
+        "The Godfather",
+        "Apocalypse Now"
+      ],
       "notes": "Legendary director, multiple Oscars"
     },
     "Woody Allen": {
@@ -535,7 +819,10 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 40,
       "profession": "film director, writer",
-      "notable_works": ["Annie Hall", "Manhattan"],
+      "notable_works": [
+        "Annie Hall",
+        "Manhattan"
+      ],
       "notes": "Prolific director/writer"
     },
     "Spike Lee": {
@@ -543,7 +830,10 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 30,
       "profession": "film director",
-      "notable_works": ["Do the Right Thing", "Malcolm X"],
+      "notable_works": [
+        "Do the Right Thing",
+        "Malcolm X"
+      ],
       "notes": "Influential filmmaker"
     },
     "Wes Anderson": {
@@ -551,7 +841,10 @@
       "fame_tier": "auteur",
       "signed_multiplier": 25,
       "profession": "film director",
-      "notable_works": ["The Grand Budapest Hotel", "Moonrise Kingdom"],
+      "notable_works": [
+        "The Grand Budapest Hotel",
+        "Moonrise Kingdom"
+      ],
       "notes": "Distinctive visual style"
     },
     "Christopher Nolan": {
@@ -559,18 +852,22 @@
       "fame_tier": "blockbuster_auteur",
       "signed_multiplier": 35,
       "profession": "film director",
-      "notable_works": ["Inception", "The Dark Knight"],
+      "notable_works": [
+        "Inception",
+        "The Dark Knight"
+      ],
       "notes": "Modern blockbuster auteur"
     }
   },
-
   "photographers_artists": {
     "Liz Goldwyn": {
       "type": "photographer",
       "fame_tier": "specialty_artist",
       "signed_multiplier": 5,
       "profession": "photographer, filmmaker",
-      "notable_works": ["Pretty Things"],
+      "notable_works": [
+        "Pretty Things"
+      ],
       "notes": "Samuel Goldwyn granddaughter, cultural photography"
     },
     "Annie Leibovitz": {
@@ -578,7 +875,9 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 25,
       "profession": "photographer",
-      "notable_works": ["Rolling Stone covers"],
+      "notable_works": [
+        "Rolling Stone covers"
+      ],
       "notes": "Iconic celebrity photographer"
     },
     "Ansel Adams": {
@@ -586,7 +885,9 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 100,
       "profession": "photographer",
-      "notable_works": ["Yosemite"],
+      "notable_works": [
+        "Yosemite"
+      ],
       "notes": "Legendary landscape photographer, deceased"
     },
     "Andy Warhol": {
@@ -594,18 +895,21 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 150,
       "profession": "artist",
-      "notable_works": ["Pop Art"],
+      "notable_works": [
+        "Pop Art"
+      ],
       "notes": "Pop art icon, anything signed extremely valuable"
     }
   },
-
   "astronauts_explorers": {
     "Buzz Aldrin": {
       "type": "astronaut",
       "fame_tier": "historical_figure",
       "signed_multiplier": 18,
       "profession": "astronaut",
-      "notable_works": ["Apollo 11 - moonwalker"],
+      "notable_works": [
+        "Apollo 11 - moonwalker"
+      ],
       "notes": "Second person to walk on moon"
     },
     "Neil Armstrong": {
@@ -613,7 +917,9 @@
       "fame_tier": "historical_icon",
       "signed_multiplier": 300,
       "profession": "astronaut",
-      "notable_works": ["Apollo 11 - first moonwalker"],
+      "notable_works": [
+        "Apollo 11 - first moonwalker"
+      ],
       "notes": "Rarely signed, deceased, first human on moon"
     },
     "John Glenn": {
@@ -621,7 +927,9 @@
       "fame_tier": "historical_figure",
       "signed_multiplier": 15,
       "profession": "astronaut, senator",
-      "notable_works": ["First American in orbit"],
+      "notable_works": [
+        "First American in orbit"
+      ],
       "notes": "Mercury astronaut, senator"
     },
     "Sally Ride": {
@@ -629,19 +937,24 @@
       "fame_tier": "historical_figure",
       "signed_multiplier": 30,
       "profession": "astronaut",
-      "notable_works": ["First American woman in space"],
+      "notable_works": [
+        "First American woman in space"
+      ],
       "notes": "Trailblazer, deceased"
     }
   },
-
   "musicians": {
     "Bob Dylan": {
       "type": "musician",
       "fame_tier": "cultural_icon",
       "signed_multiplier": 80,
       "profession": "musician, poet",
-      "notable_works": ["Like a Rolling Stone"],
-      "awards": ["Nobel Prize in Literature"],
+      "notable_works": [
+        "Like a Rolling Stone"
+      ],
+      "awards": [
+        "Nobel Prize in Literature"
+      ],
       "notes": "Nobel laureate, rarely signs"
     },
     "Paul McCartney": {
@@ -649,7 +962,9 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 70,
       "profession": "musician",
-      "notable_works": ["The Beatles"],
+      "notable_works": [
+        "The Beatles"
+      ],
       "notes": "Beatles member, legendary"
     },
     "Johnny Cash": {
@@ -657,79 +972,410 @@
       "fame_tier": "cultural_icon",
       "signed_multiplier": 50,
       "profession": "musician",
-      "notable_works": ["Man in Black"],
+      "notable_works": [
+        "Man in Black"
+      ],
       "notes": "Country music legend, deceased"
     }
   },
-
   "name_variations": {
-    "J.K. Rowling": ["Joanne Rowling", "J. K. Rowling", "JK Rowling", "Rowling, J.K.", "Rowling,J.K."],
-    "Martin Scorsese": ["Scorsese, Martin", "Scorsese,Martin", "Martin Charles Scorsese"],
-    "Buzz Aldrin": ["Aldrin, Buzz", "Aldrin,Buzz", "Edwin Aldrin", "Edwin Eugene Aldrin Jr."],
-    "Stephen King": ["King, Stephen", "Stephen Edwin King", "King,Stephen"],
-    "Doris Kearns Goodwin": ["Goodwin, Doris Kearns", "Doris Kearns", "Goodwin,Doris Kearns", "GOODWIN, Doris Kearns"],
-    "Louise Erdrich": ["Erdrich, Louise", "ERDRICH, LOUISE", "Erdrich,Louise"],
-    "Demi Moore": ["Moore, Demi", "Demetria Gene Guynes", "MOORE, DEMI"],
-    "Elmore Leonard": ["Leonard, Elmore", "Elmore, Leonard", "Leonard,Elmore"],
-    "Kurt Vonnegut": ["Vonnegut, Kurt", "Vonnegut,Kurt", "Kurt Vonnegut Jr."],
-    "Hunter S. Thompson": ["Thompson, Hunter S.", "Thompson,Hunter S.", "Hunter Stockton Thompson"],
-    "Ernest Hemingway": ["Hemingway, Ernest", "Hemingway,Ernest", "Ernest Miller Hemingway"],
-    "J.R.R. Tolkien": ["Tolkien, J.R.R.", "Tolkien,J.R.R.", "John Ronald Reuel Tolkien"],
-    "George R.R. Martin": ["Martin, George R.R.", "Martin,George R.R.", "George Raymond Richard Martin"],
-    "Neil Gaiman": ["Gaiman, Neil", "Gaiman,Neil"],
-    "Terry Pratchett": ["Pratchett, Terry", "Pratchett,Terry", "Terence David John Pratchett"],
-    "Douglas Adams": ["Adams, Douglas", "Adams,Douglas"],
-    "Margaret Atwood": ["Atwood, Margaret", "Atwood,Margaret"],
-    "Haruki Murakami": ["Murakami, Haruki", "Murakami,Haruki"],
-    "John Steinbeck": ["Steinbeck, John", "Steinbeck,John"],
-    "F. Scott Fitzgerald": ["Fitzgerald, F. Scott", "Fitzgerald,F. Scott", "Francis Scott Fitzgerald"],
-    "William Faulkner": ["Faulkner, William", "Faulkner,William"],
-    "Tom Clancy": ["Clancy, Tom", "Clancy,Tom", "Thomas Leo Clancy Jr."],
-    "Michael Crichton": ["Crichton, Michael", "Crichton,Michael"],
-    "John Grisham": ["Grisham, John", "Grisham,John"],
-    "James Patterson": ["Patterson, James", "Patterson,James"],
-    "Michael Connelly": ["Connelly, Michael", "Connelly,Michael"],
-    "James Lee Burke": ["Burke, James Lee", "Burke,James Lee"],
-    "Patricia Cornwell": ["Cornwell, Patricia", "Cornwell,Patricia"],
-    "Dennis Lehane": ["Lehane, Dennis", "Lehane,Dennis"],
-    "Carl Hiaasen": ["Hiaasen, Carl", "Hiaasen,Carl"],
-    "Sue Grafton": ["Grafton, Sue", "Grafton,Sue"],
-    "Agatha Christie": ["Christie, Agatha", "Christie,Agatha"],
-    "Raymond Chandler": ["Chandler, Raymond", "Chandler,Raymond"],
-    "Dashiell Hammett": ["Hammett, Dashiell", "Hammett,Dashiell"],
-    "Lee Child": ["Child, Lee", "Child,Lee", "James Dover Grant"],
-    "Gillian Flynn": ["Flynn, Gillian", "Flynn,Gillian"],
-    "Stieg Larsson": ["Larsson, Stieg", "Larsson,Stieg"],
-    "Colson Whitehead": ["Whitehead, Colson", "Whitehead,Colson"],
-    "Barack Obama": ["Obama, Barack", "Obama,Barack"],
-    "Michelle Obama": ["Obama, Michelle", "Obama,Michelle"],
-    "Bill Clinton": ["Clinton, Bill", "Clinton,Bill", "William Jefferson Clinton"],
-    "Hillary Clinton": ["Clinton, Hillary", "Clinton,Hillary", "Hillary Rodham Clinton"],
-    "Oprah Winfrey": ["Winfrey, Oprah", "Winfrey,Oprah"],
-    "Malcolm Gladwell": ["Gladwell, Malcolm", "Gladwell,Malcolm"],
-    "Anthony Bourdain": ["Bourdain, Anthony", "Bourdain,Anthony"],
-    "Ruth Bader Ginsburg": ["Ginsburg, Ruth Bader", "Ginsburg,Ruth Bader", "RBG"],
-    "Jimmy Carter": ["Carter, Jimmy", "Carter,Jimmy", "James Earl Carter Jr."],
-    "Bruce Springsteen": ["Springsteen, Bruce", "Springsteen,Bruce"],
-    "Keith Richards": ["Richards, Keith", "Richards,Keith"],
-    "Patti Smith": ["Smith, Patti", "Smith,Patti"],
-    "Steven Spielberg": ["Spielberg, Steven", "Spielberg,Steven"],
-    "Stanley Kubrick": ["Kubrick, Stanley", "Kubrick,Stanley"],
-    "Alfred Hitchcock": ["Hitchcock, Alfred", "Hitchcock,Alfred"],
-    "Quentin Tarantino": ["Tarantino, Quentin", "Tarantino,Quentin"],
-    "Francis Ford Coppola": ["Coppola, Francis Ford", "Coppola,Francis Ford"],
-    "Woody Allen": ["Allen, Woody", "Allen,Woody", "Allan Stewart Konigsberg"],
-    "Spike Lee": ["Lee, Spike", "Lee,Spike", "Shelton Jackson Lee"],
-    "Wes Anderson": ["Anderson, Wes", "Anderson,Wes"],
-    "Christopher Nolan": ["Nolan, Christopher", "Nolan,Christopher"],
-    "Annie Leibovitz": ["Leibovitz, Annie", "Leibovitz,Annie"],
-    "Ansel Adams": ["Adams, Ansel", "Adams,Ansel"],
-    "Andy Warhol": ["Warhol, Andy", "Warhol,Andy"],
-    "Neil Armstrong": ["Armstrong, Neil", "Armstrong,Neil"],
-    "John Glenn": ["Glenn, John", "Glenn,John"],
-    "Sally Ride": ["Ride, Sally", "Ride,Sally"],
-    "Bob Dylan": ["Dylan, Bob", "Dylan,Bob", "Robert Allen Zimmerman"],
-    "Paul McCartney": ["McCartney, Paul", "McCartney,Paul"],
-    "Johnny Cash": ["Cash, Johnny", "Cash,Johnny"]
+    "J.K. Rowling": [
+      "Joanne Rowling",
+      "J. K. Rowling",
+      "JK Rowling",
+      "Rowling, J.K.",
+      "Rowling,J.K."
+    ],
+    "Martin Scorsese": [
+      "Scorsese, Martin",
+      "Scorsese,Martin",
+      "Martin Charles Scorsese"
+    ],
+    "Buzz Aldrin": [
+      "Aldrin, Buzz",
+      "Aldrin,Buzz",
+      "Edwin Aldrin",
+      "Edwin Eugene Aldrin Jr."
+    ],
+    "Stephen King": [
+      "King, Stephen",
+      "Stephen Edwin King",
+      "King,Stephen"
+    ],
+    "Doris Kearns Goodwin": [
+      "Goodwin, Doris Kearns",
+      "Doris Kearns",
+      "Goodwin,Doris Kearns",
+      "GOODWIN, Doris Kearns"
+    ],
+    "Louise Erdrich": [
+      "Erdrich, Louise",
+      "ERDRICH, LOUISE",
+      "Erdrich,Louise"
+    ],
+    "Demi Moore": [
+      "Moore, Demi",
+      "Demetria Gene Guynes",
+      "MOORE, DEMI"
+    ],
+    "Elmore Leonard": [
+      "Leonard, Elmore",
+      "Elmore, Leonard",
+      "Leonard,Elmore"
+    ],
+    "Kurt Vonnegut": [
+      "Vonnegut, Kurt",
+      "Vonnegut,Kurt",
+      "Kurt Vonnegut Jr."
+    ],
+    "Hunter S. Thompson": [
+      "Thompson, Hunter S.",
+      "Thompson,Hunter S.",
+      "Hunter Stockton Thompson"
+    ],
+    "Ernest Hemingway": [
+      "Hemingway, Ernest",
+      "Hemingway,Ernest",
+      "Ernest Miller Hemingway"
+    ],
+    "J.R.R. Tolkien": [
+      "Tolkien, J.R.R.",
+      "Tolkien,J.R.R.",
+      "John Ronald Reuel Tolkien"
+    ],
+    "George R.R. Martin": [
+      "Martin, George R.R.",
+      "Martin,George R.R.",
+      "George Raymond Richard Martin"
+    ],
+    "Neil Gaiman": [
+      "Gaiman, Neil",
+      "Gaiman,Neil"
+    ],
+    "Terry Pratchett": [
+      "Pratchett, Terry",
+      "Pratchett,Terry",
+      "Terence David John Pratchett"
+    ],
+    "Douglas Adams": [
+      "Adams, Douglas",
+      "Adams,Douglas"
+    ],
+    "Margaret Atwood": [
+      "Atwood, Margaret",
+      "Atwood,Margaret"
+    ],
+    "Haruki Murakami": [
+      "Murakami, Haruki",
+      "Murakami,Haruki"
+    ],
+    "John Steinbeck": [
+      "Steinbeck, John",
+      "Steinbeck,John"
+    ],
+    "F. Scott Fitzgerald": [
+      "Fitzgerald, F. Scott",
+      "Fitzgerald,F. Scott",
+      "Francis Scott Fitzgerald"
+    ],
+    "William Faulkner": [
+      "Faulkner, William",
+      "Faulkner,William"
+    ],
+    "Tom Clancy": [
+      "Clancy, Tom",
+      "Clancy,Tom",
+      "Thomas Leo Clancy Jr."
+    ],
+    "Michael Crichton": [
+      "Crichton, Michael",
+      "Crichton,Michael"
+    ],
+    "John Grisham": [
+      "Grisham, John",
+      "Grisham,John"
+    ],
+    "James Patterson": [
+      "Patterson, James",
+      "Patterson,James"
+    ],
+    "Michael Connelly": [
+      "Connelly, Michael",
+      "Connelly,Michael"
+    ],
+    "James Lee Burke": [
+      "Burke, James Lee",
+      "Burke,James Lee"
+    ],
+    "Patricia Cornwell": [
+      "Cornwell, Patricia",
+      "Cornwell,Patricia"
+    ],
+    "Dennis Lehane": [
+      "Lehane, Dennis",
+      "Lehane,Dennis"
+    ],
+    "Carl Hiaasen": [
+      "Hiaasen, Carl",
+      "Hiaasen,Carl"
+    ],
+    "Sue Grafton": [
+      "Grafton, Sue",
+      "Grafton,Sue"
+    ],
+    "Agatha Christie": [
+      "Christie, Agatha",
+      "Christie,Agatha"
+    ],
+    "Raymond Chandler": [
+      "Chandler, Raymond",
+      "Chandler,Raymond"
+    ],
+    "Dashiell Hammett": [
+      "Hammett, Dashiell",
+      "Hammett,Dashiell"
+    ],
+    "Lee Child": [
+      "Child, Lee",
+      "Child,Lee",
+      "James Dover Grant"
+    ],
+    "Gillian Flynn": [
+      "Flynn, Gillian",
+      "Flynn,Gillian"
+    ],
+    "Stieg Larsson": [
+      "Larsson, Stieg",
+      "Larsson,Stieg"
+    ],
+    "Colson Whitehead": [
+      "Whitehead, Colson",
+      "Whitehead,Colson"
+    ],
+    "Barack Obama": [
+      "Obama, Barack",
+      "Obama,Barack"
+    ],
+    "Michelle Obama": [
+      "Obama, Michelle",
+      "Obama,Michelle"
+    ],
+    "Bill Clinton": [
+      "Clinton, Bill",
+      "Clinton,Bill",
+      "William Jefferson Clinton"
+    ],
+    "Hillary Clinton": [
+      "Clinton, Hillary",
+      "Clinton,Hillary",
+      "Hillary Rodham Clinton"
+    ],
+    "Oprah Winfrey": [
+      "Winfrey, Oprah",
+      "Winfrey,Oprah"
+    ],
+    "Malcolm Gladwell": [
+      "Gladwell, Malcolm",
+      "Gladwell,Malcolm"
+    ],
+    "Anthony Bourdain": [
+      "Bourdain, Anthony",
+      "Bourdain,Anthony"
+    ],
+    "Ruth Bader Ginsburg": [
+      "Ginsburg, Ruth Bader",
+      "Ginsburg,Ruth Bader",
+      "RBG"
+    ],
+    "Jimmy Carter": [
+      "Carter, Jimmy",
+      "Carter,Jimmy",
+      "James Earl Carter Jr."
+    ],
+    "Bruce Springsteen": [
+      "Springsteen, Bruce",
+      "Springsteen,Bruce"
+    ],
+    "Keith Richards": [
+      "Richards, Keith",
+      "Richards,Keith"
+    ],
+    "Patti Smith": [
+      "Smith, Patti",
+      "Smith,Patti"
+    ],
+    "Steven Spielberg": [
+      "Spielberg, Steven",
+      "Spielberg,Steven"
+    ],
+    "Stanley Kubrick": [
+      "Kubrick, Stanley",
+      "Kubrick,Stanley"
+    ],
+    "Alfred Hitchcock": [
+      "Hitchcock, Alfred",
+      "Hitchcock,Alfred"
+    ],
+    "Quentin Tarantino": [
+      "Tarantino, Quentin",
+      "Tarantino,Quentin"
+    ],
+    "Francis Ford Coppola": [
+      "Coppola, Francis Ford",
+      "Coppola,Francis Ford"
+    ],
+    "Woody Allen": [
+      "Allen, Woody",
+      "Allen,Woody",
+      "Allan Stewart Konigsberg"
+    ],
+    "Spike Lee": [
+      "Lee, Spike",
+      "Lee,Spike",
+      "Shelton Jackson Lee"
+    ],
+    "Wes Anderson": [
+      "Anderson, Wes",
+      "Anderson,Wes"
+    ],
+    "Christopher Nolan": [
+      "Nolan, Christopher",
+      "Nolan,Christopher"
+    ],
+    "Annie Leibovitz": [
+      "Leibovitz, Annie",
+      "Leibovitz,Annie"
+    ],
+    "Ansel Adams": [
+      "Adams, Ansel",
+      "Adams,Ansel"
+    ],
+    "Andy Warhol": [
+      "Warhol, Andy",
+      "Warhol,Andy"
+    ],
+    "Neil Armstrong": [
+      "Armstrong, Neil",
+      "Armstrong,Neil"
+    ],
+    "John Glenn": [
+      "Glenn, John",
+      "Glenn,John"
+    ],
+    "Sally Ride": [
+      "Ride, Sally",
+      "Ride,Sally"
+    ],
+    "Bob Dylan": [
+      "Dylan, Bob",
+      "Dylan,Bob",
+      "Robert Allen Zimmerman"
+    ],
+    "Paul McCartney": [
+      "McCartney, Paul",
+      "McCartney,Paul"
+    ],
+    "Johnny Cash": [
+      "Cash, Johnny",
+      "Cash,Johnny"
+    ]
+  },
+  "authors_bestselling": {
+    "Nora Roberts": {
+      "signed_multiplier": 25.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "romance"
+      ],
+      "notes": "Award winner in romance, highly collectible"
+    },
+    "Anne Rice": {
+      "signed_multiplier": 25.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "horror"
+      ],
+      "notes": "Award winner in horror, highly collectible"
+    },
+    "Enid Blyton": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "children"
+      ],
+      "notes": "Prolific children author"
+    },
+    "R.L. Stine": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "horror"
+      ],
+      "notes": "Prolific horror author"
+    },
+    "Gayle Lynds": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "thriller"
+      ],
+      "notes": "Prolific thriller author"
+    },
+    "Susan Mallery": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "romance"
+      ],
+      "notes": "Prolific romance author"
+    },
+    "Joe Lansdale": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "horror"
+      ],
+      "notes": "Prolific horror author"
+    },
+    "Diana Palmer": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "romance"
+      ],
+      "notes": "Prolific romance author"
+    },
+    "Heather Graham": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "romance"
+      ],
+      "notes": "Prolific romance author"
+    },
+    "Mercedes Lackey": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "fantasy"
+      ],
+      "notes": "Prolific fantasy author"
+    },
+    "David Hagberg": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "thriller"
+      ],
+      "notes": "Prolific thriller author"
+    },
+    "Seanan McGuire": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "sci-fi"
+      ],
+      "notes": "Prolific sci-fi author"
+    }
   }
 }

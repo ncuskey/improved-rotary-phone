@@ -636,16 +636,23 @@ def score_probability(
         except Exception:
             pass
 
-    # Strong buyback floor: If there's a solid buyback offer with competitive demand,
-    # ensure at least "Medium" confidence (45 points) regardless of other factors
-    # Rationale: Buyback offers represent guaranteed profit if book acquired at low cost
-    if bookscouter and bookscouter.best_price >= 10.0:
+    # Buyback floor: If there's a buyback offer, ensure minimum confidence based on offer strength
+    # Rationale: Buyback offers represent guaranteed profit if book acquired at low/no cost
+    if bookscouter and bookscouter.best_price > 0:
         vendor_count = len([o for o in bookscouter.offers if o.price > 0]) if bookscouter.offers else 0
-        if vendor_count >= 3:
-            # Strong buyback ($10+) + competitive demand (3+ vendors) = reliable opportunity
+
+        # Strong buyback ($10+) with competitive demand (3+ vendors) = Medium confidence minimum
+        if bookscouter.best_price >= 10.0 and vendor_count >= 3:
             if score < 45:
                 score = 45
                 reasons.append(f"Buyback floor: Strong offer (${bookscouter.best_price:.2f}) + {vendor_count} competing vendors ensures Medium confidence")
+
+        # ANY buyback ($1+) with at least 1 vendor = Low confidence minimum (prevents 0 score)
+        # Rationale: Even small buyback on free book = guaranteed profit
+        elif bookscouter.best_price >= 1.0 and vendor_count >= 1:
+            if score < 30:
+                score = 30
+                reasons.append(f"Buyback floor: Any positive buyback (${bookscouter.best_price:.2f}) ensures Low confidence minimum (guaranteed profit on free books)")
 
     # Cap score at 100 to prevent exceeding 100% confidence
     score = min(score, 100.0)

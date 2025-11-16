@@ -772,6 +772,41 @@ class DatabaseManager:
                 lot_payloads,
             )
 
+    def upsert_lots(self, lots: Iterable[Dict[str, Any]]) -> None:
+        """Update or insert lots without deleting unaffected ones.
+
+        Uses INSERT OR REPLACE to update only the specified lots,
+        preserving all other lots in the database. This is ideal for
+        incremental lot updates where only affected lots need to be refreshed.
+        """
+        lot_payloads = list(lots)
+        for payload in lot_payloads:
+            payload["book_isbns"] = json.dumps(payload.get("book_isbns", []))
+            payload.setdefault("justification", "")
+
+        _log("upsert_lots", count=len(lot_payloads))
+        with self._get_connection() as conn:
+            conn.executemany(
+                """
+                INSERT OR REPLACE INTO lots (
+                    name, strategy, book_isbns,
+                    estimated_value, probability_label, probability_score,
+                    sell_through, justification,
+                    lot_market_value, lot_optimal_size, lot_per_book_price,
+                    lot_comps_count, use_lot_pricing,
+                    updated_at
+                ) VALUES (
+                    :name, :strategy, :book_isbns,
+                    :estimated_value, :probability_label, :probability_score,
+                    :sell_through, :justification,
+                    :lot_market_value, :lot_optimal_size, :lot_per_book_price,
+                    :lot_comps_count, :use_lot_pricing,
+                    CURRENT_TIMESTAMP
+                )
+                """,
+                lot_payloads,
+            )
+
     def delete_lot_by_name_and_strategy(self, name: str, strategy: str) -> None:
         """Delete a specific lot by its name and strategy."""
         _log("delete_lot", name=name, strategy=strategy)

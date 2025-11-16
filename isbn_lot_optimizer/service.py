@@ -2537,15 +2537,10 @@ class BookService:
             with timer("Phase 3: Enrich affected lots with pricing", log=True, record=True):
                 enriched_candidates = self._enrich_candidates_with_pricing(affected_skeletons)
 
-            # Delete old versions of affected lots from database
-            with timer("Delete old affected lots", log=True, record=True):
-                affected_names = [(lot.name, lot.strategy) for lot in enriched_candidates]
-                for name, strategy in affected_names:
-                    self.db.delete_lot_by_name_and_strategy(name, strategy)
-
-            # Save enriched lots to database
-            with timer("Save updated lots", log=True, record=True):
-                self.save_lots(enriched_candidates)
+            # Upsert enriched lots to database (preserves unaffected lots)
+            with timer("Upsert updated lots", log=True, record=True):
+                payloads = [self._lot_to_payload(lot) for lot in enriched_candidates]
+                self.db.upsert_lots(payloads)
 
             with timer("Convert to suggestions", log=True, record=True):
                 result = [self._candidate_to_suggestion(lot) for lot in enriched_candidates]

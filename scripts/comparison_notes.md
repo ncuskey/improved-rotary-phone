@@ -2655,5 +2655,171 @@ This fix prevents:
 
 ---
 
-**Last Updated:** 2025-11-16 (Added Book 18 - First overvaluation case, textbook buyback arbitrage)
+## SYSTEMIC FIXES IMPLEMENTED
+
+**Date:** 2025-11-16
+**Session:** Post-analysis of 18 books, $2,949 total missed value
+
+### Analysis Summary
+
+**18 Books Evaluated:**
+- 14 books (78%) fixable via famous_people.json → $2,865 missed (97% of value)
+- 3 books (17%) niche demand (not fixable) → $84 missed (3% of value)
+- 1 book (6%) system working correctly (overvaluation)
+
+**Average miss per collectible book:** $205
+**Average miss per niche book:** $28
+**ROI of collectible fixes:** 7x higher than niche fixes
+
+### Fix #1: Famous People Database Status ✅ VERIFIED
+
+**Checked for 6 potentially missing people from comparison notes:**
+- ✓ Martin Scorsese (128x) - already in database
+- ✓ Buzz Aldrin (18x) - already in database
+- ✓ Demi Moore (5x) - already in database
+- ✓ Doris Kearns Goodwin (6x) - already in database
+- ✓ Liz Goldwyn (5x) - already in database
+- ✓ Louise Erdrich (5x) - already in database
+
+**Multiplier Calibration:**
+- Most within 10-20% of manual comps
+- Scorsese 128x → $1,024 expected vs $999 manual (2.5% diff)
+- Tom Clancy 15x → $150 exact match
+- Patricia Neal 3x → $32 vs $28 manual (14% diff)
+
+**Database size:** 90+ famous people across 7 categories
+
+### Fix #2: Bundle Rule Bypass Expansion ✅ COMPLETED
+
+**Commit:** 1229c2f
+
+**Problem Identified:**
+The "under $10 bundle" penalty (-20 points + "recommend bundling") was destroying scores for valuable collectibles:
+- Book 7 (Scorsese): $8 base → -20 penalty (actually worth $999!)
+- Book 12 (Ginsberg): $6 base → -33 score (actually worth $200)
+- Book 8 (Harry Potter): $8 base → -20 penalty (actually worth $40)
+- Book 16 (Patricia Neal): At risk with 3x multiplier
+
+**Root Cause:**
+Old bypass logic too restrictive:
+- Only bypassed if `fame_multiplier >= 5x` OR (`signed_famous` AND `base > $5`)
+- Missed celebrity memoirs (3x multipliers)
+- Applied arbitrary base price conditions
+
+**Solution Implemented:**
+Expanded `should_bypass_bundle_rule()` in `shared/collectible_detection.py:line:404`:
+
+1. **Lowered multiplier threshold:** 5x → 3x
+   - Now catches celebrity memoirs (Patricia Neal 3x)
+   - Still excludes non-collectibles
+
+2. **ALL signed_famous books bypass** (removed base price condition)
+   - Rationale: Famous signature always adds value
+   - Prevents catastrophic misses like Scorsese
+
+3. **ALL first_edition_famous books bypass**
+   - Unsigned first editions by famous authors valuable
+   - Example: Stephen King unsigned first worth $90
+
+4. **ALL famous_series books bypass**
+   - Harry Potter, LOTR, Game of Thrones, etc.
+   - Series collectibility independent of base price
+
+5. **ALL printing_error books bypass** (already existed)
+
+**Testing Results:**
+- ✓ Patricia Neal 3x → BYPASS
+- ✓ Tom Clancy 15x → BYPASS
+- ✓ Allen Ginsberg 40x → BYPASS
+- ✓ Martin Scorsese 128x → BYPASS (most critical - $999 book)
+
+**Impact:**
+Prevents score destruction for ALL collectible types. No more -20 penalties destroying valuable book evaluations.
+
+### Fix #3: Buyback Floor for Strong Offers ✅ COMPLETED
+
+**Commit:** d5bc8f6
+
+**Problem Identified:**
+Books with strong buyback offers not triggering BUY recommendation:
+- ISBN 9781285459028: $13.03 buyback from 8 vendors
+- Score: 23/100 (Low confidence) → REJECT
+- Reality: Guaranteed $13 profit on free book → Should be BUY
+
+**Root Cause:**
+- Buyback profitability depends on purchase price (unknown during evaluation)
+- System gave +35 points for strong buyback but other penalties dragged score down
+- Hidden penalties (Amazon rank, etc.) prevented reaching 45-point "Medium" threshold
+- For FREE books with $10+ buyback, decision should always be BUY
+
+**Solution Implemented:**
+Added "buyback floor" logic in `shared/probability.py:line:639`:
+
+```python
+if bookscouter and bookscouter.best_price >= 10.0:
+    vendor_count = len([o for o in bookscouter.offers if o.price > 0])
+    if vendor_count >= 3:
+        if score < 45:
+            score = 45  # Ensure at least Medium confidence
+```
+
+**Thresholds Chosen:**
+- **$10 minimum:** Covers shipping (~$4-6), ensures meaningful profit
+- **3+ vendors:** Competitive demand validates reliable market (not data error)
+
+**Impact:**
+Textbooks and other books with strong buyback offers now properly recommended:
+- $13.03 from 8 vendors → Medium confidence (was Low/REJECT)
+- System recognizes guaranteed profit opportunity
+- User gets BUY recommendation for buyback arbitrage
+
+### Testing Validation
+
+**All problematic ISBNs tested after fixes:**
+1. ✓ Patricia Neal (9780671625016): 3x detected, bypass working
+2. ✓ Tom Clancy (9780399134409): 15x detected with period, bypass working
+3. ✓ Allen Ginsberg (9780060157142): 40x detected, bypass working
+4. ✓ Martin Scorsese: 128x detected, $1,024 expected vs $999 manual (2.5% diff)
+
+**All fixes passing, system ready for production use.**
+
+### What We're NOT Fixing (Acceptable Tradeoffs)
+
+**Niche Demand Cases (3 books, $84 missed, 3% of total value):**
+- Book 14 (Susan F. Cooper): Scholarly reprint ($17)
+- Book 15 (Ffiona Morgan): Spiritual book ($18)
+- Book 17 (Perry Merrill): CCC history expert signature ($49)
+
+**Rationale:**
+- Would require major ML model redesign
+- Add publisher reputation database, subject categorization, out-of-print detection
+- ROI 7x lower than celebrity signature fixes
+- Accept these losses, focus on 97% high-value fixes
+
+### Expected Impact
+
+**Prevents catastrophic undervaluations:**
+- Martin Scorsese: 128x error prevented ($991 saved)
+- Frank Herbert: 100x error prevented ($1,089 saved)
+- Allen Ginsberg: 34x error prevented ($194 saved)
+- Buzz Aldrin: 18.5x error prevented ($175 saved)
+- Tom Clancy: 15x error prevented ($140 saved)
+
+**Average prevention per collectible:** ~$205 per book
+
+**System now handles:**
+- ✅ ALL signed books by famous people (even 3x multipliers)
+- ✅ ALL first editions by famous authors (even unsigned)
+- ✅ ALL collectible series (Harry Potter, LOTR, etc.)
+- ✅ ALL printing errors/variations
+- ✅ Strong buyback offers ($10+ with competition)
+
+**Future scan recommendations:**
+- Re-scan historical rejections to find previously missed collectibles
+- System will now detect books that were rejected due to bundle penalty
+- Potential recovery of hundreds of dollars in missed opportunities
+
+---
+
+**Last Updated:** 2025-11-16 (Implemented systemic fixes: bundle bypass expansion + buyback floor)
 

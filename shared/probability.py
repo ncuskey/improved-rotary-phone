@@ -636,6 +636,17 @@ def score_probability(
         except Exception:
             pass
 
+    # Strong buyback floor: If there's a solid buyback offer with competitive demand,
+    # ensure at least "Medium" confidence (45 points) regardless of other factors
+    # Rationale: Buyback offers represent guaranteed profit if book acquired at low cost
+    if bookscouter and bookscouter.best_price >= 10.0:
+        vendor_count = len([o for o in bookscouter.offers if o.price > 0]) if bookscouter.offers else 0
+        if vendor_count >= 3:
+            # Strong buyback ($10+) + competitive demand (3+ vendors) = reliable opportunity
+            if score < 45:
+                score = 45
+                reasons.append(f"Buyback floor: Strong offer (${bookscouter.best_price:.2f}) + {vendor_count} competing vendors ensures Medium confidence")
+
     # Cap score at 100 to prevent exceeding 100% confidence
     score = min(score, 100.0)
     probability_label = classify_probability(score)

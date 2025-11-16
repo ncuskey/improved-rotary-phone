@@ -112,6 +112,34 @@ class RecentScansAnalyzer:
 
         return None
 
+    def _get_lot_market_data(self, series_name: str, book_count: int) -> Optional[Dict]:
+        """
+        Look up lot market data from lots table for this series.
+
+        Returns lot pricing info if available, None otherwise.
+        """
+        # Try to find a lot for this series
+        query = """
+        SELECT
+            lot_market_value,
+            lot_per_book_price,
+            lot_comps_count,
+            lot_optimal_size
+        FROM lots
+        WHERE LOWER(name) LIKE ?
+            AND lot_market_value IS NOT NULL
+        LIMIT 1
+        """
+
+        # Search for series name in lot name
+        series_normalized = series_name.lower().replace(' series', '').strip()
+        cursor = self.conn.execute(query, (f'%{series_normalized}%',))
+        row = cursor.fetchone()
+
+        if row:
+            return dict(row)
+        return None
+
     def get_recent_scans(
         self,
         limit: Optional[int] = None,
@@ -276,6 +304,9 @@ class RecentScansAnalyzer:
                 missing = []
                 completion = 0
 
+            # Look up lot market data for this series
+            lot_market_data = self._get_lot_market_data(series_name, len(sorted_books))
+
             opportunities.append({
                 'series_name': series_name,
                 'book_count': len(sorted_books),
@@ -284,7 +315,8 @@ class RecentScansAnalyzer:
                 'avg_value': total_value / len(sorted_books),
                 'positions': positions,
                 'missing': missing,
-                'completion': completion
+                'completion': completion,
+                'lot_market_data': lot_market_data
             })
 
         # Sort by value
@@ -389,8 +421,48 @@ def print_lot_opportunities(opportunities: List[Dict]):
                 missing_str += f"... (+{len(opp['missing'])-5} more)"
             print(f"   Missing: {missing_str}")
 
+        # Show lot market data if available
+        lot_data = opp.get('lot_market_data')
+        if lot_data:
+            print(f"\n   LOT MARKET ANALYSIS:")
+            lot_per_book = lot_data['lot_per_book_price']
+            comps_count = lot_data['lot_comps_count']
+            optimal_size = lot_data.get('lot_optimal_size')
+
+            # Calculate potential lot value based on current books
+            potential_lot_value = lot_per_book * count if lot_per_book else 0
+
+            print(f"   • eBay Lot Data: ${lot_per_book:.2f}/book ({comps_count} comps)")
+            if optimal_size:
+                print(f"   • Optimal Lot Size: {optimal_size} books (you have {count})")
+            print(f"   • Current Books as Lot: ${potential_lot_value:.2f}")
+            print(f"   • Individual Sale Value: ${total_val:.2f}")
+
+            # Show ROI calculation
+            if potential_lot_value > total_val:
+                profit = potential_lot_value - total_val
+                print(f"   → RECOMMEND: Sell as lot (+${profit:.2f}, {profit/total_val*100:.1f}% gain)")
+            else:
+                profit = total_val - potential_lot_value
+                print(f"   → RECOMMEND: Sell individually (+${profit:.2f}, {profit/potential_lot_value*100:.1f}% gain)")
+
+            # Show completion strategy if incomplete
+            if completion < 100 and opp['missing']:
+                missing_count = len(opp['missing'])
+                # Estimate cost to complete (assume avg $10/book)
+                est_completion_cost = missing_count * 10
+                complete_lot_value = lot_per_book * (count + missing_count) if lot_per_book else 0
+                complete_profit = complete_lot_value - total_val - est_completion_cost
+
+                if complete_profit > profit:
+                    print(f"   💡 OPPORTUNITY: Complete series for +${complete_profit:.2f} total profit")
+                    print(f"      - Need {missing_count} more books (~${est_completion_cost:.2f})")
+                    print(f"      - Complete lot value: ${complete_lot_value:.2f}")
+        else:
+            print(f"\n   ⚠ No lot market data available - research needed")
+
         # Show individual books
-        print(f"   Books:")
+        print(f"\n   Books:")
         for book in opp['books']:
             title = book['title'][:50]
             price = book.get('estimated_price') or book.get('current_price', 0)

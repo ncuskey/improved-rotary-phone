@@ -415,16 +415,26 @@ class CollectibleDetector:
         if not collectible_info.is_collectible:
             return False
 
-        # Bypass for any collectible with fame multiplier > 5x
-        if collectible_info.fame_multiplier >= 5.0:
+        # Bypass for any collectible with fame multiplier >= 3x
+        # (Lowered from 5x to catch celebrity memoirs like Patricia Neal 3x)
+        if collectible_info.fame_multiplier >= 3.0:
             return True
 
-        # Bypass for signed books by moderately famous people if base > $5
-        if collectible_info.collectible_type == "signed_famous" and base_price > 5.0:
+        # Bypass for ANY signed book by famous person (even 2x multiplier)
+        # Rationale: Famous signature always adds value beyond base price
+        if collectible_info.collectible_type == "signed_famous":
+            return True
+
+        # Bypass for first editions by famous authors (even if unsigned)
+        if collectible_info.collectible_type == "first_edition_famous":
             return True
 
         # Bypass for printing errors
         if collectible_info.collectible_type == "printing_error":
+            return True
+
+        # Bypass for famous series (Harry Potter, LOTR, etc.)
+        if collectible_info.collectible_type == "famous_series":
             return True
 
         return False

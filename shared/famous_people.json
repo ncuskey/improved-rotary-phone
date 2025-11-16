@@ -1377,5 +1377,61 @@
       ],
       "notes": "Prolific sci-fi author"
     }
+  },
+  "authors_literature": {
+    "Allen Ginsberg": {
+      "signed_multiplier": 40.0,
+      "fame_tier": "literary_icon",
+      "genres": [
+        "poetry",
+        "literature"
+      ],
+      "notes": "Beat Generation icon, National Book Award, Pulitzer Prize finalist. Signed poetry highly collectible."
+    },
+    "Jack Kerouac": {
+      "signed_multiplier": 50.0,
+      "fame_tier": "literary_icon",
+      "genres": [
+        "literature",
+        "fiction"
+      ],
+      "notes": "Beat Generation founder, 'On the Road' author. Died 1969, signed books extremely rare and valuable."
+    },
+    "William S. Burroughs": {
+      "signed_multiplier": 45.0,
+      "fame_tier": "literary_icon",
+      "genres": [
+        "literature",
+        "fiction"
+      ],
+      "notes": "Beat Generation, 'Naked Lunch' author, postmodern literature pioneer. Highly collectible."
+    },
+    "Lawrence Ferlinghetti": {
+      "signed_multiplier": 30.0,
+      "fame_tier": "literary_icon",
+      "genres": [
+        "poetry",
+        "literature"
+      ],
+      "notes": "Beat poet, City Lights Books founder, published Howl. National Book Award finalist."
+    },
+    "Gary Snyder": {
+      "signed_multiplier": 25.0,
+      "fame_tier": "award_winner",
+      "genres": [
+        "poetry",
+        "literature"
+      ],
+      "notes": "Pulitzer Prize winner for poetry, Beat Generation poet, environmental activist."
+    },
+    "Gregory Corso": {
+      "signed_multiplier": 35.0,
+      "fame_tier": "literary_icon",
+      "genres": [
+        "poetry",
+        "literature"
+      ],
+      "notes": "Beat poet, 'Gasoline' and 'Bomb' author. Signed books collectible."
+    }
   }
 }

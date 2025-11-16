@@ -114,24 +114,27 @@ class RecentScansAnalyzer:
 
     def _get_lot_market_data(self, series_name: str, book_count: int) -> Optional[Dict]:
         """
-        Look up lot market data from lots table for this series.
+        Look up lot market data from series_lot_stats table for this series.
 
         Returns lot pricing info if available, None otherwise.
         """
-        # Try to find a lot for this series
+        # Try to find stats for this series
         query = """
         SELECT
-            lot_market_value,
-            lot_per_book_price,
-            lot_comps_count,
-            lot_optimal_size
-        FROM lots
-        WHERE LOWER(name) LIKE ?
-            AND lot_market_value IS NOT NULL
+            median_sold_price as lot_market_value,
+            median_price_per_book as lot_per_book_price,
+            sold_lots_count as lot_comps_count,
+            most_common_lot_size as lot_optimal_size,
+            total_lots_found,
+            has_complete_sets,
+            enrichment_quality_score
+        FROM series_lot_stats
+        WHERE LOWER(series_title) LIKE ?
+            AND median_price_per_book IS NOT NULL
         LIMIT 1
         """
 
-        # Search for series name in lot name
+        # Search for series name (try both with and without "Series" suffix)
         series_normalized = series_name.lower().replace(' series', '').strip()
         cursor = self.conn.execute(query, (f'%{series_normalized}%',))
         row = cursor.fetchone()

@@ -2164,5 +2164,143 @@ This fix (punctuation stripping) prevents:
 
 ---
 
-**Last Updated:** 2025-11-16 (Added Book 14 - First "niche scholarly demand" case, different from collectible detection fixes)
+### Book 15: Wild Witches Don't Get the Blues - Ffiona Morgan (9781880130032)
+**Date:** 2025-11-16
+
+**Book Details:**
+- Title: Wild Witches Don't Get the Blues: Astrology, Rituals and Healing
+- Author: Morgan, Ffiona
+- Condition: Good
+- Edition: 1992 Daughters of the Moon (NOT signed, NOT first edition)
+- ISBN: 9781880130032
+- **Category: Niche spiritual/occult collectible demand**
+
+**System Evaluation:**
+- Predicted Price: $9.72
+- Probability Score: -36/100 (NEGATIVE score!)
+- Decision: REJECT (Low confidence)
+- Reasoning: "Very niche/stale on Amazon (rank 7,241,378)"
+- "Single-item resale under $10; recommend bundling"
+- No eBay market data, no buyback data
+
+**Manual Evaluation:**
+- Manual Price: $28.00
+- Decision: BUY
+- Reasoning: "Similarly valued comps"
+- Cost Basis: $0 (free)
+- Manual Profit: $23.99
+
+**Price Difference:**
+- System undervalued by $18.28 (188.1% error)
+- Profit difference: $15.86
+- **Strong undervaluation on out-of-print spiritual book**
+
+**Key Insights:**
+
+1. **SAME PATTERN AS BOOK 14: Niche Demand Not Captured**
+   - This is a 1992 small press edition, unsigned, not first edition
+   - Not a collectible detection issue
+   - Not fixable via famous_people.json
+   - **Base ML model cannot recognize niche spiritual/occult demand**
+
+2. **Out of Print Small Press Collectible**
+   - Publisher: Daughters of the Moon (Ffiona Morgan's own imprint)
+   - Small independent publisher, limited print run
+   - Out of print, hard to find
+   - AbeBooks listings: $51.99 for Good condition (supports $28 valuation)
+   - Amazon used copies: $4.26+ (but condition/completeness varies)
+
+3. **Niche Market: Dianic Wicca & Feminist Spirituality**
+   - Dianic Wicca tradition book (women's spirituality)
+   - Author is pioneer in Goddess spirituality movement (20+ years experience)
+   - Subject: Astrology, rituals, healing from feminist Wiccan perspective
+   - Dedicated collector base in pagan/occult/feminist spirituality communities
+
+4. **Why Amazon Rank 7,241,378 is MISLEADING**
+   - System interprets: "Very niche/stale, reject"
+   - Reality: Small but dedicated buyer base
+   - Out of print = scarcity premium
+   - Niche spiritual books have thin but HIGH-VALUE markets
+   - Not mass market = ML model fails
+
+5. **ML Model Sees Negative Signals**
+   - Amazon rank: 7,241,378 (very poor)
+   - No eBay sold comps
+   - No buyback offers
+   - System: "Recommend bundling, not worth individual sale"
+   - **All signals point to reject, but niche demand is invisible**
+
+6. **Manual Comp Research Found Reality**
+   - Out of print spiritual books command premium
+   - Small press feminist/pagan titles collectible
+   - Dianic Wicca materials sought after
+   - Author's other works (Daughters of the Moon Tarot) also collectible ($50-150+ for sets)
+
+7. **Pattern: Small Press Out-of-Print Spiritual**
+   - Similar to Book 14 (scholarly reprint)
+   - Niche demand invisible to ML model
+   - Requires domain knowledge:
+     - Publisher reputation (small press vs mass market)
+     - Subject matter collectibility (spiritual/occult)
+     - Out of print status
+     - Author significance in niche community
+
+8. **Why Famous People Database Won't Help**
+   - Ffiona Morgan significant in Goddess spirituality movement
+   - But this book unsigned, not first edition
+   - Fame multipliers don't apply
+   - Value comes from: out-of-print + small press + niche subject
+   - Not from author signature collectibility
+
+**Expected Results:**
+- Cannot fix with famous_people.json (no collectible features)
+- Cannot fix with collectible detection (no signatures/first editions)
+- **Would require ML model to recognize:**
+  - Small press publisher significance
+  - Out-of-print status premium
+  - Spiritual/occult subject matter demand
+  - Niche community collector markets
+
+**Decision: No Fix to Implement**
+- Same limitation as Book 14
+- Base ML pricing cannot capture niche demand
+- Would require:
+  - Publisher reputation database
+  - Subject matter categorization (spiritual/occult/academic)
+  - Out-of-print detection with scarcity premium
+  - Niche market demand signals
+- **ROI too low compared to collectible detection fixes (Books 1-13)**
+
+**Total Missed Value So Far (15 books):**
+- Book 2 (Frank Herbert): $1,089
+- Book 7 (Martin Scorsese): $991
+- Book 12 (Allen Ginsberg): $194
+- Book 9 (Buzz Aldrin): $175
+- Book 13 (Tom Clancy): $140
+- Book 6 (Liz Goldwyn): $104
+- Book 3 (Demi Moore): $53
+- Book 5 (Doris Goodwin): $50
+- Book 8 (Harry Potter): $31
+- Book 10 (Louise Erdrich): $21
+- **Book 15 (Ffiona Morgan): $18** ← NEW (niche spiritual)
+- Book 14 (Susan F. Cooper): $17 (niche scholarly)
+- **TOTAL: $2,883 from 15 books**
+- **Average miss: $192 per book**
+
+**Pattern Recognition:**
+- Books 1-13: Collectible detection fixes (signatures, first editions) → **Addressable**
+- Books 14-15: Niche demand (scholarly, spiritual) → **Not addressable with current approach**
+- **13 fixable, 2 different category**
+
+**Recommendation:**
+- Continue collecting valuations
+- Focus on collectible detection fixes (highest ROI)
+- Track "niche demand" separately as lower-priority category
+- Books 14-15 represent ~$35 missed value ($17-18 each)
+- Books with famous signatures: $50-1000+ each
+- **Keep focusing on famous signature detection**
+
+---
+
+**Last Updated:** 2025-11-16 (Added Book 15 - Second niche demand case, out-of-print spiritual book)
 

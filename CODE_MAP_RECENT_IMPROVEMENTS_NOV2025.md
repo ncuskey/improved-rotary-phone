@@ -19,6 +19,7 @@ This document maps recent improvements to the ISBN Lot Optimizer system, focusin
 - **Metadata Search**: Search for ISBNs by title/author for books without barcodes
 - **Scan History**: Complete audit trail with GPS location tracking
 - **Enhanced Evaluation**: Improved triage endpoint with pre-scan enrichment
+- **Attribute Persistence**: Full persistence for user-selected book attributes (condition, format, signed, first edition)
 
 ### 3. Model Training Infrastructure
 - **Model Versioning**: Systematic version tracking for all specialist models
@@ -358,6 +359,181 @@ if not book:
 
 ---
 
+### 6. Book Attribute Persistence System
+
+**Purpose:** Complete persistence layer for user-selected book attributes
+
+#### Changes Summary:
+- Added proper dataclass fields for `cover_type`, `signed`, `first_edition`, `printing` in BookMetadata
+- Enhanced database layer to persist condition along with other attributes
+- Updated iOS cache model to store and restore attribute state
+- Enhanced BookDetailView initialization to load saved attributes into UI state
+
+#### Backend Changes
+
+**shared/models.py - BookMetadata Dataclass**
+```python
+@dataclass
+class BookMetadata:
+    # ... existing fields ...
+
+    # Book attributes (stored in database, not in metadata_json)
+    cover_type: Optional[str] = None
+    signed: Optional[bool] = None
+    first_edition: Optional[bool] = None
+    printing: Optional[str] = None
+```
+
+**shared/database.py - update_book_attributes()**
+```python
+def update_book_attributes(
+    self,
+    isbn: str,
+    *,
+    condition: Optional[str] = None,  # NEW: Save condition
+    cover_type: Optional[str] = None,
+    signed: bool = False,
+    first_edition: bool = False,
+    printing: Optional[str] = None
+) -> None:
+    with self._get_connection() as conn:
+        conn.execute(
+            """UPDATE books
+               SET condition = ?,
+                   cover_type = ?,
+                   signed = ?,
+                   first_edition = ?,
+                   printing = ?,
+                   updated_at = CURRENT_TIMESTAMP
+               WHERE isbn = ?""",
+            (condition, cover_type, 1 if signed else 0, 1 if first_edition else 0, printing, isbn),
+        )
+```
+
+**isbn_web/api/routes/books.py - UpdateAttributesRequest**
+```python
+class UpdateAttributesRequest(BaseModel):
+    condition: Optional[str] = None  # NEW
+    cover_type: Optional[str] = None
+    signed: bool = False
+    first_edition: bool = False
+    printing: Optional[str] = None
+    estimated_price: Optional[float] = None
+```
+
+#### iOS App Changes
+
+**LotHelper/CachedBook.swift - Attribute Storage**
+```swift
+@Model
+final class CachedBook {
+    // ... existing fields ...
+
+    // Book attributes
+    var coverType: String?
+    var signed: Bool?
+    var firstEdition: Bool?
+    var printing: String?
+
+    init(from record: BookEvaluationRecord) {
+        // ... existing init ...
+
+        // Store book attributes
+        self.coverType = record.metadata?.coverType
+        self.signed = record.metadata?.signed
+        self.firstEdition = record.metadata?.firstEdition
+        self.printing = record.metadata?.printing
+    }
+
+    func toBookEvaluationRecord() -> BookEvaluationRecord {
+        let metadata = BookMetadataDetails(
+            // ... existing fields ...
+            coverType: coverType,
+            signed: signed,
+            firstEdition: firstEdition,
+            printing: printing
+        )
+        // ... rest of conversion
+    }
+}
+```
+
+**LotHelper/BookDetailViewRedesigned.swift - UI State Initialization**
+```swift
+init(record: BookEvaluationRecord, lots: [LotSuggestionDTO] = []) {
+    // ... existing initialization ...
+
+    // Initialize book attributes from saved metadata
+    if let metadata = record.metadata {
+        // Set format based on cover_type
+        if let coverType = metadata.coverType {
+            let coverLower = coverType.lowercased()
+            if coverLower.contains("hardcover") {
+                _isHardcover = State(initialValue: true)
+            } else if coverLower.contains("mass market") {
+                _isMassMarket = State(initialValue: true)
+            } else if coverLower.contains("paperback") {
+                _isPaperback = State(initialValue: true)
+            }
+        }
+
+        // Set signed status
+        if let signed = metadata.signed {
+            _isSigned = State(initialValue: signed)
+        }
+
+        // Set first edition status
+        if let firstEdition = metadata.firstEdition {
+            _isFirstEdition = State(initialValue: firstEdition)
+        }
+    }
+}
+```
+
+**LotHelper/BookAPI.swift - API Updates**
+```swift
+static func updateAttributes(
+    isbn: String,
+    condition: String?,  // NEW
+    coverType: String?,
+    signed: Bool,
+    firstEdition: Bool,
+    printing: String?,
+    estimatedPrice: Double?
+) async throws {
+    let request = UpdateAttributesRequest(
+        condition: condition,  // NEW
+        coverType: coverType,
+        signed: signed,
+        firstEdition: firstEdition,
+        printing: printing,
+        estimatedPrice: estimatedPrice
+    )
+    // ... API call
+}
+```
+
+#### Data Flow
+
+**Saving Attributes:**
+1. User changes attributes in BookDetailView
+2. `saveAttributes()` calls `BookAPI.updateAttributes()` with all current values
+3. Backend updates database via `update_book_attributes()`
+4. Price recalculated if needed
+
+**Loading Attributes:**
+1. iOS fetches books from `/api/books/all`
+2. Backend loads attributes from database into `BookMetadata`
+3. iOS `CachedBook` stores attributes locally
+4. `BookDetailView.init()` reads from cache and initializes UI state
+5. UI toggles/buttons reflect saved selections
+
+**Impact:** Users can now adjust book attributes during scanning with full confidence they'll persist across sessions. No more re-entering selections when reviewing books later.
+
+**Documentation:** See `docs/ATTRIBUTE_PERSISTENCE_IMPLEMENTATION.md` for complete technical details.
+
+---
+
 ## Model Performance Updates
 
 ### eBay Specialist Model (Stacking)
@@ -485,7 +661,8 @@ None identified. All features working as expected.
 - **2025-11-12:** Amazon temporal weighting implemented
 - **2025-11-13:** eBay multipliers trained and deployed
 - **2025-11-14:** Metadata-only predictions added
-- **2025-11-15:** iOS app enhancements and documentation updates
+- **2025-11-15:** iOS app enhancements and attribute persistence system
+- **2025-11-15:** Documentation updates and code mapping complete
 
 ---
 

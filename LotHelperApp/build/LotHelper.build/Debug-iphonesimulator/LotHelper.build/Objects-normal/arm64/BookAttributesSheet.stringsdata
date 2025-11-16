@@ -1,0 +1,144 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/BookAttributesSheet.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Book Attributes",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 96
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "Format",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 54
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edition Details",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 62
+        }
+      },
+      {
+        "comment": "",
+        "key": "Special Attributes",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 73
+        }
+      },
+      {
+        "comment": "",
+        "key": "Purchase Details",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 77
+        }
+      },
+      {
+        "comment": "",
+        "key": "Summary",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 89
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 46
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cover Type",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 55
+        }
+      },
+      {
+        "comment": "",
+        "key": "First Edition",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "Printing",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 65
+        }
+      },
+      {
+        "comment": "",
+        "key": "Not specified",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "Signed / Autographed",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 74
+        }
+      },
+      {
+        "comment": "",
+        "key": "Purchase Price",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 79
+        }
+      },
+      {
+        "comment": "",
+        "key": "$0.00",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 81
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 100
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 105
+        }
+      }
+    ]
+  },
+  "version": 1
+}

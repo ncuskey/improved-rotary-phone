@@ -1,0 +1,56 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/RoutingInfoComponents.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 79
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 134
+        }
+      },
+      {
+        "comment": "",
+        "key": "ML Model",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 246
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recommended Channel",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 290
+        }
+      },
+      {
+        "comment": "",
+        "key": "Reasoning:",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 316
+        }
+      },
+      {
+        "comment": "",
+        "key": "•",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 323
+        }
+      }
+    ]
+  },
+  "version": 1
+}

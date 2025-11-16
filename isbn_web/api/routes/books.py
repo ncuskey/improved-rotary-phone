@@ -71,6 +71,17 @@ def _book_evaluation_to_dict(evaluation, routing_info: Optional[Dict] = None, ch
             if isinstance(value, tuple):
                 metadata_dict[key] = list(value)
 
+        # Add book attributes to metadata (these are stored in DB, not metadata JSON)
+        # Access them directly from metadata object if they exist
+        if hasattr(metadata, 'cover_type'):
+            metadata_dict['cover_type'] = metadata.cover_type
+        if hasattr(metadata, 'signed'):
+            metadata_dict['signed'] = metadata.signed
+        if hasattr(metadata, 'first_edition'):
+            metadata_dict['first_edition'] = metadata.first_edition
+        if hasattr(metadata, 'printing'):
+            metadata_dict['printing'] = metadata.printing
+
     result: Dict[str, Any] = {
         "isbn": evaluation.isbn,
         "original_isbn": evaluation.original_isbn,
@@ -1332,10 +1343,11 @@ async def estimate_price_with_attributes(
         market = book.market
         bookscouter = book.bookscouter
 
-        # Use the pre-calculated estimated_price from database as baseline
-        # This ensures the baseline stays constant across all attribute changes
-        # The estimated_price was calculated during batch processing with "Good" condition
-        baseline_price = book.estimated_price or 10.0
+        # Use baseline_price (immutable) for calculations instead of estimated_price
+        # baseline_price is the original ML prediction without attribute adjustments
+        # estimated_price gets updated when user changes attributes
+        # First check if baseline_price exists, fall back to estimated_price for older records
+        baseline_price = getattr(book, 'baseline_price', None) or book.estimated_price or 10.0
 
         # Calculate multipliers to apply to baseline price
         # Load the multipliers directly (same ones used in prediction_router.py)
@@ -1554,9 +1566,12 @@ async def estimate_price_with_attributes(
 
 class UpdateAttributesRequest(BaseModel):
     """Request body for saving user-selected attributes."""
+    condition: Optional[str] = None  # "Good", "Very Good", "Like New", etc.
     cover_type: Optional[str] = None  # "Hardcover", "Paperback", "Mass Market", or null
     signed: bool = False
+    first_edition: bool = False
     printing: Optional[str] = None  # "1st" for first edition, or null
+    estimated_price: Optional[float] = None  # Updated estimated price from client
 
 
 @router.put("/{isbn}/attributes")
@@ -1587,71 +1602,78 @@ async def update_book_attributes(
 
     # Update attributes in database
     try:
-        # First update the attributes
+        # First update the attributes including condition and first_edition
         service.db.update_book_attributes(
             normalized_isbn,
+            condition=request_body.condition,
             cover_type=request_body.cover_type,
             signed=request_body.signed,
+            first_edition=request_body.first_edition,
             printing=request_body.printing
         )
 
-        # Now calculate and update the estimated_price based on these attributes
-        # Get the book to access its current price and metadata
-        book = service.get_book(normalized_isbn)
-        if book:
-            # Load multipliers
-            from pathlib import Path
-            multipliers_path = Path.home() / "ISBN" / "isbn_lot_optimizer" / "models" / "ebay_multipliers.json"
-            try:
-                with open(multipliers_path, 'r') as f:
-                    import json
-                    mult_data = json.load(f)
-                    condition_multipliers = mult_data['condition_multipliers']
-                    binding_multipliers = mult_data['binding_multipliers']
-            except:
-                condition_multipliers = {'Good': 1.0, 'Very Good': 1.15, 'New': 1.35}
-                binding_multipliers = {'Hardcover': 1.20, 'Paperback': 1.0, 'Mass Market': 0.85}
+        # If client provided an updated estimated_price, use it directly
+        # Otherwise calculate it from multipliers
+        if request_body.estimated_price is not None:
+            # Use the price calculated by the client (which includes collectible multipliers)
+            service.db.update_book_price(normalized_isbn, request_body.estimated_price)
+        else:
+            # Fallback: calculate price using simple multipliers
+            book = service.get_book(normalized_isbn)
+            if book:
+                # Load multipliers
+                from pathlib import Path
+                multipliers_path = Path.home() / "ISBN" / "isbn_lot_optimizer" / "models" / "ebay_multipliers.json"
+                try:
+                    with open(multipliers_path, 'r') as f:
+                        import json
+                        mult_data = json.load(f)
+                        condition_multipliers = mult_data['condition_multipliers']
+                        binding_multipliers = mult_data['binding_multipliers']
+                except:
+                    condition_multipliers = {'Good': 1.0, 'Very Good': 1.15, 'New': 1.35}
+                    binding_multipliers = {'Hardcover': 1.20, 'Paperback': 1.0, 'Mass Market': 0.85}
 
-            # Get the baseline price by reverse-calculating from current price and old attributes
-            # This ensures we maintain the original baseline even after multiple updates
-            current_price = book.estimated_price or 10.0
+                # Get the baseline price by reverse-calculating from current price and old attributes
+                # This ensures we maintain the original baseline even after multiple updates
+                current_price = book.estimated_price or 10.0
 
-            # Calculate old multipliers from book's current attributes
-            old_format_mult = 1.0
-            if book.metadata and book.metadata.cover_type:
-                cover_lower = book.metadata.cover_type.lower()
-                if 'hardcover' in cover_lower or 'hardback' in cover_lower:
-                    old_format_mult = binding_multipliers.get('Hardcover', 1.0)
-                elif 'mass market' in cover_lower:
-                    old_format_mult = binding_multipliers.get('Mass Market', 1.0)
-                elif 'paperback' in cover_lower:
-                    old_format_mult = binding_multipliers.get('Paperback', 1.0)
+                # Calculate old multipliers from book's current attributes
+                old_format_mult = 1.0
+                if book.metadata and book.metadata.cover_type:
+                    cover_lower = book.metadata.cover_type.lower()
+                    if 'hardcover' in cover_lower or 'hardback' in cover_lower:
+                        old_format_mult = binding_multipliers.get('Hardcover', 1.0)
+                    elif 'mass market' in cover_lower:
+                        old_format_mult = binding_multipliers.get('Mass Market', 1.0)
+                    elif 'paperback' in cover_lower:
+                        old_format_mult = binding_multipliers.get('Paperback', 1.0)
 
-            old_signed_mult = 1.8 if (book.metadata and book.metadata.signed) else 1.0
-            old_first_mult = 1.3 if (book.metadata and book.metadata.printing and '1st' in book.metadata.printing) else 1.0
+                old_signed_mult = 1.8 if (book.metadata and book.metadata.signed) else 1.0
+                old_first_mult = 1.3 if (book.metadata and book.metadata.printing and '1st' in book.metadata.printing) else 1.0
 
-            # Reverse calculate to get baseline
-            baseline_price = current_price / (old_format_mult * old_signed_mult * old_first_mult)
+                # Reverse calculate to get baseline
+                baseline_price = current_price / (old_format_mult * old_signed_mult * old_first_mult)
 
-            # Now calculate new multipliers
-            format_mult = 1.0
-            if request_body.cover_type:
-                cover_lower = request_body.cover_type.lower()
-                if 'hardcover' in cover_lower or 'hardback' in cover_lower:
-                    format_mult = binding_multipliers.get('Hardcover', 1.0)
-                elif 'mass market' in cover_lower:
-                    format_mult = binding_multipliers.get('Mass Market', 1.0)
-                elif 'paperback' in cover_lower:
-                    format_mult = binding_multipliers.get('Paperback', 1.0)
+                # Now calculate new multipliers
+                format_mult = 1.0
+                if request_body.cover_type:
+                    cover_lower = request_body.cover_type.lower()
+                    if 'hardcover' in cover_lower or 'hardback' in cover_lower:
+                        format_mult = binding_multipliers.get('Hardcover', 1.0)
+                    elif 'mass market' in cover_lower:
+                        format_mult = binding_multipliers.get('Mass Market', 1.0)
+                    elif 'paperback' in cover_lower:
+                        format_mult = binding_multipliers.get('Paperback', 1.0)
 
-            signed_mult = 1.8 if request_body.signed else 1.0
-            first_ed_mult = 1.3 if (request_body.printing and '1st' in request_body.printing) else 1.0
+                signed_mult = 1.8 if request_body.signed else 1.0
+                first_ed_mult = 1.3 if (request_body.printing and '1st' in request_body.printing) else 1.0
 
-            # Calculate new estimated price from baseline
-            new_estimated_price = baseline_price * format_mult * signed_mult * first_ed_mult
+                # Calculate new estimated price from baseline
+                new_estimated_price = baseline_price * format_mult * signed_mult * first_ed_mult
 
-            # Update the estimated_price in the database
-            service.db.update_book_price(normalized_isbn, new_estimated_price)
+                # Update the estimated_price in the database
+                service.db.update_book_price(normalized_isbn, new_estimated_price)
 
         return JSONResponse(content={
             "success": True,

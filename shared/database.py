@@ -373,29 +373,57 @@ class DatabaseManager:
         self,
         isbn: str,
         *,
+        condition: Optional[str] = None,
         cover_type: Optional[str] = None,
         signed: bool = False,
+        first_edition: bool = False,
         printing: Optional[str] = None
     ) -> None:
         """
-        Update user-selected book attributes (cover type, signed, first edition).
+        Update user-selected book attributes (condition, cover type, signed, first edition).
 
         Args:
             isbn: Book ISBN
+            condition: Book condition (e.g., "Good", "Very Good", "Like New")
             cover_type: "Hardcover", "Paperback", "Mass Market", or None
             signed: Whether book is signed/autographed
+            first_edition: Whether book is a first edition
             printing: "1st" for first edition, or None
         """
-        _log("update_attributes", isbn=isbn, cover_type=cover_type, signed=signed, printing=printing)
+        _log("update_attributes", isbn=isbn, condition=condition, cover_type=cover_type, signed=signed, first_edition=first_edition, printing=printing)
         with self._get_connection() as conn:
             conn.execute(
                 """UPDATE books
-                   SET cover_type = ?,
+                   SET condition = ?,
+                       cover_type = ?,
                        signed = ?,
+                       first_edition = ?,
                        printing = ?,
                        updated_at = CURRENT_TIMESTAMP
                    WHERE isbn = ?""",
-                (cover_type, 1 if signed else 0, printing, isbn),
+                (condition, cover_type, 1 if signed else 0, 1 if first_edition else 0, printing, isbn),
+            )
+
+    def update_book_price(
+        self,
+        isbn: str,
+        estimated_price: float
+    ) -> None:
+        """
+        Update the estimated price for a book.
+
+        Args:
+            isbn: Book ISBN
+            estimated_price: New estimated price value
+        """
+        _log("update_book_price", isbn=isbn, price=estimated_price)
+        with self._get_connection() as conn:
+            conn.execute(
+                """UPDATE books
+                   SET estimated_price = ?,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE isbn = ?""",
+                (estimated_price, isbn),
             )
 
     def update_book_record(

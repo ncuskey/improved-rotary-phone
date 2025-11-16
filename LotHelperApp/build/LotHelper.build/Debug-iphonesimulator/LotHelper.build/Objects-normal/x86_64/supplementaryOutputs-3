@@ -1,0 +1,30 @@
+{
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/CacheManager.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CacheManager.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CacheManager.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CacheManager.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CacheManager.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CacheManager.swiftdeps"
+  },
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/CachedBook.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CachedBook.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CachedBook.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CachedBook.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CachedBook.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/CachedBook.swiftdeps"
+  },
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/ContentView.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/ContentView.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/ContentView.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/ContentView.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/ContentView.swiftdeps"
+  },
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/DecisionThresholdsSettingsView.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/DecisionThresholdsSettingsView.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/DecisionThresholdsSettingsView.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/DecisionThresholdsSettingsView.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/DecisionThresholdsSettingsView.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/x86_64/DecisionThresholdsSettingsView.swiftdeps"
+  }
+}

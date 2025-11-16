@@ -1,0 +1,48 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Books",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 8
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lots",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 15
+        }
+      },
+      {
+        "comment": "",
+        "key": "Vendors",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 18
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scan",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 23
+        }
+      },
+      {
+        "comment": "",
+        "key": "Settings",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 26
+        }
+      }
+    ]
+  },
+  "version": 1
+}

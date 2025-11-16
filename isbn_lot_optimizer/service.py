@@ -391,6 +391,8 @@ class BookService:
         include_market: bool = True,
         recalc_lots: bool = True,
         status: str = "REJECT",
+        signed: bool = False,
+        first_edition: bool = False,
     ) -> BookEvaluation:
         """
         Evaluate a book AND persist to database with given status.
@@ -434,6 +436,8 @@ class BookService:
             condition=condition,
             edition=edition,
             include_market=include_market,
+            signed=signed,
+            first_edition=first_edition,
         )
 
         # Persist to database with given status
@@ -3826,6 +3830,28 @@ class BookService:
         except Exception:
             pass
 
+        # Add book attributes from database row (cover_type, signed, first_edition, printing)
+        try:
+            if "cover_type" in row.keys():
+                setattr(metadata, "cover_type", row["cover_type"])
+        except Exception:
+            pass
+        try:
+            if "signed" in row.keys():
+                setattr(metadata, "signed", bool(row["signed"]))
+        except Exception:
+            pass
+        try:
+            if "first_edition" in row.keys():
+                setattr(metadata, "first_edition", bool(row["first_edition"]))
+        except Exception:
+            pass
+        try:
+            if "printing" in row.keys():
+                setattr(metadata, "printing", row["printing"])
+        except Exception:
+            pass
+
         market = None
         market_blob = market_dict if isinstance(market_dict, dict) else {}
         if market_blob:
@@ -3917,6 +3943,11 @@ class BookService:
         try:
             if "updated_at" in row.keys():
                 setattr(evaluation, "updated_at", row["updated_at"])
+        except Exception:
+            pass
+        try:
+            if "baseline_price" in row.keys():
+                setattr(evaluation, "baseline_price", row["baseline_price"])
         except Exception:
             pass
         return evaluation

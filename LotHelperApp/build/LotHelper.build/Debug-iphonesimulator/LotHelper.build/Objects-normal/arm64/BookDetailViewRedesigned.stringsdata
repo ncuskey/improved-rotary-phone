@@ -1,0 +1,632 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/BookDetailViewRedesigned.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Loading ML insights...",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 85
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ #%lld",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 216
+        }
+      },
+      {
+        "comment": "",
+        "key": "List to eBay",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 256
+        }
+      },
+      {
+        "comment": "",
+        "key": "Pricing",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 283
+        }
+      },
+      {
+        "comment": "",
+        "key": "ISBN",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 296
+        }
+      },
+      {
+        "comment": "",
+        "key": "N/A",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 396
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ range:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 408
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ – %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 411
+        }
+      },
+      {
+        "comment": "",
+        "key": "Multi-Scenario Profit Analysis",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 446
+        }
+      },
+      {
+        "comment": "",
+        "key": "Best margin: %@ (%@)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 463
+        }
+      },
+      {
+        "comment": "",
+        "key": "Best margin: %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 504
+        }
+      },
+      {
+        "comment": "",
+        "key": "eBay Market Data",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 524
+        }
+      },
+      {
+        "comment": "",
+        "key": "Real",
+        "location": {
+          "startingColumn": 65,
+          "startingLine": 528
+        }
+      },
+      {
+        "comment": "",
+        "key": "Est",
+        "location": {
+          "startingColumn": 74,
+          "startingLine": 528
+        }
+      },
+      {
+        "comment": "",
+        "key": "Min Price",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 558
+        }
+      },
+      {
+        "comment": "",
+        "key": "Max Price",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 569
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sold Listings Analysis",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 595
+        }
+      },
+      {
+        "comment": "",
+        "key": "Market Demand",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 614
+        }
+      },
+      {
+        "comment": "",
+        "key": "Signal Score",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 624
+        }
+      },
+      {
+        "comment": "",
+        "key": "Platform Distribution",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 644
+        }
+      },
+      {
+        "comment": "",
+        "key": "Avg Price",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 685
+        }
+      },
+      {
+        "comment": "",
+        "key": "Range",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 693
+        }
+      },
+      {
+        "comment": "",
+        "key": "Signed",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 702
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld vendor(s) - Best offer: %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 770
+        }
+      },
+      {
+        "comment": "",
+        "key": "Buyback Offers",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 737
+        }
+      },
+      {
+        "comment": "",
+        "key": "Amazon Data",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 796
+        }
+      },
+      {
+        "comment": "",
+        "key": "#%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 812
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sales Rank",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 804
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lower = more popular",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 807
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sellers",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 821
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 825
+        }
+      },
+      {
+        "comment": "",
+        "key": "Trade-In Value",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 834
+        }
+      },
+      {
+        "comment": "",
+        "key": "Included in Lots",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 859
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 862
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld books",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 877
+        }
+      },
+      {
+        "comment": "",
+        "key": "•",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 880
+        }
+      },
+      {
+        "comment": "",
+        "key": "Book Information",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 918
+        }
+      },
+      {
+        "comment": "",
+        "key": "Description",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 935
+        }
+      },
+      {
+        "comment": "",
+        "key": "Our machine learning model analyzed these factors to estimate this book's value:",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 964
+        }
+      },
+      {
+        "comment": "",
+        "key": "ML Model Reasoning",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 959
+        }
+      },
+      {
+        "comment": "",
+        "key": "Revenue",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1302
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fees",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1315
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cost",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1329
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profit",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1342
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sale Price",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1391
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cost",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1404
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profit",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1417
+        }
+      },
+      {
+        "comment": "",
+        "key": "Price Adjustments",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1604
+        }
+      },
+      {
+        "comment": "",
+        "key": "Price Adjustments",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1630
+        }
+      },
+      {
+        "comment": "",
+        "key": "Current",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1642
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1646
+        }
+      },
+      {
+        "comment": "",
+        "key": "(%@)",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1649
+        }
+      },
+      {
+        "comment": "",
+        "key": "By Condition",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 1664
+        }
+      },
+      {
+        "comment": "",
+        "key": "With Special Features",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1695
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1764
+        }
+      },
+      {
+        "comment": "",
+        "key": "Current",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1785
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 1747
+        }
+      },
+      {
+        "comment": "",
+        "key": "Book Attributes",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1821
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1826
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 1830
+        }
+      },
+      {
+        "comment": "",
+        "key": "New",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1831
+        }
+      },
+      {
+        "comment": "",
+        "key": "Like New",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1832
+        }
+      },
+      {
+        "comment": "",
+        "key": "Very Good",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1833
+        }
+      },
+      {
+        "comment": "",
+        "key": "Good",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1834
+        }
+      },
+      {
+        "comment": "",
+        "key": "Acceptable",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1835
+        }
+      },
+      {
+        "comment": "",
+        "key": "Poor",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1836
+        }
+      },
+      {
+        "comment": "",
+        "key": "Format",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1847
+        }
+      },
+      {
+        "comment": "",
+        "key": "Special Attributes",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1895
+        }
+      },
+      {
+        "comment": "",
+        "key": "Estimated Price:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1917
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1920
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ Confidence Range",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1935
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1942
+        }
+      },
+      {
+        "comment": "",
+        "key": "–",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1945
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1948
+        }
+      },
+      {
+        "comment": "",
+        "key": "+$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1983
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 73,
+          "startingLine": 1983
+        }
+      },
+      {
+        "comment": "",
+        "key": "+$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 2019
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 73,
+          "startingLine": 2019
+        }
+      }
+    ]
+  },
+  "version": 1
+}

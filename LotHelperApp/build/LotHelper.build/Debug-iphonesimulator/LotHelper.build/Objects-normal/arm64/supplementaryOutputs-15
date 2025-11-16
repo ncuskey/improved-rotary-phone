@@ -1,0 +1,30 @@
+{
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/Item.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/Item.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/Item.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/Item.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/Item.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/Item.swiftdeps"
+  },
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/LastScanSummary.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LastScanSummary.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LastScanSummary.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LastScanSummary.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LastScanSummary.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LastScanSummary.swiftdeps"
+  },
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/LocationManager.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LocationManager.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LocationManager.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LocationManager.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LocationManager.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LocationManager.swiftdeps"
+  },
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/LotHelperApp.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LotHelperApp.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LotHelperApp.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LotHelperApp.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LotHelperApp.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/LotHelperApp.swiftdeps"
+  }
+}

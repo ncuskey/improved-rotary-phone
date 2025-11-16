@@ -1,0 +1,30 @@
+{
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/BookCardView.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookCardView.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookCardView.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookCardView.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookCardView.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookCardView.swiftdeps"
+  },
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/BookDetailViewRedesigned.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookDetailViewRedesigned.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookDetailViewRedesigned.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookDetailViewRedesigned.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookDetailViewRedesigned.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookDetailViewRedesigned.swiftdeps"
+  },
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/BookListTab.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookListTab.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookListTab.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookListTab.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookListTab.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BookListTab.swiftdeps"
+  },
+  "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/BooksTabView.swift" : {
+    "const-values" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BooksTabView.swiftconstvalues",
+    "dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BooksTabView.d",
+    "diagnostics" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BooksTabView.dia",
+    "object" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BooksTabView.o",
+    "swift-dependencies" : "/Users/nickcuskey/ISBN/LotHelperApp/build/LotHelper.build/Debug-iphonesimulator/LotHelper.build/Objects-normal/arm64/BooksTabView.swiftdeps"
+  }
+}

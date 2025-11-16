@@ -1,0 +1,117 @@
+{
+  "platform": "amazon",
+  "model_type": "GradientBoostingRegressor",
+  "n_features": 27,
+  "feature_names": [
+    "log_amazon_rank",
+    "amazon_count",
+    "amazon_lowest_price",
+    "amazon_trade_in_price",
+    "amazon_price_per_rank",
+    "amazon_competitive_density",
+    "amazon_fbm_median",
+    "amazon_fbm_count",
+    "amazon_fbm_price_spread",
+    "amazon_fbm_vs_rank",
+    "amazon_fbm_avg_rating",
+    "page_count",
+    "age_years",
+    "log_ratings",
+    "rating",
+    "is_new",
+    "is_like_new",
+    "is_very_good",
+    "is_good",
+    "is_acceptable",
+    "is_poor",
+    "is_hardcover",
+    "is_mass_market",
+    "is_signed",
+    "is_first_edition",
+    "is_textbook",
+    "is_fiction"
+  ],
+  "training_samples": 11560,
+  "test_samples": 2889,
+  "train_mae": 0.17142959409736222,
+  "test_mae": 0.1838859964754791,
+  "train_rmse": 3.019366879146744,
+  "test_rmse": 2.7870354430974946,
+  "train_r2": 0.9949538104537147,
+  "test_r2": 0.995630089422151,
+  "test_mape": 0.7587170671225454,
+  "use_temporal_weighting": true,
+  "use_groupkfold": true,
+  "feature_importance": {
+    "log_amazon_rank": 0.0,
+    "amazon_count": 0.0,
+    "amazon_lowest_price": 0.0,
+    "amazon_trade_in_price": 0.0,
+    "amazon_price_per_rank": 0.0,
+    "amazon_competitive_density": 0.0,
+    "amazon_fbm_median": 0.4702633638866062,
+    "amazon_fbm_count": 0.006652822991197804,
+    "amazon_fbm_price_spread": 6.397220454190557e-05,
+    "amazon_fbm_vs_rank": 0.5190612232234941,
+    "amazon_fbm_avg_rating": 0.0037323296695998677,
+    "page_count": 0.00011295198518876767,
+    "age_years": 0.00011333603937124296,
+    "log_ratings": 0.0,
+    "rating": 0.0,
+    "is_new": 0.0,
+    "is_like_new": 0.0,
+    "is_very_good": 0.0,
+    "is_good": 0.0,
+    "is_acceptable": 0.0,
+    "is_poor": 0.0,
+    "is_hardcover": 0.0,
+    "is_mass_market": 0.0,
+    "is_signed": 0.0,
+    "is_first_edition": 0.0,
+    "is_textbook": 0.0,
+    "is_fiction": 0.0
+  },
+  "top_features": [
+    [
+      "amazon_fbm_vs_rank",
+      0.5190612232234941
+    ],
+    [
+      "amazon_fbm_median",
+      0.4702633638866062
+    ],
+    [
+      "amazon_fbm_count",
+      0.006652822991197804
+    ],
+    [
+      "amazon_fbm_avg_rating",
+      0.0037323296695998677
+    ],
+    [
+      "age_years",
+      0.00011333603937124296
+    ],
+    [
+      "page_count",
+      0.00011295198518876767
+    ],
+    [
+      "amazon_fbm_price_spread",
+      6.397220454190557e-05
+    ],
+    [
+      "log_amazon_rank",
+      0.0
+    ],
+    [
+      "amazon_count",
+      0.0
+    ],
+    [
+      "amazon_lowest_price",
+      0.0
+    ]
+  ],
+  "trained_at": "2025-11-09T19:52:58.206496"
+}

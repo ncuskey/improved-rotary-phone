@@ -245,6 +245,12 @@ struct BooksTabView: View {
                 }
             }
             .task { await initialLoadIfNeeded() }
+            .onAppear {
+                // Refresh books when returning to this tab to show updated prices
+                Task {
+                    await refreshBooksInBackground()
+                }
+            }
             .overlay {
                 if isRefreshing {
                     ZStack {
@@ -366,6 +372,23 @@ struct BooksTabView: View {
         }
 
         isRefreshing = false
+    }
+
+    @MainActor
+    private func refreshBooksInBackground() async {
+        // Silent refresh without showing loading overlay
+        // Used when returning to the tab to pick up updated prices
+        do {
+            print("🔄 Background refresh: Fetching latest books...")
+            let freshBooks = try await BookAPI.fetchAllBooks()
+            books = freshBooks
+            cacheManager.saveBooks(freshBooks)
+            UserDefaults.standard.set(Date(), forKey: "lastBooksSync")
+            print("✅ Background refresh complete: \(freshBooks.count) books updated")
+        } catch {
+            // Silently fail - don't interrupt user experience
+            print("⚠️ Background refresh failed (using cached data): \(error)")
+        }
     }
 
     @MainActor

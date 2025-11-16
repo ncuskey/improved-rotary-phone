@@ -30,6 +30,11 @@ class BookMetadata:
     series_name: Optional[str] = None
     series_index: Optional[int] = None
     series_id: Optional[str] = None
+    # Book attributes (stored in database, not in metadata_json)
+    cover_type: Optional[str] = None
+    signed: Optional[bool] = None
+    first_edition: Optional[bool] = None
+    printing: Optional[str] = None
     source: str = "unknown"
     raw: Dict[str, Any] = field(default_factory=dict)
 
@@ -136,6 +141,8 @@ class BookEvaluation:
     bookscouter_value_ratio: Optional[float] = None
     # Time-to-sell estimate
     time_to_sell_days: Optional[int] = None  # Expected days to sell (7-365), based on 90-day velocity
+    # Baseline price (immutable ML prediction before attribute adjustments)
+    baseline_price: Optional[float] = None
 
 
 @dataclass

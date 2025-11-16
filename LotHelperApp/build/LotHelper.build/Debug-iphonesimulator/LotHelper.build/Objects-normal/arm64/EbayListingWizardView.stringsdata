@@ -1,0 +1,656 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/EbayListingWizardView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "List to eBay",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 84
+        }
+      },
+      {
+        "comment": "",
+        "key": "Error",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 94
+        }
+      },
+      {
+        "comment": "",
+        "key": "Unknown step",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 125
+        }
+      },
+      {
+        "comment": "",
+        "key": "Back",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 46
+        }
+      },
+      {
+        "comment": "",
+        "key": "Next",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 59
+        }
+      },
+      {
+        "comment": "",
+        "key": "Create Listing",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 74
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 88
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 95
+        }
+      },
+      {
+        "comment": "",
+        "key": "Step 1 of 5",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 186
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition & Features",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 189
+        }
+      },
+      {
+        "comment": "",
+        "key": "Describe your book's condition and special features",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 192
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 230
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 232
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edition Features",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 249
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition Features",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 285
+        }
+      },
+      {
+        "comment": "",
+        "key": "Content Features",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 314
+        }
+      },
+      {
+        "comment": "",
+        "key": "Custom Features (Optional)",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 336
+        }
+      },
+      {
+        "comment": "",
+        "key": "Add details buyers search for to improve discoverability",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 338
+        }
+      },
+      {
+        "comment": "",
+        "key": "💡 Tip: Include author name, inscriptions, or special features",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 345
+        }
+      },
+      {
+        "comment": "",
+        "key": "e.g., 'Autographed by Stephen King'",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 342
+        }
+      },
+      {
+        "comment": "",
+        "key": "Quantity",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 354
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld %@",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 356
+        }
+      },
+      {
+        "comment": "",
+        "key": "eBay:",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 369
+        }
+      },
+      {
+        "comment": "",
+        "key": "A new, unread, unused book in perfect condition with no missing or damaged pages.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 375
+        }
+      },
+      {
+        "comment": "",
+        "key": "A book that looks new but has been read. Cover has no visible wear. No missing or damaged pages, no creases, tears, underlining, or writing.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 377
+        }
+      },
+      {
+        "comment": "",
+        "key": "A book that does not look new but is in excellent condition. No obvious damage to cover. No missing or damaged pages, no creases, tears, underlining, or writing.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 379
+        }
+      },
+      {
+        "comment": "",
+        "key": "The book has been read but is in good condition. Very minimal damage to cover. Minimal pencil underlining OK, but no highlighting or writing in margins. No missing pages.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 381
+        }
+      },
+      {
+        "comment": "",
+        "key": "A book with obvious wear. May have damage to cover or binding. Possible writing, underlining, and highlighting, but no missing pages.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 383
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 385
+        }
+      },
+      {
+        "comment": "",
+        "key": "Step 2 of 5",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 405
+        }
+      },
+      {
+        "comment": "",
+        "key": "Format & Language",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 408
+        }
+      },
+      {
+        "comment": "",
+        "key": "Book Format",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 417
+        }
+      },
+      {
+        "comment": "",
+        "key": "Language",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 442
+        }
+      },
+      {
+        "comment": "",
+        "key": "Language",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 445
+        }
+      },
+      {
+        "comment": "",
+        "key": "Step 3 of 5",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 472
+        }
+      },
+      {
+        "comment": "",
+        "key": "Set Your Price",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 475
+        }
+      },
+      {
+        "comment": "",
+        "key": "Based on your book's condition and features",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 478
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 495
+        }
+      },
+      {
+        "comment": "",
+        "key": "Price Recommendation",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 491
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 500
+        }
+      },
+      {
+        "comment": "",
+        "key": "Based on %lld comparable listings",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 503
+        }
+      },
+      {
+        "comment": "",
+        "key": "Features: %@",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 508
+        }
+      },
+      {
+        "comment": "",
+        "key": "Range: $%@ - $%@",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 514
+        }
+      },
+      {
+        "comment": "",
+        "key": "Enter price",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 542
+        }
+      },
+      {
+        "comment": "",
+        "key": "Listing Price",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 532
+        }
+      },
+      {
+        "comment": "",
+        "key": "Get Price Recommendation",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 559
+        }
+      },
+      {
+        "comment": "",
+        "key": "SEO-Optimized Title",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 572
+        }
+      },
+      {
+        "comment": "",
+        "key": "Use keyword-ranked title for better search visibility",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 574
+        }
+      },
+      {
+        "comment": "",
+        "key": "Step 4 of 5",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 668
+        }
+      },
+      {
+        "comment": "",
+        "key": "Preview",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 671
+        }
+      },
+      {
+        "comment": "",
+        "key": "Review the generated title and summary",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 674
+        }
+      },
+      {
+        "comment": "",
+        "key": "What happens next:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 707
+        }
+      },
+      {
+        "comment": "",
+        "key": "Generated Title",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 761
+        }
+      },
+      {
+        "comment": "",
+        "key": "Generating optimized title...",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 771
+        }
+      },
+      {
+        "comment": "",
+        "key": "Could not generate preview",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 783
+        }
+      },
+      {
+        "comment": "",
+        "key": "Try Again",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 794
+        }
+      },
+      {
+        "comment": "",
+        "key": "Based on 90-day sold listings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 850
+        }
+      },
+      {
+        "comment": "",
+        "key": "Keyword Score: %@ / %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 824
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@%%",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 828
+        }
+      },
+      {
+        "comment": "",
+        "key": "Regenerate Title",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 859
+        }
+      },
+      {
+        "comment": "",
+        "key": "•",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 891
+        }
+      },
+      {
+        "comment": "",
+        "key": "Success",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 936
+        }
+      },
+      {
+        "comment": "",
+        "key": "Listing Created!",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 912
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 930
+        }
+      },
+      {
+        "comment": "",
+        "key": "Step 5 of 5",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 975
+        }
+      },
+      {
+        "comment": "",
+        "key": "Final Review & Edit",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 978
+        }
+      },
+      {
+        "comment": "",
+        "key": "Review and edit all listing details before submission",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 981
+        }
+      },
+      {
+        "comment": "",
+        "key": "Title",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 1010
+        }
+      },
+      {
+        "comment": "",
+        "key": "eBay Title",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 991
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit Price",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 997
+        }
+      },
+      {
+        "comment": "",
+        "key": "Description",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 1021
+        }
+      },
+      {
+        "comment": "",
+        "key": "Price & Condition",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 1041
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit Condition",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1047
+        }
+      },
+      {
+        "comment": "",
+        "key": "Price",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1054
+        }
+      },
+      {
+        "comment": "",
+        "key": "Price",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 1057
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1063
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition",
+        "location": {
+          "startingColumn": 36,
+          "startingLine": 1066
+        }
+      },
+      {
+        "comment": "",
+        "key": "Item Specifics",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 1083
+        }
+      },
+      {
+        "comment": "",
+        "key": "Edit Format",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1089
+        }
+      },
+      {
+        "comment": "",
+        "key": "Photos",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 1117
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ready to submit?",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1137
+        }
+      }
+    ]
+  },
+  "version": 1
+}

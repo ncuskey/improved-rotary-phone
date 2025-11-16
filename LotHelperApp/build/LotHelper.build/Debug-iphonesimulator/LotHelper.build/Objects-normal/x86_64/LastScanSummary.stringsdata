@@ -1,0 +1,32 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/LastScanSummary.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Last scan",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 37
+        }
+      },
+      {
+        "comment": "",
+        "key": "•",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 49
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 52
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,280 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/DecisionThresholdsSettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Decision Settings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "Quick Presets",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 11
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profit Thresholds",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 32
+        }
+      },
+      {
+        "comment": "",
+        "key": "Confidence Thresholds",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "Market Data Thresholds",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 118
+        }
+      },
+      {
+        "comment": "",
+        "key": "Risk Tolerance",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 159
+        }
+      },
+      {
+        "comment": "",
+        "key": "Conservative (High Profit, Low Risk)",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 12
+        }
+      },
+      {
+        "comment": "",
+        "key": "Balanced (Recommended)",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 18
+        }
+      },
+      {
+        "comment": "",
+        "key": "Aggressive (Low Profit, High Volume)",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 24
+        }
+      },
+      {
+        "comment": "",
+        "key": "Minimum profit to automatically buy a book",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 44
+        }
+      },
+      {
+        "comment": "",
+        "key": "Minimum Auto-Buy Profit",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 35
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 37
+        }
+      },
+      {
+        "comment": "",
+        "key": "Minimum profit for slow-moving books (high TTS)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 60
+        }
+      },
+      {
+        "comment": "",
+        "key": "Slow-Moving Threshold",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 51
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 53
+        }
+      },
+      {
+        "comment": "",
+        "key": "Minimum profit when confidence is low",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "Uncertainty Threshold",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 67
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 69
+        }
+      },
+      {
+        "comment": "",
+        "key": "Minimum probability score to auto-buy",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 95
+        }
+      },
+      {
+        "comment": "",
+        "key": "Minimum Confidence Score",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 86
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 88
+        }
+      },
+      {
+        "comment": "",
+        "key": "Score below this triggers uncertainty review",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 111
+        }
+      },
+      {
+        "comment": "",
+        "key": "Low Confidence Threshold",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 102
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 104
+        }
+      },
+      {
+        "comment": "",
+        "key": "Minimum total comparables (active + sold)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 133
+        }
+      },
+      {
+        "comment": "",
+        "key": "Minimum Comps Required",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 121
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 123
+        }
+      },
+      {
+        "comment": "",
+        "key": "Days before flagging as slow-moving",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 152
+        }
+      },
+      {
+        "comment": "",
+        "key": "Max Slow-Moving TTS",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 140
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld days",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 142
+        }
+      },
+      {
+        "comment": "",
+        "key": "Flag books for review if no pricing data exists",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 164
+        }
+      },
+      {
+        "comment": "",
+        "key": "Require Profit Data",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 160
+        }
+      },
+      {
+        "comment": "",
+        "key": "Reset to Balanced (Default)",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 171
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 182
+        }
+      }
+    ]
+  },
+  "version": 1
+}

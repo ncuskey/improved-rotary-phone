@@ -1,0 +1,24 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/SplashScreenView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "LotHelper",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "Book Scanner & Analyzer",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 38
+        }
+      }
+    ]
+  },
+  "version": 1
+}

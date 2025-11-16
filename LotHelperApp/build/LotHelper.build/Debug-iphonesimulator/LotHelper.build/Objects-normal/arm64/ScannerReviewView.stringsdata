@@ -1,0 +1,760 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/ScannerReviewView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Scan",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 287
+        }
+      },
+      {
+        "comment": "",
+        "key": "Reject",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "Accept",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 186
+        }
+      },
+      {
+        "comment": "",
+        "key": "Looking up %@…",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 238
+        }
+      },
+      {
+        "comment": "",
+        "key": "Refresh market data",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 230
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rescan",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 271
+        }
+      },
+      {
+        "comment": "",
+        "key": "Input Mode",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 291
+        }
+      },
+      {
+        "comment": "",
+        "key": "Set Price",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 315
+        }
+      },
+      {
+        "comment": "",
+        "key": "(%@)",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 318
+        }
+      },
+      {
+        "comment": "",
+        "key": "Series Collection",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 403
+        }
+      },
+      {
+        "comment": "",
+        "key": "You Have",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 417
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 421
+        }
+      },
+      {
+        "comment": "",
+        "key": "books",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 425
+        }
+      },
+      {
+        "comment": "",
+        "key": "Collection Status",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 436
+        }
+      },
+      {
+        "comment": "",
+        "key": "Near Complete",
+        "location": {
+          "startingColumn": 66,
+          "startingLine": 439
+        }
+      },
+      {
+        "comment": "",
+        "key": "Building",
+        "location": {
+          "startingColumn": 84,
+          "startingLine": 439
+        }
+      },
+      {
+        "comment": "",
+        "key": "Complete series sell for 2-3x individual book value",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 453
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lower profit margin acceptable for series completion",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 462
+        }
+      },
+      {
+        "comment": "",
+        "key": "Previously Scanned Books:",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 473
+        }
+      },
+      {
+        "comment": "",
+        "key": "#%lld",
+        "location": {
+          "startingColumn": 54,
+          "startingLine": 495
+        }
+      },
+      {
+        "comment": "",
+        "key": "•",
+        "location": {
+          "startingColumn": 54,
+          "startingLine": 505
+        }
+      },
+      {
+        "comment": "",
+        "key": "Go back and get the rejected books to complete series!",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 539
+        }
+      },
+      {
+        "comment": "",
+        "key": "Bluetooth scanner will auto-submit",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 596
+        }
+      },
+      {
+        "comment": "",
+        "key": "Enter ISBN",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 574
+        }
+      },
+      {
+        "comment": "",
+        "key": "Show Keypad",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 615
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scan a book to see comps.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 709
+        }
+      },
+      {
+        "comment": "",
+        "key": "No active listings for this GTIN.",
+        "location": {
+          "startingColumn": 52,
+          "startingLine": 703
+        }
+      },
+      {
+        "comment": "",
+        "key": "No sold history for this GTIN.",
+        "location": {
+          "startingColumn": 90,
+          "startingLine": 703
+        }
+      },
+      {
+        "comment": "",
+        "key": "eBay Comps",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 638
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 643
+        }
+      },
+      {
+        "comment": "",
+        "key": "Active",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 644
+        }
+      },
+      {
+        "comment": "",
+        "key": "Checking active listings…",
+        "location": {
+          "startingColumn": 52,
+          "startingLine": 654
+        }
+      },
+      {
+        "comment": "",
+        "key": "Checking sold comps…",
+        "location": {
+          "startingColumn": 84,
+          "startingLine": 654
+        }
+      },
+      {
+        "comment": "",
+        "key": "Last sold:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 669
+        }
+      },
+      {
+        "comment": "",
+        "key": "Item %@  ·  Ship %@",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 695
+        }
+      },
+      {
+        "comment": "",
+        "key": "Analyzing book...",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 730
+        }
+      },
+      {
+        "comment": "",
+        "key": "Confidence Score",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 764
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 769
+        }
+      },
+      {
+        "comment": "",
+        "key": "/ 100",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 773
+        }
+      },
+      {
+        "comment": "",
+        "key": "How we calculated this:",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 794
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld.",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 801
+        }
+      },
+      {
+        "comment": "",
+        "key": "Data Sources",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 826
+        }
+      },
+      {
+        "comment": "",
+        "key": "Baseline from backend (eBay sold comps + condition/edition heuristics)",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 844
+        }
+      },
+      {
+        "comment": "",
+        "key": "Estimated Value:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 836
+        }
+      },
+      {
+        "comment": "",
+        "key": "Last sold on %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 930
+        }
+      },
+      {
+        "comment": "",
+        "key": "eBay Market Snapshot",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 885
+        }
+      },
+      {
+        "comment": "",
+        "key": "Marketplace Insights",
+        "location": {
+          "startingColumn": 61,
+          "startingLine": 890
+        }
+      },
+      {
+        "comment": "",
+        "key": "Estimated",
+        "location": {
+          "startingColumn": 86,
+          "startingLine": 890
+        }
+      },
+      {
+        "comment": "",
+        "key": "Value vs. eBay: %@ (%@)",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 965
+        }
+      },
+      {
+        "comment": "",
+        "key": "BookScouter Buyback",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 948
+        }
+      },
+      {
+        "comment": "",
+        "key": "No offers",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 958
+        }
+      },
+      {
+        "comment": "",
+        "key": "Amazon Rank: %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 974
+        }
+      },
+      {
+        "comment": "",
+        "key": "(%lld sellers)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 978
+        }
+      },
+      {
+        "comment": "",
+        "key": "Top Offers",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 996
+        }
+      },
+      {
+        "comment": "",
+        "key": "+%lld more vendors",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 1016
+        }
+      },
+      {
+        "comment": "",
+        "key": "Value vs. eBay: %@ (%@)",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1042
+        }
+      },
+      {
+        "comment": "",
+        "key": "No BooksRun offer retrieved for this ISBN.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1074
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition: %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1058
+        }
+      },
+      {
+        "comment": "",
+        "key": "Last updated %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1069
+        }
+      },
+      {
+        "comment": "",
+        "key": "Open BooksRun offer",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1064
+        }
+      },
+      {
+        "comment": "",
+        "key": "BooksRun Offer",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1036
+        }
+      },
+      {
+        "comment": "",
+        "key": "Why %@?",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1089
+        }
+      },
+      {
+        "comment": "",
+        "key": "Factors considered:",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1100
+        }
+      },
+      {
+        "comment": "",
+        "key": "Very rare - limited market activity",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 1198
+        }
+      },
+      {
+        "comment": "",
+        "key": "Somewhat rare - niche market",
+        "location": {
+          "startingColumn": 92,
+          "startingLine": 1198
+        }
+      },
+      {
+        "comment": "",
+        "key": "Common availability",
+        "location": {
+          "startingColumn": 125,
+          "startingLine": 1198
+        }
+      },
+      {
+        "comment": "",
+        "key": "Market Intelligence",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1181
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rarity Score:",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1190
+        }
+      },
+      {
+        "comment": "",
+        "key": "Categories:",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 1210
+        }
+      },
+      {
+        "comment": "",
+        "key": "• %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 1214
+        }
+      },
+      {
+        "comment": "",
+        "key": "By %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1226
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ (%lld)",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1237
+        }
+      },
+      {
+        "comment": "",
+        "key": "Already in Database",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1273
+        }
+      },
+      {
+        "comment": "",
+        "key": "Added %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 1278
+        }
+      },
+      {
+        "comment": "",
+        "key": "Consider rejecting to avoid duplicate purchase",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 1283
+        }
+      },
+      {
+        "comment": "",
+        "key": "eBay Route:",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 1311
+        }
+      },
+      {
+        "comment": "",
+        "key": "(Live)",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 1317
+        }
+      },
+      {
+        "comment": "",
+        "key": "(Est.)",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 1321
+        }
+      },
+      {
+        "comment": "",
+        "key": "Net",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 1340
+        }
+      },
+      {
+        "comment": "",
+        "key": "Amazon Route:",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 1359
+        }
+      },
+      {
+        "comment": "",
+        "key": "(Lowest Price)",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 1363
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rank: %@",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 1369
+        }
+      },
+      {
+        "comment": "",
+        "key": "Net",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 1388
+        }
+      },
+      {
+        "comment": "",
+        "key": "Buyback Route:",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 1407
+        }
+      },
+      {
+        "comment": "",
+        "key": "(%@)",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 1413
+        }
+      },
+      {
+        "comment": "",
+        "key": "Net",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 1427
+        }
+      },
+      {
+        "comment": "",
+        "key": "BUY",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 1454
+        }
+      },
+      {
+        "comment": "",
+        "key": "DON'T BUY",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 1475
+        }
+      },
+      {
+        "comment": "",
+        "key": "NEEDS REVIEW",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1497
+        }
+      },
+      {
+        "comment": "",
+        "key": "Concerns:",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 1516
+        }
+      },
+      {
+        "comment": "",
+        "key": "•",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 1523
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ready to Scan",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 1999
+        }
+      },
+      {
+        "comment": "",
+        "key": "Align the barcode within the frame.",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 2001
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scanned",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 2012
+        }
+      }
+    ]
+  },
+  "version": 1
+}

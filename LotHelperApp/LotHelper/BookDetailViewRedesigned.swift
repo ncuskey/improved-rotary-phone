@@ -24,14 +24,55 @@ struct BookDetailViewRedesigned: View {
     @State private var isSigned: Bool = false
     @State private var isFirstEdition: Bool = false
 
-    // Custom initializer to set selectedCondition from record
+    // Custom initializer to set selectedCondition and attributes from record
     init(record: BookEvaluationRecord, lots: [LotSuggestionDTO] = []) {
         self.record = record
         _lots = State(initialValue: lots)
+
         // Initialize selectedCondition with record's condition or default to "Good"
         let condition = record.condition ?? "Good"
-        print("💰 Initializing with condition: \(condition), estimatedPrice: \(record.estimatedPrice ?? 0)")
+        print("💰 Initializing BookDetailView for ISBN: \(record.isbn)")
+        print("💰 Condition: \(condition), estimatedPrice: \(record.estimatedPrice ?? 0)")
+        print("💰 Has metadata: \(record.metadata != nil)")
         _selectedCondition = State(initialValue: condition)
+
+        // Initialize book attributes from saved metadata
+        if let metadata = record.metadata {
+            print("📋 Raw metadata attributes:")
+            print("  - coverType: \(String(describing: metadata.coverType))")
+            print("  - signed: \(String(describing: metadata.signed))")
+            print("  - firstEdition: \(String(describing: metadata.firstEdition))")
+            print("  - printing: \(String(describing: metadata.printing))")
+
+            // Set format based on cover_type
+            if let coverType = metadata.coverType {
+                let coverLower = coverType.lowercased()
+                if coverLower.contains("hardcover") || coverLower.contains("hardback") {
+                    print("✅ Setting isHardcover = true")
+                    _isHardcover = State(initialValue: true)
+                } else if coverLower.contains("mass market") {
+                    print("✅ Setting isMassMarket = true")
+                    _isMassMarket = State(initialValue: true)
+                } else if coverLower.contains("paperback") {
+                    print("✅ Setting isPaperback = true")
+                    _isPaperback = State(initialValue: true)
+                }
+            }
+
+            // Set signed status
+            if let signed = metadata.signed {
+                print("✅ Setting isSigned = \(signed)")
+                _isSigned = State(initialValue: signed)
+            }
+
+            // Set first edition status
+            if let firstEdition = metadata.firstEdition {
+                print("✅ Setting isFirstEdition = \(firstEdition)")
+                _isFirstEdition = State(initialValue: firstEdition)
+            }
+        } else {
+            print("⚠️ No metadata found in record")
+        }
     }
     @State private var dynamicEstimate: Double? = nil
     @State private var attributeDeltas: [AttributeDelta] = []
@@ -1572,13 +1613,16 @@ struct BookDetailViewRedesigned: View {
 
             try await BookAPI.updateAttributes(
                 isbn: record.isbn,
+                condition: selectedCondition,
                 coverType: coverType,
                 signed: isSigned,
-                printing: printing
+                firstEdition: isFirstEdition,
+                printing: printing,
+                estimatedPrice: dynamicEstimate  // Pass the updated price estimate
             )
 
-            print("✓ Attributes saved successfully")
-            // TODO: Show success feedback to user
+            print("✓ Attributes saved successfully with new price: $\(String(format: "%.2f", dynamicEstimate ?? 0))")
+            print("📋 Saved attributes: condition=\(selectedCondition), coverType=\(coverType ?? "nil"), signed=\(isSigned), firstEdition=\(isFirstEdition)")
         } catch {
             print("Failed to save attributes: \(error.localizedDescription)")
             // TODO: Show error alert to user
@@ -1828,7 +1872,7 @@ struct AttributesView: View {
                     Text("Poor").tag("Poor")
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: condition) { newValue in
+                .onChange(of: condition) { oldValue, newValue in
                     print("📝 Condition changed to: \(newValue)")
                     onAttributeChanged()
                 }
@@ -1966,7 +2010,7 @@ struct AttributeToggle: View {
     var body: some View {
         HStack {
             Toggle(label, isOn: $isOn)
-                .onChange(of: isOn) { newValue in
+                .onChange(of: isOn) { oldValue, newValue in
                     print("📝 AttributeToggle '\(label)' changed to: \(newValue)")
                     onToggle()
                 }

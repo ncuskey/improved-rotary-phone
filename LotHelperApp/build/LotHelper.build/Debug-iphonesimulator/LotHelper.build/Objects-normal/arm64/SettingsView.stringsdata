@@ -1,0 +1,144 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/SettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Settings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 31
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scanner",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 44
+        }
+      },
+      {
+        "comment": "",
+        "key": "Data Sources",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 64
+        }
+      },
+      {
+        "comment": "",
+        "key": "Developer",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 36
+        }
+      },
+      {
+        "comment": "",
+        "key": "About",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 76
+        }
+      },
+      {
+        "comment": "",
+        "key": "Links",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 89
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sound Preview",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 38
+        }
+      },
+      {
+        "comment": "",
+        "key": "Auto-submit after scan",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 46
+        }
+      },
+      {
+        "comment": "",
+        "key": "Vibration feedback",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 49
+        }
+      },
+      {
+        "comment": "",
+        "key": "Default book condition",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 57
+        }
+      },
+      {
+        "comment": "",
+        "key": "Use local server",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "Use production API",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 69
+        }
+      },
+      {
+        "comment": "",
+        "key": "App Version",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 78
+        }
+      },
+      {
+        "comment": "",
+        "key": "Version %@",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "Privacy Policy",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 93
+        }
+      },
+      {
+        "comment": "",
+        "key": "Open Source Licenses",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 99
+        }
+      },
+      {
+        "comment": "",
+        "key": "Send Feedback",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 105
+        }
+      }
+    ]
+  },
+  "version": 1
+}

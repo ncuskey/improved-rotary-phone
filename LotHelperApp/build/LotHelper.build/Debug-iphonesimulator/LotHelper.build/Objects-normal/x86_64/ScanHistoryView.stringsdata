@@ -1,0 +1,104 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/ScanHistoryView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Scan History",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 109
+        }
+      },
+      {
+        "comment": "",
+        "key": "Error",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 133
+        }
+      },
+      {
+        "comment": "",
+        "key": "Your scan history will appear here",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "Summary",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 38
+        }
+      },
+      {
+        "comment": "",
+        "key": "Locations",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 48
+        }
+      },
+      {
+        "comment": "",
+        "key": "No Scans Yet",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 99
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld scans • %@%% accepted",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 61
+        }
+      },
+      {
+        "comment": "",
+        "key": "Filter",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 78
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scan History",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 90
+        }
+      },
+      {
+        "comment": "",
+        "key": "Filtered by: %@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 93
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 134
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 228
+        }
+      }
+    ]
+  },
+  "version": 1
+}

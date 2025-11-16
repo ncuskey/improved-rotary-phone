@@ -2095,7 +2095,8 @@ struct ScannerReviewView: View {
             edition: bookAttributes.editionNotes,
             coverType: bookAttributes.coverType == "Unknown" ? nil : bookAttributes.coverType,
             printing: bookAttributes.printing.isEmpty ? nil : bookAttributes.printing,
-            signed: bookAttributes.signed
+            signed: bookAttributes.signed,
+            firstEdition: bookAttributes.firstEdition
         ) { bookInfo in
             // Use the ISBN returned by the backend (it's properly normalized)
             let finalIsbn = bookInfo?.isbn ?? isbn

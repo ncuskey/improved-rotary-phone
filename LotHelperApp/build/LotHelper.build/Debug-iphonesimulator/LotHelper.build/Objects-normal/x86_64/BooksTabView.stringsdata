@@ -1,0 +1,472 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/BooksTabView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Books",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 224
+        }
+      },
+      {
+        "comment": "",
+        "key": "Refresh Complete",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 281
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search by title, author, ISBN, or series",
+        "location": {
+          "startingColumn": 115,
+          "startingLine": 215
+        }
+      },
+      {
+        "comment": "",
+        "key": "Delete",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 200
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sort By",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 228
+        }
+      },
+      {
+        "comment": "",
+        "key": "Refresh All Books",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 239
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sort",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 243
+        }
+      },
+      {
+        "comment": "",
+        "key": "Refreshing Books...",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 265
+        }
+      },
+      {
+        "comment": "",
+        "key": "Fetching latest market data from backend",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 269
+        }
+      },
+      {
+        "comment": "",
+        "key": "OK",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 282
+        }
+      },
+      {
+        "comment": "",
+        "key": "Overview",
+        "location": {
+          "startingColumn": 17,
+          "startingLine": 629
+        }
+      },
+      {
+        "comment": "",
+        "key": "Included in Lots (%lld)",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 582
+        }
+      },
+      {
+        "comment": "",
+        "key": "Included in Lots",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 617
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profit Analysis",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 656
+        }
+      },
+      {
+        "comment": "",
+        "key": "eBay Market Data",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 721
+        }
+      },
+      {
+        "comment": "",
+        "key": "BookScouter Buyback Offers",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 801
+        }
+      },
+      {
+        "comment": "",
+        "key": "Amazon Market Data",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 855
+        }
+      },
+      {
+        "comment": "",
+        "key": "Metadata",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 911
+        }
+      },
+      {
+        "comment": "",
+        "key": "Justification",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 961
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 591
+        }
+      },
+      {
+        "comment": "",
+        "key": "ISBN: %@",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 630
+        }
+      },
+      {
+        "comment": "",
+        "key": "Quantity: %lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 633
+        }
+      },
+      {
+        "comment": "",
+        "key": "Condition: %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 637
+        }
+      },
+      {
+        "comment": "",
+        "key": "Estimated price: %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 641
+        }
+      },
+      {
+        "comment": "",
+        "key": "Probability: %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 645
+        }
+      },
+      {
+        "comment": "",
+        "key": "eBay Sold Price (Median)",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 658
+        }
+      },
+      {
+        "comment": "",
+        "key": "Best Vendor Buyback",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 667
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profit Margin",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 682
+        }
+      },
+      {
+        "comment": "",
+        "key": "(%@%%)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 691
+        }
+      },
+      {
+        "comment": "",
+        "key": "Profit Potential",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 705
+        }
+      },
+      {
+        "comment": "",
+        "key": "Note: Sold prices are estimated from active listings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 789
+        }
+      },
+      {
+        "comment": "",
+        "key": "Active Listings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 724
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 727
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sold Listings",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 735
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 738
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sell Through Rate",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 746
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@%%",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 749
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sold Price (Median)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 760
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sold Price (Min)",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 770
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sold Price (Max)",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 780
+        }
+      },
+      {
+        "comment": "",
+        "key": "from %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 813
+        }
+      },
+      {
+        "comment": "",
+        "key": "Best Offer",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 803
+        }
+      },
+      {
+        "comment": "",
+        "key": "Total Vendors",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 819
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 822
+        }
+      },
+      {
+        "comment": "",
+        "key": "Top Offers",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 828
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lower rank = higher demand",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 865
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sales Rank",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 858
+        }
+      },
+      {
+        "comment": "",
+        "key": "#%@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 861
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sellers",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 872
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 875
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lowest Amazon Price",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 883
+        }
+      },
+      {
+        "comment": "",
+        "key": "Amazon Trade-In",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 895
+        }
+      },
+      {
+        "comment": "",
+        "key": "Author: %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 921
+        }
+      },
+      {
+        "comment": "",
+        "key": "Publisher: %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 938
+        }
+      },
+      {
+        "comment": "",
+        "key": "Published: %lld",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 942
+        }
+      },
+      {
+        "comment": "",
+        "key": "Categories: %@",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 946
+        }
+      },
+      {
+        "comment": "",
+        "key": "Series: %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 932
+        }
+      },
+      {
+        "comment": "",
+        "key": "Series: %@ #%lld",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 929
+        }
+      }
+    ]
+  },
+  "version": 1
+}

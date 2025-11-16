@@ -94,6 +94,48 @@ struct BookMetadataDetails: Codable, Hashable {
     let categories: [String]?
     let seriesName: String?
     let seriesIndex: Int?
+    // Book attributes
+    let coverType: String?
+    let signed: Bool?
+    let firstEdition: Bool?
+    let printing: String?
+
+    // Convenience initializer for programmatic creation
+    init(
+        title: String? = nil,
+        subtitle: String? = nil,
+        authors: [String]? = nil,
+        creditedAuthors: [String]? = nil,
+        canonicalAuthor: String? = nil,
+        publisher: String? = nil,
+        publishedYear: Int? = nil,
+        description: String? = nil,
+        thumbnail: String? = nil,
+        categories: [String]? = nil,
+        seriesName: String? = nil,
+        seriesIndex: Int? = nil,
+        coverType: String? = nil,
+        signed: Bool? = nil,
+        firstEdition: Bool? = nil,
+        printing: String? = nil
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.authors = authors
+        self.creditedAuthors = creditedAuthors
+        self.canonicalAuthor = canonicalAuthor
+        self.publisher = publisher
+        self.publishedYear = publishedYear
+        self.description = description
+        self.thumbnail = thumbnail
+        self.categories = categories
+        self.seriesName = seriesName
+        self.seriesIndex = seriesIndex
+        self.coverType = coverType
+        self.signed = signed
+        self.firstEdition = firstEdition
+        self.printing = printing
+    }
 
     enum CodingKeys: String, CodingKey {
         case title
@@ -108,6 +150,10 @@ struct BookMetadataDetails: Codable, Hashable {
         case categories
         case seriesName = "series_name"
         case seriesIndex = "series_index"
+        case coverType = "cover_type"
+        case signed
+        case firstEdition = "first_edition"
+        case printing
     }
 
     var primaryAuthor: String? {
@@ -559,6 +605,7 @@ enum BookAPI {
         coverType: String?,
         printing: String?,
         signed: Bool?,
+        firstEdition: Bool?,
         completion: @escaping (BookInfo?) -> Void
     ) {
         Task {
@@ -573,6 +620,7 @@ enum BookAPI {
                 if let coverType = coverType { payload["cover_type"] = coverType }
                 if let printing = printing { payload["printing"] = printing }
                 if let signed = signed { payload["signed"] = signed }
+                if let firstEdition = firstEdition { payload["first_edition"] = firstEdition }
 
                 let jsonData = try JSONSerialization.data(withJSONObject: payload)
                 var request = URLRequest(url: url)
@@ -1404,14 +1452,20 @@ struct EstimatePriceResponse: Codable {
 }
 
 struct UpdateAttributesRequest: Codable {
+    let condition: String?
     let coverType: String?
     let signed: Bool
+    let firstEdition: Bool
     let printing: String?
+    let estimatedPrice: Double?  // New estimated price to save
 
     enum CodingKeys: String, CodingKey {
+        case condition
         case coverType = "cover_type"
         case signed
+        case firstEdition = "first_edition"
         case printing
+        case estimatedPrice = "estimated_price"
     }
 }
 
@@ -1568,18 +1622,24 @@ extension BookAPI {
     /// Save user-selected book attributes to database
     static func updateAttributes(
         isbn: String,
+        condition: String?,
         coverType: String?,
         signed: Bool,
-        printing: String?
+        firstEdition: Bool,
+        printing: String?,
+        estimatedPrice: Double?
     ) async throws {
         guard let url = URL(string: "\(baseURLString)/api/books/\(isbn)/attributes") else {
             throw URLError(.badURL)
         }
 
         let request = UpdateAttributesRequest(
+            condition: condition,
             coverType: coverType,
             signed: signed,
-            printing: printing
+            firstEdition: firstEdition,
+            printing: printing,
+            estimatedPrice: estimatedPrice
         )
 
         let jsonData = try JSONEncoder().encode(request)

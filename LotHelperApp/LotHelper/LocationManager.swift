@@ -9,6 +9,7 @@ import SwiftUI
 import CoreLocation
 import MapKit
 import Combine
+import Contacts
 
 @MainActor
 class LocationManager: NSObject, ObservableObject {
@@ -62,59 +63,97 @@ class LocationManager: NSObject, ObservableObject {
     }
 
     private func reverseGeocode(location: CLLocation) {
-        // Use CLGeocoder for broad OS compatibility
-        let geocoder = CLGeocoder()
-        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
-            guard let self = self else { return }
+        // Use MKLocalSearch for reverse geocoding (modern MapKit approach)
+        // This avoids CLGeocoder deprecation warnings while maintaining compatibility
+        Task {
+            do {
+                let request = MKLocalSearch.Request()
+                request.naturalLanguageQuery = "\(location.coordinate.latitude),\(location.coordinate.longitude)"
+                request.region = MKCoordinateRegion(
+                    center: location.coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                )
 
-            if let error = error {
-                print("⚠️ Geocoding error: \(error.localizedDescription)")
-                Task { @MainActor in
-                    self.currentLocationName = "Unknown Location"
-                }
-                return
-            }
+                let search = MKLocalSearch(request: request)
+                let response = try await search.start()
 
-            guard let placemark = placemarks?.first else {
-                Task { @MainActor in
-                    self.currentLocationName = "Unknown Location"
-                }
-                return
-            }
-
-            Task { @MainActor in
-                // Build a nice location name
-                var components: [String] = []
-
-                // Try to get business name first
-                if let name = placemark.name, !name.isEmpty {
-                    components.append(name)
-                }
-
-                // Add thoroughfare (street) if available and not already in name
-                if let thoroughfare = placemark.thoroughfare,
-                   !components.contains(where: { $0.contains(thoroughfare) }) {
-                    if let subThoroughfare = placemark.subThoroughfare {
-                        components.append("\(subThoroughfare) \(thoroughfare)")
-                    } else {
-                        components.append(thoroughfare)
+                guard let mapItem = response.mapItems.first else {
+                    await MainActor.run {
+                        self.currentLocationName = "Unknown Location"
                     }
+                    return
                 }
 
-                // Add locality (city)
-                if let locality = placemark.locality {
-                    components.append(locality)
+                await MainActor.run {
+                    // Build a nice location name from MKMapItem
+                    var components: [String] = []
+
+                    // Try to get business/place name first
+                    if let name = mapItem.name, !name.isEmpty {
+                        components.append(name)
+                    }
+
+                    // Use modern iOS 26+ API: address property instead of placemark
+                    if #available(iOS 26.0, *) {
+                        // Use the new address property which returns an MKAddress
+                        if let address = mapItem.address {
+                            // MKAddress should have street and city properties
+                            // Try to access them dynamically since API might still be in flux
+                            let mirror = Mirror(reflecting: address)
+                            var street: String?
+                            var city: String?
+
+                            for child in mirror.children {
+                                if let label = child.label {
+                                    if label.lowercased().contains("street") || label.lowercased().contains("thoroughfare") {
+                                        street = child.value as? String
+                                    } else if label.lowercased().contains("city") || label.lowercased().contains("locality") {
+                                        city = child.value as? String
+                                    }
+                                }
+                            }
+
+                            if let street = street, !street.isEmpty,
+                               !components.contains(where: { $0.contains(street) }) {
+                                components.append(street)
+                            }
+                            if let city = city, !city.isEmpty {
+                                components.append(city)
+                            }
+                        }
+                    } else {
+                        // iOS < 26: Use deprecated placemark property
+                        let placemark = mapItem.placemark
+                        if let thoroughfare = placemark.thoroughfare,
+                           !components.contains(where: { $0.contains(thoroughfare) }) {
+                            if let subThoroughfare = placemark.subThoroughfare {
+                                components.append("\(subThoroughfare) \(thoroughfare)")
+                            } else {
+                                components.append(thoroughfare)
+                            }
+                        }
+
+                        // Add locality (city)
+                        if let locality = placemark.locality {
+                            components.append(locality)
+                        }
+                    }
+
+                    let locationName = components.isEmpty ? "Unknown Location" : components.joined(separator: ", ")
+                    self.currentLocationName = locationName
+
+                    // Cache for next scan
+                    self.lastLocationName = locationName
+                    self.lastLocationLatitude = location.coordinate.latitude
+                    self.lastLocationLongitude = location.coordinate.longitude
+
+                    print("📍 Location: \(locationName)")
                 }
-
-                let locationName = components.isEmpty ? "Unknown Location" : components.joined(separator: ", ")
-                self.currentLocationName = locationName
-
-                // Cache for next scan
-                self.lastLocationName = locationName
-                self.lastLocationLatitude = location.coordinate.latitude
-                self.lastLocationLongitude = location.coordinate.longitude
-
-                print("📍 Location: \(locationName)")
+            } catch {
+                print("⚠️ Geocoding error: \(error.localizedDescription)")
+                await MainActor.run {
+                    self.currentLocationName = "Unknown Location"
+                }
             }
         }
     }

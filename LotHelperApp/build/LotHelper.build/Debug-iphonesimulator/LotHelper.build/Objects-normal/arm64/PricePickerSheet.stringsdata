@@ -1,0 +1,48 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/PricePickerSheet.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Set Price",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 87
+        }
+      },
+      {
+        "comment": "",
+        "key": "Purchase Price",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 30
+        }
+      },
+      {
+        "comment": "",
+        "key": "Clear",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 40
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 91
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 97
+        }
+      }
+    ]
+  },
+  "version": 1
+}

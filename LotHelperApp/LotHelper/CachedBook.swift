@@ -33,6 +33,12 @@ final class CachedBook {
     var seriesName: String?
     var seriesIndex: Int?
 
+    // Book attributes
+    var coverType: String?
+    var signed: Bool?
+    var firstEdition: Bool?
+    var printing: String?
+
     // eBay Market data fields (flattened)
     var ebayActiveCount: Int?
     var ebaySoldCount: Int?
@@ -108,6 +114,12 @@ final class CachedBook {
         self.seriesName = record.metadata?.seriesName
         self.seriesIndex = record.metadata?.seriesIndex
 
+        // Store book attributes
+        self.coverType = record.metadata?.coverType
+        self.signed = record.metadata?.signed
+        self.firstEdition = record.metadata?.firstEdition
+        self.printing = record.metadata?.printing
+
         // Flatten eBay market data
         self.ebayActiveCount = record.market?.activeCount
         self.ebaySoldCount = record.market?.soldCount
@@ -179,7 +191,11 @@ final class CachedBook {
             thumbnail: thumbnail,
             categories: categoriesJSON?.jsonDecoded(),
             seriesName: seriesName,
-            seriesIndex: seriesIndex
+            seriesIndex: seriesIndex,
+            coverType: coverType,
+            signed: signed,
+            firstEdition: firstEdition,
+            printing: printing
         )
 
         let market = EbayMarketData(

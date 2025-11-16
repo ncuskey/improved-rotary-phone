@@ -1,0 +1,160 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/StartScreenView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Barcode Scanner",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 19
+        }
+      },
+      {
+        "comment": "",
+        "key": "Last scanned: %@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 53
+        }
+      },
+      {
+        "comment": "",
+        "key": "Start scanning ISBN",
+        "location": {
+          "startingColumn": 53,
+          "startingLine": 38
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scan another ISBN",
+        "location": {
+          "startingColumn": 77,
+          "startingLine": 38
+        }
+      },
+      {
+        "comment": "",
+        "key": "Run test lookup for ISBN 9780670855032",
+        "location": {
+          "startingColumn": 33,
+          "startingLine": 50
+        }
+      },
+      {
+        "comment": "",
+        "key": "Submit scanned ISBN %@",
+        "location": {
+          "startingColumn": 37,
+          "startingLine": 69
+        }
+      },
+      {
+        "comment": "",
+        "key": "Looking up…",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 74
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scan ISBN",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 29
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scan Again",
+        "location": {
+          "startingColumn": 57,
+          "startingLine": 29
+        }
+      },
+      {
+        "comment": "",
+        "key": "Test Lookup (9780670855032)",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "Submit %@",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 63
+        }
+      },
+      {
+        "comment": "",
+        "key": "Additional authors: %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 121
+        }
+      },
+      {
+        "comment": "",
+        "key": "Published: %lld",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 129
+        }
+      },
+      {
+        "comment": "",
+        "key": "Categories: %@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 135
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scan another book",
+        "location": {
+          "startingColumn": 29,
+          "startingLine": 271
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scan another book",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 263
+        }
+      },
+      {
+        "comment": "",
+        "key": "Align the barcode within the frame",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 315
+        }
+      },
+      {
+        "comment": "",
+        "key": "Hold steady—scanning is automatic.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 320
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel Scan",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 330
+        }
+      }
+    ]
+  },
+  "version": 1
+}

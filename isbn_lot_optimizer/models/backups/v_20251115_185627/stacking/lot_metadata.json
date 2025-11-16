@@ -1,0 +1,110 @@
+{
+  "platform": "lot",
+  "model_type": "XGBRegressor",
+  "n_features": 15,
+  "feature_names": [
+    "lot_size",
+    "is_complete_set",
+    "is_sold",
+    "price_per_book",
+    "condition_score",
+    "is_small_lot",
+    "is_medium_lot",
+    "is_large_lot",
+    "is_very_large_lot",
+    "series_id",
+    "completion_pct",
+    "completion_pct_squared",
+    "is_near_complete",
+    "complete_set_premium",
+    "inferred_series_size"
+  ],
+  "training_samples": 4477,
+  "test_samples": 1120,
+  "train_mae": 0.5123927928401818,
+  "test_mae": 1.1288720478500638,
+  "train_rmse": 0.7620773404305687,
+  "test_rmse": 5.200559225203021,
+  "train_r2": 0.9996246949183336,
+  "test_r2": 0.9803694301777088,
+  "cv_mae": 1.2736508491301803,
+  "use_temporal_weighting": true,
+  "use_groupkfold": false,
+  "hyperparameters": {
+    "subsample": 0.6,
+    "reg_lambda": 1,
+    "reg_alpha": 0,
+    "n_estimators": 500,
+    "min_child_weight": 2,
+    "max_depth": 4,
+    "learning_rate": 0.1,
+    "gamma": 0.4,
+    "colsample_bytree": 1.0
+  },
+  "optimization": {
+    "method": "RandomizedSearchCV",
+    "n_iter": 50,
+    "cv_folds": 3,
+    "scoring": "neg_mean_absolute_error"
+  },
+  "feature_importance": {
+    "lot_size": 0.5348364114761353,
+    "is_complete_set": 0.027559494599699974,
+    "is_sold": 0.001188825350254774,
+    "price_per_book": 0.3706556558609009,
+    "condition_score": 0.01711435429751873,
+    "is_small_lot": 0.0,
+    "is_medium_lot": 0.0043433960527181625,
+    "is_large_lot": 0.0010863349307328463,
+    "is_very_large_lot": 0.0,
+    "series_id": 0.010583452880382538,
+    "completion_pct": 0.013049626722931862,
+    "completion_pct_squared": 0.0,
+    "is_near_complete": 0.0,
+    "complete_set_premium": 0.0035660993307828903,
+    "inferred_series_size": 0.016016295179724693
+  },
+  "top_features": [
+    [
+      "lot_size",
+      0.5348364114761353
+    ],
+    [
+      "price_per_book",
+      0.3706556558609009
+    ],
+    [
+      "is_complete_set",
+      0.027559494599699974
+    ],
+    [
+      "condition_score",
+      0.01711435429751873
+    ],
+    [
+      "inferred_series_size",
+      0.016016295179724693
+    ],
+    [
+      "completion_pct",
+      0.013049626722931862
+    ],
+    [
+      "series_id",
+      0.010583452880382538
+    ],
+    [
+      "is_medium_lot",
+      0.0043433960527181625
+    ],
+    [
+      "complete_set_premium",
+      0.0035660993307828903
+    ],
+    [
+      "is_sold",
+      0.001188825350254774
+    ]
+  ],
+  "trained_at": "2025-11-09T20:06:42.955330"
+}

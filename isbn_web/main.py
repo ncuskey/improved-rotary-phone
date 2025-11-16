@@ -174,6 +174,7 @@ class ISBNRequest(BaseModel):
     cover_type: str | None = None
     printing: str | None = None
     signed: bool | None = None
+    first_edition: bool | None = None
 
 
 @app.post("/isbn")
@@ -213,6 +214,8 @@ async def isbn_lookup(
                 include_market=True,  # Fetch market data for mobile triage
                 recalc_lots=False,  # Don't recalc lots for rejected scans
                 status="REJECT",  # Default to REJECT - only accepted when user taps Accept
+                signed=data.signed or False,
+                first_edition=data.first_edition or False,
             )
 
             # Broadcast post-scan events
@@ -247,7 +250,7 @@ async def isbn_lookup(
                 pass  # Don't fail if market refresh fails, return cached data
 
     # Update attributes if provided (even if book already exists)
-    if data.cover_type or data.printing or data.signed is not None:
+    if data.cover_type or data.printing or data.signed is not None or data.first_edition is not None:
         update_fields = {}
         if data.cover_type:
             update_fields["cover_type"] = data.cover_type
@@ -255,6 +258,8 @@ async def isbn_lookup(
             update_fields["printing"] = data.printing
         if data.signed is not None:
             update_fields["signed"] = 1 if data.signed else 0
+        if data.first_edition is not None:
+            update_fields["first_edition"] = 1 if data.first_edition else 0
         if update_fields:
             try:
                 service.update_book_fields(data.isbn, update_fields)

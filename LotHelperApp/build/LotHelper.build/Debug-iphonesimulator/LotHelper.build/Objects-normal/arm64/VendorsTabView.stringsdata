@@ -1,0 +1,88 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/VendorsTabView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Vendors",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 41
+        }
+      },
+      {
+        "comment": "",
+        "key": "Loading vendors...",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 13
+        }
+      },
+      {
+        "comment": "",
+        "key": "Error Loading Vendors",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 16
+        }
+      },
+      {
+        "comment": "",
+        "key": "Retry",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 20
+        }
+      },
+      {
+        "comment": "",
+        "key": "No Vendor Deliveries",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 26
+        }
+      },
+      {
+        "comment": "",
+        "key": "Books grouped by vendor will appear here",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 28
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld book%@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 101
+        }
+      },
+      {
+        "comment": "",
+        "key": "Total Value",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 111
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 114
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 238
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,72 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/SoundPreviewView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Sound Preview",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 75
+        }
+      },
+      {
+        "comment": "",
+        "key": "Haptics (No Sound)",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 48
+        }
+      },
+      {
+        "comment": "",
+        "key": "Success Haptic",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 49
+        }
+      },
+      {
+        "comment": "",
+        "key": "Warning Haptic",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 53
+        }
+      },
+      {
+        "comment": "",
+        "key": "Error Haptic",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 57
+        }
+      },
+      {
+        "comment": "",
+        "key": "Light Impact",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 61
+        }
+      },
+      {
+        "comment": "",
+        "key": "Medium Impact",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 65
+        }
+      },
+      {
+        "comment": "",
+        "key": "Heavy Impact",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 69
+        }
+      }
+    ]
+  },
+  "version": 1
+}

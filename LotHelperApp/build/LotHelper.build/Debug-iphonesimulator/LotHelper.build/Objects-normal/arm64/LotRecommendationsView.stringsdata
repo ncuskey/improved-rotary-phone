@@ -1,0 +1,296 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/LotRecommendationsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Lots",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 223
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search by name, author, or series",
+        "location": {
+          "startingColumn": 115,
+          "startingLine": 220
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recalculate",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 231
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sort",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 248
+        }
+      },
+      {
+        "comment": "",
+        "key": "Filter",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 255
+        }
+      },
+      {
+        "comment": "",
+        "key": "Filter Lots",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 259
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 439
+        }
+      },
+      {
+        "comment": "",
+        "key": "Overview",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 530
+        }
+      },
+      {
+        "comment": "",
+        "key": "Justification",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 738
+        }
+      },
+      {
+        "comment": "",
+        "key": "Books in Lot (%lld)",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 751
+        }
+      },
+      {
+        "comment": "",
+        "key": "Strategy",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 535
+        }
+      },
+      {
+        "comment": "",
+        "key": "Series (Complete)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 538
+        }
+      },
+      {
+        "comment": "",
+        "key": "Series (Incomplete)",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 540
+        }
+      },
+      {
+        "comment": "",
+        "key": "Author",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 542
+        }
+      },
+      {
+        "comment": "",
+        "key": "Value Bundle",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 544
+        }
+      },
+      {
+        "comment": "",
+        "key": "Estimated value",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 551
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sell-through",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 558
+        }
+      },
+      {
+        "comment": "",
+        "key": "Probability",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 565
+        }
+      },
+      {
+        "comment": "",
+        "key": "Author",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 574
+        }
+      },
+      {
+        "comment": "",
+        "key": "Series",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 582
+        }
+      },
+      {
+        "comment": "",
+        "key": "Using lot comps as more direct comparable",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 673
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lot comp pricing",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 600
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld eBay comps",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 605
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lot market value",
+        "location": {
+          "startingColumn": 38,
+          "startingLine": 615
+        }
+      },
+      {
+        "comment": "",
+        "key": "Per-book price",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 625
+        }
+      },
+      {
+        "comment": "",
+        "key": "Individual pricing",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 640
+        }
+      },
+      {
+        "comment": "",
+        "key": "+%@ (%.1f%%) vs individual sales",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 658
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ (%.1f%%) vs individual sales",
+        "location": {
+          "startingColumn": 41,
+          "startingLine": 659
+        }
+      },
+      {
+        "comment": "",
+        "key": "Lot Market Pricing",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 680
+        }
+      },
+      {
+        "comment": "",
+        "key": "Optimal lot size: %lld books",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 692
+        }
+      },
+      {
+        "comment": "",
+        "key": "You have %lld books. Market data suggests %lld-book lots perform best for this series.",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 695
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recommendation",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 702
+        }
+      },
+      {
+        "comment": "",
+        "key": "Books You Have",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 715
+        }
+      },
+      {
+        "comment": "",
+        "key": "Books Still Needed",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 725
+        }
+      },
+      {
+        "comment": "",
+        "key": "Series Completion",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 733
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ #%lld",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 762
+        }
+      }
+    ]
+  },
+  "version": 1
+}

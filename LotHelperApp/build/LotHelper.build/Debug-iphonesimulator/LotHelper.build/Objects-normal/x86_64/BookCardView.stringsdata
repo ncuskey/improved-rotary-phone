@@ -1,0 +1,112 @@
+{
+  "source": "/Users/nickcuskey/ISBN/LotHelperApp/LotHelper/BookCardView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Expected Profit",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 67
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 70
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sell via",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 81
+        }
+      },
+      {
+        "comment": "",
+        "key": "Estimated Value",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 94
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 97
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cover of %@",
+        "location": {
+          "startingColumn": 42,
+          "startingLine": 129
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld sold",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 190
+        }
+      },
+      {
+        "comment": "",
+        "key": "eBay",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 203
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 206
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cost",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 213
+        }
+      },
+      {
+        "comment": "",
+        "key": "$%@",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 216
+        }
+      },
+      {
+        "comment": "",
+        "key": "View Details",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 231
+        }
+      },
+      {
+        "comment": "",
+        "key": "Add to Lot",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 232
+        }
+      }
+    ]
+  },
+  "version": 1
+}

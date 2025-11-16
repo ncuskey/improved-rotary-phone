@@ -753,6 +753,76 @@ async def refresh_book_data(
         )
 
 
+@router.get("/grouped_by_vendor")
+@router.get("/grouped_by_vendor.json")
+async def get_books_grouped_by_vendor(
+    service: BookService = Depends(get_book_service),
+) -> JSONResponse:
+    """
+    Group books by best buyback vendor for bulk selling.
+
+    Returns books grouped by their best vendor offer from BookScouter data.
+    Only includes books with vendor offers (bookscouter data present).
+
+    Returns:
+        List[VendorGroup]: Books grouped by vendor with totals
+    """
+    try:
+        # Get all books from catalog
+        all_books = service.list_books()
+
+        # Group books by best vendor
+        vendor_groups = {}
+
+        for book in all_books:
+            # Skip books without bookscouter data
+            if not book.bookscouter or not book.bookscouter.offers:
+                continue
+
+            # Find best offer for this book
+            best_offer = max(book.bookscouter.offers, key=lambda o: o.price)
+
+            # Add to vendor group
+            vendor_key = best_offer.vendor_id
+            if vendor_key not in vendor_groups:
+                vendor_groups[vendor_key] = {
+                    "vendor_name": best_offer.vendor_name,
+                    "vendor_id": best_offer.vendor_id,
+                    "books": [],
+                    "total_value": 0.0
+                }
+
+            # Add book to this vendor's group
+            vendor_groups[vendor_key]["books"].append({
+                "isbn": book.isbn,
+                "title": book.metadata.title if book.metadata else "Unknown Title",
+                "authors": list(book.metadata.authors) if book.metadata and book.metadata.authors else [],
+                "thumbnail": book.metadata.thumbnail if book.metadata else None,
+                "estimated_price": best_offer.price,
+                "condition": book.condition
+            })
+            vendor_groups[vendor_key]["total_value"] += best_offer.price
+
+        # Convert to response format
+        result = []
+        for vendor_data in vendor_groups.values():
+            result.append({
+                "vendor": vendor_data["vendor_name"],  # iOS expects "vendor" not "vendor_name"
+                "book_count": len(vendor_data["books"]),
+                "total_value": round(vendor_data["total_value"], 2),
+                "books": vendor_data["books"]
+            })
+
+        # Sort by total value (highest first)
+        result.sort(key=lambda x: x["total_value"], reverse=True)
+
+        return JSONResponse(content=result)
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to group books by vendor: {str(e)}"}
+        )
 @router.get("/{isbn}", response_class=HTMLResponse)
 async def get_book_detail(
     request: Request,
@@ -1776,76 +1846,6 @@ class VendorGroup(BaseModel):
     books: List[VendorBook]
 
 
-@router.get("/grouped_by_vendor")
-@router.get("/grouped_by_vendor.json")
-async def get_books_grouped_by_vendor(
-    service: BookService = Depends(get_book_service),
-) -> JSONResponse:
-    """
-    Group books by best buyback vendor for bulk selling.
-
-    Returns books grouped by their best vendor offer from BookScouter data.
-    Only includes books with vendor offers (bookscouter data present).
-
-    Returns:
-        List[VendorGroup]: Books grouped by vendor with totals
-    """
-    try:
-        # Get all books from catalog
-        all_books = service.list_books()
-
-        # Group books by best vendor
-        vendor_groups = {}
-
-        for book in all_books:
-            # Skip books without bookscouter data
-            if not book.bookscouter or not book.bookscouter.offers:
-                continue
-
-            # Find best offer for this book
-            best_offer = max(book.bookscouter.offers, key=lambda o: o.price)
-
-            # Add to vendor group
-            vendor_key = best_offer.vendor_id
-            if vendor_key not in vendor_groups:
-                vendor_groups[vendor_key] = {
-                    "vendor_name": best_offer.vendor_name,
-                    "vendor_id": best_offer.vendor_id,
-                    "books": [],
-                    "total_value": 0.0
-                }
-
-            # Add book to this vendor's group
-            vendor_groups[vendor_key]["books"].append({
-                "isbn": book.isbn,
-                "title": book.metadata.title if book.metadata else "Unknown Title",
-                "authors": ", ".join(book.metadata.authors) if book.metadata and book.metadata.authors else "Unknown Author",
-                "offer_price": best_offer.price,
-                "condition": book.condition
-            })
-            vendor_groups[vendor_key]["total_value"] += best_offer.price
-
-        # Convert to response format
-        result = []
-        for vendor_data in vendor_groups.values():
-            result.append({
-                "vendor_name": vendor_data["vendor_name"],
-                "vendor_id": vendor_data["vendor_id"],
-                "book_count": len(vendor_data["books"]),
-                "total_value": round(vendor_data["total_value"], 2),
-                "books": vendor_data["books"]
-            })
-
-        # Sort by total value (highest first)
-        result.sort(key=lambda x: x["total_value"], reverse=True)
-
-        return JSONResponse(content=result)
-
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": f"Failed to group books by vendor: {str(e)}"}
-        )
 
 
 class PotentialLotBook(BaseModel):

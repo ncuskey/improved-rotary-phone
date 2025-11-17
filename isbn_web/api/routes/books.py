@@ -20,6 +20,7 @@ from shared.metadata import fetch_metadata, create_http_session
 from shared.utils import normalise_isbn
 from shared.series_integration import enrich_evaluation_with_series, match_and_attach_series
 from shared.collectible_detection import CollectibleDetector
+from shared.reprint_detector import is_likely_reprint
 
 from ..dependencies import get_book_service
 from ...config import settings
@@ -124,8 +125,11 @@ def calculate_uplift_potential(evaluation) -> Dict[str, Any]:
 
     # 1. Check First Edition potential (if not already confirmed)
     if is_first_edition is not True:
+        # Skip first edition check if this is likely a reprint/reissue
+        if is_likely_reprint(metadata):
+            logger.debug(f"Skipping first edition uplift for {evaluation.isbn} - detected as reprint")
         # Use edition premium estimator for realistic first edition premium
-        if _edition_estimator.is_ready():
+        elif _edition_estimator.is_ready():
             try:
                 premium_dollars, explanation = _edition_estimator.estimate_premium(
                     isbn=evaluation.isbn,
@@ -145,7 +149,19 @@ def calculate_uplift_potential(evaluation) -> Dict[str, Any]:
                     # Use the higher of ML model or fame-based estimate
                     premium_dollars = max(premium_dollars, fame_premium)
 
-                if premium_dollars > 0.50:  # Show checks with >$0.50 potential
+                # Cap first edition premiums at $500 to prevent unrealistic values
+                # (e.g., continuation novels, metadata errors, extreme multipliers)
+                MAX_FIRST_EDITION_PREMIUM = 500.0
+                premium_dollars = min(premium_dollars, MAX_FIRST_EDITION_PREMIUM)
+
+                # Only show first edition uplift if either:
+                # 1. Author is collectible (fame multiplier applies), OR
+                # 2. ML model estimates a significant premium (>$50)
+                MIN_NON_COLLECTIBLE_PREMIUM = 50.0
+                is_significant = (collectible_info.is_collectible or
+                                 premium_dollars >= MIN_NON_COLLECTIBLE_PREMIUM)
+
+                if is_significant and premium_dollars > 0.50:  # Show checks with >$0.50 potential
                     # Create detailed prompt with publisher-specific guidance
                     publisher = getattr(metadata, 'publisher', '') or ''
                     identification_guide = (
@@ -211,26 +227,37 @@ def calculate_uplift_potential(evaluation) -> Dict[str, Any]:
 
     # 2. Check Signed potential (if not already confirmed)
     if is_signed is not True:
-        # Use collectible detector to check if author is famous
-        collectible_info = _collectible_detector.detect(
-            metadata=metadata,
-            signed=True,
-            first_edition=False
-        )
+        # Skip signed check if this is likely a reprint/continuation
+        # (posthumous books shouldn't get signed uplifts for deceased authors)
+        if is_likely_reprint(metadata):
+            logger.debug(f"Skipping signed uplift for {evaluation.isbn} - detected as reprint/continuation")
+        else:
+            # Use collectible detector to check if author is famous
+            collectible_info = _collectible_detector.detect(
+                metadata=metadata,
+                signed=True,
+                first_edition=False
+            )
 
-        if collectible_info.is_collectible:
-            # Signed multiplier calculation: (multiplier - 1.0) * current_price
-            fame_multiplier = collectible_info.fame_multiplier
-            signed_premium = current_price * (fame_multiplier - 1.0)
+            # Only show signed uplift for collectible authors
+            # (no point checking if random author signatures are present)
+            if collectible_info.is_collectible:
+                # Signed multiplier calculation: (multiplier - 1.0) * current_price
+                fame_multiplier = collectible_info.fame_multiplier
+                signed_premium = current_price * (fame_multiplier - 1.0)
 
-            if signed_premium > 0.50:
-                famous_person = collectible_info.famous_person or "this author"
-                checks.append({
-                    "attribute": "Signed",
-                    "prompt": f"Check if signed by {famous_person}",
-                    "potential_value": round(signed_premium, 2),
-                    "icon": "✍️"
-                })
+                # Cap signed premiums at $1000 to prevent unrealistic values
+                MAX_SIGNED_PREMIUM = 1000.0
+                signed_premium = min(signed_premium, MAX_SIGNED_PREMIUM)
+
+                if signed_premium > 0.50:
+                    famous_person = collectible_info.famous_person or "this author"
+                    checks.append({
+                        "attribute": "Signed",
+                        "prompt": f"Check if signed by {famous_person}",
+                        "potential_value": round(signed_premium, 2),
+                        "icon": "✍️"
+                    })
 
     # 3. Check Condition upgrade potential
     condition_multipliers = _multipliers.get("condition_multipliers", {})

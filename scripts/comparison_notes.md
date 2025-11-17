@@ -2891,3 +2891,205 @@ System also undervalued by 22% ($26.21 vs $32 manual):
 
 **Last Updated:** 2025-11-16 (Implemented systemic fixes: bundle bypass expansion + buyback floor)
 
+
+---
+
+## Book 1: The Quiet Game by Greg Iles
+**ISBN:** 9780525937935  
+**Date:** 2025-11-16  
+**Issue:** Page Count Heuristic Overvaluation  
+
+### System Evaluation
+- **ML Price:** $10.00 (before fix) → $6.69 (after fix)
+- **Score:** 41%/100 (before) → 49%/100 (after) (Medium confidence)
+- **eBay Data:** 0 sold, 0 active
+- **Amazon Rank:** #180,236
+- **Amazon FBM Lowest:** $6.71
+- **Page Count:** 433 pages
+
+### Manual Evaluation
+- **Manual Price:** $7.00
+- **Decision:** REJECT
+- **Difference:** $3.00 (43% error) → $0.31 (4.4% error after fix)
+
+### Analysis
+**Price Difference:** $0.24 from manual valuation (both agreed REJECT)
+
+**Issue Category:** PAGE COUNT HEURISTIC OVERVALUATION ✅ FIXED
+
+**Root Cause:**
+The system valued this book at $10.00 despite:
+- Amazon lowest price of **$6.71**
+- **0 eBay sold comps** (no market validation)
+- User manual valuation of **$7.00**
+
+Investigation revealed the source:
+```
+$4.00 base + $6.00 (433 pages × $0.02, capped at $6 max) = $10.00
+```
+
+The **page count heuristic** was dominating when no eBay data existed, ignoring the Amazon market signal that suggested a lower value.
+
+**Fix Implemented (Commit d492b53):**
+Amazon price now acts as a **ceiling** (not just floor) for books without eBay data:
+```python
+# When no eBay data (sold_count=0, active_count=0):
+if not market or (market.sold_count == 0 and market.active_count == 0):
+    base = min(base, amazon_estimate * 1.5)  # Cap at 1.5× Amazon
+else:
+    base = max(base, amazon_estimate)  # Amazon as floor only
+```
+
+**Rationale:**
+- When eBay data unavailable, Amazon is the **primary market signal**
+- Allow heuristics to add value (up to 50% above Amazon)
+- Prevent page count from wildly overvaluing books
+- Maintain eBay priority when available (most accurate data unchanged)
+
+**Result After Fix:**
+- Price: **$6.69** (capped at 1.5× Amazon estimate of $4.46)
+- Error: **$0.31** (4.4% vs 43% before fix)
+- Amazon estimate: $6.71 × 0.7 × 0.95 (Good condition) = $4.46
+- Max allowed: $4.46 × 1.5 = **$6.69** ✅
+
+**Impact:**
+- ✅ Fixed price accuracy for books without eBay data
+- ✅ Improved from 43% error to 4.4% error
+- ✅ System now within $0.31 of manual valuation
+- ✅ No impact on books with eBay data (primary signal unchanged)
+
+**See Also:** `/Users/nickcuskey/ISBN/docs/AMAZON_PRICE_CAP_FIX.md`
+
+---
+
+## Book 2: The Bee Sting by Paul Murray
+**ISBN:** 9780374600303  
+**Date:** 2025-11-16  
+**Issue:** Decision Threshold - Low Profit Buy  
+
+### System Evaluation
+- **ML Price:** $7.76
+- **Score:** 45%/100 (Medium confidence)
+- **eBay Data:** None available
+- **Amazon Rank:** #30,361 (bestseller territory)
+- **Amazon FBM Lowest:** $7.78
+- **Projected Profit:** $6.43 after fees
+
+### Manual Evaluation
+- **Manual Price:** $8.00
+- **Decision:** REJECT
+- **Notes:** "Low value"
+- **Projected Profit:** $6.64 after fees
+
+### Analysis
+**Price Accuracy:** ✅ Excellent ($0.24 difference, 3% error)
+
+**Decision Mismatch:** ✗ System BUY vs User REJECT
+
+**Issue Category:** DECISION THRESHOLD - LOW PROFIT
+
+**Root Cause:**
+Price prediction was accurate ($7.76 vs $8.00), but:
+- 45% confidence triggered **BUY** recommendation
+- Only **$6.64 profit** for a single book
+- System noted: "Single-item resale under $10; recommend bundling"
+- But overall recommendation was still **BUY**
+
+**Problem:**
+The system recognized this should be bundled (not sold individually) but still recommended BUY at 45% confidence. For only $6.64 profit on a free book with no eBay validation, this should be:
+- **HOLD** (for bundling)
+- **REJECT** (if not building bundle)
+
+**Potential Fix Options:**
+1. **Raise profit threshold:** Require higher profit ($10+) for Medium confidence BUYs
+2. **Bundle-aware decisions:** When system says "recommend bundling", default to HOLD not BUY
+3. **Confidence × Profit scoring:** Factor profit into decision, not just confidence
+4. **No-eBay penalty:** Lower confidence for predictions without eBay validation
+
+**Status:** 🔍 INVESTIGATING - Collecting more comparison data to determine optimal thresholds
+
+**Note:** This is a **decision logic** issue, not a **pricing** issue. The ML price was accurate.
+
+---
+
+**Last Updated:** 2025-11-16 (Amazon price cap fix + new decision threshold investigation)
+
+## Book 3: Wolf Hall by Hilary Mantel
+
+**ISBN:** 9780805080681  
+**Date:** 2025-11-16  
+**Issue:** First Edition Premium Not Applied - Missing Collectible Author  
+
+### System Evaluation
+- **ML Price (before fix):** $7.13
+- **Score:** 25%/100 (Low confidence)
+- **eBay Data:** None available
+- **Amazon Rank:** #95,197 (strong demand)
+- **Amazon FBM Lowest:** $7.15
+- **First Edition:** Yes (user confirmed)
+
+### Manual Evaluation
+- **Manual Price:** $10.00
+- **Decision:** REJECT
+- **Notes:** "Low value"
+
+### Analysis
+**Price Accuracy (before fix):** ✗ Poor ($2.87 difference, 40% error)
+
+**Decision Agreement:** ✓ Both REJECT (due to low absolute value)
+
+**Issue Category:** FIRST EDITION PREMIUM - DATABASE COVERAGE GAP
+
+**Root Cause:**
+The first edition premium system has two parts:
+1. ✅ **Reprint Detection** (working) - Filters out continuation novels like The Monogram Murders
+2. ❌ **Premium Application** (not working for this book) - Only applies if author in famous_people.json
+
+**Investigation:**
+Wolf Hall is a **first edition** of a **Man Booker Prize winner** (2009 + 2012):
+- System noted: "First edition noted" in reasoning
+- But **NO premium applied** ($7.13 essentially equals Amazon $7.15)
+- **Cause:** Hilary Mantel not in `shared/famous_people.json` database
+- Database had 90 people, focused on genre fiction (sci-fi, thriller, horror)
+- **Missing:** Literary fiction authors, Man Booker Prize winners
+
+**First Edition Premium Logic** (`shared/collectible_detection.py:222-224`):
+```python
+# First edition unsigned typically worth 20-30% of signed value
+# Use 25% as reasonable market estimate
+first_edition_mult = signed_mult * 0.25
+```
+
+**Fix Applied:**
+Added Hilary Mantel to `shared/famous_people.json`:
+- Category: `authors_award_winners`
+- Signed multiplier: 12x
+- First edition multiplier: 3.0x (25% of 12x)
+- Awards: Man Booker Prize (2009, 2012)
+- Notable works: Wolf Hall trilogy
+
+**Results (after fix):**
+- **Before:** $7.13 (40% undervalued)
+- **After:** $12.00 (20% overvalued)  
+- **User:** $10.00
+- **Improvement:** Error reduced from 40% → 20%
+
+The system now shows in justification:
+```
+COLLECTIBLE: first_edition_famous by MANTEL, HILARY ($3.0x multiplier) - First edition by award_winner
+```
+
+**Status:** ✅ FIXED - Commit d3861a4
+
+**Lesson Learned:**
+The continuation novel detection works (filters out The Monogram Murders), but the database coverage for literary fiction authors is incomplete. The system can only apply first edition premiums for authors in the `famous_people.json` database.
+
+**Future Improvements:**
+1. Expand `famous_people.json` with more literary fiction authors
+2. Add Man Booker Prize, National Book Award, Pulitzer Prize winners
+3. Consider automatic enrichment from award winner databases
+4. The enrich_famous_people.py script can help automate this
+
+---
+
+**Last Updated:** 2025-11-16 (Added Wolf Hall first edition premium investigation + fix)

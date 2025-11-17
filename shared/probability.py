@@ -258,7 +258,15 @@ def estimate_price(
         condition_weight = CONDITION_WEIGHTS.get(condition, 0.95) if condition else 0.95
         # Use 70% of Amazon price as conservative eBay sale estimate
         amazon_estimate = bookscouter.amazon_lowest_price * 0.7 * condition_weight
-        base = max(base, amazon_estimate)
+
+        # When eBay data is unavailable, use Amazon as primary signal
+        # Allow heuristics to add value, but cap at 1.5x Amazon estimate to prevent overvaluation
+        if not market or (market.sold_count == 0 and market.active_count == 0):
+            # No eBay data - weight Amazon heavily and cap heuristics
+            base = min(base, amazon_estimate * 1.5)
+        else:
+            # eBay data exists - use Amazon as floor only
+            base = max(base, amazon_estimate)
 
     base = max(base, 3.0)
 

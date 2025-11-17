@@ -1,13 +1,13 @@
 {
   "_metadata": {
     "version": "2.0",
-    "last_updated": "2025-11-15",
+    "last_updated": "2025-11-16",
     "description": "Database of famous people whose signatures make books significantly more valuable",
     "multipliers": "Base multiplier for signed books. Unsigned first editions use 0.3-0.5x of this.",
-    "total_people": 90,
+    "total_people": 91,
     "categories": [
       "authors_literary_icons (28 people)",
-      "authors_award_winners (16 people)",
+      "authors_award_winners (17 people)",
       "celebrities (18 people)",
       "film_directors (11 people)",
       "photographers_artists (4 people)",
@@ -590,6 +590,25 @@
         "The Girl with the Dragon Tattoo"
       ],
       "notes": "Millennium trilogy author, deceased 2004, rare signatures"
+    },
+    "Hilary Mantel": {
+      "type": "author",
+      "fame_tier": "award_winner",
+      "signed_multiplier": 12,
+      "genres": [
+        "literary fiction",
+        "historical fiction"
+      ],
+      "notable_works": [
+        "Wolf Hall",
+        "Bring Up the Bodies",
+        "The Mirror & the Light"
+      ],
+      "awards": [
+        "Man Booker Prize (2009)",
+        "Man Booker Prize (2012)"
+      ],
+      "notes": "Two-time Man Booker Prize winner, acclaimed historical novelist, deceased 2022"
     }
   },
   "celebrities": {

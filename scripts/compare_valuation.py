@@ -380,10 +380,11 @@ class ValuationComparator:
                 print(f"    → Conditional BUY if confidence > 50%")
 
         if evaluation.probability_score:
-            print(f"  RULE 3: Confidence = {evaluation.probability_score:.0%}")
-            if evaluation.probability_score >= 0.7:
+            # probability_score is already 0-100, not 0-1
+            print(f"  RULE 3: Confidence = {evaluation.probability_score:.1f}%")
+            if evaluation.probability_score >= 70:
                 print(f"    → High confidence (≥ 70%)")
-            elif evaluation.probability_score >= 0.5:
+            elif evaluation.probability_score >= 50:
                 print(f"    → Medium confidence (50-70%)")
             else:
                 print(f"    → Low confidence (< 50%)")

@@ -3093,3 +3093,88 @@ The continuation novel detection works (filters out The Monogram Murders), but t
 ---
 
 **Last Updated:** 2025-11-16 (Added Wolf Hall first edition premium investigation + fix)
+
+## Book 4: White Hunters by Brian Herne
+
+**ISBN:** 9780805059199  
+**Date:** 2025-11-16  
+**Issue:** Signed First Edition - Niche Collectible Database Gap + Base Price Calculation  
+
+### System Evaluation
+- **ML Price (before fix):** $10.00
+- **Score:** 100%/100 (High confidence - due to buyback guarantee)
+- **eBay Data:** None available
+- **Amazon Rank:** #1,376,490
+- **Amazon FBM Lowest:** $20.98
+- **Signed:** Yes (user confirmed)
+- **First Edition:** Yes (user confirmed)
+
+### Manual Evaluation
+- **Manual Price:** $60.00
+- **Decision:** BUY
+- **Notes:** "Similar comp values"
+- **Projected Profit:** $51.75
+
+### Analysis
+**Price Accuracy (before fix):** ✗ Very Poor ($50 difference, 500% error)
+
+**Decision Agreement:** ✓ Both BUY
+
+**Issue Category:** NICHE COLLECTIBLE DATABASE GAP + BASE PRICE CALCULATION
+
+**Root Cause #1: Missing Collectible Author**
+- Brian Herne is definitive historian of African safari hunting
+- Highly collectible in specialized market (African history/safari/hunting)
+- Not in `shared/famous_people.json` database (only 92 people, focused on mainstream fiction)
+- **Database gap:** Missing specialized non-fiction authors
+
+**Fix Applied (Partial):**
+Added Brian Herne to `shared/famous_people.json`:
+- Category: `authors_award_winners` (specialized_author)
+- Signed multiplier: 6x
+- Genres: African history, safari, hunting
+- Notable work: White Hunters: The Golden Age of African Safaris
+
+**Results (after author fix):**
+- **Before:** $10.00 (500% undervalued)
+- **After:** $24.00 (150% undervalued - partial improvement)
+- **User:** $60.00
+- **Improvement:** Error reduced from 500% → 150%, but still significant
+
+**Root Cause #2: Base Price Calculation Issue (UNRESOLVED)**
+The collectible multiplier (6x) is working, but base price is wrong:
+- Base calculation: ~$4
+- Amazon FBM Lowest: $20.98
+- **Problem:** Base should respect Amazon $20.98, not default to $4
+
+Analysis:
+- Final price with 6x: $24 = $4 base × 6
+- If base was $10 (closer to Amazon): $10 × 6 = $60 ✓ (matches user)
+- If base was $20 (Amazon price): $20 × 6 = $120 (too high)
+
+**Outstanding Investigation:**
+Why is base price $4 when Amazon shows $20.98? Possibilities:
+1. Amazon price signal not being used for collectibles
+2. Heuristics overriding Amazon signal
+3. Bug in base price calculation for books with high Amazon prices
+4. Conservative cap being applied incorrectly
+
+**Status:** 🔍 INVESTIGATING BASE PRICE CALCULATION
+
+**Commits:**
+- 6452f37: Added Brian Herne (partial fix, 140% improvement)
+
+**Next Steps:**
+1. Investigate `estimate_price()` function for books with high Amazon FBM prices
+2. Verify Amazon price signal is being used as floor/ceiling correctly
+3. Consider if collectibles need different base price logic
+4. May need to increase multiplier from 6x to 12-15x if base price can't be fixed
+
+**Lesson Learned:**
+Niche collectibles (specialized non-fiction) have two problems:
+1. Database coverage gap (solvable by adding authors)
+2. Base price calculation may need different logic for high-value specialized books
+
+---
+
+**Last Updated:** 2025-11-16 (Added White Hunters investigation - partial fix applied)

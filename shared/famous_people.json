@@ -4,10 +4,10 @@
     "last_updated": "2025-11-16",
     "description": "Database of famous people whose signatures make books significantly more valuable",
     "multipliers": "Base multiplier for signed books. Unsigned first editions use 0.3-0.5x of this.",
-    "total_people": 91,
+    "total_people": 92,
     "categories": [
       "authors_literary_icons (28 people)",
-      "authors_award_winners (17 people)",
+      "authors_award_winners (18 people)",
       "celebrities (18 people)",
       "film_directors (11 people)",
       "photographers_artists (4 people)",
@@ -609,6 +609,21 @@
         "Man Booker Prize (2012)"
       ],
       "notes": "Two-time Man Booker Prize winner, acclaimed historical novelist, deceased 2022"
+    },
+    "Brian Herne": {
+      "type": "author",
+      "fame_tier": "specialized_author",
+      "signed_multiplier": 6,
+      "genres": [
+        "non-fiction",
+        "African history",
+        "safari",
+        "hunting"
+      ],
+      "notable_works": [
+        "White Hunters: The Golden Age of African Safaris"
+      ],
+      "notes": "Definitive historian of African safari hunting, highly collectible in niche market"
     }
   },
   "celebrities": {

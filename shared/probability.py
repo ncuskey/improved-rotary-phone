@@ -260,10 +260,12 @@ def estimate_price(
         amazon_estimate = bookscouter.amazon_lowest_price * 0.7 * condition_weight
 
         # When eBay data is unavailable, use Amazon as primary signal
-        # Allow heuristics to add value, but cap at 1.5x Amazon estimate to prevent overvaluation
+        # Use Amazon as floor, but cap heuristics at 1.5x Amazon if they're too high
         if not market or (market.sold_count == 0 and market.active_count == 0):
-            # No eBay data - weight Amazon heavily and cap heuristics
-            base = min(base, amazon_estimate * 1.5)
+            # No eBay data - use Amazon as floor, cap heuristics at 1.5x Amazon
+            # This prevents both undervaluation (when Amazon > heuristics) and
+            # overvaluation (when heuristics > 1.5x Amazon)
+            base = max(amazon_estimate, min(base, amazon_estimate * 1.5))
         else:
             # eBay data exists - use Amazon as floor only
             base = max(base, amazon_estimate)

@@ -1,4 +1,389 @@
 {
+  "Ai Jiang": {
+    "type": "author",
+    "fame_tier": "genre_award",
+    "signed_multiplier": 8,
+    "genres": [
+      "science fiction",
+      "fantasy"
+    ],
+    "notable_works": [
+      "Linghun"
+    ],
+    "awards": [
+      "Nebula Award (Best Novella) (2024)"
+    ],
+    "notes": "Nebula Award (Best Novella) winner 2024"
+  },
+  "Ann Leckie": {
+    "type": "author",
+    "fame_tier": "genre_award",
+    "signed_multiplier": 8,
+    "genres": [
+      "science fiction",
+      "fantasy"
+    ],
+    "notable_works": [
+      "Imperial Radch"
+    ],
+    "awards": [
+      "Hugo Award (Best Series) (2024)"
+    ],
+    "notes": "Hugo Award (Best Series) winner 2024"
+  },
+  "Barbara Kingsolver": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 12,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "N/A (lifetime achievement)"
+    ],
+    "awards": [
+      "National Book Award (Medal for Distinguished Contribution to American Letters) (2024)"
+    ],
+    "notes": "National Book Award (Medal for Distinguished Contribution to American Letters) winner 2024"
+  },
+  "Dave Eggers": {
+    "type": "author",
+    "fame_tier": "childrens_award",
+    "signed_multiplier": 6,
+    "genres": [
+      "children's literature",
+      "young adult"
+    ],
+    "notable_works": [
+      "The Eyes and the Impossible"
+    ],
+    "awards": [
+      "Newbery Medal (2024)"
+    ],
+    "notes": "Newbery Medal winner 2024"
+  },
+  "Emily Tesh": {
+    "type": "author",
+    "fame_tier": "genre_award",
+    "signed_multiplier": 8,
+    "genres": [
+      "science fiction",
+      "fantasy"
+    ],
+    "notable_works": [
+      "Some Desperate Glory"
+    ],
+    "awards": [
+      "Hugo Award (Best Novel) (2024)"
+    ],
+    "notes": "Hugo Award (Best Novel) winner 2024"
+  },
+  "Jason De Le\u00f3n": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 12,
+    "genres": [
+      "non-fiction"
+    ],
+    "notable_works": [
+      "Soldiers and Kings"
+    ],
+    "awards": [
+      "National Book Award (Nonfiction) (2024)"
+    ],
+    "notes": "National Book Award (Nonfiction) winner 2024"
+  },
+  "Jenny Erpenbeck and Michael Hofmann": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 12,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "Kairos"
+    ],
+    "awards": [
+      "International Booker Prize (2024)"
+    ],
+    "notes": "International Booker Prize winner 2024"
+  },
+  "Jonny Steinberg": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 10,
+    "genres": [
+      "non-fiction"
+    ],
+    "notable_works": [
+      "Winnie and Nelson: Portrait of a Marriage"
+    ],
+    "awards": [
+      "National Book Critics Circle Award (Biography) (2023)"
+    ],
+    "notes": "National Book Critics Circle Award (Biography) winner 2023"
+  },
+  "Kim Hyesoon": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 10,
+    "genres": [
+      "poetry"
+    ],
+    "notable_works": [
+      "Phantom Pain Wings"
+    ],
+    "awards": [
+      "National Book Critics Circle Award (Poetry) (2023)"
+    ],
+    "notes": "National Book Critics Circle Award (Poetry) winner 2023"
+  },
+  "Lena Khalaf Tuffaha": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 12,
+    "genres": [
+      "poetry"
+    ],
+    "notable_works": [
+      "Something About Living"
+    ],
+    "awards": [
+      "National Book Award (Poetry) (2024)"
+    ],
+    "notes": "National Book Award (Poetry) winner 2024"
+  },
+  "Lorrie Moore": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 10,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "I Am Homeless If This Is Not My Home"
+    ],
+    "awards": [
+      "National Book Critics Circle Award (Fiction) (2023)"
+    ],
+    "notes": "National Book Critics Circle Award (Fiction) winner 2023"
+  },
+  "Maureen Freely": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 10,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "Cold Nights of Childhood"
+    ],
+    "awards": [
+      "National Book Critics Circle Award (Translation) (2023)"
+    ],
+    "notes": "National Book Critics Circle Award (Translation) winner 2023"
+  },
+  "Naomi Kritzer": {
+    "type": "author",
+    "fame_tier": "genre_award",
+    "signed_multiplier": 8,
+    "genres": [
+      "science fiction",
+      "fantasy"
+    ],
+    "notable_works": [
+      "The Year Without Sunshine"
+    ],
+    "awards": [
+      "Nebula Award (Best Novelette) (2024)"
+    ],
+    "notes": "Nebula Award (Best Novelette) winner 2024"
+  },
+  "Percival Everett": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 12,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "James"
+    ],
+    "awards": [
+      "National Book Award (Fiction) (2024)"
+    ],
+    "notes": "National Book Award (Fiction) winner 2024"
+  },
+  "R. S. A. Garcia": {
+    "type": "author",
+    "fame_tier": "genre_award",
+    "signed_multiplier": 8,
+    "genres": [
+      "science fiction",
+      "fantasy"
+    ],
+    "notable_works": [
+      "Tantie Merle and the Farmhand 4200"
+    ],
+    "awards": [
+      "Nebula Award (Best Short Story) (2024)"
+    ],
+    "notes": "Nebula Award (Best Short Story) winner 2024"
+  },
+  "Safiya Sinclair": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 10,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "How to Say Babylon"
+    ],
+    "awards": [
+      "National Book Critics Circle Award (Autobiography) (2023)"
+    ],
+    "notes": "National Book Critics Circle Award (Autobiography) winner 2023"
+  },
+  "Samantha Harvey": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 15,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "Orbital"
+    ],
+    "awards": [
+      "Booker Prize (2024)"
+    ],
+    "notes": "Booker Prize winner 2024"
+  },
+  "Shifa Saltagi Safadi": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 12,
+    "genres": [
+      "children's literature",
+      "young adult"
+    ],
+    "notable_works": [
+      "Kareem Between"
+    ],
+    "awards": [
+      "National Book Award (Young People's Literature) (2024)"
+    ],
+    "notes": "National Book Award (Young People's Literature) winner 2024"
+  },
+  "T. Kingfisher": {
+    "type": "author",
+    "fame_tier": "genre_award",
+    "signed_multiplier": 8,
+    "genres": [
+      "science fiction",
+      "fantasy"
+    ],
+    "notable_works": [
+      "Thornhedge"
+    ],
+    "awards": [
+      "Hugo Award (Best Novella) (2024)"
+    ],
+    "notes": "Hugo Award (Best Novella) winner 2024"
+  },
+  "Tahir Hamut Izgil": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 10,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "Waiting to Be Arrested at Night"
+    ],
+    "awards": [
+      "National Book Critics Circle Award (John Leonard Prize) (2023)"
+    ],
+    "notes": "National Book Critics Circle Award (John Leonard Prize) winner 2023"
+  },
+  "V. V. Ganeshananthan": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 10,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "Brotherless Night"
+    ],
+    "awards": [
+      "Women's Prize for Fiction (2024)"
+    ],
+    "notes": "Women's Prize for Fiction winner 2024"
+  },
+  "Vajra Chandrasekera": {
+    "type": "author",
+    "fame_tier": "genre_award",
+    "signed_multiplier": 8,
+    "genres": [
+      "science fiction",
+      "fantasy"
+    ],
+    "notable_works": [
+      "The Saint of Bright Doors"
+    ],
+    "awards": [
+      "Nebula Award (Best Novel) (2024)"
+    ],
+    "notes": "Nebula Award (Best Novel) winner 2024"
+  },
+  "Vashti Harrison": {
+    "type": "author",
+    "fame_tier": "childrens_award",
+    "signed_multiplier": 6,
+    "genres": [
+      "children's literature",
+      "young adult"
+    ],
+    "notable_works": [
+      "Big"
+    ],
+    "awards": [
+      "Caldecott Medal (2024)"
+    ],
+    "notes": "Caldecott Medal winner 2024"
+  },
+  "W. Paul Coates": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 12,
+    "genres": [
+      "literary fiction"
+    ],
+    "notable_works": [
+      "N/A (lifetime achievement)"
+    ],
+    "awards": [
+      "National Book Award (Literarian Award for Outstanding Service) (2024)"
+    ],
+    "notes": "National Book Award (Literarian Award for Outstanding Service) winner 2024"
+  },
+  "Y\u00e1ng Shu\u0101ng-z\u01d0": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 12,
+    "genres": [
+      "international literature"
+    ],
+    "notable_works": [
+      "Taiwan Travelogue"
+    ],
+    "awards": [
+      "National Book Award (Translated Literature) (2024)"
+    ],
+    "notes": "National Book Award (Translated Literature) winner 2024"
+  },
   "_metadata": {
     "version": "2.0",
     "last_updated": "2025-11-16",
@@ -15,6 +400,389 @@
       "musicians (3 people)"
     ],
     "coverage": "Expanded to 90+ famous people across 7 categories with comprehensive name variation support"
+  },
+  "astronauts_explorers": {
+    "Buzz Aldrin": {
+      "type": "astronaut",
+      "fame_tier": "historical_figure",
+      "signed_multiplier": 18,
+      "profession": "astronaut",
+      "notable_works": [
+        "Apollo 11 - moonwalker"
+      ],
+      "notes": "Second person to walk on moon"
+    },
+    "Neil Armstrong": {
+      "type": "astronaut",
+      "fame_tier": "historical_icon",
+      "signed_multiplier": 300,
+      "profession": "astronaut",
+      "notable_works": [
+        "Apollo 11 - first moonwalker"
+      ],
+      "notes": "Rarely signed, deceased, first human on moon"
+    },
+    "John Glenn": {
+      "type": "astronaut",
+      "fame_tier": "historical_figure",
+      "signed_multiplier": 15,
+      "profession": "astronaut, senator",
+      "notable_works": [
+        "First American in orbit"
+      ],
+      "notes": "Mercury astronaut, senator"
+    },
+    "Sally Ride": {
+      "type": "astronaut",
+      "fame_tier": "historical_figure",
+      "signed_multiplier": 30,
+      "profession": "astronaut",
+      "notable_works": [
+        "First American woman in space"
+      ],
+      "notes": "Trailblazer, deceased"
+    }
+  },
+  "authors_award_winners": {
+    "Doris Kearns Goodwin": {
+      "type": "author",
+      "fame_tier": "award_winner",
+      "signed_multiplier": 6,
+      "genres": [
+        "history",
+        "biography"
+      ],
+      "notable_works": [
+        "Team of Rivals"
+      ],
+      "awards": [
+        "Pulitzer Prize"
+      ],
+      "notes": "Presidential historian"
+    },
+    "Louise Erdrich": {
+      "type": "author",
+      "fame_tier": "award_winner",
+      "signed_multiplier": 5,
+      "genres": [
+        "literary fiction"
+      ],
+      "notable_works": [
+        "The Night Watchman"
+      ],
+      "awards": [
+        "Pulitzer Prize",
+        "National Book Award"
+      ],
+      "notes": "Contemporary Native American author"
+    },
+    "Colson Whitehead": {
+      "type": "author",
+      "fame_tier": "award_winner",
+      "signed_multiplier": 8,
+      "genres": [
+        "literary fiction"
+      ],
+      "awards": [
+        "Pulitzer Prize"
+      ],
+      "notes": "Two-time Pulitzer winner"
+    },
+    "Michael Connelly": {
+      "type": "author",
+      "fame_tier": "genre_master",
+      "signed_multiplier": 12,
+      "genres": [
+        "crime fiction",
+        "thriller"
+      ],
+      "notable_works": [
+        "Harry Bosch series",
+        "The Lincoln Lawyer"
+      ],
+      "notes": "Bestselling crime author, Edgar Award winner"
+    },
+    "James Lee Burke": {
+      "type": "author",
+      "fame_tier": "genre_master",
+      "signed_multiplier": 10,
+      "genres": [
+        "crime fiction",
+        "mystery"
+      ],
+      "notable_works": [
+        "Dave Robicheaux series"
+      ],
+      "notes": "Literary crime fiction, Edgar Awards"
+    },
+    "Patricia Cornwell": {
+      "type": "author",
+      "fame_tier": "genre_master",
+      "signed_multiplier": 12,
+      "genres": [
+        "crime fiction",
+        "forensics"
+      ],
+      "notable_works": [
+        "Kay Scarpetta series"
+      ],
+      "notes": "Pioneer of forensic crime fiction"
+    },
+    "Dennis Lehane": {
+      "type": "author",
+      "fame_tier": "genre_master",
+      "signed_multiplier": 10,
+      "genres": [
+        "crime fiction",
+        "thriller"
+      ],
+      "notable_works": [
+        "Mystic River",
+        "Gone Baby Gone"
+      ],
+      "notes": "Literary crime fiction, many film adaptations"
+    },
+    "Carl Hiaasen": {
+      "type": "author",
+      "fame_tier": "genre_master",
+      "signed_multiplier": 8,
+      "genres": [
+        "crime fiction",
+        "satire"
+      ],
+      "notable_works": [
+        "Tourist Season",
+        "Skinny Dip"
+      ],
+      "notes": "Florida noir, satirical crime fiction"
+    },
+    "Sue Grafton": {
+      "type": "author",
+      "fame_tier": "genre_master",
+      "signed_multiplier": 15,
+      "genres": [
+        "mystery",
+        "detective"
+      ],
+      "notable_works": [
+        "Alphabet series (A is for Alibi)"
+      ],
+      "notes": "Mystery series icon, deceased 2017"
+    },
+    "Agatha Christie": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 300,
+      "genres": [
+        "mystery",
+        "detective"
+      ],
+      "notable_works": [
+        "Murder on the Orient Express",
+        "And Then There Were None"
+      ],
+      "notes": "Queen of Mystery, best-selling novelist of all time, deceased 1976"
+    },
+    "Raymond Chandler": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 200,
+      "genres": [
+        "crime fiction",
+        "noir"
+      ],
+      "notable_works": [
+        "The Big Sleep",
+        "Farewell, My Lovely"
+      ],
+      "notes": "Noir fiction pioneer, deceased 1959"
+    },
+    "Dashiell Hammett": {
+      "type": "author",
+      "fame_tier": "literary_icon",
+      "signed_multiplier": 250,
+      "genres": [
+        "crime fiction",
+        "noir"
+      ],
+      "notable_works": [
+        "The Maltese Falcon",
+        "The Thin Man"
+      ],
+      "notes": "Hard-boiled detective fiction pioneer, deceased 1961"
+    },
+    "Lee Child": {
+      "type": "author",
+      "fame_tier": "bestselling_author",
+      "signed_multiplier": 12,
+      "genres": [
+        "thriller",
+        "action"
+      ],
+      "notable_works": [
+        "Jack Reacher series"
+      ],
+      "notes": "Action thriller bestseller"
+    },
+    "Gillian Flynn": {
+      "type": "author",
+      "fame_tier": "bestselling_author",
+      "signed_multiplier": 18,
+      "genres": [
+        "thriller",
+        "psychological"
+      ],
+      "notable_works": [
+        "Gone Girl",
+        "Sharp Objects"
+      ],
+      "notes": "Psychological thriller phenomenon"
+    },
+    "Stieg Larsson": {
+      "type": "author",
+      "fame_tier": "bestselling_author",
+      "signed_multiplier": 40,
+      "genres": [
+        "crime fiction",
+        "thriller"
+      ],
+      "notable_works": [
+        "The Girl with the Dragon Tattoo"
+      ],
+      "notes": "Millennium trilogy author, deceased 2004, rare signatures"
+    },
+    "Hilary Mantel": {
+      "type": "author",
+      "fame_tier": "award_winner",
+      "signed_multiplier": 12,
+      "genres": [
+        "literary fiction",
+        "historical fiction"
+      ],
+      "notable_works": [
+        "Wolf Hall",
+        "Bring Up the Bodies",
+        "The Mirror & the Light"
+      ],
+      "awards": [
+        "Man Booker Prize (2009)",
+        "Man Booker Prize (2012)"
+      ],
+      "notes": "Two-time Man Booker Prize winner, acclaimed historical novelist, deceased 2022"
+    },
+    "Brian Herne": {
+      "type": "author",
+      "fame_tier": "specialized_author",
+      "signed_multiplier": 6,
+      "genres": [
+        "non-fiction",
+        "African history",
+        "safari",
+        "hunting"
+      ],
+      "notable_works": [
+        "White Hunters: The Golden Age of African Safaris"
+      ],
+      "notes": "Definitive historian of African safari hunting, highly collectible in niche market"
+    }
+  },
+  "authors_bestselling": {
+    "Nora Roberts": {
+      "signed_multiplier": 25.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "romance"
+      ],
+      "notes": "Award winner in romance, highly collectible"
+    },
+    "Anne Rice": {
+      "signed_multiplier": 25.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "horror"
+      ],
+      "notes": "Award winner in horror, highly collectible"
+    },
+    "Enid Blyton": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "children"
+      ],
+      "notes": "Prolific children author"
+    },
+    "R.L. Stine": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "horror"
+      ],
+      "notes": "Prolific horror author"
+    },
+    "Gayle Lynds": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "thriller"
+      ],
+      "notes": "Prolific thriller author"
+    },
+    "Susan Mallery": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "romance"
+      ],
+      "notes": "Prolific romance author"
+    },
+    "Joe Lansdale": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "horror"
+      ],
+      "notes": "Prolific horror author"
+    },
+    "Diana Palmer": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "romance"
+      ],
+      "notes": "Prolific romance author"
+    },
+    "Heather Graham": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "romance"
+      ],
+      "notes": "Prolific romance author"
+    },
+    "Mercedes Lackey": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "fantasy"
+      ],
+      "notes": "Prolific fantasy author"
+    },
+    "David Hagberg": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "thriller"
+      ],
+      "notes": "Prolific thriller author"
+    },
+    "Seanan McGuire": {
+      "signed_multiplier": 12.0,
+      "fame_tier": "bestselling_author",
+      "genres": [
+        "sci-fi"
+      ],
+      "notes": "Prolific sci-fi author"
+    }
   },
   "authors_literary_icons": {
     "Frank Herbert": {
@@ -383,247 +1151,60 @@
       "notes": "Extremely prolific, frequently signs"
     }
   },
-  "authors_award_winners": {
-    "Doris Kearns Goodwin": {
-      "type": "author",
-      "fame_tier": "award_winner",
-      "signed_multiplier": 6,
-      "genres": [
-        "history",
-        "biography"
-      ],
-      "notable_works": [
-        "Team of Rivals"
-      ],
-      "awards": [
-        "Pulitzer Prize"
-      ],
-      "notes": "Presidential historian"
-    },
-    "Louise Erdrich": {
-      "type": "author",
-      "fame_tier": "award_winner",
-      "signed_multiplier": 5,
-      "genres": [
-        "literary fiction"
-      ],
-      "notable_works": [
-        "The Night Watchman"
-      ],
-      "awards": [
-        "Pulitzer Prize",
-        "National Book Award"
-      ],
-      "notes": "Contemporary Native American author"
-    },
-    "Colson Whitehead": {
-      "type": "author",
-      "fame_tier": "award_winner",
-      "signed_multiplier": 8,
-      "genres": [
-        "literary fiction"
-      ],
-      "awards": [
-        "Pulitzer Prize"
-      ],
-      "notes": "Two-time Pulitzer winner"
-    },
-    "Michael Connelly": {
-      "type": "author",
-      "fame_tier": "genre_master",
-      "signed_multiplier": 12,
-      "genres": [
-        "crime fiction",
-        "thriller"
-      ],
-      "notable_works": [
-        "Harry Bosch series",
-        "The Lincoln Lawyer"
-      ],
-      "notes": "Bestselling crime author, Edgar Award winner"
-    },
-    "James Lee Burke": {
-      "type": "author",
-      "fame_tier": "genre_master",
-      "signed_multiplier": 10,
-      "genres": [
-        "crime fiction",
-        "mystery"
-      ],
-      "notable_works": [
-        "Dave Robicheaux series"
-      ],
-      "notes": "Literary crime fiction, Edgar Awards"
-    },
-    "Patricia Cornwell": {
-      "type": "author",
-      "fame_tier": "genre_master",
-      "signed_multiplier": 12,
-      "genres": [
-        "crime fiction",
-        "forensics"
-      ],
-      "notable_works": [
-        "Kay Scarpetta series"
-      ],
-      "notes": "Pioneer of forensic crime fiction"
-    },
-    "Dennis Lehane": {
-      "type": "author",
-      "fame_tier": "genre_master",
-      "signed_multiplier": 10,
-      "genres": [
-        "crime fiction",
-        "thriller"
-      ],
-      "notable_works": [
-        "Mystic River",
-        "Gone Baby Gone"
-      ],
-      "notes": "Literary crime fiction, many film adaptations"
-    },
-    "Carl Hiaasen": {
-      "type": "author",
-      "fame_tier": "genre_master",
-      "signed_multiplier": 8,
-      "genres": [
-        "crime fiction",
-        "satire"
-      ],
-      "notable_works": [
-        "Tourist Season",
-        "Skinny Dip"
-      ],
-      "notes": "Florida noir, satirical crime fiction"
-    },
-    "Sue Grafton": {
-      "type": "author",
-      "fame_tier": "genre_master",
-      "signed_multiplier": 15,
-      "genres": [
-        "mystery",
-        "detective"
-      ],
-      "notable_works": [
-        "Alphabet series (A is for Alibi)"
-      ],
-      "notes": "Mystery series icon, deceased 2017"
-    },
-    "Agatha Christie": {
-      "type": "author",
+  "authors_literature": {
+    "Allen Ginsberg": {
+      "signed_multiplier": 40.0,
       "fame_tier": "literary_icon",
-      "signed_multiplier": 300,
       "genres": [
-        "mystery",
-        "detective"
+        "poetry",
+        "literature"
       ],
-      "notable_works": [
-        "Murder on the Orient Express",
-        "And Then There Were None"
-      ],
-      "notes": "Queen of Mystery, best-selling novelist of all time, deceased 1976"
+      "notes": "Beat Generation icon, National Book Award, Pulitzer Prize finalist. Signed poetry highly collectible."
     },
-    "Raymond Chandler": {
-      "type": "author",
+    "Jack Kerouac": {
+      "signed_multiplier": 50.0,
       "fame_tier": "literary_icon",
-      "signed_multiplier": 200,
       "genres": [
-        "crime fiction",
-        "noir"
+        "literature",
+        "fiction"
       ],
-      "notable_works": [
-        "The Big Sleep",
-        "Farewell, My Lovely"
-      ],
-      "notes": "Noir fiction pioneer, deceased 1959"
+      "notes": "Beat Generation founder, 'On the Road' author. Died 1969, signed books extremely rare and valuable."
     },
-    "Dashiell Hammett": {
-      "type": "author",
+    "William S. Burroughs": {
+      "signed_multiplier": 45.0,
       "fame_tier": "literary_icon",
-      "signed_multiplier": 250,
       "genres": [
-        "crime fiction",
-        "noir"
+        "literature",
+        "fiction"
       ],
-      "notable_works": [
-        "The Maltese Falcon",
-        "The Thin Man"
-      ],
-      "notes": "Hard-boiled detective fiction pioneer, deceased 1961"
+      "notes": "Beat Generation, 'Naked Lunch' author, postmodern literature pioneer. Highly collectible."
     },
-    "Lee Child": {
-      "type": "author",
-      "fame_tier": "bestselling_author",
-      "signed_multiplier": 12,
+    "Lawrence Ferlinghetti": {
+      "signed_multiplier": 30.0,
+      "fame_tier": "literary_icon",
       "genres": [
-        "thriller",
-        "action"
+        "poetry",
+        "literature"
       ],
-      "notable_works": [
-        "Jack Reacher series"
-      ],
-      "notes": "Action thriller bestseller"
+      "notes": "Beat poet, City Lights Books founder, published Howl. National Book Award finalist."
     },
-    "Gillian Flynn": {
-      "type": "author",
-      "fame_tier": "bestselling_author",
-      "signed_multiplier": 18,
-      "genres": [
-        "thriller",
-        "psychological"
-      ],
-      "notable_works": [
-        "Gone Girl",
-        "Sharp Objects"
-      ],
-      "notes": "Psychological thriller phenomenon"
-    },
-    "Stieg Larsson": {
-      "type": "author",
-      "fame_tier": "bestselling_author",
-      "signed_multiplier": 40,
-      "genres": [
-        "crime fiction",
-        "thriller"
-      ],
-      "notable_works": [
-        "The Girl with the Dragon Tattoo"
-      ],
-      "notes": "Millennium trilogy author, deceased 2004, rare signatures"
-    },
-    "Hilary Mantel": {
-      "type": "author",
+    "Gary Snyder": {
+      "signed_multiplier": 25.0,
       "fame_tier": "award_winner",
-      "signed_multiplier": 12,
       "genres": [
-        "literary fiction",
-        "historical fiction"
+        "poetry",
+        "literature"
       ],
-      "notable_works": [
-        "Wolf Hall",
-        "Bring Up the Bodies",
-        "The Mirror & the Light"
-      ],
-      "awards": [
-        "Man Booker Prize (2009)",
-        "Man Booker Prize (2012)"
-      ],
-      "notes": "Two-time Man Booker Prize winner, acclaimed historical novelist, deceased 2022"
+      "notes": "Pulitzer Prize winner for poetry, Beat Generation poet, environmental activist."
     },
-    "Brian Herne": {
-      "type": "author",
-      "fame_tier": "specialized_author",
-      "signed_multiplier": 6,
+    "Gregory Corso": {
+      "signed_multiplier": 35.0,
+      "fame_tier": "literary_icon",
       "genres": [
-        "non-fiction",
-        "African history",
-        "safari",
-        "hunting"
+        "poetry",
+        "literature"
       ],
-      "notable_works": [
-        "White Hunters: The Golden Age of African Safaris"
-      ],
-      "notes": "Definitive historian of African safari hunting, highly collectible in niche market"
+      "notes": "Beat poet, 'Gasoline' and 'Bomb' author. Signed books collectible."
     }
   },
   "celebrities": {
@@ -910,90 +1491,6 @@
         "The Dark Knight"
       ],
       "notes": "Modern blockbuster auteur"
-    }
-  },
-  "photographers_artists": {
-    "Liz Goldwyn": {
-      "type": "photographer",
-      "fame_tier": "specialty_artist",
-      "signed_multiplier": 5,
-      "profession": "photographer, filmmaker",
-      "notable_works": [
-        "Pretty Things"
-      ],
-      "notes": "Samuel Goldwyn granddaughter, cultural photography"
-    },
-    "Annie Leibovitz": {
-      "type": "photographer",
-      "fame_tier": "cultural_icon",
-      "signed_multiplier": 25,
-      "profession": "photographer",
-      "notable_works": [
-        "Rolling Stone covers"
-      ],
-      "notes": "Iconic celebrity photographer"
-    },
-    "Ansel Adams": {
-      "type": "photographer",
-      "fame_tier": "cultural_icon",
-      "signed_multiplier": 100,
-      "profession": "photographer",
-      "notable_works": [
-        "Yosemite"
-      ],
-      "notes": "Legendary landscape photographer, deceased"
-    },
-    "Andy Warhol": {
-      "type": "artist",
-      "fame_tier": "cultural_icon",
-      "signed_multiplier": 150,
-      "profession": "artist",
-      "notable_works": [
-        "Pop Art"
-      ],
-      "notes": "Pop art icon, anything signed extremely valuable"
-    }
-  },
-  "astronauts_explorers": {
-    "Buzz Aldrin": {
-      "type": "astronaut",
-      "fame_tier": "historical_figure",
-      "signed_multiplier": 18,
-      "profession": "astronaut",
-      "notable_works": [
-        "Apollo 11 - moonwalker"
-      ],
-      "notes": "Second person to walk on moon"
-    },
-    "Neil Armstrong": {
-      "type": "astronaut",
-      "fame_tier": "historical_icon",
-      "signed_multiplier": 300,
-      "profession": "astronaut",
-      "notable_works": [
-        "Apollo 11 - first moonwalker"
-      ],
-      "notes": "Rarely signed, deceased, first human on moon"
-    },
-    "John Glenn": {
-      "type": "astronaut",
-      "fame_tier": "historical_figure",
-      "signed_multiplier": 15,
-      "profession": "astronaut, senator",
-      "notable_works": [
-        "First American in orbit"
-      ],
-      "notes": "Mercury astronaut, senator"
-    },
-    "Sally Ride": {
-      "type": "astronaut",
-      "fame_tier": "historical_figure",
-      "signed_multiplier": 30,
-      "profession": "astronaut",
-      "notable_works": [
-        "First American woman in space"
-      ],
-      "notes": "Trailblazer, deceased"
     }
   },
   "musicians": {
@@ -1337,158 +1834,46 @@
       "Neal,Patricia"
     ]
   },
-  "authors_bestselling": {
-    "Nora Roberts": {
-      "signed_multiplier": 25.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "romance"
+  "photographers_artists": {
+    "Liz Goldwyn": {
+      "type": "photographer",
+      "fame_tier": "specialty_artist",
+      "signed_multiplier": 5,
+      "profession": "photographer, filmmaker",
+      "notable_works": [
+        "Pretty Things"
       ],
-      "notes": "Award winner in romance, highly collectible"
+      "notes": "Samuel Goldwyn granddaughter, cultural photography"
     },
-    "Anne Rice": {
-      "signed_multiplier": 25.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "horror"
+    "Annie Leibovitz": {
+      "type": "photographer",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 25,
+      "profession": "photographer",
+      "notable_works": [
+        "Rolling Stone covers"
       ],
-      "notes": "Award winner in horror, highly collectible"
+      "notes": "Iconic celebrity photographer"
     },
-    "Enid Blyton": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "children"
+    "Ansel Adams": {
+      "type": "photographer",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 100,
+      "profession": "photographer",
+      "notable_works": [
+        "Yosemite"
       ],
-      "notes": "Prolific children author"
+      "notes": "Legendary landscape photographer, deceased"
     },
-    "R.L. Stine": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "horror"
+    "Andy Warhol": {
+      "type": "artist",
+      "fame_tier": "cultural_icon",
+      "signed_multiplier": 150,
+      "profession": "artist",
+      "notable_works": [
+        "Pop Art"
       ],
-      "notes": "Prolific horror author"
-    },
-    "Gayle Lynds": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "thriller"
-      ],
-      "notes": "Prolific thriller author"
-    },
-    "Susan Mallery": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "romance"
-      ],
-      "notes": "Prolific romance author"
-    },
-    "Joe Lansdale": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "horror"
-      ],
-      "notes": "Prolific horror author"
-    },
-    "Diana Palmer": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "romance"
-      ],
-      "notes": "Prolific romance author"
-    },
-    "Heather Graham": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "romance"
-      ],
-      "notes": "Prolific romance author"
-    },
-    "Mercedes Lackey": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "fantasy"
-      ],
-      "notes": "Prolific fantasy author"
-    },
-    "David Hagberg": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "thriller"
-      ],
-      "notes": "Prolific thriller author"
-    },
-    "Seanan McGuire": {
-      "signed_multiplier": 12.0,
-      "fame_tier": "bestselling_author",
-      "genres": [
-        "sci-fi"
-      ],
-      "notes": "Prolific sci-fi author"
-    }
-  },
-  "authors_literature": {
-    "Allen Ginsberg": {
-      "signed_multiplier": 40.0,
-      "fame_tier": "literary_icon",
-      "genres": [
-        "poetry",
-        "literature"
-      ],
-      "notes": "Beat Generation icon, National Book Award, Pulitzer Prize finalist. Signed poetry highly collectible."
-    },
-    "Jack Kerouac": {
-      "signed_multiplier": 50.0,
-      "fame_tier": "literary_icon",
-      "genres": [
-        "literature",
-        "fiction"
-      ],
-      "notes": "Beat Generation founder, 'On the Road' author. Died 1969, signed books extremely rare and valuable."
-    },
-    "William S. Burroughs": {
-      "signed_multiplier": 45.0,
-      "fame_tier": "literary_icon",
-      "genres": [
-        "literature",
-        "fiction"
-      ],
-      "notes": "Beat Generation, 'Naked Lunch' author, postmodern literature pioneer. Highly collectible."
-    },
-    "Lawrence Ferlinghetti": {
-      "signed_multiplier": 30.0,
-      "fame_tier": "literary_icon",
-      "genres": [
-        "poetry",
-        "literature"
-      ],
-      "notes": "Beat poet, City Lights Books founder, published Howl. National Book Award finalist."
-    },
-    "Gary Snyder": {
-      "signed_multiplier": 25.0,
-      "fame_tier": "award_winner",
-      "genres": [
-        "poetry",
-        "literature"
-      ],
-      "notes": "Pulitzer Prize winner for poetry, Beat Generation poet, environmental activist."
-    },
-    "Gregory Corso": {
-      "signed_multiplier": 35.0,
-      "fame_tier": "literary_icon",
-      "genres": [
-        "poetry",
-        "literature"
-      ],
-      "notes": "Beat poet, 'Gasoline' and 'Bomb' author. Signed books collectible."
+      "notes": "Pop art icon, anything signed extremely valuable"
     }
   }
 }

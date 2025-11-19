@@ -3178,3 +3178,48 @@ Niche collectibles (specialized non-fiction) have two problems:
 ---
 
 **Last Updated:** 2025-11-16 (Added White Hunters investigation - partial fix applied)
+
+### Book 4 Update: White Hunters - viaLibri Validation
+**Date:** 2025-11-16 (continued)
+
+**viaLibri Cross-Check:**
+- Used Decodo Advanced (1 credit) to scrape viaLibri with JavaScript rendering
+- Result: **0 listings found** for ISBN 9780805059199
+- Validated with fully-rendered HTML (55,694 bytes)
+
+**Key Finding:**
+White Hunters by Brian Herne is **NOT currently listed on viaLibri's aggregated marketplaces** (AbeBooks, Biblio, ZVAB, etc.). This confirms:
+1. Very specialized/niche book with limited online availability
+2. Few dealers actively listing it
+3. User's $60 manual valuation is the best available market signal
+
+**viaLibri Integration:**
+- Successfully integrated Decodo Advanced for viaLibri scraping
+- Core plan (90K credits): Basic HTML only, doesn't render JavaScript
+- Advanced plan (~4.5K credits): Full JavaScript rendering, works perfectly
+- Cost: 1 credit per ISBN
+- Decision: Add viaLibri checks to future comparisons when available
+
+**Final Status:**
+- System: $83.70 (with 6x multiplier on $13.95 Amazon floor base)
+- User: $60.00
+- viaLibri: No data available
+- **Decision:** Keep 6x multiplier, continue gathering more data points
+
+**Resolution:**
+❓ **UNCERTAIN** - Need more validation data across multiple Brian Herne titles and similar specialized authors before adjusting multiplier. Single data point insufficient for calibration.
+
+**Lessons Learned:**
+1. viaLibri is valuable for mainstream collectibles but may lack coverage for ultra-niche titles
+2. Decodo Advanced successfully bypasses bot detection for JavaScript-heavy sites
+3. For specialized non-fiction, expert manual valuation may be only reliable signal
+4. Need 10-20 comparison points before adjusting collectible multipliers
+
+**Next Steps:**
+1. Continue comparison validations with viaLibri integration
+2. Gather more data on specialized author premiums
+3. Track viaLibri coverage rate across different book categories
+4. Consider adjusting multipliers only after sufficient validation data
+
+---
+

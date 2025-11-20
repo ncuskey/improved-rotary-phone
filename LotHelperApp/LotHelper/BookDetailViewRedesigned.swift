@@ -1943,7 +1943,7 @@ struct AttributesView: View {
                     .foregroundColor(.secondary)
 
                 HStack(spacing: 8) {
-                    FormatToggle(
+                    DetailFormatToggle(
                         label: "Hardcover",
                         isSelected: $isHardcover,
                         delta: deltas.first { $0.attribute == "is_hardcover" }?.delta,
@@ -1956,7 +1956,7 @@ struct AttributesView: View {
                         }
                     )
 
-                    FormatToggle(
+                    DetailFormatToggle(
                         label: "Paperback",
                         isSelected: $isPaperback,
                         delta: deltas.first { $0.attribute == "is_paperback" }?.delta,
@@ -1969,7 +1969,7 @@ struct AttributesView: View {
                         }
                     )
 
-                    FormatToggle(
+                    DetailFormatToggle(
                         label: "Mass Market",
                         isSelected: $isMassMarket,
                         delta: deltas.first { $0.attribute == "is_mass_market" }?.delta,
@@ -1990,14 +1990,14 @@ struct AttributesView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
-                AttributeToggle(
+                DetailAttributeToggle(
                     label: "Signed/Autographed",
                     isOn: $isSigned,
                     delta: deltas.first { $0.attribute == "is_signed" }?.delta,
                     onToggle: onAttributeChanged
                 )
 
-                AttributeToggle(
+                DetailAttributeToggle(
                     label: "First Edition",
                     isOn: $isFirstEdition,
                     delta: deltas.first { $0.attribute == "is_first_edition" }?.delta,
@@ -2059,7 +2059,7 @@ struct AttributesView: View {
     }
 }
 
-struct AttributeToggle: View {
+struct DetailAttributeToggle: View {
     let label: String
     @Binding var isOn: Bool
     let delta: Double?
@@ -2086,7 +2086,7 @@ struct AttributeToggle: View {
     }
 }
 
-struct FormatToggle: View {
+struct DetailFormatToggle: View {
     let label: String
     @Binding var isSelected: Bool
     let delta: Double?

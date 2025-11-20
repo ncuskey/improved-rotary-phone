@@ -1,35 +1,6 @@
 import SwiftUI
 
-/// Book attributes that can be selected during scanning
-struct BookAttributes {
-    var condition: String
-    var coverType: String = "Unknown"
-    var signed: Bool = false
-    var firstEdition: Bool = false
-    var printing: String = ""
-    var purchasePrice: Double = 0.0
 
-    init(defaultCondition: String = "Good") {
-        self.condition = defaultCondition
-    }
-
-    /// Build edition notes string from attributes
-    var editionNotes: String? {
-        var notes: [String] = []
-
-        if firstEdition {
-            notes.append("First Edition")
-        }
-        if !printing.isEmpty {
-            notes.append(printing)
-        }
-        if signed {
-            notes.append("Signed")
-        }
-
-        return notes.isEmpty ? nil : notes.joined(separator: ", ")
-    }
-}
 
 struct BookAttributesSheet: View {
     @Binding var attributes: BookAttributes

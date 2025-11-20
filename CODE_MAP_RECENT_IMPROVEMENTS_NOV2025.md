@@ -1,11 +1,19 @@
 # Code Map: Recent Improvements (November 2025)
 
-**Date:** 2025-11-15
+**Date:** 2025-11-19 (Updated)
 **Status:** Complete
 
 ## Overview
 
-This document maps recent improvements to the ISBN Lot Optimizer system, focusing on ML model enhancements, API improvements, and iOS app integration features.
+This document maps recent improvements to the ISBN Lot Optimizer system, focusing on ML model enhancements, API improvements, iOS app integration features, collectible book detection expansion, and data collection infrastructure.
+
+## Latest Updates (2025-11-19)
+
+### Collectible Book Detection & Data Collection
+- **Award Winners Import**: Automated CSV import tool for literary award winners with tier-based signed book multipliers
+- **Famous People Database**: Expanded from 11 → 36 authors (227% increase) with 2023-2024 award winners
+- **viaLibri Integration**: Decodo-powered price checking for specialized collectible books
+- **Comparison Validation**: Integrated viaLibri scraping into manual validation workflow
 
 ## Summary of Changes
 
@@ -534,6 +542,211 @@ static func updateAttributes(
 
 ---
 
+### 7. viaLibri Price Checking with Decodo Advanced
+
+**Purpose:** Validate and collect pricing data for specialized/collectible books from viaLibri aggregated marketplace
+
+#### Changes Summary:
+- Created `scripts/check_vialibri.py` standalone tool for on-demand viaLibri scraping
+- Integrated Decodo Advanced plan (JavaScript rendering) to bypass bot detection
+- Parses viaLibri HTML to extract book listings, prices, and market statistics
+- Cost-effective validation tool (1 credit per ISBN check)
+
+#### Key Code Sections:
+
+**scripts/check_vialibri.py - Main Scraping Function**
+```python
+def check_vialibri(isbn: str) -> dict:
+    """
+    Check viaLibri for an ISBN and return parsed results.
+
+    Args:
+        isbn: ISBN to look up
+
+    Returns:
+        Dict with 'stats', 'listings', and 'found' keys
+    """
+    # Get credentials from DECODO_AUTH_TOKEN (Advanced plan account)
+    auth_token = os.getenv('DECODO_AUTH_TOKEN')
+    decoded = base64.b64decode(auth_token).decode('utf-8')
+    username, password = decoded.split(':', 1)
+
+    # Build viaLibri URL
+    url = f'https://www.vialibri.net/searches?all_text={isbn}'
+
+    # Scrape with Decodo Advanced (JS rendering enabled)
+    client = DecodoClient(
+        username=username,
+        password=password,
+        plan='advanced',
+        rate_limit=1
+    )
+
+    response = client.scrape_url(url, render_js=True)
+
+    # Parse results
+    data = parse_vialibri_html(response.body)
+    data['found'] = data['stats']['total_listings'] > 0
+
+    return data
+```
+
+**Usage:**
+```bash
+# Check a single ISBN on viaLibri
+python3 scripts/check_vialibri.py 9780805059199
+
+# Output includes:
+# - Total listings found
+# - Price statistics (min, median, mean, max)
+# - Special edition counts (signed, first edition)
+# - Sample listings with seller details
+```
+
+**Integration Points:**
+- Used during manual comparison validations for collectible books
+- Provides third-party pricing data when eBay/Amazon have limited listings
+- Validates signed book premiums for famous authors
+- Cost: 1 Decodo Advanced credit per ISBN (strategic usage)
+
+**Impact:** Enables price validation for ultra-niche collectible books not well-represented on standard marketplaces. Particularly valuable for signed books and specialized non-fiction.
+
+---
+
+### 8. Award-Winning Authors Import System
+
+**Purpose:** Automate importing literary award winners into collectible author database with appropriate signed book multipliers
+
+#### Changes Summary:
+- Created `scripts/import_award_winners.py` CSV import tool
+- Implements tier-based signed book multipliers (6x-15x) by award prestige
+- Handles author name normalization and genre detection
+- Supports batch imports with preview and confirmation
+- Expanded `shared/famous_people.json` from 11 → 36 authors (227% growth)
+
+#### Key Code Sections:
+
+**scripts/import_award_winners.py - Award Tier System**
+```python
+# Award tier multipliers (signed book premiums)
+AWARD_TIERS = {
+    # Tier 1: Most prestigious literary awards
+    'National Book Award': {'multiplier': 12, 'tier': 'major_award'},
+    'Booker Prize': {'multiplier': 15, 'tier': 'major_award'},
+    'International Booker Prize': {'multiplier': 12, 'tier': 'major_award'},
+    'Women\'s Prize for Fiction': {'multiplier': 10, 'tier': 'major_award'},
+    'National Book Critics Circle Award': {'multiplier': 10, 'tier': 'major_award'},
+
+    # Tier 2: Genre awards (still collectible)
+    'Hugo Award': {'multiplier': 8, 'tier': 'genre_award'},
+    'Nebula Award': {'multiplier': 8, 'tier': 'genre_award'},
+
+    # Tier 3: Children's/YA awards
+    'Newbery Medal': {'multiplier': 6, 'tier': 'childrens_award'},
+    'Caldecott Medal': {'multiplier': 6, 'tier': 'childrens_award'},
+}
+
+def get_award_info(award_name):
+    """
+    Get multiplier and tier for an award.
+
+    Returns (multiplier, tier) or (8, 'award_winner') as default.
+    """
+    # Try exact match first
+    if award_name in AWARD_TIERS:
+        info = AWARD_TIERS[award_name]
+        return info['multiplier'], info['tier']
+
+    # Try partial matches
+    for key, info in AWARD_TIERS.items():
+        if key in award_name:
+            return info['multiplier'], info['tier']
+
+    # Default for unrecognized awards
+    return 8, 'award_winner'
+```
+
+**scripts/import_award_winners.py - Name Normalization**
+```python
+def normalize_author_name(name):
+    """
+    Normalize author name for consistency.
+
+    Examples:
+        "John Smith" -> "John Smith"
+        "Smith, John" -> "John Smith"
+    """
+    name = name.strip()
+
+    # Handle "Last, First" format
+    if ',' in name:
+        parts = name.split(',', 1)
+        if len(parts) == 2:
+            last, first = parts
+            name = f"{first.strip()} {last.strip()}"
+
+    # Handle translator notation: "Name (translated by ...)"
+    if '(translated by' in name.lower():
+        name = name.split('(translated by')[0].strip()
+
+    return name
+```
+
+**CSV Format:**
+```csv
+Award,Author,Work,Year
+National Book Award (Fiction),Percival Everett,James,2024
+Booker Prize,Samantha Harvey,Orbital,2024
+Hugo Award (Best Novel),Emily Tesh,Some Desperate Glory,2024
+Newbery Medal,Dave Eggers,The Eyes and the Impossible,2024
+```
+
+**Usage:**
+```bash
+# Import award winners from CSV
+python3 scripts/import_award_winners.py /path/to/award_winners.csv
+
+# Non-interactive mode (auto-confirm)
+python3 scripts/import_award_winners.py /path/to/award_winners.csv --yes
+```
+
+**shared/famous_people.json - Database Structure**
+```json
+{
+  "Percival Everett": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 12,
+    "genres": ["literary fiction"],
+    "notable_works": ["James"],
+    "awards": ["National Book Award (Fiction) (2024)"],
+    "notes": "National Book Award (Fiction) winner 2024"
+  },
+  "Samantha Harvey": {
+    "type": "author",
+    "fame_tier": "major_award",
+    "signed_multiplier": 15,
+    "genres": ["literary fiction"],
+    "notable_works": ["Orbital"],
+    "awards": ["Booker Prize (2024)"],
+    "notes": "Booker Prize winner 2024"
+  }
+}
+```
+
+**Impact:** Significantly improved collectible book detection for contemporary literature. Signed books from these authors now receive appropriate premiums (6x-15x) instead of generic defaults. Database now covers major literary awards through 2024.
+
+**Authors Added (2023-2024):**
+- National Book Award winners: Percival Everett, Jason De León, Lena Khalaf Tuffaha, Shifa Saltagi Safadi
+- Booker Prize: Samantha Harvey, Jenny Erpenbeck
+- National Book Critics Circle: Lorrie Moore, Safiya Sinclair, Jonny Steinberg, Kim Hyesoon
+- Hugo/Nebula winners: Emily Tesh, Vajra Chandrasekera, Ai Jiang, Naomi Kritzer, R.S.A. Garcia, T. Kingfisher
+- Women's Prize: V.V. Ganeshananthan
+- Newbery/Caldecott: Dave Eggers, Vashti Harrison
+- And 10 more contemporary award-winning authors
+
+---
+
 ## Model Performance Updates
 
 ### eBay Specialist Model (Stacking)
@@ -624,7 +837,11 @@ None identified. All features working as expected.
 ## Documentation Updates
 
 ### Files Created/Updated
-- `CODE_MAP_RECENT_IMPROVEMENTS_NOV2025.md` (this file)
+- `CODE_MAP_RECENT_IMPROVEMENTS_NOV2025.md` (this file) - Updated 2025-11-19
+- `scripts/import_award_winners.py` - NEW: CSV import tool for award winners
+- `scripts/check_vialibri.py` - NEW: viaLibri price validation tool
+- `scripts/comparison_notes.md` - Updated with viaLibri validation results
+- `shared/famous_people.json` - Expanded from 11 → 36 authors
 - Updated main `README.md` with latest feature descriptions
 - Model metadata files updated with training dates
 
@@ -636,12 +853,15 @@ None identified. All features working as expected.
 1. Monitor eBay multiplier accuracy in production
 2. Collect more training data for specialist models
 3. Fine-tune metadata-only prediction confidence thresholds
+4. **Expand famous_people.json with historical award winners** (Pulitzer, Nobel, past decades)
+5. **Continue manual comparison validations** with viaLibri integration
 
 ### Long-term
 1. Expand specialist models to more platforms (Alibris, ZVAB)
 2. Implement ensemble confidence intervals
 3. Add user feedback loop for prediction accuracy
 4. Explore neural network approaches for book embeddings
+5. **Build automated award winner scraper** (annual updates from award organization websites)
 
 ---
 
@@ -663,8 +883,10 @@ None identified. All features working as expected.
 - **2025-11-14:** Metadata-only predictions added
 - **2025-11-15:** iOS app enhancements and attribute persistence system
 - **2025-11-15:** Documentation updates and code mapping complete
+- **2025-11-19:** viaLibri integration with Decodo Advanced
+- **2025-11-19:** Award winners import system and famous_people.json expansion
 
 ---
 
 **Status:** ✅ All changes tested and deployed
-**Last Updated:** 2025-11-15
+**Last Updated:** 2025-11-19

@@ -2,6 +2,8 @@
 
 This directory contains scripts for capturing and syncing signed book data to improve ML model predictions.
 
+**Latest Update (2025-11-19):** Added award winners import system and famous authors database expansion (11 → 36 authors)
+
 ## Quick Start
 
 ```bash
@@ -157,6 +159,129 @@ Updating signed=1 for 137 ISBNs...
 New signed book count: 142 (5.19%)
 Improvement: +137 signed books
 ```
+
+---
+
+### `import_award_winners.py` (NEW: 2025-11-19)
+**Purpose:** Import literary award winners from CSV into famous_people.json with tier-based signed book multipliers
+
+**Award Tiers:**
+- **Tier 1 (Major Awards)**: National Book Award (12x), Booker Prize (15x), International Booker (12x), Women's Prize (10x), NBCC (10x)
+- **Tier 2 (Genre Awards)**: Hugo Award (8x), Nebula Award (8x)
+- **Tier 3 (Children's Awards)**: Newbery Medal (6x), Caldecott Medal (6x)
+
+**CSV Format:**
+```csv
+Award,Author,Work,Year
+National Book Award (Fiction),Percival Everett,James,2024
+Booker Prize,Samantha Harvey,Orbital,2024
+Hugo Award (Best Novel),Emily Tesh,Some Desperate Glory,2024
+```
+
+**Usage:**
+```bash
+# Import with preview and confirmation
+python3 scripts/import_award_winners.py /path/to/award_winners.csv
+
+# Auto-confirm mode (skip confirmation prompt)
+python3 scripts/import_award_winners.py /path/to/award_winners.csv --yes
+```
+
+**Output Example:**
+```
+=== IMPORT SUMMARY ===
+CSV authors: 28 total
+New authors to add: 25
+Skipped (already exists): 2
+
+NEW AUTHORS TO ADD:
+
+1. Percival Everett
+   Multiplier: 12x
+   Award: National Book Award (Fiction) (2024)
+   Genres: literary fiction
+
+2. Samantha Harvey
+   Multiplier: 15x
+   Award: Booker Prize (2024)
+   Genres: literary fiction
+
+... and 23 more
+
+Add 25 new authors to famous_people.json? (yes/no): yes
+
+✓ Successfully added 25 authors
+✓ Total in database: 36
+```
+
+**Features:**
+- Author name normalization ("Last, First" → "First Last")
+- Automatic genre detection based on award type
+- Skips translators and illustrators
+- Deduplication against existing database entries
+- Preview mode before making changes
+
+**Impact:**
+- Database expanded from 11 → 36 authors (227% increase)
+- Signed books from award winners now receive appropriate premiums
+- Covers major literary awards through 2024
+
+---
+
+### `check_vialibri.py` (NEW: 2025-11-19)
+**Purpose:** Check viaLibri marketplace for pricing data on collectible/specialized books
+
+**Use Case:** Manual validation of ML predictions for collectible books with limited eBay/Amazon data
+
+**Requirements:**
+- Decodo Advanced plan account (JavaScript rendering)
+- `DECODO_AUTH_TOKEN` environment variable (base64-encoded credentials)
+
+**Usage:**
+```bash
+# Check a single ISBN on viaLibri
+python3 scripts/check_vialibri.py 9780805059199
+```
+
+**Output Example:**
+```
+=== VIALIBRI CHECK FOR ISBN 9780805059199 ===
+Cost: 1 Decodo Advanced credit
+
+Fetching...
+
+✓ Found 12 listings (12 price points)
+
+PRICE STATISTICS:
+  Lowest:  $15.00
+  Median:  $45.00
+  Mean:    $52.30
+  Highest: $125.00
+
+Special editions: 3 signed, 5 first edition
+
+SAMPLE LISTINGS:
+1. Brian Herne - White Hunters: The Golden Age of African Safaris
+   Seller: Rare Book Cellar (United States)
+   First edition, signed by author. Fine condition in dust jacket.
+   → AbeBooks: $125.00
+   → ZVAB: $125.00
+
+...
+```
+
+**Integration:**
+- Used during manual comparison validations
+- Provides third-party pricing when eBay/Amazon lack data
+- Validates signed book premiums for famous authors
+- Strategic usage (1 credit per ISBN check)
+
+**Cost Management:**
+- ~4,500 Decodo Advanced credits available
+- Use for collectibles/signed books only
+- Not for bulk collection
+
+---
 
 ### `enrich_and_sync_workflow.sh`
 **Purpose:** Complete enrichment workflow including signed book sync

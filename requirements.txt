@@ -9,3 +9,7 @@ uvicorn[standard]
 jinja2
 python-multipart
 sse-starlette
+beautifulsoup4
+lxml
+selenium
+webdriver-manager

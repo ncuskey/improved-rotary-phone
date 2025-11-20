@@ -1,12 +1,43 @@
 # Signed Book Data Collection and ML Integration
 
-**Date:** November 9, 2025
-**Status:** ✅ System Implemented
-**Script:** `scripts/sync_signed_status_to_training.py`
+**Date:** November 9, 2025 (Updated: November 19, 2025)
+**Status:** ✅ System Implemented + Award Winners Database Expansion
+**Scripts:**
+- `scripts/sync_signed_status_to_training.py` - Sync signed status to training data
+- `scripts/import_award_winners.py` - Import famous authors from CSV (NEW: 2025-11-19)
 
 ---
 
-## Problem Statement
+## Recent Update (2025-11-19): Famous Authors Database Expansion
+
+**Database Growth:** 11 → 36 authors (227% increase)
+
+### Award Winners Import System
+- Created automated CSV import tool with tier-based signed book multipliers
+- Added 25 contemporary award-winning authors (2023-2024)
+- Award tiers: Major awards (12-15x), Genre awards (8x), Children's awards (6x)
+
+### Authors Added:
+- **National Book Award winners**: Percival Everett, Jason De León, Lena Khalaf Tuffaha, Shifa Saltagi Safadi
+- **Booker Prize**: Samantha Harvey (15x), Jenny Erpenbeck (12x)
+- **National Book Critics Circle**: Lorrie Moore, Safiya Sinclair, Jonny Steinberg, Kim Hyesoon
+- **Hugo/Nebula winners**: Emily Tesh, Vajra Chandrasekera, Ai Jiang, Naomi Kritzer, R.S.A. Garcia, T. Kingfisher
+- **Women's Prize**: V.V. Ganeshananthan
+- **Newbery/Caldecott**: Dave Eggers, Vashti Harrison
+- And 10 more contemporary literary award winners
+
+### Usage:
+```bash
+# Import award winners from CSV
+python3 scripts/import_award_winners.py /path/to/award_winners.csv
+
+# Auto-confirm mode
+python3 scripts/import_award_winners.py /path/to/award_winners.csv --yes
+```
+
+---
+
+## Original Problem Statement
 
 The ML model was predicting **$0 premium for signed books** because only 5 signed books (0.18%) existed in 2,736 training samples - far too few for the model to learn the pattern.
 
